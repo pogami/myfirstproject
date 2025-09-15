@@ -1,0 +1,134 @@
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Upload, FileText, Sparkles, CheckCircle, ArrowRight } from "lucide-react";
+import SyllabusUpload from "@/components/syllabus-upload";
+
+const features = [
+  {
+    icon: <Sparkles className="size-5 text-purple-500" />,
+    title: "AI-Powered Analysis",
+    description: "Smart parsing extracts key information automatically"
+  },
+  {
+    icon: <FileText className="size-5 text-blue-500" />,
+    title: "Instant Processing",
+    description: "Get results in seconds, not minutes"
+  },
+  {
+    icon: <CheckCircle className="size-5 text-green-500" />,
+    title: "Auto-Class Detection",
+    description: "Automatically finds and joins relevant study groups"
+  }
+];
+
+export default function SyllabusUploadPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Hero Section */}
+        <div className="text-center space-y-4 py-8">
+          <div className="flex justify-center mb-4">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+              <Upload className="size-12 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Upload Your Syllabus
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Transform your course syllabus into an interactive learning experience. Get AI-powered analysis, 
+            join study groups, and unlock personalized study tools.
+          </p>
+          <div className="flex justify-center gap-2">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              <Sparkles className="size-3 mr-1" />
+              AI-Powered
+            </Badge>
+            <Badge variant="outline">Instant Results</Badge>
+            <Badge variant="outline">Free to Use</Badge>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
+          {features.map((feature, index) => (
+            <Card key={feature.title} className="border-0 bg-gradient-to-br from-card/50 to-card/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <CardContent className="p-6 text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="p-2 rounded-lg bg-muted/50">
+                    {feature.icon}
+                  </div>
+                </div>
+                <h3 className="font-semibold mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Upload Component */}
+        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl transition-all duration-500">
+          <CardHeader className="text-center pb-6">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                <FileText className="size-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Ready to Get Started?
+            </CardTitle>
+            <CardDescription className="text-lg">
+              Upload your syllabus file and let our AI do the rest
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            <SyllabusUpload />
+          </CardContent>
+        </Card>
+
+        {/* How It Works */}
+        <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10">
+          <CardHeader>
+            <CardTitle className="text-center">How It Works</CardTitle>
+            <CardDescription className="text-center">
+              Simple steps to transform your syllabus into a powerful learning tool
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <span className="text-lg font-bold text-primary">1</span>
+                </div>
+                <h3 className="font-semibold">Upload File</h3>
+                <p className="text-sm text-muted-foreground">
+                  Drag and drop your syllabus PDF or text file
+                </p>
+              </div>
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <span className="text-lg font-bold text-primary">2</span>
+                </div>
+                <h3 className="font-semibold">AI Analysis</h3>
+                <p className="text-sm text-muted-foreground">
+                  Our AI extracts key information and course details
+                </p>
+              </div>
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <span className="text-lg font-bold text-primary">3</span>
+                </div>
+                <h3 className="font-semibold">Join Groups</h3>
+                <p className="text-sm text-muted-foreground">
+                  Automatically join study groups and start collaborating
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
