@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Mascot } from "@/components/mascot";
+import { SwirlingArrows } from "@/components/swirling-arrows";
 
 type HeroProps = {
   // Optional props if you want to customize later
@@ -104,12 +106,19 @@ export function Hero({
 
         <p className="max-w-2xl text-xl text-muted-foreground">{subtitle}</p>
 
-        <div className="flex flex-wrap gap-4 mt-2">
-          <Button size="lg" asChild>
+        <div className="flex flex-wrap gap-4 mt-2 relative">
+          <Button size="lg" asChild className="relative">
             <Link href={ctaHref}>
               {ctaText} <ArrowRight className="ml-2" />
+              {/* Doodle arrows pointing to this button */}
+              <SwirlingArrows className="absolute -top-16 -left-16" />
             </Link>
           </Button>
+          
+          {/* Mascot positioned near the button */}
+          <div className="absolute -right-20 top-0 hidden lg:block">
+            <Mascot />
+          </div>
         </div>
       </div>
     </section>
