@@ -65,11 +65,14 @@ export default function ChatPage() {
 
         try {
             // Get AI response
-            const aiResponse = await getInDepthAnalysis(inputValue, 'General');
+            const aiResponse = await getInDepthAnalysis({
+                question: inputValue,
+                context: 'General'
+            });
             
             const aiMessage = {
                 id: (Date.now() + 1).toString(),
-                text: aiResponse,
+                text: typeof aiResponse === 'string' ? aiResponse : aiResponse.answer || 'I apologize, but I couldn\'t generate a response.',
                 sender: 'bot',
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
