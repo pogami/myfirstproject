@@ -78,25 +78,25 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="animate-in fade-in-50 space-y-8">
-        {/* Header with Notifications */}
-        <div className="flex justify-between items-start mb-6">
+        {/* Header with Notifications - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'Guest'}!</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'Guest'}!</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Here's your academic overview and today's focus areas.
             </p>
           </div>
           
-          {/* Notifications - Always top right */}
-          <div className="ml-6">
+          {/* Notifications - Mobile positioned */}
+          <div className="sm:ml-6 self-end sm:self-auto">
             <Notifications />
           </div>
         </div>
 
-        {/* Compact Welcome Section */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border border-primary/20 mb-6">
+        {/* Compact Welcome Section - Mobile Optimized */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-6 border border-primary/20 mb-6">
           <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-          <div className="relative flex items-center justify-between">
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
                 <Sparkles className="size-5 text-primary" />
@@ -105,14 +105,14 @@ export default function DashboardPage() {
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 mb-2">
                   Welcome Back!
                 </Badge>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Your unified platform for college success. Connect with classmates, manage assignments, and stay organized with AI-powered tools.
                 </p>
               </div>
             </div>
             
-            {/* Advanced Features Button - Compact */}
-            <div className="flex items-center gap-3">
+            {/* Advanced Features Button - Mobile Stacked */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <Dialog open={isAdvancedDialogOpen} onOpenChange={setIsAdvancedDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0">
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                   // Trigger demo break
                   window.dispatchEvent(new CustomEvent('demo-break-trigger'));
                 }}
-                className="text-xs"
+                className="text-xs w-full sm:w-auto"
               >
                 ☕ Demo Break
               </Button>
@@ -176,78 +176,78 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Stats Overview - Mobile Optimized */}
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <BookOpen className="size-5 text-blue-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
+                  <BookOpen className="size-4 sm:size-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-blue-600">{classCount}</p>
-                  <p className="text-sm text-muted-foreground">Active Classes</p>
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600">{classCount}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Active Classes</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <MessageSquare className="size-5 text-green-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
+                  <MessageSquare className="size-4 sm:size-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-green-600">{totalMessages}</p>
-                  <p className="text-sm text-muted-foreground">Messages Sent</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">{totalMessages}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Messages Sent</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card className="border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-500/10">
-                  <TrendingUp className="size-5 text-purple-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10">
+                  <TrendingUp className="size-4 sm:size-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-purple-600">98%</p>
-                  <p className="text-sm text-muted-foreground">Success Rate</p>
+                  <p className="text-xl sm:text-2xl font-bold text-purple-600">98%</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Success Rate</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-orange-500/10">
-                  <Clock className="size-5 text-orange-600" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 rounded-lg bg-orange-500/10">
+                  <Clock className="size-4 sm:size-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-orange-600">24/7</p>
-                  <p className="text-sm text-muted-foreground">AI Support</p>
+                  <p className="text-xl sm:text-2xl font-bold text-orange-600">24/7</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">AI Support</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Mobile Optimized */}
         <div>
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">Quick Actions</h2>
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Quick Actions</h2>
             <Badge variant="outline" className="text-xs">Get Started</Badge>
           </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {quickActionCards.map((card, index) => (
               <Card key={card.title} className="group relative overflow-hidden border-0 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:bg-card/80">
                 <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-                <CardContent className="relative p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-lg`}>
+                <CardContent className="relative p-4 sm:p-6">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                    <div className={`p-2 sm:p-3 rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-lg`}>
                       {card.icon}
                     </div>
                     <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
@@ -255,14 +255,14 @@ export default function DashboardPage() {
                     </Badge>
                   </div>
                   
-                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                     {card.title}
                   </h3>
-                  <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed">
                     {card.description}
                   </p>
                   
-                  <div className="space-y-2 mb-6">
+                  <div className="space-y-2 mb-4 sm:mb-6">
                     {card.features.map((feature, idx) => (
                       <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
                         <div className="w-1 h-1 rounded-full bg-primary"></div>
@@ -272,9 +272,9 @@ export default function DashboardPage() {
                   </div>
                   
                   <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-0" variant="default">
-                    <Link href={card.href} className="flex items-center justify-center gap-2 font-medium">
+                    <Link href={card.href} className="flex items-center justify-center gap-2 font-medium text-sm sm:text-base">
                       {card.buttonText}
-                      <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-300" />
+                      <ArrowRight className="size-3 sm:size-4 group-hover:translate-x-1 transition-transform duration-300" />
                     </Link>
                   </Button>
                 </CardContent>

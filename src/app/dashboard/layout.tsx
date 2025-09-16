@@ -306,10 +306,14 @@ export default function DashboardLayout({
         </Sidebar>
         <SidebarInset>
           <AnnouncementBanner />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background/40 relative">{children}</main>
+          <main className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 bg-background/40 relative min-h-screen">
+            <div className="max-w-full mx-auto">
+              {children}
+            </div>
+          </main>
           
-          {/* Floating Profile in Top-Right Corner */}
-          <div className="fixed top-4 right-4 z-50">
+          {/* Floating Profile in Top-Right Corner - Mobile Optimized */}
+          <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
             <DashboardHeader user={user || guestUser} />
           </div>
         </SidebarInset>

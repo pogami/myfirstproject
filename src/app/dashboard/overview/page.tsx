@@ -33,69 +33,69 @@ export default function ClassOverviewPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
             <div className="space-y-8 animate-in fade-in-50">
-                {/* Hero Section */}
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 border border-primary/20">
+                {/* Hero Section - Mobile Optimized */}
+                <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-6 md:p-8 border border-primary/20">
                     <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
                     <div className="relative">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 rounded-xl bg-primary/10">
-                                <BookUser className="size-6 text-primary" />
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10">
+                                <BookUser className="size-5 sm:size-6 text-primary" />
                             </div>
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm">
                                 {classChats.length} Active Classes
                             </Badge>
                         </div>
-                        <h1 className="text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2 sm:mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                             Class Overview
                         </h1>
-                        <p className="text-lg text-muted-foreground max-w-2xl">
+                        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl">
                             Browse all your classes, see activity levels, and connect with classmates. 
                             Join study groups and collaborate on assignments.
                         </p>
                     </div>
                 </div>
 
-                {/* Stats Overview */}
-                <div className="grid gap-6 md:grid-cols-3">
+                {/* Stats Overview - Mobile Optimized */}
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                     <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-blue-500/10">
-                                    <BookUser className="size-5 text-blue-600" />
+                        <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
+                                    <BookUser className="size-4 sm:size-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-blue-600">{classChats.length}</p>
-                                    <p className="text-sm text-muted-foreground">Total Classes</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-blue-600">{classChats.length}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Total Classes</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     
                     <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-green-500/10">
-                                    <MessageSquare className="size-5 text-green-600" />
+                        <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
+                                    <MessageSquare className="size-4 sm:size-5 text-green-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-green-600">
+                                    <p className="text-xl sm:text-2xl font-bold text-green-600">
                                         {classChats.reduce((sum, [, chat]) => sum + chat.messages.length, 0)}
                                     </p>
-                                    <p className="text-sm text-muted-foreground">Total Messages</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Total Messages</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     
                     <Card className="border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-purple-500/10">
-                                    <TrendingUp className="size-5 text-purple-600" />
+                        <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10">
+                                    <TrendingUp className="size-4 sm:size-5 text-purple-600" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-purple-600">Active</p>
-                                    <p className="text-sm text-muted-foreground">Study Groups</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-purple-600">Active</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Study Groups</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -109,7 +109,7 @@ export default function ClassOverviewPage() {
                             <h2 className="text-2xl font-bold tracking-tight">Your Classes</h2>
                             <Badge variant="outline" className="text-xs">Click to Join</Badge>
                         </div>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                             {classChats.map(([id, chat]) => {
                                 const stats = getRandomStats();
                                 return (

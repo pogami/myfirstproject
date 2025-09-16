@@ -27,63 +27,63 @@ export default function SyllabusUploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Hero Section */}
-        <div className="text-center space-y-4 py-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-              <Upload className="size-12 text-primary" />
+        {/* Hero Section - Mobile Optimized */}
+        <div className="text-center space-y-4 py-6 sm:py-8">
+          <div className="flex justify-center mb-3 sm:mb-4">
+            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+              <Upload className="size-10 sm:size-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             Upload Your Syllabus
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
             Transform your course syllabus into an interactive learning experience. Get AI-powered analysis, 
             join study groups, and unlock personalized study tools.
           </p>
-          <div className="flex justify-center gap-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+          <div className="flex flex-wrap justify-center gap-2 px-4">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
               <Sparkles className="size-3 mr-1" />
               AI-Powered
             </Badge>
-            <Badge variant="outline">Instant Results</Badge>
-            <Badge variant="outline">Free to Use</Badge>
+            <Badge variant="outline" className="text-xs">Instant Results</Badge>
+            <Badge variant="outline" className="text-xs">Free to Use</Badge>
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
+        {/* Features Grid - Mobile Optimized */}
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 mb-6 sm:mb-8 px-4 sm:px-0">
           {features.map((feature, index) => (
             <Card key={feature.title} className="border-0 bg-gradient-to-br from-card/50 to-card/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <CardContent className="p-6 text-center">
-                <div className="flex justify-center mb-3">
-                  <div className="p-2 rounded-lg bg-muted/50">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="flex justify-center mb-2 sm:mb-3">
+                  <div className="p-1.5 sm:p-2 rounded-lg bg-muted/50">
                     {feature.icon}
                   </div>
                 </div>
-                <h3 className="font-semibold mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">{feature.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">{feature.description}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Upload Component */}
-        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-          <CardHeader className="text-center pb-6">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                <FileText className="size-8 text-primary" />
+        {/* Upload Component - Mobile Optimized */}
+        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl transition-all duration-500 mx-4 sm:mx-0">
+          <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                <FileText className="size-6 sm:size-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Ready to Get Started?
             </CardTitle>
-            <CardDescription className="text-lg">
+            <CardDescription className="text-base sm:text-lg">
               Upload your syllabus file and let our AI do the rest
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <SyllabusUpload />
           </CardContent>
         </Card>

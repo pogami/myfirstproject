@@ -561,18 +561,18 @@ export default function ChatInterface() {
     }
 
     return (
-        <div className="space-y-6">
-            <Card className="h-[75vh] flex flex-col shadow-2xl border border-border/50 rounded-3xl bg-gradient-to-br from-background to-muted/20">
-                <CardHeader className="pb-4">
+        <div className="space-y-4 sm:space-y-6">
+            <Card className="h-[70vh] sm:h-[75vh] flex flex-col shadow-2xl border border-border/50 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-background to-muted/20">
+                <CardHeader className="pb-3 sm:pb-4">
                     <div className="flex items-center justify-between">
-                        <div>
-                    <CardTitle className="flex items-center gap-2 font-bold text-xl">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-                            <MessageCircle className="h-5 w-5" />
+                        <div className="flex-1 min-w-0">
+                    <CardTitle className="flex items-center gap-2 font-bold text-lg sm:text-xl">
+                        <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
+                            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                         </div>
-                        Class Chats
+                        <span className="truncate">Class Chats</span>
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground/80">Collaborate with students in your classes.</CardDescription>
+                    <CardDescription className="text-xs sm:text-sm text-muted-foreground/80">Collaborate with students in your classes.</CardDescription>
                         </div>
                         {currentTab && chats[currentTab] && (
                             <DropdownMenu>
@@ -613,24 +613,24 @@ export default function ChatInterface() {
                         )}
                     </div>
                 </CardHeader>
-                <CardContent className="flex-grow flex flex-col min-h-0 px-6 pb-6">
+                <CardContent className="flex-grow flex flex-col min-h-0 px-3 sm:px-6 pb-3 sm:pb-6">
                     {hasChats ? (
                     <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-grow flex flex-col min-h-0">
-                        <TabsList className="grid w-full rounded-2xl bg-muted/30 p-1" style={{gridTemplateColumns: `repeat(${Object.keys(chats).length}, minmax(0, 1fr))`}}>
+                        <TabsList className="grid w-full rounded-xl sm:rounded-2xl bg-muted/30 p-0.5 sm:p-1 overflow-x-auto" style={{gridTemplateColumns: `repeat(${Object.keys(chats).length}, minmax(0, 1fr))`}}>
                             {Object.keys(chats).map(key => (
                                 <TabsTrigger 
                                     key={key} 
                                     value={key}
-                                    className="rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200"
+                                    className="rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
                                 >
-                                    {chats[key].name}
+                                    <span className="truncate">{chats[key].name}</span>
                                 </TabsTrigger>
                             ))}
                         </TabsList>
                         {currentChat && currentTab && (
-                             <TabsContent key={currentTab} value={currentTab} className="flex-grow mt-4 flex flex-col min-h-0">
-                                 <ScrollArea className="flex-grow pr-4 -mr-4" ref={scrollAreaRef}>
-                                     <div className="space-y-6 pb-4">
+                             <TabsContent key={currentTab} value={currentTab} className="flex-grow mt-3 sm:mt-4 flex flex-col min-h-0">
+                                 <ScrollArea className="flex-grow pr-2 sm:pr-4 -mr-2 sm:-mr-4" ref={scrollAreaRef}>
+                                     <div className="space-y-4 sm:space-y-6 pb-4">
                                         {currentChat.messages.map((msg, index) => {
                                             const isCollapsed = collapsedMessages.has(index);
                                             const isLong = isLongMessage(msg.text);
@@ -644,9 +644,9 @@ export default function ChatInterface() {
                                             const correspondingUserQuestion = userMessages[botMessageIndex - 1]?.text || '';
                                             
                                             return (
-                                                <div key={index} className={cn("flex items-start gap-3 w-full mb-4", msg.userId === user?.uid && 'justify-end')}>
+                                                <div key={index} className={cn("flex items-start gap-2 sm:gap-3 w-full mb-3 sm:mb-4", msg.userId === user?.uid && 'justify-end')}>
                                                 {msg.userId !== user?.uid && (
-                                                        <Avatar className="h-10 w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
+                                                        <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                             {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
                                                                 <AvatarImage 
                                                                     src={userProfiles[msg.userId || ''].photoURL} 
@@ -666,15 +666,15 @@ export default function ChatInterface() {
                                                 )}
                                                     
                                                 <div className={cn(
-                                                        "max-w-xs md:max-w-md lg:max-w-lg shadow-lg ring-1 ring-black/5",
+                                                        "max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg shadow-lg ring-1 ring-black/5",
                                                         msg.userId === user?.uid 
-                                                            ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-2xl rounded-br-md' 
-                                                            : 'bg-gradient-to-br from-background to-muted/30 text-foreground rounded-2xl rounded-bl-md border border-border/50',
+                                                            ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl rounded-br-md' 
+                                                            : 'bg-gradient-to-br from-background to-muted/30 text-foreground rounded-xl sm:rounded-2xl rounded-bl-md border border-border/50',
                                                         msg.sender === 'moderator' && 'bg-gradient-to-br from-destructive/10 to-destructive/5 text-destructive border border-destructive/20'
                                                     )}>
                                                         {/* Message Header */}
-                                                        <div className="flex items-center justify-between p-3 pb-2">
-                                                            <p className="font-semibold text-sm opacity-90">{msg.name}</p>
+                                                        <div className="flex items-center justify-between p-2 sm:p-3 pb-1 sm:pb-2">
+                                                            <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
                                                             <div className="flex items-center gap-1">
                                                                 {isLong && (
                                                                     <Button
@@ -726,23 +726,23 @@ export default function ChatInterface() {
                                                         </div>
                                                         
                                                         {/* Message Content */}
-                                                        <div className="px-3 pb-3">
+                                                        <div className="px-2 sm:px-3 pb-2 sm:pb-3">
                                                             {isLong && isCollapsed ? (
                                                                 <div>
-                                                                    <p className="whitespace-pre-wrap text-sm leading-relaxed opacity-90">
+                                                                    <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed opacity-90">
                                                                         {getPreviewText(msg.text)}
                                                                     </p>
                                                                     <Button
                                                                         variant="link"
                                                                         size="sm"
                                                                         onClick={() => toggleMessageCollapse(index)}
-                                                                        className="h-auto p-0 mt-2 text-xs font-medium hover:underline"
+                                                                        className="h-auto p-0 mt-1 sm:mt-2 text-xs font-medium hover:underline"
                                                                     >
                                                                         Show more...
                                                                     </Button>
                                                 </div>
                                                             ) : (
-                                                                <p className="whitespace-pre-wrap text-sm leading-relaxed opacity-90">
+                                                                <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed opacity-90">
                                                                     {msg.text}
                                                                 </p>
                                                             )}
@@ -750,7 +750,7 @@ export default function ChatInterface() {
                                                         
                                                         {/* Message Footer */}
                                                         {isLong && !isCollapsed && (
-                                                            <div className="px-3 pb-2">
+                                                            <div className="px-2 sm:px-3 pb-1 sm:pb-2">
                                                                 <Button
                                                                     variant="link"
                                                                     size="sm"
@@ -764,7 +764,7 @@ export default function ChatInterface() {
                                                     </div>
                                                     
                                                  {msg.userId === user?.uid && (
-                                                        <Avatar className="h-10 w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
+                                                        <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/80">
                                                                 <User className="size-5 text-muted-foreground" />
                                                         </div>
@@ -800,7 +800,7 @@ export default function ChatInterface() {
                                      </div>
                                  </ScrollArea>
                                  
-                                <form onSubmit={handleSendMessage} className="mt-4 flex gap-3 pt-4 border-t border-border/50">
+                                <form onSubmit={handleSendMessage} className="mt-3 sm:mt-4 flex gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-border/50">
                                     <div className="flex-1 relative">
                                     <Input
                                         placeholder={
@@ -812,13 +812,13 @@ export default function ChatInterface() {
                                         onChange={e => setInputValue(e.target.value)}
                                         disabled={isSending || isMuted}
                                         autoComplete="off"
-                                            className="text-base pr-12 rounded-2xl border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 shadow-sm"
+                                            className="text-sm sm:text-base pr-12 rounded-xl sm:rounded-2xl border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 shadow-sm"
                                         />
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground flex items-center gap-2">
+                                        <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground flex items-center gap-2">
                                             {isMuted && (
                                                 <div className="flex items-center gap-1 text-red-600">
-                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                                    <span className="font-medium">MUTED</span>
+                                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                                    <span className="font-medium text-xs">MUTED</span>
                                                 </div>
                                             )}
                                             {inputValue.length > 0 && `${inputValue.length} chars`}
@@ -828,9 +828,9 @@ export default function ChatInterface() {
                                         type="submit" 
                                         size="icon" 
                                         disabled={!inputValue.trim() || isSending || isMuted} 
-                                        className="h-12 w-12 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
                                     >
-                                        <Send className="h-5 w-5" />
+                                        <Send className="h-4 w-4 sm:h-5 sm:w-5" />
                                         <span className="sr-only">Send</span>
                                     </Button>
                                 </form>

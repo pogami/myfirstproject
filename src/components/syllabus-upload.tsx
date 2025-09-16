@@ -180,40 +180,40 @@ export default function SyllabusUpload() {
                 {!file && !isAnalyzing && (
                      <div 
                         onClick={triggerFileIput} 
-                        className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/30 rounded-xl p-10 cursor-pointer hover:bg-muted transition-colors"
+                        className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/30 rounded-xl p-6 sm:p-8 md:p-10 cursor-pointer hover:bg-muted transition-colors"
                     >
-                        <Upload className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                        <p className="text-muted-foreground font-semibold">Click or drag file to this area to upload</p>
-                        <p className="text-xs text-muted-foreground mt-1">Supported formats: PDF, DOC, DOCX, TXT (max 10MB)</p>
+                        <Upload className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/50 mb-3 sm:mb-4" />
+                        <p className="text-muted-foreground font-semibold text-sm sm:text-base text-center">Click or drag file to this area to upload</p>
+                        <p className="text-xs text-muted-foreground mt-1 text-center">Supported formats: PDF, DOC, DOCX, TXT (max 10MB)</p>
                     </div>
                 )}
 
                 {file && !isAnalyzing && (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <FileText className="h-6 w-6 text-secondary-foreground flex-shrink-0" />
-                                <p className="text-sm font-medium truncate text-secondary-foreground">{file.name}</p>
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-secondary/50 border">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-secondary-foreground flex-shrink-0" />
+                                <p className="text-xs sm:text-sm font-medium truncate text-secondary-foreground">{file.name}</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => setFile(null)}>
-                                <X className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0" onClick={() => setFile(null)}>
+                                <X className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                         </div>
                         
-                        <Button onClick={handleAnalyze} className="w-full">
-                            <Upload className="mr-2 h-4 w-4" />
+                        <Button onClick={handleAnalyze} className="w-full text-sm sm:text-base">
+                            <Upload className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                             Upload and Analyze
                         </Button>
                     </div>
                 )}
                 {isAnalyzing && (
-                     <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 relative">
+                     <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 space-y-3 sm:space-y-4 relative">
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="h-32 w-32 bg-primary/10 rounded-full animate-ping"></div>
+                            <div className="h-24 w-24 sm:h-32 sm:w-32 bg-primary/10 rounded-full animate-ping"></div>
                         </div>
-                        <AnalyzingIcon className="h-24 w-24 text-primary mb-4 relative" />
-                        <h3 className="text-xl font-semibold">Analyzing your syllabus...</h3>
-                        <p className="text-muted-foreground">{currentMessage}</p>
+                        <AnalyzingIcon className="h-20 w-20 sm:h-24 sm:w-24 text-primary mb-3 sm:mb-4 relative" />
+                        <h3 className="text-lg sm:text-xl font-semibold">Analyzing your syllabus...</h3>
+                        <p className="text-muted-foreground text-sm sm:text-base">{currentMessage}</p>
                         <Progress value={progress} className="w-full" />
                         <p className="text-sm font-bold text-primary">{Math.round(progress)}%</p>
                     </div>
