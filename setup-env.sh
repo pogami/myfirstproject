@@ -1,35 +1,41 @@
 #!/bin/bash
 
 # CourseConnect Environment Setup Script
-echo "🚀 Setting up CourseConnect environment..."
+echo "🚀 Setting up CourseConnect environment variables..."
 
 # Create .env.local file
 cat > .env.local << 'EOF'
-# AI Provider Configuration
-# Get your Google AI API key from: https://aistudio.google.com/app/apikey
-GOOGLE_AI_API_KEY=your_actual_google_api_key_here
+# CourseConnect Environment Variables
+# Replace these with your actual API keys
 
-# Get your OpenAI API key from: https://platform.openai.com/api-keys
-OPENAI_API_KEY=your_actual_openai_api_key_here
+# OpenAI API Key (get from https://platform.openai.com/account/api-keys)
+OPENAI_API_KEY=demo-key
 
-# AI Provider Preference (google or openai)
-AI_PROVIDER_PREFERENCE=google
+# Google AI API Key (get from https://aistudio.google.com/app/apikey)
+GOOGLE_AI_API_KEY=demo-key
 
-# Firebase Configuration (already configured - these are public)
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDk-zhYbWHSWdk-cDzq5b_kwZ2L3wFsYgQ
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=courseconnect-61eme.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=courseconnect-61eme
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=courseconnect-61eme.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=150901346125
-NEXT_PUBLIC_FIREBASE_APP_ID=1:150901346125:web:116c79e5f3521488e97104
-NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://courseconnect-61eme-default-rtdb.firebaseio.com
+# AI Provider Preference (google, openai, or fallback)
+AI_PROVIDER_PREFERENCE=fallback
+
+# Firebase Configuration (if needed)
+NEXT_PUBLIC_FIREBASE_API_KEY=demo-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-project
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=demo-app-id
 EOF
 
 echo "✅ Created .env.local file"
 echo ""
-echo "📝 Next steps:"
-echo "1. Get your Google AI API key from: https://aistudio.google.com/app/apikey"
-echo "2. Edit .env.local and replace 'your_actual_google_api_key_here' with your actual API key"
-echo "3. Restart your development server: npm run dev"
+echo "📝 To use real AI features:"
+echo "1. Get an OpenAI API key from: https://platform.openai.com/account/api-keys"
+echo "2. Get a Google AI API key from: https://aistudio.google.com/app/apikey"
+echo "3. Replace 'demo-key' in .env.local with your actual keys"
+echo "4. Change AI_PROVIDER_PREFERENCE to 'google' or 'openai'"
 echo ""
-echo "🎉 Chat functionality will work with enhanced fallback responses even without API keys!"
+echo "🎯 For now, the app will use enhanced fallback responses that provide"
+echo "   helpful educational content without requiring API keys!"
+echo ""
+echo "🔄 Restart your development server to apply changes:"
+echo "   npm run dev"

@@ -44,7 +44,7 @@ export interface StudyAssistanceInput {
  */
 async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
   try {
-    if (!googleApiKey || googleApiKey === 'your_google_ai_api_key_here' || googleApiKey === 'demo-key') {
+    if (!googleApiKey || googleApiKey === 'your_google_ai_api_key_here' || googleApiKey === 'demo-key' || googleApiKey === '') {
       throw new Error('Google AI API key not configured');
     }
 
@@ -109,7 +109,7 @@ For mathematical expressions, use LaTeX formatting:
 async function tryOpenAI(input: StudyAssistanceInput): Promise<AIResponse> {
   try {
     const openaiApiKey = process.env.OPENAI_API_KEY;
-    if (!openaiApiKey || openaiApiKey === 'your_openai_api_key_here') {
+    if (!openaiApiKey || openaiApiKey === 'your_openai_api_key_here' || openaiApiKey === 'demo-key' || openaiApiKey === '') {
       throw new Error('OpenAI API key not configured');
     }
 
@@ -178,25 +178,96 @@ function getEnhancedFallback(input: StudyAssistanceInput): AIResponse {
   const lowerQuestion = question.toLowerCase();
   const lowerContext = context.toLowerCase();
   
+  // Math questions
+  if (lowerQuestion.includes('derivative') || lowerQuestion.includes('calculus')) {
+    return {
+      answer: `Let me help you understand derivatives! A derivative measures how fast a function is changing at any point - think of it as the "slope" of a curve at that specific point.
+
+Key Concepts:
+• The derivative of f(x) = x² is f'(x) = 2x
+• Derivatives help us find maximum and minimum values
+• They're essential for optimization problems
+
+Example: If you have a position function, the derivative gives you velocity. If you have velocity, the derivative gives you acceleration.
+
+Common Rules:
+• Power Rule: d/dx[xⁿ] = nxⁿ⁻¹
+• Product Rule: d/dx[f(x)g(x)] = f'(x)g(x) + f(x)g'(x)
+• Chain Rule: d/dx[f(g(x))] = f'(g(x)) × g'(x)
+
+Practice Tip: Start with simple polynomial functions and gradually work up to more complex ones.`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('integral') || lowerQuestion.includes('integration')) {
+    return {
+      answer: `Integration is the reverse process of differentiation! While derivatives find rates of change, integrals find the total accumulation.
+
+Key Concepts:
+• The integral of 2x is x² + C (where C is a constant)
+• Integration finds areas under curves
+• It's used for calculating volumes, work, and many real-world applications
+
+Types of Integrals:
+• Indefinite integrals: ∫f(x)dx = F(x) + C
+• Definite integrals: ∫[a to b]f(x)dx = F(b) - F(a)
+
+Common Integration Techniques:
+• Power Rule: ∫xⁿdx = xⁿ⁺¹/(n+1) + C
+• Substitution: Change variables to simplify
+• Integration by Parts: For products of functions
+
+Example: To find the area under y = x² from x=0 to x=2:
+∫[0 to 2]x²dx = [x³/3]₀² = 8/3 - 0 = 8/3 square units`,
+      provider: 'fallback'
+    };
+  }
+  
   // Science questions
   if (lowerQuestion.includes('lightning') || lowerQuestion.includes('thunder')) {
     return {
-      answer: `Lightning is an electrical discharge that occurs when electrical charges build up in storm clouds and discharge to the ground or other clouds. It's nature's way of balancing electrical charges in the atmosphere.`,
+      answer: `Lightning is a fascinating natural phenomenon! Here's how it works:
+
+The Science:
+• Lightning is an electrical discharge between clouds or between clouds and the ground
+• It occurs when electrical charges build up in storm clouds
+• The discharge can reach temperatures of 30,000°C (54,000°F) - hotter than the sun's surface!
+
+How It Forms:
+1. Ice particles in clouds collide and create electrical charges
+2. Positive charges gather at the top, negative at the bottom
+3. When the charge difference becomes too great, lightning occurs
+4. The lightning bolt heats the air, causing it to expand rapidly
+5. This rapid expansion creates the sound we hear as thunder
+
+Safety Tips:
+• The "30-30 rule": If you see lightning, count to 30. If you hear thunder before reaching 30, seek shelter immediately
+• Stay indoors during storms
+• Avoid open areas, tall objects, and water`,
       provider: 'fallback'
     };
   }
   
   if (lowerQuestion.includes('photosynthesis')) {
     return {
-      answer: `Photosynthesis is how plants make their own food using sunlight, water, and carbon dioxide to produce glucose and oxygen. It's the process that keeps most life on Earth alive by producing the oxygen we breathe.`,
-      provider: 'fallback'
-    };
-  }
-  
-  // Math questions
-  if (lowerQuestion.includes('derivative') || lowerQuestion.includes('calculus')) {
-    return {
-      answer: `A derivative measures how fast a function is changing at any point - think of it as the "slope" of a curve. It's fundamental to calculus and helps us understand rates of change in real-world situations.`,
+      answer: `Photosynthesis is how plants make their own food - it's literally the foundation of life on Earth!
+
+The Process:
+• Plants use sunlight, water (H₂O), and carbon dioxide (CO₂) to make glucose (C₆H₁₂O₆) and oxygen (O₂)
+• The chemical equation: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂
+
+Two Main Stages:
+1. Light-dependent reactions: Capture sunlight energy in chloroplasts
+2. Light-independent reactions (Calvin cycle): Use that energy to make glucose
+
+Why It Matters:
+• Produces the oxygen we breathe
+• Removes CO₂ from the atmosphere
+• Provides food for the entire food chain
+• Without photosynthesis, life as we know it wouldn't exist
+
+Fun Fact: Plants are essentially solar-powered factories that convert sunlight into chemical energy!`,
       provider: 'fallback'
     };
   }
@@ -204,14 +275,100 @@ function getEnhancedFallback(input: StudyAssistanceInput): AIResponse {
   // Programming questions
   if (lowerQuestion.includes('loop') || lowerQuestion.includes('for') || lowerQuestion.includes('while')) {
     return {
-      answer: `Loops repeat code multiple times - 'for' loops when you know how many times, 'while' loops until a condition is met. They're essential for automating repetitive tasks in programming.`,
+      answer: `Loops are fundamental in programming - they let you repeat code multiple times efficiently!
+
+Types of Loops:
+
+1. For Loops:
+   • Use when you know how many times to repeat
+   • Example: for (int i = 0; i < 10; i++) { ... }
+   • Great for counting, iterating through arrays
+
+2. While Loops:
+   • Repeat while a condition is true
+   • Example: while (condition) { ... }
+   • Good when you don't know how many iterations you'll need
+
+3. Do-While Loops:
+   • Execute at least once, then check condition
+   • Example: do { ... } while (condition);
+
+Best Practices:
+• Always ensure your loop has a way to end (avoid infinite loops!)
+• Use meaningful variable names for counters
+• Consider the efficiency - sometimes a different loop type is better
+
+Common Mistakes:
+• Off-by-one errors (starting at 0 vs 1)
+• Forgetting to update the loop variable
+• Creating infinite loops`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('recursion') || lowerQuestion.includes('recursive')) {
+    return {
+      answer: `Recursion is a powerful programming concept where a function calls itself! It's like a mathematical proof by induction.
+
+Key Components:
+1. Base Case: The stopping condition that prevents infinite recursion
+2. Recursive Case: The function calls itself with a modified parameter
+
+Classic Example - Factorial:
+• factorial(5) = 5 × factorial(4)
+• factorial(4) = 4 × factorial(3)
+• ...continues until factorial(1) = 1 (base case)
+
+Code Example:
+function factorial(n) {
+    if (n <= 1) return 1;        // Base case
+    return n * factorial(n-1);   // Recursive case
+}
+
+When to Use Recursion:
+• Tree traversal (file systems, DOM)
+• Mathematical sequences (Fibonacci)
+• Divide-and-conquer algorithms
+• Problems that can be broken into smaller identical problems
+
+Important: Always have a base case, or you'll get a stack overflow!`,
       provider: 'fallback'
     };
   }
   
   // Generic helpful response
   return {
-    answer: `I'd be happy to help with your question: "${question}"\n\nHere's what I can tell you about this topic:\n\nThis is an important concept that students often study. The key is to understand the fundamental principles and practice applying them. I recommend breaking down the problem into smaller parts and working through each step carefully.\n\nIf you need more specific help, try asking a more detailed question or providing additional context about what you're studying.`,
+    answer: `I'd be happy to help with your question: "${question}"
+
+Here's a comprehensive approach to understanding this topic:
+
+1. Start with the Basics:
+   • Break down the main concepts
+   • Look up definitions of key terms
+   • Understand the fundamental principles
+
+2. Find Examples:
+   • Look for concrete examples that illustrate the concept
+   • Practice with simple cases before complex ones
+   • Try to relate it to things you already know
+
+3. Practice and Apply:
+   • Work through practice problems
+   • Try explaining the concept to someone else
+   • Apply it to real-world situations
+
+4. Common Study Strategies:
+   • Create flashcards for key terms
+   • Draw diagrams or mind maps
+   • Form study groups with classmates
+   • Ask your professor or TA for clarification
+
+5. Additional Resources:
+   • Check your textbook for detailed explanations
+   • Look for online tutorials or videos
+   • Use practice problems from your course materials
+
+Remember: Learning takes time and practice. Don't hesitate to ask for help when you need it!`,
     provider: 'fallback'
   };
 }
@@ -389,7 +546,15 @@ For mathematical expressions, use LaTeX formatting:
  * Main function that tries providers in order with automatic fallback
  */
 export async function provideStudyAssistanceWithFallback(input: StudyAssistanceInput): Promise<AIResponse> {
-  const preference = process.env.AI_PROVIDER_PREFERENCE || 'google';
+  const preference = process.env.AI_PROVIDER_PREFERENCE || 'fallback';
+  
+  // If preference is set to fallback or no API keys are available, use fallback directly
+  if (preference === 'fallback' || 
+      (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'demo-key' || process.env.OPENAI_API_KEY === '') &&
+      (!process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY === 'demo-key' || process.env.GOOGLE_AI_API_KEY === '')) {
+    console.log('Using enhanced fallback responses (no API keys configured)');
+    return getEnhancedFallback(input);
+  }
   
   try {
     // Try preferred provider first
