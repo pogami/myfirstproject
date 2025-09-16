@@ -38,6 +38,15 @@ import { Button } from "@/components/ui/button";
 function AnnouncementBanner() {
   const [isVisible, setIsVisible] = useState(true);
 
+  // Auto-dismiss after 10 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!isVisible) {
     return null;
   }
@@ -308,8 +317,8 @@ export default function DashboardLayout({
         <SidebarInset>
           <AnnouncementBanner />
           
-          {/* Mobile Header with Hamburger Menu */}
-          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:hidden">
+          {/* Header with Hamburger Menu - Always Visible */}
+          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="h-8 w-8" />
@@ -327,11 +336,6 @@ export default function DashboardLayout({
               {children}
             </div>
           </main>
-          
-          {/* Floating Profile in Top-Right Corner - Desktop Only */}
-          <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 hidden sm:block">
-            <DashboardHeader user={user || guestUser} />
-          </div>
         </SidebarInset>
 
         <AlertDialog open={showUpgrade} onOpenChange={setShowUpgrade}>
