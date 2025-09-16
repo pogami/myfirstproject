@@ -3,9 +3,9 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/client';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 
 export type Message = {
     sender: "user" | "bot" | "moderator";
@@ -28,10 +28,12 @@ interface ChatState {
   isGuest: boolean;
   isStoreLoading: boolean;
   isSendingMessage: boolean; // Loading state for message sending
+  isDemoMode: boolean; // Demo mode for Advanced AI features
   addChat: (chatName: string, initialMessage: Message) => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   setCurrentTab: (tabId: string | undefined) => void;
   setShowUpgrade: (show: boolean) => void;
+  setIsDemoMode: (isDemo: boolean) => void;
   initializeAuthListener: () => () => void; // Returns an unsubscribe function
   clearGuestData: () => void;
   resetChat: (chatId: string) => Promise<void>;
@@ -51,55 +53,62 @@ export const useChatStore = create<ChatState>()(
       isGuest: true,
       isStoreLoading: true,
       isSendingMessage: false,
+      isDemoMode: true, // Default to demo mode enabled
 
       initializeAuthListener: () => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            // User is signed in.
-            set({ isGuest: false, isStoreLoading: true });
-            
-            try {
-              const userDocRef = doc(db, 'users', user.uid);
-              const userDocSnap = await getDoc(userDocRef);
+        const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
+          try {
+            if (user) {
+              // User is signed in.
+              set({ isGuest: false, isStoreLoading: true });
+              
+              try {
+                const userDocRef = doc(db as Firestore, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
 
-              if (userDocSnap.exists()) {
-                  const userData = userDocSnap.data();
-                  const chatIds: string[] = userData.chats || [];
-                  const chatsToLoad: Record<string, Chat> = {};
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    const chatIds: string[] = userData.chats || [];
+                    const chatsToLoad: Record<string, Chat> = {};
 
-                  for (const chatId of chatIds) {
-                       const chatDocRef = doc(db, 'chats', chatId);
-                       const chatDocSnap = await getDoc(chatDocRef);
-                       if (chatDocSnap.exists()) {
-                           const chatData = chatDocSnap.data() as Omit<Chat, 'id'>;
-                           chatsToLoad[chatId] = { ...chatData, id: chatId };
-                       }
-                  }
-                  // Merge with existing local chats to preserve any guest chats
-                  const currentState = get();
-                  const mergedChats = { ...currentState.chats, ...chatsToLoad };
-                  set({ chats: mergedChats, isStoreLoading: false });
-              } else {
-                   // Don't overwrite existing chats if user has no Firestore chats yet
-                   const currentState = get();
-                   if (Object.keys(currentState.chats).length === 0) {
-                       set({ chats: {}, isStoreLoading: false });
-                   } else {
-                       set({ isStoreLoading: false });
-                   }
+                    for (const chatId of chatIds) {
+                         const chatDocRef = doc(db as Firestore, 'chats', chatId);
+                         const chatDocSnap = await getDoc(chatDocRef);
+                         if (chatDocSnap.exists()) {
+                             const chatData = chatDocSnap.data() as Omit<Chat, 'id'>;
+                             chatsToLoad[chatId] = { ...chatData, id: chatId };
+                         }
+                    }
+                    // Merge with existing local chats to preserve any guest chats
+                    const currentState = get();
+                    const mergedChats = { ...currentState.chats, ...chatsToLoad };
+                    set({ chats: mergedChats, isStoreLoading: false });
+                } else {
+                     // Don't overwrite existing chats if user has no Firestore chats yet
+                     const currentState = get();
+                     if (Object.keys(currentState.chats).length === 0) {
+                         set({ chats: {}, isStoreLoading: false });
+                     } else {
+                         set({ isStoreLoading: false });
+                     }
+                }
+              } catch (error) {
+                console.warn("Failed to load user chats (offline mode):", error);
+                // Continue in offline mode - preserve existing chats
+                const currentState = get();
+                if (Object.keys(currentState.chats).length === 0) {
+                    set({ chats: {}, isStoreLoading: false });
+                } else {
+                    set({ isStoreLoading: false });
+                }
               }
-            } catch (error) {
-              console.warn("Failed to load user chats (offline mode):", error);
-              // Continue in offline mode - preserve existing chats
-              const currentState = get();
-              if (Object.keys(currentState.chats).length === 0) {
-                  set({ chats: {}, isStoreLoading: false });
-              } else {
-                  set({ isStoreLoading: false });
-              }
+            } else {
+              // User is signed out. The persisted local state for guests will be used.
+              set({ isGuest: true, isStoreLoading: false });
             }
-          } else {
-            // User is signed out. The persisted local state for guests will be used.
+          } catch (authError) {
+            console.warn("Auth state change error (offline mode):", authError);
+            // If auth fails completely, fall back to guest mode
             set({ isGuest: true, isStoreLoading: false });
           }
         });
@@ -126,7 +135,7 @@ export const useChatStore = create<ChatState>()(
             return;
         }
 
-        const user = auth.currentUser;
+        const user = (auth as Auth)?.currentUser;
         if (!user) return;
 
         // Optimistically update local state first
@@ -144,7 +153,7 @@ export const useChatStore = create<ChatState>()(
 
         // Try to persist to Firestore (but don't fail if offline)
         try {
-            const chatDocRef = doc(db, 'chats', chatId);
+            const chatDocRef = doc(db as Firestore, 'chats', chatId);
             const chatDocSnap = await getDoc(chatDocRef);
 
             if (!chatDocSnap.exists()) {
@@ -155,7 +164,7 @@ export const useChatStore = create<ChatState>()(
                 await setDoc(chatDocRef, newChat);
             }
             
-            const userDocRef = doc(db, 'users', user.uid);
+            const userDocRef = doc(db as Firestore, 'users', user.uid);
             await updateDoc(userDocRef, {
                 chats: arrayUnion(chatId)
             });
@@ -189,7 +198,7 @@ export const useChatStore = create<ChatState>()(
 
         // If user is logged in, try to persist to Firestore (but don't fail if offline)
         if (!isGuest) {
-            const chatDocRef = doc(db, 'chats', chatId);
+            const chatDocRef = doc(db as Firestore, 'chats', chatId);
             try {
               const chatDocSnap = await getDoc(chatDocRef);
               if (chatDocSnap.exists()) {
@@ -208,6 +217,7 @@ export const useChatStore = create<ChatState>()(
       },
       setCurrentTab: (tabId) => set({ currentTab: tabId }),
       setShowUpgrade: (show) => set({ showUpgrade: show }),
+      setIsDemoMode: (isDemo) => set({ isDemoMode: isDemo }),
       clearGuestData: () => set({ chats: {}, currentTab: undefined }),
       
       resetChat: async (chatId) => {
@@ -232,7 +242,7 @@ export const useChatStore = create<ChatState>()(
 
         // Update Firestore if user is logged in
         if (!isGuest) {
-          const chatDocRef = doc(db, 'chats', chatId);
+          const chatDocRef = doc(db as Firestore, 'chats', chatId);
           try {
             await updateDoc(chatDocRef, { messages: resetMessages });
           } catch (error) {
@@ -293,9 +303,9 @@ export const useChatStore = create<ChatState>()(
         if (!isGuest) {
           try {
             // Remove chat from user's chat list
-            const user = auth.currentUser;
+            const user = (auth as Auth)?.currentUser;
             if (user) {
-              const userDocRef = doc(db, 'users', user.uid);
+              const userDocRef = doc(db as Firestore, 'users', user.uid);
               const userDocSnap = await getDoc(userDocRef);
               if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();

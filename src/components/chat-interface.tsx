@@ -50,7 +50,29 @@ export default function ChatInterface() {
     const [userProfiles, setUserProfiles] = useState<Record<string, { photoURL?: string; displayName?: string }>>({});
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
-    const [user] = useAuthState(auth);
+    const [user, setUser] = useState<any>(null);
+    
+    useEffect(() => {
+        // Safely handle auth state
+        try {
+            if (auth && typeof auth.onAuthStateChanged === 'function') {
+                const unsubscribe = auth.onAuthStateChanged(
+                    (user) => setUser(user),
+                    (error) => {
+                        console.warn("Auth state error in chat interface (offline mode):", error);
+                        setUser(null);
+                    }
+                );
+                return unsubscribe;
+            } else {
+                // Mock auth - no user
+                setUser(null);
+            }
+        } catch (authError) {
+            console.warn("Auth initialization error in chat interface (offline mode):", authError);
+            setUser(null);
+        }
+    }, []);
 
     const getInitials = (name: string | null | undefined) => {
         if (!name) return "U";

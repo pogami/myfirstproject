@@ -57,7 +57,7 @@ export default function ProfilePage() {
         },
         {
             id: "groups",
-            icon: <Users className="size-5 text-purple-500" />,
+            icon: <User className="size-5 text-purple-500" />,
             title: "Study Group Updates",
             description: "New members and group activities",
             enabled: false

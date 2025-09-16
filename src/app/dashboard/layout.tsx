@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X } from "lucide-react";
+import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, Brain } from "lucide-react";
 import {
   SidebarProvider,
   Sidebar,
@@ -85,9 +85,54 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
-  const [user, loading, error] = useAuthState(auth);
-  const { chats, showUpgrade, setShowUpgrade, isGuest } = useChatStore();
+  
+  // Safely handle auth state
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
+  
+  useEffect(() => {
+    // Safely handle auth state
+    try {
+      if (auth && typeof auth.onAuthStateChanged === 'function') {
+        const unsubscribe = auth.onAuthStateChanged(
+          (user: any) => {
+            setUser(user);
+            setLoading(false);
+            setError(null);
+          },
+          (error: any) => {
+            console.warn("Auth state error in dashboard layout (offline mode):", error);
+            setUser(null);
+            setLoading(false);
+            setError(error);
+          }
+        );
+        return unsubscribe;
+      } else {
+        // Mock auth - no user
+        setUser(null);
+        setLoading(false);
+        setError(null);
+      }
+    } catch (authError) {
+      console.warn("Auth initialization error in dashboard layout (offline mode):", authError);
+      setUser(null);
+      setLoading(false);
+      setError(authError);
+    }
+  }, []);
+  
+  const { chats, showUpgrade, setShowUpgrade, isGuest, isDemoMode, setIsDemoMode } = useChatStore();
   const [guestUser, setGuestUser] = useState<any>(null);
+  const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
+  
+  // Check if user has subscription (this would typically come from your payment system)
+  const checkUserSubscription = () => {
+    // For now, we'll assume no one has a subscription unless they're in demo mode
+    // In a real app, this would check your payment system or user database
+    return false;
+  };
 
   // Check for guest user in localStorage
   useEffect(() => {
@@ -308,6 +353,29 @@ export default function DashboardLayout({
                   <span className="font-medium text-sm sm:text-base">Notifications</span>
                 </Link>
               </SidebarMenuItem>
+              
+              {/* Advanced AI Tab - Only show for Pro users or demo mode */}
+              {(checkUserSubscription() || isDemoMode) && (
+                <SidebarMenuItem>
+                  <Link 
+                    href="/dashboard/advanced"
+                    className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                      isActive("/dashboard/advanced") 
+                        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-purple-600/5 hover:shadow-md"
+                    }`}
+                  >
+                    <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                      isActive("/dashboard/advanced") 
+                        ? "bg-white/20" 
+                        : "bg-muted/50 group-hover:bg-purple-500/20"
+                    }`}>
+                      <Brain className="size-4 sm:size-5" />
+                    </div>
+                    <span className="font-medium text-sm sm:text-base">Advanced AI</span>
+                  </Link>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
@@ -331,8 +399,8 @@ export default function DashboardLayout({
             </div>
           </header>
           
-          <main className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 bg-background/40 relative min-h-screen">
-            <div className="max-w-full mx-auto">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-background/40 relative min-h-screen">
+            <div className="max-w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
               {children}
             </div>
           </main>

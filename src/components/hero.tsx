@@ -51,7 +51,7 @@ export function Hero({
 
   return (
     <section
-      className="relative overflow-hidden py-16 md:py-24 text-center"
+      className="relative overflow-hidden py-12 sm:py-16 md:py-20 lg:py-24 text-center"
       style={backgroundStyle}
     >
       {/* Reactive radial background */}
@@ -88,8 +88,8 @@ export function Hero({
       </style>
 
       {/* Content */}
-      <div className="relative z-10 container max-w-6xl mx-auto px-6 flex flex-col items-center gap-6">
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter !leading-[1.1]">
+      <div className="relative z-10 container max-w-6xl mx-auto px-3 sm:px-6 flex flex-col items-center gap-4 sm:gap-6">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tighter !leading-[1.1] px-2 sm:px-0">
           Ace your{" "}
           <span
             className={`text-primary inline-block transition-opacity duration-300 ${
@@ -102,12 +102,12 @@ export function Hero({
           , together.
         </h1>
 
-        <p className="max-w-2xl text-xl text-muted-foreground">{subtitle}</p>
+        <p className="max-w-2xl text-base sm:text-lg lg:text-xl text-muted-foreground px-4 sm:px-0">{subtitle}</p>
 
-        <div className="flex flex-wrap gap-4 mt-2">
-          <Button size="lg" asChild>
+        <div className="flex flex-wrap gap-3 sm:gap-4 mt-1 sm:mt-2">
+          <Button size="lg" className="h-12 sm:h-12 text-sm sm:text-base min-h-[48px] sm:min-h-[48px]" asChild>
             <Link href={ctaHref}>
-              {ctaText} <ArrowRight className="ml-2" />
+              {ctaText} <ArrowRight className="ml-1 sm:ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </Link>
           </Button>
         </div>

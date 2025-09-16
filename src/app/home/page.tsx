@@ -56,23 +56,23 @@ export default function LandingPage() {
                 `}
             </style>
             <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-20 max-w-6xl mx-auto px-6 items-center justify-between">
-                    <Link href="/home" className="flex items-center gap-3">
-                        <CourseConnectLogo className="h-9 w-9 text-primary" />
-                        <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
+                <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
+                    <Link href="/home" className="flex items-center gap-2 sm:gap-3">
+                        <CourseConnectLogo className="h-7 w-7 sm:h-9 sm:w-9 text-primary" />
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
                     </Link>
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="lg" asChild>
+                    <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
+                        <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
                             <Link href="/about">About</Link>
                         </Button>
-                        <Button variant="ghost" size="lg" asChild>
+                        <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
                             <Link href="/pricing">Pricing</Link>
                         </Button>
-                        <Button variant="ghost" size="lg" asChild>
+                        <Button variant="ghost" size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
                             <Link href="/login">Sign In</Link>
                         </Button>
-                        <Button size="lg" asChild>
-                            <Link href="/dashboard">Get Started <ArrowRight className="ml-2" /></Link>
+                        <Button size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+                            <Link href="/dashboard">Get Started <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" /></Link>
                         </Button>
                     </div>
                 </div>
@@ -80,24 +80,25 @@ export default function LandingPage() {
             <main className="flex-1">
                 <Hero />
                 <Tabs defaultValue="features" className="w-full">
-                    <div className="container max-w-6xl mx-auto px-6">
-                        <TabsList className="grid w-full grid-cols-2 mb-8">
-                            <TabsTrigger value="features">Features</TabsTrigger>
-                            <TabsTrigger value="classes">Popular Classes</TabsTrigger>
+                    <div className="container max-w-6xl mx-auto px-3 sm:px-6">
+                        <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-10 sm:h-11 min-h-[40px] sm:min-h-[44px]">
+                            <TabsTrigger value="features" className="text-xs sm:text-sm">Features</TabsTrigger>
+                            <TabsTrigger value="classes" className="text-xs sm:text-sm">Popular Classes</TabsTrigger>
+                            <TabsTrigger value="demo" className="text-xs sm:text-sm">Try Demo</TabsTrigger>
                         </TabsList>
                         
-                        <TabsContent value="features" className="space-y-16">
+                        <TabsContent value="features" className="space-y-8 sm:space-y-12 lg:space-y-16">
                             {/* Features Section */}
                             <div className="w-full">
-                                <div className="text-center mb-16">
-                                    <h2 className="text-4xl font-bold tracking-tight mb-6">Everything You Need to Succeed</h2>
-                                    <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 lg:mb-6">Everything You Need to Succeed</h2>
+                                    <p className="text-sm sm:text-base lg:text-xl text-muted-foreground max-w-3xl mx-auto px-4 sm:px-0">
                                         CourseConnect combines AI-powered analysis with collaborative study tools to help you ace every class.
                                     </p>
                                 </div>
 
                                 {/* Feature Cards Grid */}
-                                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-16">
+                                <div className="grid gap-4 sm:gap-6 lg:gap-8 md:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
                             {/* AI Syllabus Analysis */}
                             <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                                 <CardHeader>
@@ -291,6 +292,174 @@ export default function LandingPage() {
                                             </Badge>
                                         </Card>
                                     ))}
+                                </div>
+                            </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="demo" className="space-y-8">
+                            <div className="w-full">
+                                <div className="text-center mb-8">
+                                    <h2 className="text-3xl font-bold tracking-tight mb-4">Try CourseConnect Demo</h2>
+                                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                                        Experience how CourseConnect works with our interactive demo. Join a sample class chat and see AI assistance in action!
+                                    </p>
+                                </div>
+
+                                {/* Demo Chat Interface */}
+                                <Card className="max-w-4xl mx-auto">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <MessageSquare className="h-5 w-5 text-primary" />
+                                            CS-101 Study Group - Live Demo
+                                        </CardTitle>
+                                        <CardDescription>
+                                            This is a live demo of CourseConnect's class chat. Try asking questions and see how our AI helps!
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {/* Chat Messages */}
+                                        <div className="h-80 overflow-y-auto space-y-4 mb-4 p-4 bg-muted/20 rounded-lg">
+                                            {/* Demo Messages */}
+                                            <div className="flex gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="bg-blue-500 text-white">JS</AvatarFallback>
+                                                </Avatar>
+                                                <div className="bg-background border rounded-lg p-3 max-w-[80%]">
+                                                    <div className="font-semibold text-sm mb-1">John Smith</div>
+                                                    <div className="text-sm">Hey everyone! Can someone help me understand recursion in our assignment?</div>
+                                                    <div className="text-xs text-muted-foreground mt-1">2 minutes ago</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="bg-green-500 text-white">AI</AvatarFallback>
+                                                </Avatar>
+                                                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 max-w-[80%]">
+                                                    <div className="font-semibold text-sm mb-1 flex items-center gap-1">
+                                                        <Bot className="h-3 w-3" />
+                                                        CourseConnect AI
+                                                    </div>
+                                                    <div className="text-sm">
+                                                        I'd be happy to help with recursion! Here's a simple explanation:
+                                                        <br/><br/>
+                                                        <strong>Recursion</strong> is when a function calls itself. It has two parts:
+                                                        <br/>• <strong>Base case</strong>: The stopping condition
+                                                        <br/>• <strong>Recursive case</strong>: The function calls itself
+                                                        <br/><br/>
+                                                        Example: <code>factorial(n) = n × factorial(n-1)</code>
+                                                        <br/><br/>
+                                                        Would you like me to walk through a specific example?
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground mt-1">Just now</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="bg-purple-500 text-white">SM</AvatarFallback>
+                                                </Avatar>
+                                                <div className="bg-background border rounded-lg p-3 max-w-[80%]">
+                                                    <div className="font-semibold text-sm mb-1">Sarah Miller</div>
+                                                    <div className="text-sm">Thanks AI! That really helped. Can you also explain how to implement a binary search recursively?</div>
+                                                    <div className="text-xs text-muted-foreground mt-1">1 minute ago</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback className="bg-green-500 text-white">AI</AvatarFallback>
+                                                </Avatar>
+                                                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 max-w-[80%]">
+                                                    <div className="font-semibold text-sm mb-1 flex items-center gap-1">
+                                                        <Bot className="h-3 w-3" />
+                                                        CourseConnect AI
+                                                    </div>
+                                                    <div className="text-sm">
+                                                        Absolutely! Here's how binary search works recursively:
+                                                        <br/><br/>
+                                                        <pre className="bg-muted p-2 rounded text-xs overflow-x-auto">
+{`function binarySearch(arr, target, left = 0, right = arr.length - 1) {
+    if (left > right) return -1;  // Base case
+    
+    const mid = Math.floor((left + right) / 2);
+    
+    if (arr[mid] === target) return mid;  // Found it!
+    if (arr[mid] > target) return binarySearch(arr, target, left, mid - 1);
+    return binarySearch(arr, target, mid + 1, right);
+}`}
+                                                        </pre>
+                                                        <br/>
+                                                        The key is dividing the search space in half each time!
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground mt-1">Just now</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Chat Input */}
+                                        <div className="flex gap-2">
+                                            <Input
+                                                placeholder="Ask a question or share something..."
+                                                className="flex-1"
+                                            />
+                                            <Button disabled>
+                                                <Send className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+
+                                        <div className="text-xs text-muted-foreground text-center mt-2">
+                                            💡 <strong>Demo Mode:</strong> This is a preview of CourseConnect's class chat. 
+                                            <Link href="/dashboard/chat" className="text-primary hover:underline ml-1">
+                                                Try the real thing →
+                                            </Link>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Demo Features */}
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
+                                    <Card className="text-center p-6">
+                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                            <MessageSquare className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <h3 className="font-semibold mb-2">Real-time Chat</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Instant messaging with classmates and AI assistance
+                                        </p>
+                                    </Card>
+
+                                    <Card className="text-center p-6">
+                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                            <Bot className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <h3 className="font-semibold mb-2">AI Homework Help</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Get instant explanations and step-by-step solutions
+                                        </p>
+                                    </Card>
+
+                                    <Card className="text-center p-6">
+                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                            <Users className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <h3 className="font-semibold mb-2">Study Groups</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Collaborate with classmates on assignments and projects
+                                        </p>
+                                    </Card>
+                                </div>
+
+                                {/* CTA */}
+                                <div className="text-center mt-8">
+                                    <Button size="lg" asChild>
+                                        <Link href="/dashboard/upload">
+                                            Start Your Free Trial <ArrowRight className="ml-2" />
+                                        </Link>
+                                    </Button>
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                        No credit card required • Join thousands of students
+                                    </p>
                                 </div>
                             </div>
                         </TabsContent>

@@ -20,16 +20,19 @@ import {
   Bell,
   Settings,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Crown
 } from 'lucide-react';
+import Link from 'next/link';
 import { GoogleCalendarIntegration } from '@/components/google-calendar-integration';
 import { SpotifyIntegration } from '@/components/spotify-integration';
 import { AdvancedAITutor } from '@/components/advanced-ai-tutor';
 import { GradePredictionSystem } from '@/components/grade-prediction-system';
 import { EnhancedStudyGroups } from '@/components/enhanced-study-groups';
 import { MultiModalAI } from '@/components/multi-modal-ai';
-import Link from 'next/link';
-import { Crown, Lock } from 'lucide-react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase/client';
+import { useChatStore } from '@/hooks/use-chat-store';
 
 interface DashboardStats {
   studyTimeToday: number;
@@ -50,9 +53,55 @@ interface QuickAction {
 }
 
 export default function AdvancedDashboard() {
+  // Use a safer approach for auth state
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
+  
+  useEffect(() => {
+    // Safely handle auth state
+    try {
+      if (auth && typeof auth.onAuthStateChanged === 'function') {
+        const unsubscribe = auth.onAuthStateChanged(
+          (user: any) => {
+            setUser(user);
+            setLoading(false);
+            setError(null);
+          },
+          (error: any) => {
+            console.warn("Auth state error (offline mode):", error);
+            setUser(null);
+            setLoading(false);
+            setError(error);
+          }
+        );
+        return unsubscribe;
+      } else {
+        // Mock auth - no user
+        setUser(null);
+        setLoading(false);
+        setError(null);
+      }
+    } catch (authError) {
+      console.warn("Auth initialization error (offline mode):", authError);
+      setUser(null);
+      setLoading(false);
+      setError(authError);
+    }
+  }, []);
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
-  const [isDemoMode, setIsDemoMode] = useState(true); // Demo mode for testing
+  const { isDemoMode, setIsDemoMode } = useChatStore();
+  
+  // Redirect if demo mode is disabled and user doesn't have subscription
+  useEffect(() => {
+    if (!isDemoMode) {
+      // In a real app, you would check subscription status here
+      // For now, redirect to dashboard if not in demo mode
+      window.location.href = '/dashboard';
+    }
+  }, [isDemoMode]);
   const [stats, setStats] = useState<DashboardStats>({
     studyTimeToday: 2.5,
     assignmentsCompleted: 8,
@@ -204,7 +253,7 @@ export default function AdvancedDashboard() {
         )}
 
         {/* Paywall for non-Pro users (only show if not in demo mode) */}
-        {!isProUser && !isDemoMode && (
+        {!isDemoMode && (
           <Card className="mb-8 border-primary/20 bg-gradient-to-r from-primary/5 to-purple-500/5">
             <CardContent className="p-8 text-center">
               <div className="flex justify-center mb-4">
@@ -417,7 +466,7 @@ export default function AdvancedDashboard() {
           </TabsContent>
 
           <TabsContent value="ai-tutor">
-            <AdvancedAITutor />
+            <AdvancedAITutor user={user} />
           </TabsContent>
 
           <TabsContent value="study-groups">

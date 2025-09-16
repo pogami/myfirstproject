@@ -19,12 +19,52 @@ const firebaseConfig = {
 // Initialize Firebase
 let app;
 if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
+  try {
+    app = initializeApp(firebaseConfig);
+  } catch (error) {
+    console.warn("Firebase initialization failed (offline mode):", error);
+    // Create a minimal app object to prevent crashes
+    app = { name: 'offline-app' };
+  }
 } else {
   app = getApps()[0];
 }
 
-export const storage = getStorage(app);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const rtdb = getDatabase(app);
+// Initialize services with error handling
+let storage: any, db: any, auth: any, rtdb: any;
+
+try {
+  storage = getStorage(app);
+  db = getFirestore(app);
+  auth = getAuth(app);
+  rtdb = getDatabase(app);
+} catch (error) {
+  console.warn("Firebase services initialization failed (offline mode):", error);
+  // Create mock objects to prevent crashes
+  storage = {
+    ref: () => ({ uploadBytes: () => Promise.resolve(), getDownloadURL: () => Promise.resolve('') })
+  };
+  db = {
+    doc: () => ({ 
+      getDoc: () => Promise.resolve({ exists: () => false, data: () => null }),
+      setDoc: () => Promise.resolve(),
+      updateDoc: () => Promise.resolve()
+    })
+  };
+  auth = {
+    currentUser: null,
+    onAuthStateChanged: (callback: any) => {
+      callback(null);
+      return () => {};
+    }
+  };
+  rtdb = {
+    ref: () => ({
+      onValue: () => () => {},
+      set: () => Promise.resolve(),
+      onDisconnect: () => ({ set: () => Promise.resolve() })
+    })
+  };
+}
+
+export { storage, db, auth, rtdb };

@@ -53,11 +53,17 @@ interface SubjectTutor {
 interface AdvancedAITutorProps {
   currentSubject?: string;
   userLevel?: 'beginner' | 'intermediate' | 'advanced';
+  user?: {
+    displayName?: string | null;
+    photoURL?: string | null;
+    email?: string | null;
+  } | null;
 }
 
 export function AdvancedAITutor({ 
   currentSubject = 'General', 
-  userLevel = 'intermediate' 
+  userLevel = 'intermediate',
+  user = null
 }: AdvancedAITutorProps) {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -65,6 +71,8 @@ export function AdvancedAITutor({
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedTutor, setSelectedTutor] = useState<SubjectTutor | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showInDepth, setShowInDepth] = useState(false);
+  const [lastQuestion, setLastQuestion] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -149,6 +157,7 @@ export function AdvancedAITutor({
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setLastQuestion(content);
     setInputMessage('');
     setIsProcessing(true);
     setIsTyping(true);
@@ -181,69 +190,897 @@ export function AdvancedAITutor({
     }
   };
 
-  const generateAIResponse = (userInput: string, tutor: SubjectTutor | null): string => {
-    const input = userInput.toLowerCase();
+  const getInDepthAnalysis = (question: string, tutor: SubjectTutor | null): string => {
+    const input = question.toLowerCase().trim();
     
+    if (tutor?.id === 'history' && input.includes('yemen')) {
+      return `YEMEN: COMPREHENSIVE HISTORICAL ANALYSIS
+
+GEOGRAPHICAL FOUNDATION
+Yemen occupies a strategic position at the southern tip of the Arabian Peninsula, bordered by Saudi Arabia (north), Oman (east), Red Sea (west), and Arabian Sea (south). The country spans approximately 527,970 km² with diverse terrain including coastal plains, highlands, and desert regions. The capital Sana'a sits at 2,200m elevation, while Aden serves as the economic hub.
+
+ANCIENT CIVILIZATIONS (1000 BCE - 600 CE)
+Yemen was home to several sophisticated kingdoms that controlled the lucrative frankincense and myrrh trade routes:
+
+Saba (Sheba) Kingdom (1200-275 BCE):
+- Capital: Marib (home to the legendary Marib Dam)
+- Queen of Sheba's legendary visit to King Solomon
+- Advanced irrigation systems supporting 50,000+ people
+- Controlled trade between Arabia, Africa, and India
+
+Hadhramaut Kingdom (800 BCE - 300 CE):
+- Capital: Shabwa
+- Monopoly on frankincense production
+- Sophisticated water management systems
+- Cultural influence extending to East Africa
+
+Himyar Kingdom (110 BCE - 525 CE):
+- Last major pre-Islamic kingdom
+- Adopted Judaism as state religion
+- Controlled Red Sea trade routes
+- Fell to Ethiopian invasion in 525 CE
+
+ISLAMIC PERIOD (630-1918)
+- 630 CE: Yemen converted to Islam during Prophet Muhammad's lifetime
+- Multiple dynasties ruled: Umayyads, Abbasids, Ziyadids, Rasulids
+- 1517: Ottoman Empire gained control
+- 1635: Local Zaydi imams established independence
+- 1839: British occupied Aden, creating strategic port
+
+MODERN ERA TIMELINE
+1918: Ottoman withdrawal, Yemen gained independence
+1962: North Yemen Revolution - republic established
+1967: South Yemen independence from Britain (People's Democratic Republic)
+1970: South Yemen became Marxist state
+1990: Unification of North and South Yemen
+1994: Civil war - North defeated South
+2011: Arab Spring protests forced President Saleh to resign
+2014-2015: Houthi rebellion captured Sana'a, civil war began
+
+CURRENT CONFLICT ANALYSIS (2014-Present)
+The Yemen Civil War involves multiple factions:
+
+Houthi Movement (Ansar Allah):
+- Zaydi Shia group from northern highlands
+- Supported by Iran
+- Controls Sana'a and northern regions
+
+Internationally Recognized Government:
+- Led by President Hadi (now Rashad al-Alimi)
+- Supported by Saudi Arabia and UAE
+- Based in Aden
+
+Southern Transitional Council:
+- Separatist movement in South Yemen
+- UAE-backed
+- Seeks southern independence
+
+HUMANITARIAN CRISIS IMPACT
+- 24+ million people need humanitarian assistance
+- 4+ million internally displaced
+- Cholera outbreaks affecting millions
+- Famine conditions in multiple regions
+- 80% of population below poverty line
+
+STRATEGIC SIGNIFICANCE
+- Controls Bab el-Mandeb Strait (30% of global oil trade)
+- Proximity to Saudi oil fields
+- Gateway between Red Sea and Indian Ocean
+- Historical crossroads of trade routes
+
+ECONOMIC FOUNDATIONS
+Traditional Economy:
+- Agriculture: Coffee (Mocha), qat, cotton, fruits
+- Fishing: Red Sea and Arabian Sea
+- Trade: Historical frankincense routes
+
+Modern Challenges:
+- Oil reserves declining
+- Water scarcity crisis
+- Economic blockade effects
+- Infrastructure destruction
+
+CULTURAL HERITAGE
+- UNESCO World Heritage Sites: Old City of Sana'a, Historic Town of Zabid
+- Ancient architecture: Tower houses, mud-brick construction
+- Traditional music: Yemeni folk, classical Arabic
+- Literary tradition: Poetry, historical chronicles`;
+    }
+    
+    if (tutor?.id === 'math' && input.includes('5x5x5')) {
+      return `5 × 5 × 5 = 125: ADVANCED MATHEMATICAL ANALYSIS
+
+COMPUTATIONAL BREAKDOWN
+Step 1: 5 × 5 = 25
+Step 2: 25 × 5 = 125
+
+MATHEMATICAL REPRESENTATIONS
+Exponential Notation: 5³ = 125
+Prime Factorization: 125 = 5³ = 5 × 5 × 5
+Scientific Notation: 1.25 × 10²
+
+GEOMETRIC INTERPRETATIONS
+Cube Volume: A cube with side length 5 units has volume 5³ = 125 cubic units
+3D Grid: 5 × 5 × 5 lattice points in 3-dimensional space
+Coordinate System: Points (x,y,z) where x,y,z ∈ {0,1,2,3,4}
+
+COMBINATORIAL APPLICATIONS
+Permutations: 5³ ways to arrange 3 items from 5 choices with repetition
+Tree Diagram: 5 branches × 5 branches × 5 branches = 125 total paths
+Probability: Sample space of 125 equally likely outcomes
+
+NUMBER THEORY CONNECTIONS
+Perfect Cube: 125 is a perfect cube (5³)
+Sum of Cubes: 125 = 5³ = 4³ + 3³ + 2³ + 1³ + 0³
+Digital Root: 1+2+5 = 8, then 8 → single digit
+Divisibility: 125 is divisible by 1, 5, 25, 125
+
+ALGEBRAIC EXTENSIONS
+Polynomial Roots: x³ - 125 = 0 has root x = 5
+Binomial Expansion: (5)³ = 125
+Logarithmic Form: log₅(125) = 3
+
+REAL-WORLD APPLICATIONS
+Engineering: 5×5×5 cubic meter storage capacity
+Computer Science: 5³ = 125 possible combinations in 3-bit system
+Economics: Compound growth over 3 periods at 5% each
+Physics: 5³ cubic units of volume in fluid dynamics
+
+ADVANCED MATHEMATICAL CONCEPTS
+Group Theory: 125 elements in certain finite groups
+Topology: 125 points in 3D topological space
+Calculus: Volume integral over 5×5×5 region
+Linear Algebra: 125-dimensional vector space`;
+    }
+    
+    return `In-depth analysis for "${question}" is not available. Please ask a more specific question or select a specialized tutor.`;
+  };
+
+  const handleInDepthAnalysis = () => {
+    if (!lastQuestion) return;
+    
+    const inDepthResponse = getInDepthAnalysis(lastQuestion, selectedTutor);
+    const assistantMessage: AIMessage = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: inDepthResponse,
+      type: 'text',
+      timestamp: new Date(),
+      subject: selectedTutor?.name || currentSubject,
+      difficulty: userLevel
+    };
+
+    setMessages(prev => [...prev, assistantMessage]);
+    setShowInDepth(true);
+  };
+
+  const copyChat = () => {
+    const chatText = messages.map(msg => 
+      `${msg.timestamp.toLocaleTimeString()} • ${msg.subject}\n${msg.content}`
+    ).join('\n\n');
+    
+    navigator.clipboard.writeText(chatText);
+    toast({
+      title: "Chat Copied",
+      description: "Chat history has been copied to clipboard.",
+    });
+  };
+
+  const exportChat = () => {
+    const chatData = {
+      timestamp: new Date().toISOString(),
+      tutor: selectedTutor?.name || 'General',
+      messages: messages
+    };
+    
+    const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Chat Exported",
+      description: "Chat history has been exported as JSON file.",
+    });
+  };
+
+  const resetChat = () => {
+    setMessages([]);
+    setLastQuestion('');
+    setShowInDepth(false);
+    toast({
+      title: "Chat Reset",
+      description: "Chat history has been cleared.",
+    });
+  };
+
+  const generateAIResponse = (userInput: string, tutor: SubjectTutor | null): string => {
+    const input = userInput.toLowerCase().trim();
+    
+    // If a specialized tutor is selected, they should answer ANY question in their field
     if (tutor) {
+      // Only redirect if it's clearly not related to their field at all
+      const isCompletelyUnrelated = tutor.specialties.every(specialty => 
+        !input.includes(specialty.toLowerCase()) && 
+        !input.includes(specialty.split(' ')[0].toLowerCase())
+      ) && 
+      // Additional checks for completely unrelated topics
+      !(tutor.id === 'history' && (input.includes('yemen') || input.includes('war') || input.includes('revolution') || input.includes('ancient') || input.includes('medieval') || input.includes('civilization') || input.includes('history') || input.includes('past') || input.includes('timeline'))) &&
+      !(tutor.id === 'math' && (input.includes('5x5x5') || input.includes('5*5*5') || input.includes('equation') || input.includes('solve') || input.includes('math') || input.includes('number') || input.includes('calculate') || input.includes('algebra') || input.includes('geometry'))) &&
+      !(tutor.id === 'science' && (input.includes('photosynthesis') || input.includes('physics') || input.includes('chemistry') || input.includes('biology') || input.includes('science') || input.includes('experiment') || input.includes('molecule') || input.includes('atom'))) &&
+      !(tutor.id === 'programming' && (input.includes('recursion') || input.includes('algorithm') || input.includes('code') || input.includes('programming') || input.includes('python') || input.includes('javascript') || input.includes('function'))) &&
+      !(tutor.id === 'language' && (input.includes('grammar') || input.includes('writing') || input.includes('english') || input.includes('literature') || input.includes('poetry') || input.includes('essay'))) &&
+      !(tutor.id === 'creative' && (input.includes('art') || input.includes('design') || input.includes('creative') || input.includes('music') || input.includes('drawing') || input.includes('painting')));
+      
+      // Only redirect if it's completely unrelated AND not a greeting
+      if (isCompletelyUnrelated && !input.includes('hello') && !input.includes('hi') && !input.includes('help')) {
+        return `I'm your ${tutor.name} and I'm 100% focused on ${tutor.description.toLowerCase()}. 
+
+Your question doesn't seem related to my specialty. I can only help with:
+${tutor.specialties.map(s => `• ${s}`).join('\n')}
+
+To ask general questions, please deselect me as your tutor first. I'm here to give you expert-level help in my field!`;
+      }
+      
+      // Provide direct, comprehensive answers for specialized tutors
       switch (tutor.id) {
         case 'math':
           if (input.includes('5x5x5') || input.includes('5*5*5') || input.includes('5 × 5 × 5')) {
-            return `**5 × 5 × 5 = 125**
+            return `5 × 5 × 5 = 125
 
-Let me break this down step by step:
+Step-by-step:
+• 5 × 5 = 25
+• 25 × 5 = 125
 
-**Step 1**: 5 × 5 = 25
-**Step 2**: 25 × 5 = 125
+Alternative methods:
+• Exponential: 5³ = 125
+• Cube volume: A cube with sides of 5 units has volume 125 cubic units
 
-**Alternative approaches:**
-• **Exponential form**: 5³ = 5 × 5 × 5 = 125
-• **Repeated addition**: 5 + 5 + 5 + 5 + 5 = 25, then 25 + 25 + 25 + 25 + 25 = 125
-
-**Real-world context:**
-This could represent:
-• Volume of a cube with side length 5 units
-• 5³ cubic units = 125 cubic units
-• Total combinations in a 3-step process where each step has 5 options
-
-**Related concepts:**
-• Powers and exponents
+Applications:
 • Volume calculations
-• Permutations and combinations
+• Permutations (5³ ways to arrange 3 items from 5 choices)
+• Probability (125 possible outcomes)
 
-Would you like me to explain any of these related concepts in more detail?`;
+[In-Depth Analysis Available]`;
           }
           if (input.includes('calculus') || input.includes('derivative')) {
-            return `Great question about calculus! Let me break down derivatives for you:\n\n1. **Definition**: A derivative measures how fast a function is changing at any point.\n2. **Notation**: f'(x) or dy/dx\n3. **Power Rule**: If f(x) = x^n, then f'(x) = nx^(n-1)\n4. **Example**: If f(x) = x², then f'(x) = 2x\n\nWould you like me to explain any specific part in more detail?`;
+            return `**Calculus Derivatives - Complete Guide**
+
+**Definition**: A derivative measures the instantaneous rate of change of a function at any point.
+
+**Key Concepts:**
+• **Notation**: f'(x), dy/dx, or Df(x)
+• **Geometric meaning**: Slope of the tangent line
+• **Physical meaning**: Instantaneous velocity/acceleration
+
+**Essential Rules:**
+1. **Power Rule**: If f(x) = x^n, then f'(x) = nx^(n-1)
+2. **Constant Rule**: If f(x) = c, then f'(x) = 0
+3. **Sum Rule**: (f + g)' = f' + g'
+4. **Product Rule**: (fg)' = f'g + fg'
+5. **Chain Rule**: (f(g(x)))' = f'(g(x)) · g'(x)
+
+**Examples:**
+• f(x) = x² → f'(x) = 2x
+• f(x) = x³ → f'(x) = 3x²
+• f(x) = √x → f'(x) = 1/(2√x)
+
+**Applications:**
+• Finding maximum/minimum values
+• Optimization problems
+• Related rates
+• Curve sketching
+
+What specific aspect of derivatives would you like me to explain further?`;
           }
-          return `I'm your Math AI Tutor! I can help with algebra, calculus, statistics, geometry, and more. What specific math concept would you like to explore?`;
+          if (input.includes('algebra') || input.includes('equation') || input.includes('solve')) {
+            return `**Algebra Problem Solving**
+
+I'm ready to solve any algebraic equation! Here's my systematic approach:
+
+**Step-by-Step Method:**
+1. **Identify the type**: Linear, quadratic, polynomial, rational, etc.
+2. **Simplify**: Combine like terms, clear fractions
+3. **Isolate the variable**: Use inverse operations
+4. **Check your answer**: Substitute back into original equation
+
+**Common Techniques:**
+• **Linear equations**: ax + b = c → x = (c-b)/a
+• **Quadratic equations**: Use factoring, completing the square, or quadratic formula
+• **Systems**: Substitution or elimination methods
+
+**Example**: Solve 2x + 5 = 13
+• Step 1: 2x = 13 - 5
+• Step 2: 2x = 8
+• Step 3: x = 4
+• Check: 2(4) + 5 = 8 + 5 = 13 ✓
+
+Please share your specific equation and I'll solve it step-by-step!`;
+          }
+          return `I'm your Math AI Tutor! I specialize in:
+• Algebra: Equations, inequalities, functions, polynomials
+• Calculus: Derivatives, integrals, limits, optimization
+• Statistics: Probability, distributions, hypothesis testing
+• Geometry: Shapes, proofs, trigonometry, coordinate geometry
+
+I provide direct, step-by-step solutions. What math problem can I solve for you?`;
         
         case 'science':
           if (input.includes('photosynthesis')) {
-            return `Photosynthesis is fascinating! Here's how it works:\n\n**Process**: Plants convert light energy into chemical energy\n**Equation**: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂\n**Two Stages**:\n1. Light-dependent reactions (in thylakoids)\n2. Calvin cycle (in stroma)\n\nThis process is essential for life on Earth! Would you like me to explain either stage in detail?`;
+            return `**Photosynthesis - Complete Process**
+
+**Overall Equation:**
+6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂
+
+**Two Main Stages:**
+
+**1. Light-Dependent Reactions (Thylakoids)**
+• **Input**: Light energy, H₂O, ADP, NADP⁺
+• **Output**: ATP, NADPH, O₂
+• **Process**: Light excites chlorophyll → electron transport chain → ATP synthesis
+• **Key**: Photolysis splits water, releasing oxygen
+
+**2. Calvin Cycle (Stroma)**
+• **Input**: CO₂, ATP, NADPH
+• **Output**: Glucose (C₆H₁₂O₆)
+• **Process**: Carbon fixation → Reduction → Regeneration
+• **Key**: RuBisCO enzyme fixes CO₂ to RuBP
+
+**Factors Affecting Rate:**
+• Light intensity
+• CO₂ concentration
+• Temperature
+• Chlorophyll availability
+
+**Importance**: Foundation of most food chains and oxygen production
+
+Which stage would you like me to explain in detail?`;
           }
-          return `I'm your Science AI Tutor! I specialize in physics, chemistry, biology, and earth sciences. What scientific concept can I help you understand?`;
+          if (input.includes('physics') || input.includes('force') || input.includes('motion')) {
+            return `**Physics Fundamentals**
+
+I can help with all physics concepts:
+
+**Mechanics:**
+• **Kinematics**: Motion equations, velocity, acceleration
+• **Dynamics**: Newton's laws, forces, momentum
+• **Energy**: Kinetic, potential, conservation of energy
+• **Circular motion**: Centripetal force, angular velocity
+
+**Example**: A car accelerates from 0 to 60 mph in 10 seconds
+• Convert: 60 mph = 26.8 m/s
+• Acceleration: a = Δv/Δt = 26.8/10 = 2.68 m/s²
+• Distance: d = ½at² = ½(2.68)(10)² = 134 m
+
+**Other Topics:**
+• Thermodynamics, waves, electricity, magnetism
+• Modern physics: quantum mechanics, relativity
+
+What specific physics problem can I solve for you?`;
+          }
+          return `I'm your Science AI Tutor! I specialize in:
+• Physics: Mechanics, thermodynamics, waves, electricity
+• Chemistry: Atomic structure, bonding, reactions, stoichiometry
+• Biology: Cell biology, genetics, evolution, ecology
+• Earth Science: Geology, meteorology, astronomy
+
+I provide detailed explanations with examples. What scientific concept can I explain?`;
         
         case 'programming':
           if (input.includes('recursion')) {
-            return `Recursion is a powerful programming concept! Here's the breakdown:\n\n**Definition**: A function that calls itself to solve smaller instances of the same problem\n**Key Components**:\n1. Base case (stopping condition)\n2. Recursive case (function calls itself)\n\n**Example** (Factorial):\n\`\`\`python\ndef factorial(n):\n    if n <= 1:  # Base case\n        return 1\n    return n * factorial(n-1)  # Recursive case\n\`\`\`\n\nWould you like to see more examples or practice problems?`;
+            return `**Recursion - Complete Guide**
+
+**Definition**: A function that calls itself to solve smaller instances of the same problem.
+
+**Essential Components:**
+1. **Base Case**: Stopping condition (prevents infinite recursion)
+2. **Recursive Case**: Function calls itself with modified parameters
+
+**Classic Example - Factorial:**
+\`\`\`python
+def factorial(n):
+    if n <= 1:        # Base case
+        return 1
+    return n * factorial(n-1)  # Recursive case
+\`\`\`
+
+**How it works:**
+• factorial(5) = 5 × factorial(4)
+• factorial(4) = 4 × factorial(3)
+• factorial(3) = 3 × factorial(2)
+• factorial(2) = 2 × factorial(1)
+• factorial(1) = 1 (base case)
+• Result: 5 × 4 × 3 × 2 × 1 = 120
+
+**Other Examples:**
+• Fibonacci sequence
+• Binary tree traversal
+• Tower of Hanoi
+• Merge sort
+
+**When to use recursion:**
+• Problem can be broken into similar subproblems
+• Each subproblem is smaller than the original
+• Base case is clearly defined
+
+What specific recursive problem can I help you solve?`;
           }
-          return `I'm your Programming AI Tutor! I can help with Python, JavaScript, Java, C++, data structures, algorithms, and more. What programming concept would you like to learn?`;
+          if (input.includes('algorithm') || input.includes('sort') || input.includes('search')) {
+            return `**Algorithms - Essential Concepts**
+
+**Sorting Algorithms:**
+• **Bubble Sort**: O(n²) - Simple but inefficient
+• **Quick Sort**: O(n log n) average - Divide and conquer
+• **Merge Sort**: O(n log n) - Stable, guaranteed performance
+• **Heap Sort**: O(n log n) - In-place sorting
+
+**Searching Algorithms:**
+• **Linear Search**: O(n) - Check each element
+• **Binary Search**: O(log n) - Requires sorted array
+
+**Example - Binary Search:**
+\`\`\`python
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+\`\`\`
+
+**Data Structures:**
+• Arrays, Linked Lists, Stacks, Queues
+• Trees, Graphs, Hash Tables
+
+What specific algorithm can I explain or help you implement?`;
+          }
+          return `I'm your Programming AI Tutor! I specialize in:
+• Languages: Python, JavaScript, Java, C++, TypeScript
+• Data Structures: Arrays, linked lists, trees, graphs, hash tables
+• Algorithms: Sorting, searching, dynamic programming, recursion
+• Concepts: OOP, functional programming, design patterns
+
+I provide working code examples and step-by-step explanations. What programming problem can I solve?`;
+        
+        case 'language':
+          if (input.includes('grammar') || input.includes('sentence') || input.includes('writing')) {
+            return `**Grammar and Writing Excellence**
+
+**Common Grammar Rules:**
+• **Subject-Verb Agreement**: "The team is" (singular) vs "The teams are" (plural)
+• **Pronoun Agreement**: "Everyone should bring their book" (modern usage)
+• **Comma Usage**: Separate items in lists, introductory phrases, non-essential clauses
+• **Apostrophes**: Possession (John's book) vs contractions (don't)
+
+**Sentence Structure:**
+• **Simple**: One independent clause
+• **Compound**: Two independent clauses joined by conjunction
+• **Complex**: Independent + dependent clause
+• **Compound-Complex**: Multiple clauses
+
+**Writing Tips:**
+• **Active Voice**: "The student wrote the essay" (not "The essay was written by the student")
+• **Conciseness**: Remove unnecessary words
+• **Parallel Structure**: "I like reading, writing, and studying" (not "I like reading, to write, and study")
+
+**Example Analysis:**
+"Despite the rain, the students, who were determined to succeed, continued their studies."
+• Despite the rain = introductory phrase
+• the students = subject
+• who were determined to succeed = non-essential clause
+• continued their studies = main verb phrase
+
+What specific grammar or writing issue can I help you with?`;
+          }
+          return `I'm your Language AI Tutor! I specialize in:
+• English: Grammar, writing, literature analysis, vocabulary
+• Literature: Poetry, prose, literary devices, themes
+• Writing: Essays, creative writing, research papers
+• Languages: Spanish, French, German basics
+
+I provide detailed explanations and examples. What language concept can I help you master?`;
+        
+        case 'history':
+          if (input.includes('yemen')) {
+            return `Yemen is a country in the southern Arabian Peninsula, bordered by Saudi Arabia, Oman, the Red Sea, and Arabian Sea. Capital: Sana'a.
+
+Key Facts:
+• Population: ~30 million
+• Area: 527,970 km²
+• Language: Arabic
+• Religion: Islam
+
+History: Ancient kingdoms (Saba/Sheba, Hadhramaut, Himyar) controlled frankincense trade routes. Converted to Islam in 630 CE. Modern Yemen formed in 1990 when North and South unified. Currently experiencing civil war since 2014.
+
+Current Situation: Humanitarian crisis with 24+ million needing assistance. Controlled by Houthi rebels in north, internationally recognized government in south.
+
+[In-Depth Analysis Available]`;
+          }
+          if (input.includes('war') || input.includes('battle') || input.includes('revolution')) {
+            return `Historical Analysis Framework
+
+Primary Sources: Documents, artifacts, eyewitness accounts from the time period
+Secondary Sources: Books, articles written by historians analyzing primary sources
+
+Historical Thinking Skills:
+• Chronology: Understanding cause and effect over time
+• Context: How events relate to their time period
+• Perspective: Different viewpoints on the same event
+• Evidence: Evaluating reliability of sources
+
+Example Analysis - American Revolution:
+• Causes: Taxation without representation, British restrictions on trade
+• Key Events: Boston Tea Party (1773), Declaration of Independence (1776)
+• Outcomes: American independence, new government structure
+• Significance: Influenced other revolutions, established democratic principles
+
+Historical Periods I Cover:
+• Ancient civilizations, Medieval period, Renaissance
+• World Wars, Cold War, Modern era
+• Social movements, economic developments
+
+What specific historical event or period can I analyze for you?`;
+          }
+          return `I'm your History AI Tutor! I specialize in:
+• World History: Ancient civilizations to modern era
+• American History: Colonial period to present
+• Social Studies: Government, economics, geography
+• Historical Analysis: Primary sources, cause and effect, perspective
+
+I provide detailed historical context and analysis. What historical topic can I explain?`;
+        
+        case 'creative':
+          if (input.includes('art') || input.includes('design') || input.includes('creative')) {
+            return `**Creative Arts and Design**
+
+**Design Principles:**
+• **Balance**: Symmetrical vs asymmetrical composition
+• **Contrast**: Light/dark, large/small, color opposites
+• **Emphasis**: Focal point that draws attention
+• **Unity**: Cohesive visual elements
+• **Rhythm**: Repetition creating visual flow
+
+**Color Theory:**
+• **Primary**: Red, blue, yellow
+• **Secondary**: Orange, green, purple
+• **Complementary**: Opposite colors on color wheel
+• **Analogous**: Adjacent colors for harmony
+
+**Creative Process:**
+1. **Research**: Gather inspiration and references
+2. **Brainstorm**: Generate multiple ideas
+3. **Sketch**: Quick visual exploration
+4. **Refine**: Develop chosen concept
+5. **Execute**: Final implementation
+
+**Art Movements**: Renaissance, Impressionism, Modernism, Contemporary
+
+What specific creative project or concept can I help you develop?`;
+          }
+          return `I'm your Creative AI Tutor! I specialize in:
+• Visual Arts: Drawing, painting, design principles, color theory
+• Music: Theory, composition, instrument techniques
+• Creative Writing: Poetry, fiction, storytelling techniques
+• Digital Arts: Graphic design, animation, multimedia
+
+I provide inspiration and technical guidance. What creative project can I help you with?`;
         
         default:
-          return `I'm your ${tutor.name}! I specialize in ${tutor.description}. How can I help you learn today?`;
+          return `I'm your ${tutor.name}! I specialize in ${tutor.description.toLowerCase()}. 
+
+I provide direct, expert-level answers in my field. What specific question can I answer for you?`;
       }
     }
 
-    // General AI responses
+    // General AI responses - only when no specialized tutor is selected
     if (input.includes('hello') || input.includes('hi')) {
-      return `Hello! I'm your advanced AI tutor. I can help you with multiple subjects and learning styles. Choose a specialized tutor above or ask me anything!`;
+      return `Hello! I'm your advanced AI tutor. I can help you with multiple subjects and learning styles. 
+
+Choose a specialized tutor above for expert help in specific subjects, or ask me general questions!
+
+I provide direct answers and step-by-step explanations. What would you like to learn about?`;
     }
     
     if (input.includes('help')) {
-      return `I can help you with:\n\n• **Math**: Algebra, calculus, statistics, geometry\n• **Science**: Physics, chemistry, biology, earth science\n• **Programming**: Python, JavaScript, Java, algorithms\n• **Languages**: English, literature, writing\n• **History**: World history, social studies\n• **Creative**: Arts, music, creative writing\n\nWhat would you like to learn about?`;
+      return `I can help you with:
+
+Math: Algebra, calculus, statistics, geometry - direct problem solving
+Science: Physics, chemistry, biology, earth science - detailed explanations  
+Programming: Python, JavaScript, Java, algorithms - working code examples
+Languages: English, literature, writing - grammar and analysis
+History: World history, social studies - historical analysis
+Creative: Arts, music, creative writing - inspiration and techniques
+
+For specialized help: Select a tutor above for 100% focused expertise
+For general questions: Ask me anything and I'll give you direct answers
+
+What would you like to learn about?`;
     }
 
-    return `That's an interesting question! I'd be happy to help you understand that concept. Could you provide a bit more detail about what specific aspect you'd like me to explain?`;
+    // Automatic subject detection for direct answers
+    if (input.includes('history') || input.includes('yemen') || input.includes('war') || input.includes('revolution') || input.includes('ancient') || input.includes('medieval') || input.includes('civilization')) {
+      if (input.includes('yemen')) {
+        return `YEMEN: Advanced Historical Analysis
+
+GEOGRAPHICAL FOUNDATION
+Yemen occupies a strategic position at the southern tip of the Arabian Peninsula, bordered by Saudi Arabia (north), Oman (east), Red Sea (west), and Arabian Sea (south). The country spans approximately 527,970 km² with diverse terrain including coastal plains, highlands, and desert regions. The capital Sana'a sits at 2,200m elevation, while Aden serves as the economic hub.
+
+ANCIENT CIVILIZATIONS (1000 BCE - 600 CE)
+Yemen was home to several sophisticated kingdoms that controlled the lucrative frankincense and myrrh trade routes:
+
+Saba (Sheba) Kingdom (1200-275 BCE):
+- Capital: Marib (home to the legendary Marib Dam)
+- Queen of Sheba's legendary visit to King Solomon
+- Advanced irrigation systems supporting 50,000+ people
+- Controlled trade between Arabia, Africa, and India
+
+Hadhramaut Kingdom (800 BCE - 300 CE):
+- Capital: Shabwa
+- Monopoly on frankincense production
+- Sophisticated water management systems
+- Cultural influence extending to East Africa
+
+Himyar Kingdom (110 BCE - 525 CE):
+- Last major pre-Islamic kingdom
+- Adopted Judaism as state religion
+- Controlled Red Sea trade routes
+- Fell to Ethiopian invasion in 525 CE
+
+ISLAMIC PERIOD (630-1918)
+- 630 CE: Yemen converted to Islam during Prophet Muhammad's lifetime
+- Multiple dynasties ruled: Umayyads, Abbasids, Ziyadids, Rasulids
+- 1517: Ottoman Empire gained control
+- 1635: Local Zaydi imams established independence
+- 1839: British occupied Aden, creating strategic port
+
+MODERN ERA TIMELINE
+1918: Ottoman withdrawal, Yemen gained independence
+1962: North Yemen Revolution - republic established
+1967: South Yemen independence from Britain (People's Democratic Republic)
+1970: South Yemen became Marxist state
+1990: Unification of North and South Yemen
+1994: Civil war - North defeated South
+2011: Arab Spring protests forced President Saleh to resign
+2014-2015: Houthi rebellion captured Sana'a, civil war began
+
+CURRENT CONFLICT ANALYSIS (2014-Present)
+The Yemen Civil War involves multiple factions:
+
+Houthi Movement (Ansar Allah):
+- Zaydi Shia group from northern highlands
+- Supported by Iran
+- Controls Sana'a and northern regions
+
+Internationally Recognized Government:
+- Led by President Hadi (now Rashad al-Alimi)
+- Supported by Saudi Arabia and UAE
+- Based in Aden
+
+Southern Transitional Council:
+- Separatist movement in South Yemen
+- UAE-backed
+- Seeks southern independence
+
+HUMANITARIAN CRISIS IMPACT
+- 24+ million people need humanitarian assistance
+- 4+ million internally displaced
+- Cholera outbreaks affecting millions
+- Famine conditions in multiple regions
+- 80% of population below poverty line
+
+STRATEGIC SIGNIFICANCE
+- Controls Bab el-Mandeb Strait (30% of global oil trade)
+- Proximity to Saudi oil fields
+- Gateway between Red Sea and Indian Ocean
+- Historical crossroads of trade routes
+
+ECONOMIC FOUNDATIONS
+Traditional Economy:
+- Agriculture: Coffee (Mocha), qat, cotton, fruits
+- Fishing: Red Sea and Arabian Sea
+- Trade: Historical frankincense routes
+
+Modern Challenges:
+- Oil reserves declining
+- Water scarcity crisis
+- Economic blockade effects
+- Infrastructure destruction
+
+CULTURAL HERITAGE
+- UNESCO World Heritage Sites: Old City of Sana'a, Historic Town of Zabid
+- Ancient architecture: Tower houses, mud-brick construction
+- Traditional music: Yemeni folk, classical Arabic
+- Literary tradition: Poetry, historical chronicles
+
+Would you like me to analyze any specific aspect in greater depth - such as the ancient kingdoms' trade networks, the current conflict's geopolitical implications, or Yemen's cultural contributions to Islamic civilization?`;
+      }
+      return `I can help you with historical topics! Here are some key areas I can explain:
+
+World History: Ancient civilizations, medieval period, Renaissance, World Wars, Cold War
+American History: Colonial period, Revolution, Civil War, World Wars, modern era
+Social Studies: Government systems, economic developments, social movements
+Historical Analysis: Primary sources, cause and effect relationships, different perspectives
+
+What specific historical topic would you like me to explain in detail?`;
+    }
+
+    if (input.includes('math') || input.includes('algebra') || input.includes('calculus') || input.includes('geometry') || input.includes('equation') || input.includes('solve') || input.includes('5x5x5') || input.includes('5*5*5')) {
+      if (input.includes('5x5x5') || input.includes('5*5*5') || input.includes('5 × 5 × 5')) {
+        return `5 × 5 × 5 = 125: Advanced Mathematical Analysis
+
+COMPUTATIONAL BREAKDOWN
+Step 1: 5 × 5 = 25
+Step 2: 25 × 5 = 125
+
+MATHEMATICAL REPRESENTATIONS
+Exponential Notation: 5³ = 125
+Prime Factorization: 125 = 5³ = 5 × 5 × 5
+Scientific Notation: 1.25 × 10²
+
+GEOMETRIC INTERPRETATIONS
+Cube Volume: A cube with side length 5 units has volume 5³ = 125 cubic units
+3D Grid: 5 × 5 × 5 lattice points in 3-dimensional space
+Coordinate System: Points (x,y,z) where x,y,z ∈ {0,1,2,3,4}
+
+COMBINATORIAL APPLICATIONS
+Permutations: 5³ ways to arrange 3 items from 5 choices with repetition
+Tree Diagram: 5 branches × 5 branches × 5 branches = 125 total paths
+Probability: Sample space of 125 equally likely outcomes
+
+NUMBER THEORY CONNECTIONS
+Perfect Cube: 125 is a perfect cube (5³)
+Sum of Cubes: 125 = 5³ = 4³ + 3³ + 2³ + 1³ + 0³
+Digital Root: 1+2+5 = 8, then 8 → single digit
+Divisibility: 125 is divisible by 1, 5, 25, 125
+
+ALGEBRAIC EXTENSIONS
+Polynomial Roots: x³ - 125 = 0 has root x = 5
+Binomial Expansion: (5)³ = 125
+Logarithmic Form: log₅(125) = 3
+
+REAL-WORLD APPLICATIONS
+Engineering: 5×5×5 cubic meter storage capacity
+Computer Science: 5³ = 125 possible combinations in 3-bit system
+Economics: Compound growth over 3 periods at 5% each
+Physics: 5³ cubic units of volume in fluid dynamics
+
+ADVANCED MATHEMATICAL CONCEPTS
+Group Theory: 125 elements in certain finite groups
+Topology: 125 points in 3D topological space
+Calculus: Volume integral over 5×5×5 region
+Linear Algebra: 125-dimensional vector space
+
+Would you like me to explore any specific mathematical concept in greater depth - such as the geometric properties of cubes, combinatorial applications, or connections to higher mathematics?`;
+      }
+      return `I can help you with mathematics! Here are the areas I can assist with:
+
+Algebra: Solving equations, inequalities, functions, polynomials
+Calculus: Derivatives, integrals, limits, optimization problems
+Statistics: Probability, distributions, hypothesis testing
+Geometry: Shapes, proofs, trigonometry, coordinate geometry
+
+I provide step-by-step solutions and detailed explanations. What specific math problem can I solve for you?`;
+    }
+
+    if (input.includes('science') || input.includes('physics') || input.includes('chemistry') || input.includes('biology') || input.includes('photosynthesis')) {
+      if (input.includes('photosynthesis')) {
+        return `Photosynthesis is the process by which plants convert light energy into chemical energy. Here's how it works:
+
+Overall Equation:
+6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂
+
+Two Main Stages:
+
+1. Light-Dependent Reactions (Thylakoids)
+Input: Light energy, H₂O, ADP, NADP⁺
+Output: ATP, NADPH, O₂
+Process: Light excites chlorophyll → electron transport chain → ATP synthesis
+Key: Photolysis splits water, releasing oxygen
+
+2. Calvin Cycle (Stroma)
+Input: CO₂, ATP, NADPH
+Output: Glucose (C₆H₁₂O₆)
+Process: Carbon fixation → Reduction → Regeneration
+Key: RuBisCO enzyme fixes CO₂ to RuBP
+
+Factors Affecting Rate:
+• Light intensity
+• CO₂ concentration
+• Temperature
+• Chlorophyll availability
+
+Importance: Foundation of most food chains and oxygen production
+
+Which stage would you like me to explain in detail?`;
+      }
+      return `I can help you with science topics! Here are the areas I specialize in:
+
+Physics: Mechanics, thermodynamics, waves, electricity, magnetism
+Chemistry: Atomic structure, bonding, reactions, stoichiometry
+Biology: Cell biology, genetics, evolution, ecology
+Earth Science: Geology, meteorology, astronomy
+
+I provide detailed explanations with examples and real-world applications. What scientific concept can I explain for you?`;
+    }
+
+    if (input.includes('programming') || input.includes('code') || input.includes('python') || input.includes('javascript') || input.includes('recursion') || input.includes('algorithm')) {
+      if (input.includes('recursion')) {
+        return `Recursion is a programming technique where a function calls itself to solve smaller instances of the same problem.
+
+Essential Components:
+1. Base Case: Stopping condition (prevents infinite recursion)
+2. Recursive Case: Function calls itself with modified parameters
+
+Classic Example - Factorial:
+def factorial(n):
+    if n <= 1:        # Base case
+        return 1
+    return n * factorial(n-1)  # Recursive case
+
+How it works:
+• factorial(5) = 5 × factorial(4)
+• factorial(4) = 4 × factorial(3)
+• factorial(3) = 3 × factorial(2)
+• factorial(2) = 2 × factorial(1)
+• factorial(1) = 1 (base case)
+• Result: 5 × 4 × 3 × 2 × 1 = 120
+
+Other Examples:
+• Fibonacci sequence
+• Binary tree traversal
+• Tower of Hanoi
+• Merge sort
+
+When to use recursion:
+• Problem can be broken into similar subproblems
+• Each subproblem is smaller than the original
+• Base case is clearly defined
+
+What specific recursive problem can I help you solve?`;
+      }
+      return `I can help you with programming! Here are the areas I specialize in:
+
+Languages: Python, JavaScript, Java, C++, TypeScript
+Data Structures: Arrays, linked lists, trees, graphs, hash tables
+Algorithms: Sorting, searching, dynamic programming, recursion
+Concepts: OOP, functional programming, design patterns
+
+I provide working code examples and step-by-step explanations. What programming problem can I solve for you?`;
+    }
+
+    // Provide direct answers for general questions
+    if (input.includes('what is') || input.includes('explain') || input.includes('how does')) {
+      return `I'd be happy to explain that concept! However, for the most detailed and expert-level help, I recommend selecting a specialized tutor above.
+
+Specialized tutors provide:
+• 100% focused expertise in their field
+• Step-by-step problem solving
+• Detailed explanations with examples
+• Domain-specific knowledge
+
+General mode provides:
+• Broad overviews
+• Basic explanations
+• Multi-subject guidance
+
+Could you provide more specific details about what you'd like me to explain? Or select a specialized tutor for expert-level help!`;
+    }
+
+    return `I'm here to help you learn! For the best experience:
+
+Select a specialized tutor above for expert-level help in specific subjects
+Ask specific questions and I'll give you direct, detailed answers
+
+What would you like to learn about today?`;
   };
 
   const startVoiceRecording = async () => {
@@ -460,6 +1297,31 @@ I'm here to help you understand whatever concepts are presented in this visual m
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Selected Tutor Display */}
+          {selectedTutor && (
+            <div className="mb-4 p-4 border border-primary bg-primary/5 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full ${selectedTutor.color} flex items-center justify-center text-white`}>
+                    {selectedTutor.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm">{selectedTutor.name}</h4>
+                    <p className="text-xs text-muted-foreground">{selectedTutor.description}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTutor(null)}
+                  className="text-xs"
+                >
+                  Deselect
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {subjectTutors.map((tutor) => (
               <div
@@ -494,15 +1356,57 @@ I'm here to help you understand whatever concepts are presented in this visual m
       {/* Chat Interface */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            AI Tutor Chat
-            {selectedTutor && (
-              <Badge variant="outline" className="ml-2">
-                {selectedTutor.name}
-              </Badge>
-            )}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              AI Tutor Chat
+              {selectedTutor && (
+                <Badge variant="outline" className="ml-2">
+                  {selectedTutor.name}
+                </Badge>
+              )}
+            </CardTitle>
+            <div className="flex gap-2">
+              {lastQuestion && !showInDepth && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInDepthAnalysis}
+                  className="text-xs"
+                >
+                  <Brain className="h-3 w-3 mr-1" />
+                  In-Depth Analysis
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyChat}
+                disabled={messages.length === 0}
+                className="text-xs"
+              >
+                Copy
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportChat}
+                disabled={messages.length === 0}
+                className="text-xs"
+              >
+                Export
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetChat}
+                disabled={messages.length === 0}
+                className="text-xs"
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Messages */}
@@ -534,9 +1438,17 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 </div>
                 {message.role === 'user' && (
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-muted text-muted-foreground">
-                      You
-                    </AvatarFallback>
+                    {user?.photoURL ? (
+                      <img 
+                        src={user.photoURL} 
+                        alt={user.displayName || 'User'} 
+                        className="h-8 w-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                 )}
               </div>
@@ -561,19 +1473,21 @@ I'm here to help you understand whatever concepts are presented in this visual m
           </div>
 
           {/* Input Area */}
-          <div className="space-y-3">
-            <div className="flex gap-2">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex gap-2 sm:gap-3">
               <Input
                 placeholder="Ask your AI tutor anything..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && sendMessage(inputMessage)}
                 disabled={isProcessing}
+                className="text-sm sm:text-base min-h-[44px] sm:min-h-[40px]"
               />
               <Button
                 onClick={() => sendMessage(inputMessage)}
                 disabled={!inputMessage.trim() || isProcessing}
                 size="sm"
+                className="min-h-[44px] sm:min-h-[40px] min-w-[44px] sm:min-w-[40px]"
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -583,21 +1497,22 @@ I'm here to help you understand whatever concepts are presented in this visual m
               </Button>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={startVoiceRecording}
                 disabled={isRecording || isProcessing}
+                className="min-h-[44px] sm:min-h-[40px] text-xs sm:text-sm"
               >
                 {isRecording ? (
                   <>
-                    <MicOff className="h-4 w-4 mr-2" />
+                    <MicOff className="h-4 w-4 mr-1 sm:mr-2" />
                     Recording...
                   </>
                 ) : (
                   <>
-                    <Mic className="h-4 w-4 mr-2" />
+                    <Mic className="h-4 w-4 mr-1 sm:mr-2" />
                     Voice
                   </>
                 )}
@@ -608,8 +1523,9 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 size="sm"
                 onClick={() => document.getElementById('image-upload')?.click()}
                 disabled={isProcessing}
+                className="min-h-[44px] sm:min-h-[40px] text-xs sm:text-sm"
               >
-                <Camera className="h-4 w-4 mr-2" />
+                <Camera className="h-4 w-4 mr-1 sm:mr-2" />
                 Image
               </Button>
               

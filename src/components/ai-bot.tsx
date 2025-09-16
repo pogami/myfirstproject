@@ -115,6 +115,7 @@ export function AIBot({ className = "" }: AIBotProps) {
           window.location.href = "/dashboard/overview";
           break;
         case 3:
+          // Fix: Redirect to demo chat instead of advanced AI
           window.location.href = "/dashboard/chat";
           break;
         default:

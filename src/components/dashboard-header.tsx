@@ -162,37 +162,37 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-12 w-12 rounded-full shadow-lg border-2 border-background/20 hover:shadow-xl transition-all duration-200">
-                <Avatar className="h-12 w-12">
+            <Button variant="ghost" className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg border-2 border-background/20 hover:shadow-xl transition-all duration-200 min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px]">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                     {user ? (
                         <>
                             <AvatarImage src={user.photoURL || ''} data-ai-hint="student avatar" alt={user.displayName || 'Student'} />
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm sm:text-base">
                                 {getInitials(user.displayName || user.email)}
                             </AvatarFallback>
                         </>
                     ) : (
-                       <Skeleton className="h-12 w-12 rounded-full" />
+                       <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-full" />
                     )}
                 </Avatar>
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-64 bg-card/95 backdrop-blur-sm border-0 shadow-xl" align="end">
+        <DropdownMenuContent className="w-56 sm:w-64 bg-card/95 backdrop-blur-sm border-0 shadow-xl" align="end">
           {user ? (
             <>
-              <DropdownMenuLabel className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+              <DropdownMenuLabel className="px-3 sm:px-4 py-2 sm:py-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                     <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'Student'} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-xs sm:text-sm">
                       {getInitials(user.displayName || user.email)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold truncate text-foreground">{user.displayName || 'Student User'}</p>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <p className="font-semibold truncate text-foreground text-sm sm:text-base">{user.displayName || 'Student User'}</p>
                       {isGuest && (
-                        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 border-orange-200">
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">
                           Guest
                         </Badge>
                       )}
@@ -204,47 +204,47 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
               <DropdownMenuSeparator className="bg-border/50" />
               {isGuest && (
                 <>
-                  <DropdownMenuItem asChild className="px-4 py-3 hover:bg-primary/10 transition-colors">
-                    <Link href="/login?state=signup" className="flex items-center gap-3">
-                      <Shield className="size-4 text-primary" />
-                      <span>Create Account</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border/50" />
+              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+                <Link href="/login?state=signup" className="flex items-center gap-2 sm:gap-3">
+                  <Shield className="size-4 text-primary flex-shrink-0" />
+                  <span className="text-sm sm:text-base">Create Account</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border/50" />
                 </>
               )}
-              <DropdownMenuItem asChild className="px-4 py-3 hover:bg-primary/10 transition-colors">
-                <Link href="/dashboard/profile" className="flex items-center gap-3">
-                  <UserIcon className="size-4 text-primary" />
-                  <span>Profile</span>
+              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+                <Link href="/dashboard/profile" className="flex items-center gap-2 sm:gap-3">
+                  <UserIcon className="size-4 text-primary flex-shrink-0" />
+                  <span className="text-sm sm:text-base">Profile</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="px-4 py-3 hover:bg-primary/10 transition-colors">
-                <Link href="/dashboard/settings" className="flex items-center gap-3">
-                  <SettingsIcon className="size-4 text-primary" />
-                  <span>Settings</span>
+              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+                <Link href="/dashboard/settings" className="flex items-center gap-2 sm:gap-3">
+                  <SettingsIcon className="size-4 text-primary flex-shrink-0" />
+                  <span className="text-sm sm:text-base">Settings</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="px-4 py-3 hover:bg-primary/10 transition-colors">
-                <Link href="/dashboard/notifications" className="flex items-center gap-3">
-                  <Bell className="size-4 text-primary" />
-                  <span>Notifications</span>
+              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+                <Link href="/dashboard/notifications" className="flex items-center gap-2 sm:gap-3">
+                  <Bell className="size-4 text-primary flex-shrink-0" />
+                  <span className="text-sm sm:text-base">Notifications</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/50" />
               <DropdownMenuItem 
                 onClick={handleLogout} 
-                className="px-4 py-3 hover:bg-destructive/10 transition-colors text-destructive focus:text-destructive"
+                className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-destructive/10 transition-colors text-destructive focus:text-destructive"
               >
-                <LogOut className="size-4 mr-3" />
-                Logout
+                <LogOut className="size-4 mr-2 sm:mr-3 flex-shrink-0" />
+                <span className="text-sm sm:text-base">Logout</span>
               </DropdownMenuItem>
             </>
           ) : (
-             <DropdownMenuItem asChild className="px-4 py-3 hover:bg-primary/10 transition-colors">
-                  <Link href="/login" className="flex items-center gap-3">
-                    <UserIcon className="size-4 text-primary" />
-                    <span>Login</span>
+             <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+                  <Link href="/login" className="flex items-center gap-2 sm:gap-3">
+                    <UserIcon className="size-4 text-primary flex-shrink-0" />
+                    <span className="text-sm sm:text-base">Login</span>
                   </Link>
               </DropdownMenuItem>
           )}

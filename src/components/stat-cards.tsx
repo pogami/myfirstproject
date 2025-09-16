@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { useState, useEffect } from 'react';
 import { auth } from '@/lib/firebase/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +9,37 @@ import { GraduationCap } from 'lucide-react';
 import { useChatStore } from '@/hooks/use-chat-store';
 
 export function StatCards() {
-    const [user] = useAuthState(auth);
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    
+    useEffect(() => {
+        // Safely handle auth state
+        try {
+            if (auth && typeof auth.onAuthStateChanged === 'function') {
+                const unsubscribe = auth.onAuthStateChanged(
+                    (user) => {
+                        setUser(user);
+                        setLoading(false);
+                    },
+                    (error) => {
+                        console.warn("Auth state error in stat cards (offline mode):", error);
+                        setUser(null);
+                        setLoading(false);
+                    }
+                );
+                return unsubscribe;
+            } else {
+                // Mock auth - no user
+                setUser(null);
+                setLoading(false);
+            }
+        } catch (authError) {
+            console.warn("Auth initialization error in stat cards (offline mode):", authError);
+            setUser(null);
+            setLoading(false);
+        }
+    }, []);
+    
     const { chats } = useChatStore();
     
     const yourClassesCount = Object.keys(chats).filter(c => c !== 'general-chat').length;

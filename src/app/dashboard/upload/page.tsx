@@ -39,39 +39,39 @@ export default function SyllabusUploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* How It Works Section - Moved to Top */}
-      <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10 mb-8">
-        <CardHeader>
-          <CardTitle className="text-center">How It Works</CardTitle>
-          <CardDescription className="text-center">
+      <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10 mb-6 sm:mb-8">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-center text-lg sm:text-xl">How It Works</CardTitle>
+          <CardDescription className="text-center text-sm sm:text-base">
             Simple steps to transform your syllabus into a powerful learning tool
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-lg font-bold text-primary">1</span>
+        <CardContent className="p-4 sm:p-6 pt-0">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+            <div className="text-center space-y-2 sm:space-y-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <span className="text-base sm:text-lg font-bold text-primary">1</span>
               </div>
-              <h3 className="font-semibold">Upload File</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-sm sm:text-base">Upload File</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Drag and drop your syllabus PDF or text file
               </p>
             </div>
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-lg font-bold text-primary">2</span>
+            <div className="text-center space-y-2 sm:space-y-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <span className="text-base sm:text-lg font-bold text-primary">2</span>
               </div>
-              <h3 className="font-semibold">AI Analysis</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-sm sm:text-base">AI Analysis</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Our AI extracts key information and course details
               </p>
             </div>
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-lg font-bold text-primary">3</span>
+            <div className="text-center space-y-2 sm:space-y-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <span className="text-base sm:text-lg font-bold text-primary">3</span>
               </div>
-              <h3 className="font-semibold">Join Groups</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-sm sm:text-base">Join Groups</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Automatically join study groups and start collaborating
               </p>
             </div>
