@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bot, MessageCircle, X, Sparkles, BookOpen, Users, GraduationCap, ArrowRight } from "lucide-react";
+import { Bot, MessageCircle, X, Sparkles, BookOpen, Users, GraduationCap, ArrowRight, CheckCircle, Zap, Target, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -12,6 +12,7 @@ interface AIBotProps {
 export function AIBot({ className = "" }: AIBotProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showOverview, setShowOverview] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(0);
 
   const messages = [
@@ -41,6 +42,33 @@ export function AIBot({ className = "" }: AIBotProps) {
     }
   ];
 
+  const overviewSteps = [
+    {
+      title: "Step 1: Upload Your Syllabus",
+      description: "Upload any course syllabus and get instant AI analysis",
+      features: ["Smart topic extraction", "Study schedule suggestions", "Difficulty assessment"],
+      icon: <BookOpen className="w-6 h-6 text-blue-500" />
+    },
+    {
+      title: "Step 2: Join Study Groups",
+      description: "Connect with classmates and collaborate on assignments",
+      features: ["Auto-match with classmates", "Real-time collaboration", "Study session scheduling"],
+      icon: <Users className="w-6 h-6 text-green-500" />
+    },
+    {
+      title: "Step 3: Use AI Tools",
+      description: "Access powerful AI features for better learning",
+      features: ["24/7 homework help", "Auto-generated flashcards", "Grade predictions"],
+      icon: <Zap className="w-6 h-6 text-purple-500" />
+    },
+    {
+      title: "Step 4: Track Progress",
+      description: "Monitor your academic performance and improve",
+      features: ["Performance analytics", "Study time tracking", "Success insights"],
+      icon: <Target className="w-6 h-6 text-orange-500" />
+    }
+  ];
+
   useEffect(() => {
     // Show bot after 3 seconds
     const showTimer = setTimeout(() => setIsVisible(true), 3000);
@@ -55,7 +83,7 @@ export function AIBot({ className = "" }: AIBotProps) {
   }, []);
 
   useEffect(() => {
-    if (showPopup) {
+    if (showPopup && !showOverview) {
       // Cycle through messages every 8 seconds
       const messageTimer = setInterval(() => {
         setCurrentMessage((prev) => (prev + 1) % messages.length);
@@ -63,28 +91,42 @@ export function AIBot({ className = "" }: AIBotProps) {
       
       return () => clearInterval(messageTimer);
     }
-  }, [showPopup, messages.length]);
+  }, [showPopup, showOverview, messages.length]);
+
+  const handleBotClick = () => {
+    if (!showPopup) {
+      setShowPopup(true);
+    }
+  };
 
   const handleAction = () => {
-    // Close popup and redirect based on current message
-    setShowPopup(false);
-    
-    switch (currentMessage) {
-      case 0:
-        window.location.href = "/dashboard";
-        break;
-      case 1:
-        window.location.href = "/dashboard/upload";
-        break;
-      case 2:
-        window.location.href = "/dashboard/overview";
-        break;
-      case 3:
-        window.location.href = "/dashboard/chat";
-        break;
-      default:
-        window.location.href = "/dashboard";
+    if (currentMessage === 0) {
+      // Show overview for "Get Started"
+      setShowOverview(true);
+    } else {
+      // Close popup and redirect based on current message
+      setShowPopup(false);
+      
+      switch (currentMessage) {
+        case 1:
+          window.location.href = "/dashboard/upload";
+          break;
+        case 2:
+          window.location.href = "/dashboard/overview";
+          break;
+        case 3:
+          window.location.href = "/dashboard/chat";
+          break;
+        default:
+          window.location.href = "/dashboard";
+      }
     }
+  };
+
+  const handleStartJourney = () => {
+    setShowOverview(false);
+    setShowPopup(false);
+    window.location.href = "/dashboard/upload";
   };
 
   return (
@@ -96,7 +138,10 @@ export function AIBot({ className = "" }: AIBotProps) {
         }`}
       >
         {/* Bot Body */}
-        <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-2xl border-4 border-white cursor-pointer hover:scale-105 transition-transform duration-200">
+        <div 
+          className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-2xl border-4 border-white cursor-pointer hover:scale-105 transition-transform duration-200"
+          onClick={handleBotClick}
+        >
           {/* Eyes */}
           <div className="absolute top-3 left-3 w-2 h-2 bg-white rounded-full"></div>
           <div className="absolute top-3 right-3 w-2 h-2 bg-white rounded-full"></div>
@@ -178,6 +223,103 @@ export function AIBot({ className = "" }: AIBotProps) {
                     />
                   ))}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Comprehensive Overview Modal */}
+      {showOverview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-sm border-2 border-blue-200 shadow-2xl">
+            <CardContent className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <Bot className="w-8 h-8 text-blue-600" />
+                  <div>
+                    <h2 className="text-2xl font-bold text-blue-600">Welcome to CourseConnect!</h2>
+                    <p className="text-sm text-gray-600">Your AI-powered study companion</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowOverview(false)}
+                  className="h-8 w-8 p-0 hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Overview Steps */}
+              <div className="space-y-6 mb-8">
+                {overviewSteps.map((step, index) => (
+                  <div key={index} className="flex gap-4 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-blue-200">
+                        {step.icon}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-gray-800 mb-2">{step.title}</h3>
+                      <p className="text-gray-600 mb-3">{step.description}</p>
+                      <div className="space-y-1">
+                        {step.features.map((feature, featureIndex) => (
+                          <div key={featureIndex} className="flex items-center gap-2 text-sm text-gray-600">
+                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            <span>{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Key Benefits */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white mb-6">
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Sparkles className="w-6 h-6" />
+                  Why Choose CourseConnect?
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5" />
+                    <span className="text-sm">24/7 AI Support</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5" />
+                    <span className="text-sm">Personalized Learning</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Users className="w-5 h-5" />
+                    <span className="text-sm">Study Group Matching</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Zap className="w-5 h-5" />
+                    <span className="text-sm">Instant Homework Help</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleStartJourney}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  Start Your Journey
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowOverview(false)}
+                  className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                >
+                  Explore More
+                </Button>
               </div>
             </CardContent>
           </Card>
