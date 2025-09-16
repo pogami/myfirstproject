@@ -8,15 +8,34 @@
   "theme_color": "#3b82f6",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/courseconnect-favicon.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/apple-touch-icon.svg",
+      "src": "/apple-touch-icon.svg?v=3",
       "sizes": "180x180",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.svg?v=3",
+      "sizes": "152x152",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.svg?v=3",
+      "sizes": "120x120",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.svg?v=3",
+      "sizes": "76x76",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

@@ -13,7 +13,10 @@ export const metadata: Metadata = {
       { url: '/courseconnect-favicon.svg?v=3', type: 'image/svg+xml' }
     ],
     apple: [
-      { url: '/courseconnect-favicon.svg?v=3', sizes: '180x180', type: 'image/svg+xml' }
+      { url: '/apple-touch-icon.svg?v=3', sizes: '180x180', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=3', sizes: '152x152', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=3', sizes: '120x120', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=3', sizes: '76x76', type: 'image/svg+xml' }
     ]
   }
 };
@@ -31,10 +34,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         <link rel="icon" href="/courseconnect-favicon.svg?v=3" type="image/svg+xml" />
         <link rel="shortcut icon" href="/courseconnect-favicon.svg?v=3" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg?v=3" />
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="0" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="120x120" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="76x76" />
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
         <meta name="theme-color" content="#3b82f6" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
