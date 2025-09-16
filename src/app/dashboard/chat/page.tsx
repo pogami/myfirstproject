@@ -123,8 +123,7 @@ export default function ChatPage() {
                         )}
                         {classChats.map(([id, chat]) => (
                             <TabsTrigger key={id} value={id} className="flex items-center gap-2">
-                                <BookOpen className="h-4 w-4" />
-                                <span className="hidden sm:inline truncate">{chat.title}</span>
+                                <span className="truncate max-w-[120px] sm:max-w-[200px]">{chat.title}</span>
                             </TabsTrigger>
                         ))}
                     </TabsList>

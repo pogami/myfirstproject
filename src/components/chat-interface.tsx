@@ -51,6 +51,7 @@ export default function ChatInterface() {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [user, setUser] = useState<any>(null);
+    const [visitedChats, setVisitedChats] = useState<Set<string>>(new Set());
     
     useEffect(() => {
         // Safely handle auth state
@@ -141,6 +142,30 @@ export default function ChatInterface() {
             viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
         }
     }, [chats, currentTab]);
+
+    // Handle welcome notifications when user joins a chat
+    useEffect(() => {
+        if (currentTab && user && !visitedChats.has(currentTab)) {
+            const currentChat = chats[currentTab];
+            if (currentChat && currentTab !== 'general-chat') {
+                // Add welcome notification
+                const welcomeMessage: Message = {
+                    sender: "bot",
+                    text: `Welcome ${user.displayName || user.email || 'Student'} to ${currentChat.title}! 🎓\n\nFeel free to ask questions, collaborate with classmates, and get AI assistance with your studies.`,
+                    name: "CourseConnect AI",
+                    timestamp: Date.now()
+                };
+                
+                addMessage(currentTab, welcomeMessage);
+                setVisitedChats(prev => new Set(prev).add(currentTab));
+                
+                toast({
+                    title: "Welcome to Class Chat!",
+                    description: `You've joined ${currentChat.title}`,
+                });
+            }
+        }
+    }, [currentTab, user, visitedChats, chats, addMessage, toast]);
 
     // Helper functions for message management
     const toggleMessageCollapse = (index: number) => {
