@@ -4,24 +4,42 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles } from "lucide-react";
+import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles, LogOut } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ClassOverviewPage() {
-    const { chats, setCurrentTab } = useChatStore();
+    const { chats, setCurrentTab, deleteChat } = useChatStore();
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { toast } = useToast();
 
     const classChats = Object.entries(chats).filter(([key]) => key !== 'general-chat');
 
     const handleCardClick = (chatId: string) => {
         setCurrentTab(chatId);
         router.push('/dashboard/chat');
+    }
+
+    const handleLeaveClass = async (chatId: string, chatTitle: string) => {
+        try {
+            await deleteChat(chatId);
+            toast({
+                title: "Left Class Successfully",
+                description: `You have left ${chatTitle}`,
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to leave class. Please try again.",
+                variant: "destructive",
+            });
+        }
     }
 
     const getRandomStats = () => ({
@@ -166,13 +184,24 @@ export default function ClassOverviewPage() {
                                             </div>
                                             
                                             <div className="mt-4 pt-4 border-t border-border/50">
-                                                <Button 
-                                                    className="w-full bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary border-primary/20 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
-                                                    variant="outline"
-                                                >
-                                                    Join Study Group
-                                                    <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                                                </Button>
+                                                <div className="flex gap-2">
+                                                    <Button 
+                                                        className="flex-1 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary border-primary/20 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
+                                                        variant="outline"
+                                                        onClick={() => handleCardClick(id)}
+                                                    >
+                                                        Join Chat
+                                                        <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                                                    </Button>
+                                                    <Button 
+                                                        className="bg-gradient-to-r from-red-500/10 to-red-500/5 hover:from-red-500/20 hover:to-red-500/10 text-red-500 border-red-500/20 hover:border-red-500/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleLeaveClass(id, chat.title)}
+                                                    >
+                                                        <LogOut className="size-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>
