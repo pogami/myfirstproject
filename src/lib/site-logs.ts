@@ -17,7 +17,23 @@ export interface SiteLog {
 export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
-      date: "2025-01-16",
+      date: "2024-09-16",
+      version: "v2.5.0",
+      changes: [
+        "Fixed React child error in chat interface - resolved object rendering issues",
+        "Added leave class functionality to class overview tab with confirmation toasts",
+        "Updated class tabs to display syllabus names instead of generic book icons",
+        "Implemented welcome notifications when users join class chats",
+        "Enhanced user experience with better button layouts and responsive design",
+        "Fixed localhost access issues and improved development workflow",
+        "Updated changelog system to show real-time data instead of hardcoded dates"
+      ],
+      type: "bug-fix",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2024-09-16",
       version: "v2.4.0",
       changes: [
         "Created dedicated changelog page at /changelog route",
@@ -33,7 +49,7 @@ export class SiteLogManager {
       impact: "high"
     },
     {
-      date: "2025-01-16",
+      date: "2024-09-15",
       version: "v2.3.0",
       changes: [
         "Converted site logs to clickable button in footer navigation",
@@ -48,7 +64,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-15",
+      date: "2024-09-14",
       version: "v2.2.0",
       changes: [
         "Added comprehensive site footer with navigation links and company information",
@@ -64,7 +80,7 @@ export class SiteLogManager {
       impact: "high"
     },
     {
-      date: "2025-01-14",
+      date: "2024-09-13",
       version: "v2.1.0",
       changes: [
         "Fixed email sign-in authentication flow - resolved infinite loading issue",
@@ -79,7 +95,7 @@ export class SiteLogManager {
       impact: "high"
     },
     {
-      date: "2025-01-13",
+      date: "2024-09-12",
       version: "v2.0.5",
       changes: [
         "Enhanced Google OAuth authentication with better error messages",
@@ -92,7 +108,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-12",
+      date: "2024-09-11",
       version: "v2.0.4",
       changes: [
         "Added Scholar Features section with advanced AI capabilities",
@@ -106,7 +122,7 @@ export class SiteLogManager {
       impact: "high"
     },
     {
-      date: "2025-01-11",
+      date: "2024-09-10",
       version: "v2.0.3",
       changes: [
         "Improved mobile responsiveness across all pages",
@@ -119,7 +135,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-10",
+      date: "2024-09-09",
       version: "v2.0.2",
       changes: [
         "Launched CourseConnect platform with core features",
@@ -133,7 +149,7 @@ export class SiteLogManager {
       impact: "critical"
     },
     {
-      date: "2025-01-09",
+      date: "2024-09-08",
       version: "v2.0.1",
       changes: [
         "Finalized core platform architecture",
@@ -147,7 +163,7 @@ export class SiteLogManager {
       impact: "high"
     },
     {
-      date: "2025-01-08",
+      date: "2024-09-07",
       version: "v2.0.0",
       changes: [
         "Completed initial platform development",
@@ -162,7 +178,7 @@ export class SiteLogManager {
       impact: "critical"
     },
     {
-      date: "2025-01-07",
+      date: "2024-09-06",
       version: "v1.5.0",
       changes: [
         "Completed UI/UX design phase",
@@ -176,7 +192,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-06",
+      date: "2024-09-05",
       version: "v1.4.0",
       changes: [
         "Completed project planning and architecture design",
@@ -190,7 +206,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-05",
+      date: "2024-09-04",
       version: "v1.3.0",
       changes: [
         "Conducted market research and user interviews",
@@ -204,7 +220,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-04",
+      date: "2024-09-03",
       version: "v1.2.0",
       changes: [
         "Completed competitive analysis",
@@ -218,7 +234,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-03",
+      date: "2024-09-02",
       version: "v1.1.0",
       changes: [
         "Conducted initial market research",
@@ -232,7 +248,7 @@ export class SiteLogManager {
       impact: "medium"
     },
     {
-      date: "2025-01-02",
+      date: "2024-09-01",
       version: "v1.0.0",
       changes: [
         "CourseConnect project conception and ideation",
