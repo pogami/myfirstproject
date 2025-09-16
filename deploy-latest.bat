@@ -76,6 +76,16 @@ if %errorlevel% equ 0 (
     echo console.log('✅ Vercel deployment logged successfully'); >> temp_deployment_log.js
     
     echo.
+    echo 🔄 Auto-syncing to GitHub...
+    if exist "auto-sync.bat" (
+        call auto-sync.bat
+    ) else (
+        echo 📤 Pushing to GitHub...
+        git push origin main
+        git push origin main:master
+    )
+    
+    echo.
     echo 📝 Next steps:
     echo 1. Test the changelog page at your Vercel URL/changelog
     echo 2. Test the updated authentication flow on localhost:9002
