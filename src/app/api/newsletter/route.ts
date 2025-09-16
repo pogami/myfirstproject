@@ -5,7 +5,7 @@ import nodemailer from 'nodemailer';
 const emailSubscribers: string[] = [];
 
 // Email configuration
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail', // You can use other services like 'outlook', 'yahoo', etc.
   auth: {
     user: process.env.EMAIL_USER, // Your email
@@ -16,6 +16,12 @@ const transporter = nodemailer.createTransporter({
 // Function to send welcome email
 async function sendWelcomeEmail(email: string) {
   try {
+    // Check if email credentials are configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log('Email credentials not configured, skipping email send');
+      return false;
+    }
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
