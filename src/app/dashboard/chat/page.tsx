@@ -72,7 +72,7 @@ export default function ChatPage() {
             
             const aiMessage = {
                 id: (Date.now() + 1).toString(),
-                text: typeof aiResponse === 'string' ? aiResponse : aiResponse.answer || 'I apologize, but I couldn\'t generate a response.',
+                text: aiResponse.answer || 'I apologize, but I couldn\'t generate a response.',
                 sender: 'bot',
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
