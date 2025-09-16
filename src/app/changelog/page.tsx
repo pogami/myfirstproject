@@ -124,7 +124,7 @@ export default function ChangelogPage() {
         {/* Search and Filters */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col gap-4">
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -136,9 +136,9 @@ export default function ChangelogPage() {
                   />
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -152,7 +152,7 @@ export default function ChangelogPage() {
                   </SelectContent>
                 </Select>
                 <Select value={filterImpact} onValueChange={setFilterImpact}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full sm:w-40">
                     <SelectValue placeholder="Impact" />
                   </SelectTrigger>
                   <SelectContent>
@@ -171,10 +171,10 @@ export default function ChangelogPage() {
         {/* Changelog Entries */}
         <div className="space-y-6 mb-12">
           {filteredLogs.map((log, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+            <Card key={index} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02]">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge 
                       variant={
                         log.type === 'launch' ? 'default' :
@@ -205,8 +205,8 @@ export default function ChangelogPage() {
                     {log.date}
                   </div>
                 </div>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  {log.version}
+                <CardTitle className="text-lg sm:text-xl flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span>{log.version}</span>
                   {log.author && (
                     <span className="text-sm font-normal text-muted-foreground">
                       by {log.author}
@@ -278,29 +278,29 @@ export default function ChangelogPage() {
         </div>
 
         {/* Footer Stats */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{stats.totalLogs}</div>
-              <div className="text-sm text-muted-foreground">Total Updates</div>
+              <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalLogs}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Total Updates</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-500">{stats.byType.feature || 0}</div>
-              <div className="text-sm text-muted-foreground">New Features</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-500">{stats.byType.feature || 0}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">New Features</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-500">{stats.byType['bug-fix'] || 0}</div>
-              <div className="text-sm text-muted-foreground">Bug Fixes</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-500">{stats.byType['bug-fix'] || 0}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Bug Fixes</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-500">{stats.byType.enhancement || 0}</div>
-              <div className="text-sm text-muted-foreground">Enhancements</div>
+              <div className="text-xl sm:text-2xl font-bold text-purple-500">{stats.byType.enhancement || 0}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Enhancements</div>
             </CardContent>
           </Card>
         </div>
