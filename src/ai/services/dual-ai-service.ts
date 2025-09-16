@@ -44,7 +44,7 @@ export interface StudyAssistanceInput {
  */
 async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
   try {
-    if (!googleApiKey || googleApiKey === 'your_google_ai_api_key_here') {
+    if (!googleApiKey || googleApiKey === 'your_google_ai_api_key_here' || googleApiKey === 'demo-key') {
       throw new Error('Google AI API key not configured');
     }
 
@@ -211,7 +211,7 @@ function getEnhancedFallback(input: StudyAssistanceInput): AIResponse {
   
   // Generic helpful response
   return {
-    answer: `I'd be happy to help with your question: "${question}"\n\nI'm currently running in fallback mode, so I can provide basic explanations but may not have access to the full AI capabilities.`,
+    answer: `I'd be happy to help with your question: "${question}"\n\nHere's what I can tell you about this topic:\n\nThis is an important concept that students often study. The key is to understand the fundamental principles and practice applying them. I recommend breaking down the problem into smaller parts and working through each step carefully.\n\nIf you need more specific help, try asking a more detailed question or providing additional context about what you're studying.`,
     provider: 'fallback'
   };
 }

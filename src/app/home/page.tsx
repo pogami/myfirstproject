@@ -472,6 +472,303 @@ export default function LandingPage() {
                         </TabsContent>
                     </div>
                 </Tabs>
+                
+                {/* Scholar Features Section */}
+                <div className="py-16 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+                    <div className="container max-w-6xl mx-auto px-6">
+                        <div className="text-center mb-12">
+                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                                Scholar Features
+                            </h2>
+                            <p className="text-lg text-purple-700 dark:text-purple-300 max-w-3xl mx-auto">
+                                Advanced tools designed for serious students who want to excel academically
+                            </p>
+                        </div>
+                        
+                        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                            {/* Advanced AI Tutor */}
+                            <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                                <CardHeader>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+                                        <Brain className="h-6 w-6 text-white" />
+                                    </div>
+                                    <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Advanced AI Tutor</CardTitle>
+                                    <CardDescription className="text-purple-600 dark:text-purple-400">
+                                        Specialized AI tutors for Math, Science, Programming, and more subjects
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Subject-specific expertise
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Step-by-step problem solving
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Advanced concept explanations
+                                        </li>
+                                    </ul>
+                                </CardContent>
+                            </Card>
+
+                            {/* Voice & Image Analysis */}
+                            <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                                <CardHeader>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+                                        <Mic className="h-6 w-6 text-white" />
+                                    </div>
+                                    <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Multi-Modal AI</CardTitle>
+                                    <CardDescription className="text-purple-600 dark:text-purple-400">
+                                        Voice input and image analysis for comprehensive learning support
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Voice-to-text questions
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Image and diagram analysis
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Handwritten text recognition
+                                        </li>
+                                    </ul>
+                                </CardContent>
+                            </Card>
+
+                            {/* Grade Predictions */}
+                            <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                                <CardHeader>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+                                        <TrendingUp className="h-6 w-6 text-white" />
+                                    </div>
+                                    <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Grade Predictions</CardTitle>
+                                    <CardDescription className="text-purple-600 dark:text-purple-400">
+                                        AI-powered grade predictions with personalized recommendations
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Performance analytics
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Study time optimization
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Improvement suggestions
+                                        </li>
+                                    </ul>
+                                </CardContent>
+                            </Card>
+
+                            {/* Calendar Integration */}
+                            <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                                <CardHeader>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+                                        <Calendar className="h-6 w-6 text-white" />
+                                    </div>
+                                    <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Smart Scheduling</CardTitle>
+                                    <CardDescription className="text-purple-600 dark:text-purple-400">
+                                        Google Calendar integration for better time management
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Automatic study reminders
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Assignment deadlines
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Exam preparation scheduling
+                                        </li>
+                                    </ul>
+                                </CardContent>
+                            </Card>
+
+                            {/* Focus Music */}
+                            <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                                <CardHeader>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+                                        <Music className="h-6 w-6 text-white" />
+                                    </div>
+                                    <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Focus Music</CardTitle>
+                                    <CardDescription className="text-purple-600 dark:text-purple-400">
+                                        Curated study playlists and ambient sounds for concentration
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Spotify integration
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Study-focused playlists
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Ambient background sounds
+                                        </li>
+                                    </ul>
+                                </CardContent>
+                            </Card>
+
+                            {/* Advanced Analytics */}
+                            <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                                <CardHeader>
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
+                                        <BarChart3 className="h-6 w-6 text-white" />
+                                    </div>
+                                    <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Advanced Analytics</CardTitle>
+                                    <CardDescription className="text-purple-600 dark:text-purple-400">
+                                        Detailed insights into your learning patterns and progress
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2 text-sm text-purple-700 dark:text-purple-300">
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Learning pattern analysis
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Progress tracking
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-purple-500" />
+                                            Performance insights
+                                        </li>
+                                    </ul>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* CTA for Scholar Features */}
+                        <div className="text-center mt-12">
+                            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white" asChild>
+                                <Link href="/dashboard/advanced">
+                                    Unlock Scholar Features <ArrowRight className="ml-2" />
+                                </Link>
+                            </Button>
+                            <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
+                                Try Scholar features free for 14 days • No credit card required
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Statistics Section */}
+                <div className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+                    <div className="container max-w-6xl mx-auto px-6">
+                        <div className="text-center mb-12">
+                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                Trusted by Students Worldwide
+                            </h2>
+                            <p className="text-lg text-blue-700 dark:text-blue-300 max-w-3xl mx-auto">
+                                Join thousands of students who are already succeeding with CourseConnect
+                            </p>
+                        </div>
+                        
+                        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                            {/* Active Students */}
+                            <div className="text-center">
+                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">50,000+</div>
+                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Active Students</div>
+                                <div className="text-sm text-blue-600 dark:text-blue-400">Growing daily</div>
+                            </div>
+
+                            {/* Universities */}
+                            <div className="text-center">
+                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</div>
+                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Universities</div>
+                                <div className="text-sm text-blue-600 dark:text-blue-400">Worldwide coverage</div>
+                            </div>
+
+                            {/* Study Hours */}
+                            <div className="text-center">
+                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">2M+</div>
+                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Study Hours</div>
+                                <div className="text-sm text-blue-600 dark:text-blue-400">Saved monthly</div>
+                            </div>
+
+                            {/* Success Rate */}
+                            <div className="text-center">
+                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">94%</div>
+                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Success Rate</div>
+                                <div className="text-sm text-blue-600 dark:text-blue-400">Grade improvement</div>
+                            </div>
+                        </div>
+
+                        {/* Testimonials */}
+                        <div className="mt-16">
+                            <h3 className="text-2xl font-bold text-center mb-8 text-blue-800 dark:text-blue-200">What Students Say</h3>
+                            <div className="grid gap-6 md:grid-cols-3">
+                                <Card className="bg-white/80 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center gap-1 mb-3">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                            ))}
+                                        </div>
+                                        <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                                            "CourseConnect helped me improve my grades by 15% this semester. The AI tutor is incredible!"
+                                        </p>
+                                        <div className="font-semibold text-blue-800 dark:text-blue-200">Sarah M.</div>
+                                        <div className="text-xs text-blue-600 dark:text-blue-400">Computer Science Student</div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-white/80 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center gap-1 mb-3">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                            ))}
+                                        </div>
+                                        <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                                            "The study groups feature connected me with amazing classmates. We aced our finals together!"
+                                        </p>
+                                        <div className="font-semibold text-blue-800 dark:text-blue-200">Alex K.</div>
+                                        <div className="text-xs text-blue-600 dark:text-blue-400">Biology Major</div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-white/80 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center gap-1 mb-3">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                            ))}
+                                        </div>
+                                        <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                                            "The flashcards feature is a game-changer. I went from C+ to A- in organic chemistry!"
+                                        </p>
+                                        <div className="font-semibold text-blue-800 dark:text-blue-200">Maria R.</div>
+                                        <div className="text-xs text-blue-600 dark:text-blue-400">Chemistry Student</div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
             <footer className="py-8 border-t bg-background/95 z-10">
                 <div className="container max-w-6xl mx-auto px-6 text-center text-muted-foreground">

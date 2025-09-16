@@ -391,7 +391,6 @@ export default function DashboardLayout({
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="h-8 w-8" />
                 <Link href="/home" className="flex items-center gap-2">
-                  <CourseConnectLogo className="h-6 w-6 text-primary" />
                   <h1 className="text-lg font-bold text-primary tracking-tight">CourseConnect</h1>
                 </Link>
               </div>
