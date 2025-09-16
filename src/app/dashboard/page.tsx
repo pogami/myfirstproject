@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { MessageSquare, Upload, BookOpen, Users, TrendingUp, Clock, Star, ArrowRight, Sparkles, Target, Zap } from "lucide-react";
+import { MessageSquare, Upload, BookOpen, Users, TrendingUp, Clock, Star, ArrowRight, Sparkles, Target, Zap, Crown } from "lucide-react";
 import Notifications from "@/components/notifications";
 import { StatCards } from "@/components/stat-cards";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/client";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
 
 const quickActionCards = [
     {
@@ -69,30 +71,108 @@ const featureHighlights = [
 export default function DashboardPage() {
   const { chats } = useChatStore();
   const [user] = useAuthState(auth);
+  const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false);
   const classCount = Object.keys(chats).filter(key => key !== 'general-chat').length;
   const totalMessages = Object.values(chats).reduce((sum, chat) => sum + chat.messages.length, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="animate-in fade-in-50 space-y-8">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 border border-primary/20">
-          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <Sparkles className="size-6 text-primary" />
-              </div>
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                Welcome Back!
-              </Badge>
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Welcome to CourseConnect
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              Your unified platform for college success. Connect with classmates, manage assignments, and stay organized with AI-powered tools.
+        {/* Header with Notifications */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {user?.displayName || user?.email?.split('@')[0] || 'Guest'}!</h1>
+            <p className="text-muted-foreground">
+              Here's your academic overview and today's focus areas.
             </p>
+          </div>
+          
+          {/* Notifications - Always top right */}
+          <div className="ml-6">
+            <Notifications />
+          </div>
+        </div>
+
+        {/* Compact Welcome Section */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border border-primary/20 mb-6">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Sparkles className="size-5 text-primary" />
+              </div>
+              <div>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 mb-2">
+                  Welcome Back!
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  Your unified platform for college success. Connect with classmates, manage assignments, and stay organized with AI-powered tools.
+                </p>
+              </div>
+            </div>
+            
+            {/* Advanced Features Button - Compact */}
+            <div className="flex items-center gap-3">
+              <Dialog open={isAdvancedDialogOpen} onOpenChange={setIsAdvancedDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0">
+                    <Crown className="h-4 w-4 mr-2" />
+                    🚀 Try Pro Features Free
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Crown className="h-5 w-5 text-purple-600" />
+                      Unlock Advanced Features
+                    </DialogTitle>
+                    <DialogDescription className="text-base">
+                      Want to try our Pro features? Get access to advanced AI tutors, voice input, image analysis, grade predictions, and more!
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
+                      <h4 className="font-semibold mb-2 text-purple-900 dark:text-purple-100">Pro Features Include:</h4>
+                      <ul className="text-sm text-purple-800 dark:text-purple-200 space-y-1">
+                        <li>• Advanced AI Tutor with specialized subjects</li>
+                        <li>• Voice input & image analysis</li>
+                        <li>• Grade prediction system</li>
+                        <li>• Google Calendar integration</li>
+                        <li>• Spotify focus music</li>
+                        <li>• Enhanced study groups</li>
+                        <li>• Smart break reminders</li>
+                      </ul>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700">
+                        <Link href="/dashboard/advanced" onClick={() => setIsAdvancedDialogOpen(false)}>
+                          <Crown className="h-4 w-4 mr-2" />
+                          Try Demo - Free
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" className="w-full">
+                        <Link href="/pricing" onClick={() => setIsAdvancedDialogOpen(false)}>
+                          Upgrade to Pro - $5.99/mo
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              {/* Demo Break Button */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  // Trigger demo break
+                  window.dispatchEvent(new CustomEvent('demo-break-trigger'));
+                }}
+                className="text-xs"
+              >
+                ☕ Demo Break
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -203,32 +283,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Feature Highlights */}
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">Why CourseConnect?</h2>
-            <Badge variant="outline" className="text-xs">Features</Badge>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {featureHighlights.map((feature, index) => (
-              <Card key={feature.title} className="border-0 bg-gradient-to-br from-background to-muted/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      {feature.icon}
-                    </div>
-                  </div>
-                  <h3 className="font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-        
         {/* Bottom Section */}
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className="grid gap-8 lg:grid-cols-1">
+          <div>
             <Card className="border-0 bg-gradient-to-br from-card to-card/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -270,9 +327,6 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-          </div>
-          <div>
-            <Notifications />
           </div>
         </div>
       </div>

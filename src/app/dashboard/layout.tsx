@@ -119,18 +119,47 @@ export default function DashboardLayout({
 
 
    if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-primary mx-auto mb-4"></div>
+          <h2 className="text-lg font-semibold mb-2">Loading Dashboard</h2>
+          <p className="text-sm text-muted-foreground">Please wait while we prepare your workspace</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="flex h-screen items-center justify-center">Error: {error.message}</div>;
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <AlertTriangle className="h-12 w-12 mx-auto" />
+          </div>
+          <h2 className="text-lg font-semibold mb-2 text-red-600">Authentication Error</h2>
+          <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
   }
   
   // This logic is for guest users.
   if (!user && (isGuest || guestUser)) {
       if (Object.keys(chats).length >= 2 && pathname !== '/dashboard/upload' && pathname !== '/dashboard/chat') {
           router.push('/login?state=signup');
-          return <div className="flex h-screen items-center justify-center">Redirecting to sign up...</div>;
+          return (
+            <div className="flex h-screen items-center justify-center bg-background">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-primary mx-auto mb-4"></div>
+                <h2 className="text-lg font-semibold mb-2">Redirecting to Sign Up</h2>
+                <p className="text-sm text-muted-foreground">Please wait while we redirect you...</p>
+              </div>
+            </div>
+          );
       }
   }
 

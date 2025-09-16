@@ -1,5 +1,5 @@
 import React from 'react';
-import { FormattedMessage } from '../components/formatted-message';
+import { FormattedMessage } from '../../components/formatted-message';
 
 export default function MathTest() {
   const mathExample = `Core Concept:

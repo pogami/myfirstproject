@@ -27,6 +27,7 @@ interface ChatState {
   showUpgrade: boolean; // To control the upgrade modal
   isGuest: boolean;
   isStoreLoading: boolean;
+  isSendingMessage: boolean; // Loading state for message sending
   addChat: (chatName: string, initialMessage: Message) => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   setCurrentTab: (tabId: string | undefined) => void;
@@ -49,6 +50,7 @@ export const useChatStore = create<ChatState>()(
       showUpgrade: false,
       isGuest: true,
       isStoreLoading: true,
+      isSendingMessage: false,
 
       initializeAuthListener: () => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -165,6 +167,10 @@ export const useChatStore = create<ChatState>()(
 
       addMessage: async (chatId, message, replaceLast = false) => {
         const { isGuest } = get();
+        
+        // Set loading state
+        set({ isSendingMessage: true });
+        
          // This is optimistic update for the UI
         set((state) => {
           if (!state.chats[chatId]) return state;
@@ -196,6 +202,9 @@ export const useChatStore = create<ChatState>()(
                 // Continue working in offline mode - the message is already in local state
             }
         }
+        
+        // Clear loading state
+        set({ isSendingMessage: false });
       },
       setCurrentTab: (tabId) => set({ currentTab: tabId }),
       setShowUpgrade: (show) => set({ showUpgrade: show }),
