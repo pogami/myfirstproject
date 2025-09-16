@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Sparkles, CheckCircle, ArrowRight } from "lucide-react";
 import SyllabusUpload from "@/components/syllabus-upload";
+import { HowItWorksSlideshow } from "@/components/how-it-works-slideshow";
 
 const features = [
   {
@@ -24,8 +26,59 @@ const features = [
 ];
 
 export default function SyllabusUploadPage() {
+  const [showSlideshow, setShowSlideshow] = useState(false);
+
+  useEffect(() => {
+    // Check if slideshow should be shown from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showSlideshow') === 'true') {
+      setShowSlideshow(true);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* How It Works Section - Moved to Top */}
+      <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10 mb-8">
+        <CardHeader>
+          <CardTitle className="text-center">How It Works</CardTitle>
+          <CardDescription className="text-center">
+            Simple steps to transform your syllabus into a powerful learning tool
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <span className="text-lg font-bold text-primary">1</span>
+              </div>
+              <h3 className="font-semibold">Upload File</h3>
+              <p className="text-sm text-muted-foreground">
+                Drag and drop your syllabus PDF or text file
+              </p>
+            </div>
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <span className="text-lg font-bold text-primary">2</span>
+              </div>
+              <h3 className="font-semibold">AI Analysis</h3>
+              <p className="text-sm text-muted-foreground">
+                Our AI extracts key information and course details
+              </p>
+            </div>
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <span className="text-lg font-bold text-primary">3</span>
+              </div>
+              <h3 className="font-semibold">Join Groups</h3>
+              <p className="text-sm text-muted-foreground">
+                Automatically join study groups and start collaborating
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Hero Section - Mobile Optimized */}
         <div className="text-center space-y-4 py-6 sm:py-8">
@@ -88,46 +141,10 @@ export default function SyllabusUploadPage() {
           </CardContent>
         </Card>
 
-        {/* How It Works */}
-        <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10">
-          <CardHeader>
-            <CardTitle className="text-center">How It Works</CardTitle>
-            <CardDescription className="text-center">
-              Simple steps to transform your syllabus into a powerful learning tool
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <span className="text-lg font-bold text-primary">1</span>
-                </div>
-                <h3 className="font-semibold">Upload File</h3>
-                <p className="text-sm text-muted-foreground">
-                  Drag and drop your syllabus PDF or text file
-                </p>
-              </div>
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <span className="text-lg font-bold text-primary">2</span>
-                </div>
-                <h3 className="font-semibold">AI Analysis</h3>
-                <p className="text-sm text-muted-foreground">
-                  Our AI extracts key information and course details
-                </p>
-              </div>
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <span className="text-lg font-bold text-primary">3</span>
-                </div>
-                <h3 className="font-semibold">Join Groups</h3>
-                <p className="text-sm text-muted-foreground">
-                  Automatically join study groups and start collaborating
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Slideshow */}
+        {showSlideshow && (
+          <HowItWorksSlideshow onClose={() => setShowSlideshow(false)} />
+        )}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ import { auth, db } from "@/lib/firebase/client";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Camera, Loader2, User, Mail, GraduationCap, Calendar } from "lucide-react";
+import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +38,31 @@ export default function ProfilePage() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadStatus, setUploadStatus] = useState("");
+
+    // Notification settings
+    const [notificationSettings, setNotificationSettings] = useState([
+        {
+            id: "chat",
+            icon: <MessageSquare className="size-5 text-blue-500" />,
+            title: "Chat Notifications",
+            description: "New messages and mentions in study groups",
+            enabled: true
+        },
+        {
+            id: "assignments",
+            icon: <Calendar className="size-5 text-green-500" />,
+            title: "Assignment Reminders",
+            description: "Deadlines and important dates",
+            enabled: true
+        },
+        {
+            id: "groups",
+            icon: <Users className="size-5 text-purple-500" />,
+            title: "Study Group Updates",
+            description: "New members and group activities",
+            enabled: false
+        }
+    ]);
 
     useEffect(() => {
         if (loading) return; // Wait for auth to load
@@ -325,6 +350,22 @@ export default function ProfilePage() {
         }
     };
 
+    const toggleNotificationSetting = (id: string) => {
+        setNotificationSettings(prev => 
+            prev.map(setting => 
+                setting.id === id 
+                    ? { ...setting, enabled: !setting.enabled }
+                    : setting
+            )
+        );
+        
+        const setting = notificationSettings.find(s => s.id === id);
+        toast({
+            title: `${setting?.title} ${setting?.enabled ? 'Disabled' : 'Enabled'}`,
+            description: `You will ${setting?.enabled ? 'no longer' : 'now'} receive ${setting?.title.toLowerCase()}.`,
+        });
+    };
+
     if (loading || isLoading) {
         return (
             <div className="max-w-2xl mx-auto space-y-6">
@@ -568,6 +609,43 @@ export default function ProfilePage() {
                                     'Save Changes'
                                 )}
                             </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Notification Settings */}
+                <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Bell className="size-5 text-primary" />
+                            Notification Settings
+                        </CardTitle>
+                        <CardDescription>
+                            Customize what notifications you receive
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {notificationSettings.map((type, index) => (
+                                <div 
+                                    key={type.id} 
+                                    onClick={() => toggleNotificationSetting(type.id)}
+                                    className="flex items-center justify-between p-5 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 hover:from-primary/5 hover:to-primary/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-sm border border-transparent hover:border-primary/20 cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
+                                            {type.icon}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-base">{type.title}</h3>
+                                            <p className="text-sm text-muted-foreground">{type.description}</p>
+                                        </div>
+                                    </div>
+                                    <Badge variant={type.enabled ? "default" : "secondary"} className="px-3 py-1 text-xs font-medium">
+                                        {type.enabled ? "Enabled" : "Disabled"}
+                                    </Badge>
+                                </div>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>

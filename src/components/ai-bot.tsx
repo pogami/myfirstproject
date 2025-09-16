@@ -101,8 +101,8 @@ export function AIBot({ className = "" }: AIBotProps) {
 
   const handleAction = () => {
     if (currentMessage === 0) {
-      // Show overview for "Get Started"
-      setShowOverview(true);
+      // Redirect to upload page with slideshow
+      window.location.href = "/dashboard/upload?showSlideshow=true";
     } else {
       // Close popup and redirect based on current message
       setShowPopup(false);
@@ -229,102 +229,6 @@ export function AIBot({ className = "" }: AIBotProps) {
         </div>
       )}
 
-      {/* Comprehensive Overview Modal */}
-      {showOverview && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-sm border-2 border-blue-200 shadow-2xl">
-            <CardContent className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <Bot className="w-8 h-8 text-blue-600" />
-                  <div>
-                    <h2 className="text-2xl font-bold text-blue-600">Welcome to CourseConnect!</h2>
-                    <p className="text-sm text-gray-600">Your AI-powered study companion</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowOverview(false)}
-                  className="h-8 w-8 p-0 hover:bg-gray-100"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-
-              {/* Overview Steps */}
-              <div className="space-y-6 mb-8">
-                {overviewSteps.map((step, index) => (
-                  <div key={index} className="flex gap-4 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md border-2 border-blue-200">
-                        {step.icon}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-800 mb-2">{step.title}</h3>
-                      <p className="text-gray-600 mb-3">{step.description}</p>
-                      <div className="space-y-1">
-                        {step.features.map((feature, featureIndex) => (
-                          <div key={featureIndex} className="flex items-center gap-2 text-sm text-gray-600">
-                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            <span>{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Key Benefits */}
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white mb-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Sparkles className="w-6 h-6" />
-                  Why Choose CourseConnect?
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5" />
-                    <span className="text-sm">24/7 AI Support</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Target className="w-5 h-5" />
-                    <span className="text-sm">Personalized Learning</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5" />
-                    <span className="text-sm">Study Group Matching</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Zap className="w-5 h-5" />
-                    <span className="text-sm">Instant Homework Help</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleStartJourney}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <BookOpen className="w-5 h-5 mr-2" />
-                  Start Your Journey
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowOverview(false)}
-                  className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
-                >
-                  Explore More
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

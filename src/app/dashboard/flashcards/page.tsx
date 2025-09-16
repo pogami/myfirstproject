@@ -3,8 +3,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { GraduationCap, Brain, Target, Zap, Sparkles, BookOpen, ArrowRight } from "lucide-react";
+import { GraduationCap, Brain, Target, Zap, Sparkles, BookOpen, ArrowRight, TrendingUp, Clock, CheckCircle } from "lucide-react";
 import FlashcardGenerator from "@/components/flashcard-generator";
+import { useState, useEffect } from "react";
 
 const features = [
   {
@@ -32,6 +33,74 @@ const studyTips = [
 ];
 
 export default function FlashcardsPage() {
+  const [progress, setProgress] = useState({
+    cardsStudied: 0,
+    accuracyRate: 0,
+    studyStreak: 0,
+    totalCards: 0,
+    correctAnswers: 0,
+    studyTime: 0
+  });
+
+  const [isStudying, setIsStudying] = useState(false);
+  const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
+
+  // Simulate real-time progress updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isStudying && studyStartTime) {
+        const elapsed = Math.floor((Date.now() - studyStartTime.getTime()) / 1000);
+        setProgress(prev => ({
+          ...prev,
+          studyTime: elapsed
+        }));
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isStudying, studyStartTime]);
+
+  // Listen for flashcard events
+  useEffect(() => {
+    const handleFlashcardEvent = (event: CustomEvent) => {
+      const { type, data } = event.detail;
+      
+      switch (type) {
+        case 'card_studied':
+          setProgress(prev => ({
+            ...prev,
+            cardsStudied: prev.cardsStudied + 1,
+            totalCards: prev.totalCards + 1
+          }));
+          break;
+        case 'correct_answer':
+          setProgress(prev => ({
+            ...prev,
+            correctAnswers: prev.correctAnswers + 1,
+            accuracyRate: Math.round(((prev.correctAnswers + 1) / (prev.cardsStudied + 1)) * 100)
+          }));
+          break;
+        case 'study_started':
+          setIsStudying(true);
+          setStudyStartTime(new Date());
+          break;
+        case 'study_ended':
+          setIsStudying(false);
+          setStudyStartTime(null);
+          break;
+      }
+    };
+
+    window.addEventListener('flashcard-event', handleFlashcardEvent as EventListener);
+    return () => window.removeEventListener('flashcard-event', handleFlashcardEvent as EventListener);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -129,25 +198,61 @@ export default function FlashcardsPage() {
                 <CardTitle className="flex items-center gap-2">
                   <Target className="size-5 text-primary" />
                   Your Progress
+                  {isStudying && (
+                    <Badge variant="default" className="ml-2 bg-green-500 text-white animate-pulse">
+                      <Clock className="size-3 mr-1" />
+                      Studying
+                    </Badge>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  Track your learning journey
+                  Track your learning journey in real-time
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Cards Studied</span>
-                    <span className="font-semibold">0</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{progress.cardsStudied}</span>
+                      {progress.cardsStudied > 0 && (
+                        <CheckCircle className="size-4 text-green-500" />
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Accuracy Rate</span>
-                    <span className="font-semibold">--</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{progress.accuracyRate}%</span>
+                      {progress.accuracyRate >= 80 && (
+                        <TrendingUp className="size-4 text-green-500" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Study Time</span>
+                    <span className="font-semibold">{formatTime(progress.studyTime)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Study Streak</span>
-                    <span className="font-semibold">0 days</span>
+                    <span className="font-semibold">{progress.studyStreak} days</span>
                   </div>
+                  
+                  {/* Progress Bar */}
+                  {progress.cardsStudied > 0 && (
+                    <div className="pt-4 border-t border-border/50">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-muted-foreground">Overall Progress</span>
+                        <span className="font-medium">{Math.round((progress.correctAnswers / Math.max(progress.cardsStudied, 1)) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((progress.correctAnswers / Math.max(progress.cardsStudied, 1)) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
