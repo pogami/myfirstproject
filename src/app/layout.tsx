@@ -5,7 +5,7 @@ import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 
 export const metadata: Metadata = {
-  title: 'CourseConnect',
+  title: 'CourseConnect - AI College Platform',
   description: 'Your unified platform for college success.',
   manifest: '/manifest.json',
   icons: {
