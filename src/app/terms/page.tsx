@@ -90,6 +90,23 @@ export default function TermsPage() {
       </header>
 
       <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Development Disclaimer */}
+        <Card className="mb-8 border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-6 w-6 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">Development Demo Notice</h3>
+                <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
+                  <strong>This is a development demonstration project.</strong> CourseConnect is not a real business or service. 
+                  This Terms of Service document is for educational and portfolio purposes only. Do not use this platform 
+                  for actual academic work or rely on any AI-generated content for real assignments.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Hero Section */}
         <div className="text-center mb-12 sm:mb-16">
           <div className="flex justify-center mb-6">
@@ -198,8 +215,8 @@ export default function TermsPage() {
             <div>
               <h4 className="font-semibold mb-2">Our Content</h4>
               <p className="text-sm text-muted-foreground">
-                CourseConnect and its original content, features, and functionality are owned by CourseConnect Inc. 
-                and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.
+                CourseConnect and its original content, features, and functionality are created for educational and portfolio demonstration purposes. 
+                This project showcases web development skills and is not intended for commercial use.
               </p>
             </div>
             <div>
@@ -277,13 +294,13 @@ export default function TermsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              If you have any questions about these Terms of Service, please contact us:
+              This is a development demonstration project. For questions about this demo or portfolio piece, please contact the developer.
             </p>
             <div className="space-y-2">
-              <p className="font-medium">CourseConnect Inc.</p>
+              <p className="font-medium">Development Project</p>
               <p className="text-sm text-muted-foreground">
-                Email: legal@courseconnect.com<br />
-                Address: 123 Education Street, San Francisco, CA 94105
+                This CourseConnect platform is created for educational and portfolio demonstration purposes.<br />
+                Not intended for commercial use or real academic work.
               </p>
             </div>
           </CardContent>
