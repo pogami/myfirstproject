@@ -122,7 +122,11 @@ export default function TermsPage() {
           </p>
           <div className="mt-6">
             <Badge variant="outline" className="text-sm">
-              Last updated: January 16, 2024
+              Last updated: {new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
             </Badge>
           </div>
         </div>
