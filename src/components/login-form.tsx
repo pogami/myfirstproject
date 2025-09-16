@@ -154,14 +154,32 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       await migrateGuestData(user.uid);
       router.push('/dashboard');
     } catch (error: any) {
-      console.error(error);
+      console.error('Google Sign-in Error:', error);
+      console.error('Error details:', {
+        code: error?.code,
+        message: error?.message,
+        domain: window.location.hostname,
+        port: window.location.port,
+        fullUrl: window.location.href
+      });
+      
       let description = "Could not sign in with Google. Please try again or use another method.";
-      if (error?.code === 'auth/operation-not-allowed' || error?.code === 'auth/unauthorized-domain') {
-        description = "Sign-in with Google is not enabled. Please enable it in your Firebase console's Authentication settings.";
+      
+      if (error?.code === 'auth/operation-not-allowed') {
+        description = "Google sign-in is not enabled. Please enable it in your Firebase console's Authentication settings.";
+      } else if (error?.code === 'auth/unauthorized-domain') {
+        description = `This domain (${window.location.hostname}:${window.location.port}) is not authorized. Please add 'localhost' to authorized domains in Firebase Console → Authentication → Settings.`;
       } else if (error?.code === 'auth/account-exists-with-different-credential') {
         description = "An account already exists with this email. Please sign in with the original method."
       } else if (error?.code === 'auth/popup-closed-by-user') {
         description = "Sign-in was cancelled. Please try again if you want to continue.";
+      } else if (error?.code === 'auth/invalid-action' || error?.message?.includes('invalid_request')) {
+        description = `Invalid action/request. Please check your OAuth configuration:
+        1. Add 'localhost' to Firebase Console → Authentication → Settings → Authorized domains
+        2. Add 'http://localhost:${window.location.port}' to Google Cloud Console → Credentials → OAuth 2.0 Client ID → Authorized JavaScript origins
+        3. Current URL: ${window.location.href}`;
+      } else if (error?.message?.includes('redirect_uri_mismatch')) {
+        description = `Redirect URI mismatch. Please add 'http://localhost:${window.location.port}/__/auth/handler' to Google Cloud Console → Credentials → OAuth 2.0 Client ID → Authorized redirect URIs`;
       }
 
       toast({

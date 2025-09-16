@@ -16,6 +16,15 @@ const firebaseConfig = {
   "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com"
 };
 
+// Configure Firebase Auth for localhost
+let authDomain = firebaseConfig.authDomain;
+if (typeof window !== 'undefined') {
+  // Set the auth domain to allow localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    authDomain = 'localhost';
+  }
+}
+
 // Initialize Firebase
 let app;
 if (!getApps().length) {
