@@ -347,6 +347,10 @@ export default function LandingPage() {
                                                         <br/><br/>
                                                         Example: <code>factorial(n) = n × factorial(n-1)</code>
                                                         <br/><br/>
+                                                        <strong>Mathematical Example:</strong>
+                                                        <br/>3² = 3 × 3 = 9
+                                                        <br/>5 ÷ 2 = 2.5
+                                                        <br/><br/>
                                                         Would you like me to walk through a specific example?
                                                     </div>
                                                     <div className="text-xs text-muted-foreground mt-1">Just now</div>
@@ -388,7 +392,12 @@ export default function LandingPage() {
 }`}
                                                         </pre>
                                                         <br/>
+                                                        <strong>Mathematical Concept:</strong>
+                                                        <br/>Time Complexity: O(log₂n) - logarithmic time
+                                                        <br/>Space Complexity: O(log₂n) - recursive calls
+                                                        <br/><br/>
                                                         The key is dividing the search space in half each time!
+                                                        <br/>Example: Searching 1000 items takes only ~10 comparisons!
                                                     </div>
                                                     <div className="text-xs text-muted-foreground mt-1">Just now</div>
                                                 </div>
