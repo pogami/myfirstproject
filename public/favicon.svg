@@ -12,4 +12,6 @@
     <path d="M8,8 A8,8 0 1,1 8,24" />
     <path d="M12,16 A4,4 0 1,1 12,16" />
   </g>
+  <!-- Add "CC" text to make it more distinctive -->
+  <text x="16" y="20" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="white">CC</text>
 </svg>
