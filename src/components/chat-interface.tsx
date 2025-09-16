@@ -372,7 +372,7 @@ export default function ChatInterface() {
                 
                 const assistanceMessage: Message = {
                     sender: "bot",
-                    text: typeof result === 'string' ? result : (typeof result.answer === 'string' ? result.answer : String(result.answer || 'I apologize, but I couldn\'t generate a response.')),
+                    text: result.answer || 'I apologize, but I couldn\'t generate a response.',
                     name: "CourseConnect AI",
                     timestamp: Date.now()
                 };
@@ -499,7 +499,7 @@ export default function ChatInterface() {
                 context
             });
             
-            setAnalysisContent(typeof result === 'string' ? result : (typeof result.answer === 'string' ? result.answer : String(result.answer || 'I apologize, but I couldn\'t generate a detailed analysis.')));
+            setAnalysisContent(result.answer || 'I apologize, but I couldn\'t generate a detailed analysis.');
             setIsAnalysisModalOpen(true);
             
             // Increment usage count
@@ -598,7 +598,7 @@ export default function ChatInterface() {
             
             const assistanceMessage: Message = {
                 sender: "bot",
-                text: typeof result === 'string' ? result : (typeof result.answer === 'string' ? result.answer : String(result.answer || 'I apologize, but I couldn\'t generate a response.')),
+                text: result.answer || 'I apologize, but I couldn\'t generate a response.',
                 name: "CourseConnect AI",
                 timestamp: Date.now()
             };
