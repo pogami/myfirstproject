@@ -15,6 +15,7 @@ import { Hero } from "@/components/hero";
 import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIBot } from "@/components/ai-bot";
+import { SiteFooter } from "@/components/site-footer";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -770,11 +771,9 @@ export default function LandingPage() {
                     </div>
                 </div>
             </main>
-            <footer className="py-8 border-t bg-background/95 z-10">
-                <div className="container max-w-6xl mx-auto px-6 text-center text-muted-foreground">
-                    © {new Date().getFullYear()} CourseConnect. All rights reserved.
-                </div>
-            </footer>
+            
+            {/* Comprehensive Footer with Links and Logs */}
+            <SiteFooter />
 
             {/* AI Bot */}
             <AIBot />

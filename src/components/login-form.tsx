@@ -46,27 +46,38 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   }, [initialState]);
 
   const migrateGuestData = async (userId: string) => {
-    if (Object.keys(guestChats).length > 0) {
-        const batch = writeBatch(db);
-        const chatIds = Object.keys(guestChats);
+    try {
+        if (Object.keys(guestChats).length > 0) {
+            const batch = writeBatch(db);
+            const chatIds = Object.keys(guestChats);
 
-        for (const chatId of chatIds) {
-            const chat = guestChats[chatId];
-            const chatDocRef = doc(db, "chats", chatId);
-            const chatDocSnap = await getDoc(chatDocRef);
+            for (const chatId of chatIds) {
+                const chat = guestChats[chatId];
+                const chatDocRef = doc(db, "chats", chatId);
+                const chatDocSnap = await getDoc(chatDocRef);
 
-            if (!chatDocSnap.exists()) {
-                 batch.set(chatDocRef, { name: chat.name, messages: chat.messages });
+                if (!chatDocSnap.exists()) {
+                    batch.set(chatDocRef, { 
+                        name: chat.name, 
+                        messages: chat.messages,
+                        userId: userId,
+                        createdAt: new Date().toISOString()
+                    });
+                }
             }
+            
+            const userDocRef = doc(db, "users", userId);
+            batch.set(userDocRef, { chats: chatIds }, { merge: true });
+            
+            await batch.commit();
+            clearGuestData();
+            console.log('Guest data migrated successfully');
         }
-        
-        const userDocRef = doc(db, "users", userId);
-        batch.set(userDocRef, { chats: chatIds }, { merge: true });
-        
-        await batch.commit();
-        clearGuestData();
+    } catch (error) {
+        console.error('Error migrating guest data:', error);
+        // Don't throw error - let user continue to dashboard
     }
-  }
+}
 
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -105,7 +116,12 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         toast({ title: "Signed In!", description: "Welcome back." });
       }
 
-      await migrateGuestData(user.uid);
+      // Migrate guest data (non-blocking)
+      migrateGuestData(user.uid).catch(error => {
+        console.error('Guest data migration failed:', error);
+      });
+      
+      // Navigate to dashboard
       router.push('/dashboard');
 
     } catch (error: any)
@@ -151,7 +167,12 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         toast({ title: "Signed In!", description: "Welcome back." });
       }
       
-      await migrateGuestData(user.uid);
+      // Migrate guest data (non-blocking)
+      migrateGuestData(user.uid).catch(error => {
+        console.error('Guest data migration failed:', error);
+      });
+      
+      // Navigate to dashboard
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Google Sign-in Error:', error);

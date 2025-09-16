@@ -1,0 +1,449 @@
+/**
+ * Site Logs Management System
+ * 
+ * This utility helps track and manage all updates to the CourseConnect platform.
+ * Each change should be logged here with proper categorization and details.
+ */
+
+export interface SiteLog {
+  date: string;
+  version: string;
+  changes: string[];
+  type: 'launch' | 'feature' | 'enhancement' | 'bug-fix' | 'security' | 'performance';
+  author?: string;
+  impact?: 'low' | 'medium' | 'high' | 'critical';
+}
+
+export class SiteLogManager {
+  private static logs: SiteLog[] = [
+    {
+      date: "2025-01-16",
+      version: "v2.4.0",
+      changes: [
+        "Created dedicated changelog page at /changelog route",
+        "Enhanced changelog system with advanced search and filtering",
+        "Added comprehensive changelog page with statistics and categorization",
+        "Implemented automatic deployment logging for localhost and Vercel",
+        "Updated footer navigation to link directly to changelog page",
+        "Added deployment tracking system for better change management",
+        "Enhanced changelog UI with better visual design and user experience"
+      ],
+      type: "feature",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-01-16",
+      version: "v2.3.0",
+      changes: [
+        "Converted site logs to clickable button in footer navigation",
+        "Created modal-based changelog display for better user experience",
+        "Enhanced logs system to show complete development history",
+        "Added interactive logs modal with scrollable content",
+        "Improved logs categorization with security and performance types",
+        "Updated footer navigation to include logs as company link"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-15",
+      version: "v2.2.0",
+      changes: [
+        "Added comprehensive site footer with navigation links and company information",
+        "Implemented site logs management system for tracking all updates",
+        "Created automated changelog system with version tracking",
+        "Enhanced home page with detailed footer including social links",
+        "Added newsletter signup functionality in footer",
+        "Implemented structured logging for all future site changes",
+        "Updated localhost and Vercel synchronization process"
+      ],
+      type: "feature",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-01-14",
+      version: "v2.1.0",
+      changes: [
+        "Fixed email sign-in authentication flow - resolved infinite loading issue",
+        "Improved guest data migration with better error handling",
+        "Enhanced Firebase configuration for localhost and production",
+        "Added comprehensive footer with site logs and navigation links",
+        "Updated Vercel deployment configuration",
+        "Fixed Next.js configuration warnings"
+      ],
+      type: "bug-fix",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-01-13",
+      version: "v2.0.5",
+      changes: [
+        "Enhanced Google OAuth authentication with better error messages",
+        "Improved dashboard loading performance",
+        "Added environment-specific Firebase configuration",
+        "Updated authentication error handling for better user experience"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-12",
+      version: "v2.0.4",
+      changes: [
+        "Added Scholar Features section with advanced AI capabilities",
+        "Implemented multi-modal AI support (voice and image analysis)",
+        "Enhanced grade prediction system",
+        "Added Google Calendar integration",
+        "Implemented Spotify focus music integration"
+      ],
+      type: "feature",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-01-11",
+      version: "v2.0.3",
+      changes: [
+        "Improved mobile responsiveness across all pages",
+        "Enhanced AI chat interface with better message formatting",
+        "Added real-time study group collaboration features",
+        "Implemented smart flashcard generation from syllabus content"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-10",
+      version: "v2.0.2",
+      changes: [
+        "Launched CourseConnect platform with core features",
+        "Implemented AI-powered syllabus analysis",
+        "Added study group creation and management",
+        "Created comprehensive dashboard with analytics",
+        "Built responsive web application with modern UI/UX"
+      ],
+      type: "launch",
+      author: "Development Team",
+      impact: "critical"
+    },
+    {
+      date: "2025-01-09",
+      version: "v2.0.1",
+      changes: [
+        "Finalized core platform architecture",
+        "Completed Firebase integration setup",
+        "Implemented user authentication system",
+        "Created initial database schema",
+        "Set up development and production environments"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-01-08",
+      version: "v2.0.0",
+      changes: [
+        "Completed initial platform development",
+        "Implemented Next.js 15 with App Router",
+        "Set up Tailwind CSS and component library",
+        "Created responsive design system",
+        "Integrated Firebase for backend services",
+        "Built authentication and user management"
+      ],
+      type: "launch",
+      author: "Development Team",
+      impact: "critical"
+    },
+    {
+      date: "2025-01-07",
+      version: "v1.5.0",
+      changes: [
+        "Completed UI/UX design phase",
+        "Finalized component architecture",
+        "Created design system and style guide",
+        "Implemented responsive breakpoints",
+        "Set up development workflow and tooling"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-06",
+      version: "v1.4.0",
+      changes: [
+        "Completed project planning and architecture design",
+        "Selected technology stack (Next.js, Firebase, Tailwind)",
+        "Created initial project structure",
+        "Set up development environment",
+        "Implemented basic routing and navigation"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-05",
+      version: "v1.3.0",
+      changes: [
+        "Conducted market research and user interviews",
+        "Defined core features and user personas",
+        "Created wireframes and user flow diagrams",
+        "Established project requirements and scope",
+        "Set up version control and project management"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-04",
+      version: "v1.2.0",
+      changes: [
+        "Completed competitive analysis",
+        "Identified unique value propositions",
+        "Defined target market and user segments",
+        "Created initial business model",
+        "Established development timeline and milestones"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-03",
+      version: "v1.1.0",
+      changes: [
+        "Conducted initial market research",
+        "Identified pain points in student collaboration",
+        "Researched AI integration opportunities",
+        "Analyzed existing educational platforms",
+        "Defined initial feature set and requirements"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "medium"
+    },
+    {
+      date: "2025-01-02",
+      version: "v1.0.0",
+      changes: [
+        "CourseConnect project conception and ideation",
+        "Initial brainstorming and concept development",
+        "Market opportunity identification",
+        "Team formation and role assignment",
+        "Project kickoff and initial planning"
+      ],
+      type: "launch",
+      author: "Development Team",
+      impact: "critical"
+    }
+  ];
+
+  /**
+   * Get all site logs
+   */
+  static getAllLogs(): SiteLog[] {
+    return this.logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  /**
+   * Get logs by type
+   */
+  static getLogsByType(type: SiteLog['type']): SiteLog[] {
+    return this.logs.filter(log => log.type === type);
+  }
+
+  /**
+   * Get recent logs (last N entries)
+   */
+  static getRecentLogs(count: number = 5): SiteLog[] {
+    return this.getAllLogs().slice(0, count);
+  }
+
+  /**
+   * Add a new log entry
+   */
+  static addLog(log: Omit<SiteLog, 'date'>): void {
+    const newLog: SiteLog = {
+      ...log,
+      date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    };
+    
+    this.logs.unshift(newLog);
+    
+    // Log to console for development
+    console.log(`📝 Site Log Added: ${newLog.version} - ${newLog.type}`);
+    console.log(`Changes: ${newLog.changes.join(', ')}`);
+  }
+
+  /**
+   * Get logs formatted for display
+   */
+  static getFormattedLogs(): SiteLog[] {
+    return this.getAllLogs().map(log => ({
+      ...log,
+      changes: log.changes.map(change => 
+        change.charAt(0).toUpperCase() + change.slice(1)
+      )
+    }));
+  }
+
+  /**
+   * Get version history
+   */
+  static getVersionHistory(): { version: string; date: string; type: string }[] {
+    return this.logs.map(log => ({
+      version: log.version,
+      date: log.date,
+      type: log.type
+    }));
+  }
+
+  /**
+   * Get statistics
+   */
+  static getStats(): {
+    totalLogs: number;
+    byType: Record<string, number>;
+    byImpact: Record<string, number>;
+    latestVersion: string;
+  } {
+    const byType = this.logs.reduce((acc, log) => {
+      acc[log.type] = (acc[log.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byImpact = this.logs.reduce((acc, log) => {
+      acc[log.impact || 'medium'] = (acc[log.impact || 'medium'] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      totalLogs: this.logs.length,
+      byType,
+      byImpact,
+      latestVersion: this.logs[0]?.version || 'v1.0.0'
+    };
+  }
+}
+
+/**
+ * Helper function to add a new log entry
+ * Usage: addSiteLog('v2.1.1', 'feature', ['New feature added'], 'high')
+ */
+export function addSiteLog(
+  version: string,
+  type: SiteLog['type'],
+  changes: string[],
+  impact: SiteLog['impact'] = 'medium',
+  author: string = 'Development Team'
+): void {
+  SiteLogManager.addLog({
+    version,
+    type,
+    changes,
+    impact,
+    author
+  });
+}
+
+/**
+ * Helper function to get logs for display in components
+ */
+export function getSiteLogsForDisplay(): SiteLog[] {
+  return SiteLogManager.getFormattedLogs();
+}
+
+/**
+ * Deployment logging system
+ */
+export class DeploymentLogger {
+  private static deploymentLogs: Array<{
+    timestamp: string;
+    environment: 'localhost' | 'vercel' | 'production';
+    version: string;
+    changes: string[];
+    author: string;
+  }> = [];
+
+  /**
+   * Log a deployment
+   */
+  static logDeployment(
+    environment: 'localhost' | 'vercel' | 'production',
+    version: string,
+    changes: string[],
+    author: string = 'Development Team'
+  ): void {
+    const deployment = {
+      timestamp: new Date().toISOString(),
+      environment,
+      version,
+      changes,
+      author
+    };
+
+    this.deploymentLogs.unshift(deployment);
+    
+    // Also add to main site logs
+    addSiteLog(
+      version,
+      'enhancement',
+      [`Deployed to ${environment}: ${changes.join(', ')}`],
+      'medium',
+      author
+    );
+
+    console.log(`🚀 Deployment Logged: ${version} to ${environment}`);
+  }
+
+  /**
+   * Get deployment history
+   */
+  static getDeploymentHistory(): typeof this.deploymentLogs {
+    return this.deploymentLogs;
+  }
+
+  /**
+   * Get deployments by environment
+   */
+  static getDeploymentsByEnvironment(environment: 'localhost' | 'vercel' | 'production'): typeof this.deploymentLogs {
+    return this.deploymentLogs.filter(log => log.environment === environment);
+  }
+
+  /**
+   * Get latest deployment
+   */
+  static getLatestDeployment(): typeof this.deploymentLogs[0] | null {
+    return this.deploymentLogs[0] || null;
+  }
+}
+
+/**
+ * Helper function to log localhost deployment
+ */
+export function logLocalhostDeployment(version: string, changes: string[], author?: string): void {
+  DeploymentLogger.logDeployment('localhost', version, changes, author);
+}
+
+/**
+ * Helper function to log Vercel deployment
+ */
+export function logVercelDeployment(version: string, changes: string[], author?: string): void {
+  DeploymentLogger.logDeployment('vercel', version, changes, author);
+}
+
+/**
+ * Helper function to log production deployment
+ */
+export function logProductionDeployment(version: string, changes: string[], author?: string): void {
+  DeploymentLogger.logDeployment('production', version, changes, author);
+}
