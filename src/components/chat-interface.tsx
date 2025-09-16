@@ -148,21 +148,30 @@ export default function ChatInterface() {
         if (currentTab && user && !visitedChats.has(currentTab)) {
             const currentChat = chats[currentTab];
             if (currentChat && currentTab !== 'general-chat') {
-                // Add welcome notification
-                const welcomeMessage: Message = {
-                    sender: "bot",
-                    text: `Welcome ${user.displayName || user.email || 'Student'} to ${currentChat.title}! 🎓\n\nFeel free to ask questions, collaborate with classmates, and get AI assistance with your studies.`,
-                    name: "CourseConnect AI",
-                    timestamp: Date.now()
-                };
-                
-                addMessage(currentTab, welcomeMessage);
-                setVisitedChats(prev => new Set(prev).add(currentTab));
-                
-                toast({
-                    title: "Welcome to Class Chat!",
-                    description: `You've joined ${currentChat.title}`,
-                });
+                try {
+                    // Add welcome notification
+                    const welcomeMessage: Message = {
+                        sender: "bot",
+                        text: `Welcome ${user.displayName || user.email || 'Student'} to ${currentChat.title}! 🎓\n\nFeel free to ask questions, collaborate with classmates, and get AI assistance with your studies.`,
+                        name: "CourseConnect AI",
+                        timestamp: Date.now()
+                    };
+                    
+                    // Mark as visited first to prevent infinite loop
+                    setVisitedChats(prev => new Set(prev).add(currentTab));
+                    
+                    // Add message asynchronously
+                    addMessage(currentTab, welcomeMessage).catch(error => {
+                        console.error('Failed to add welcome message:', error);
+                    });
+                    
+                    toast({
+                        title: "Welcome to Class Chat!",
+                        description: `You've joined ${currentChat.title}`,
+                    });
+                } catch (error) {
+                    console.error('Error in welcome notification:', error);
+                }
             }
         }
     }, [currentTab, user, visitedChats, chats, addMessage, toast]);
@@ -344,7 +353,7 @@ export default function ChatInterface() {
                 // Import AI functions dynamically to avoid build issues
                 const { provideStudyAssistance } = await import("@/ai/flows/provide-study-assistance");
                 
-                const context = chats[currentTab!]?.name || 'General Chat';
+                const context = chats[currentTab!]?.title || 'General Chat';
                 const result = await provideStudyAssistance({
                     question: messageToProcess.text,
                     context: context
@@ -363,7 +372,7 @@ export default function ChatInterface() {
                 
                 // Provide contextual fallback response based on chat name
                 const lowerQuestion = messageToProcess.text.toLowerCase();
-                const chatName = chats[currentTab!]?.name || '';
+                const chatName = chats[currentTab!]?.title || '';
                 const lowerChatName = chatName.toLowerCase();
             
                 let fallbackText = `I'd be happy to help with your question: "${messageToProcess.text}"\n\n`;
@@ -533,7 +542,7 @@ export default function ChatInterface() {
             // Import AI functions dynamically to avoid build issues
             const { provideStudyAssistance } = await import("@/ai/flows/provide-study-assistance");
             
-            const context = chats[currentTab!]?.name || 'General Chat';
+            const context = chats[currentTab!]?.title || 'General Chat';
             const result = await provideStudyAssistance({
                 question: messageToProcess,
                 context: context
@@ -670,7 +679,7 @@ export default function ChatInterface() {
                                     value={key}
                                     className="rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
                                 >
-                                    <span className="truncate">{chats[key].name}</span>
+                                    <span className="truncate">{chats[key].title}</span>
                                 </TabsTrigger>
                             ))}
                         </TabsList>
@@ -743,7 +752,7 @@ export default function ChatInterface() {
                                                                         size="sm"
                                                                         onClick={() => {
                                                                             if (correspondingUserQuestion) {
-                                                                                handleInDepthAnalysis(correspondingUserQuestion, chats[currentTab!]?.name || 'General Chat', index);
+                                                                                handleInDepthAnalysis(correspondingUserQuestion, chats[currentTab!]?.title || 'General Chat', index);
                                                                             }
                                                                         }}
                                                                         disabled={isAnalyzing}
