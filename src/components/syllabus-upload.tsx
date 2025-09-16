@@ -100,14 +100,25 @@ export default function SyllabusUpload() {
                 const result = await analyzeSyllabus({ fileDataUri });
                  setProgress(100);
 
-                // Always accept files in demo mode or when AI fails
+                // Create class chat with proper synchronization
                 const chatName = result.isSyllabus ? 
                     `${result.classCode}: ${result.className}` : 
                     `Course: ${file.name.replace(/\.[^/.]+$/, "")}`;
                 
+                // Create a unique chat ID based on class code for synchronization
+                const chatId = result.isSyllabus ? 
+                    `class-${result.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : 
+                    `course-${file.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
+                
                 await addChat(
                     chatName,
-                    { sender: 'bot', name: 'CourseConnect AI', text: `Welcome to the chat for ${chatName}! Ask a question to get started.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.`, timestamp: Date.now() }
+                    { 
+                        sender: 'bot', 
+                        name: 'CourseConnect AI', 
+                        text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
+                        timestamp: Date.now() 
+                    },
+                    chatId
                 );
 
                 toast({
