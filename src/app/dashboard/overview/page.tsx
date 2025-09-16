@@ -33,6 +33,8 @@ export default function ClassOverviewPage() {
                 title: "Left Class Successfully",
                 description: `You have left ${chatTitle}`,
             });
+            // Redirect to dashboard after leaving class
+            router.push('/dashboard');
         } catch (error) {
             toast({
                 title: "Error",
