@@ -11,14 +11,15 @@ export function CourseConnectLogo(props: React.SVGProps<SVGSVGElement>) {
                 </linearGradient>
             </defs>
             <rect width="100" height="100" rx="20" fill="url(#grad1)"/>
-            <g fill="none" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M75,25 A30,30 0 1,0 75,75" />
-                <path d="M60,50 A15,15 0 1,0 60,50" />
-                <path d="M25,25 A30,30 0 1,1 25,75" />
-                <path d="M40,50 A15,15 0 1,1 40,50" />
+            {/* Interlocking 'X' shape with circles at endpoints */}
+            <g>
+                <path d="M 25 25 C 35 15, 65 85, 75 75" stroke="white" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 25 75 C 35 85, 65 15, 75 25" stroke="white" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="25" cy="25" r="4" fill="white" />
+                <circle cx="75" cy="75" r="4" fill="white" />
+                <circle cx="25" cy="75" r="4" fill="white" />
+                <circle cx="75" cy="25" r="4" fill="white" />
             </g>
-            {/* Add "CC" text to make it more distinctive */}
-            <text x="50" y="60" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" textAnchor="middle" fill="white">CC</text>
         </svg>
     )
 }
