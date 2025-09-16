@@ -58,7 +58,7 @@ export default function LandingPage() {
                 <div className="container flex h-20 max-w-6xl mx-auto px-6 items-center justify-between">
                     <Link href="/home" className="flex items-center gap-3">
                         <CourseConnectLogo className="h-9 w-9 text-primary" />
-                        <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
+                        <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect 🚀</h1>
                     </Link>
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="lg" asChild>
