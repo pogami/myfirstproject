@@ -15,6 +15,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Hero } from "@/components/hero";
 import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Mascot } from "@/components/mascot";
+import { SwirlingArrows } from "@/components/swirling-arrows";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -301,6 +303,10 @@ export default function LandingPage() {
                     © {new Date().getFullYear()} CourseConnect. All rights reserved.
                 </div>
             </footer>
+
+            {/* Mascot and Animations */}
+            <Mascot />
+            <SwirlingArrows targetSelector='a[href="/dashboard/upload"]' />
 
             <Toaster />
         </div>
