@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, OAuthProvider, signInWithPopup, updateProfile, signInAnonymously } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, OAuthProvider, GoogleAuthProvider, signInWithPopup, updateProfile, signInAnonymously } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, setDoc, getDoc, writeBatch } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MicrosoftLogo } from "@/components/icons/microsoft-logo";
+import { GoogleLogo } from "@/components/icons/google-logo";
 import { Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
@@ -33,6 +34,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   const [major, setMajor] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingMicrosoft, setIsSubmittingMicrosoft] = useState(false);
+  const [isSubmittingGoogle, setIsSubmittingGoogle] = useState(false);
   const [isSubmittingGuest, setIsSubmittingGuest] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(initialState === 'signup');
   const router = useRouter();
@@ -118,6 +120,59 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       setIsSubmitting(false);
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    setIsSubmittingGoogle(true);
+    const provider = new GoogleAuthProvider();
+    
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Check if this is a new user and create their profile
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (!userDoc.exists()) {
+        // New user - create profile with default values
+        await setDoc(doc(db, "users", user.uid), {
+          displayName: user.displayName || "Google User",
+          email: user.email,
+          graduationYear: "",
+          school: "",
+          major: "",
+          provider: "google",
+          createdAt: new Date().toISOString()
+        });
+        
+        toast({ 
+          title: "Welcome to CourseConnect!", 
+          description: "Your Google account has been connected. Complete your profile in settings." 
+        });
+      } else {
+        toast({ title: "Signed In!", description: "Welcome back." });
+      }
+      
+      await migrateGuestData(user.uid);
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error(error);
+      let description = "Could not sign in with Google. Please try again or use another method.";
+      if (error?.code === 'auth/operation-not-allowed' || error?.code === 'auth/unauthorized-domain') {
+        description = "Sign-in with Google is not enabled. Please enable it in your Firebase console's Authentication settings.";
+      } else if (error?.code === 'auth/account-exists-with-different-credential') {
+        description = "An account already exists with this email. Please sign in with the original method."
+      } else if (error?.code === 'auth/popup-closed-by-user') {
+        description = "Sign-in was cancelled. Please try again if you want to continue.";
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Authentication Failed",
+        description: description,
+      });
+    } finally {
+        setIsSubmittingGoogle(false);
+    }
+  }
 
   const handleMicrosoftSignIn = async () => {
     setIsSubmittingMicrosoft(true);
@@ -219,7 +274,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                   variant="outline" 
                   className="w-full h-12 text-base font-semibold border-2 border-dashed border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300" 
                   onClick={handleGuestLogin}
-                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                 >
                   {isSubmittingGuest ? (
                     <Loader2 className="animate-spin mr-2 h-5 w-5" />
@@ -254,13 +309,13 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
-                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                     />
                   </div>
                    <div>
                     <Label htmlFor="school">School</Label>
                      <Select onValueChange={setSchool} value={school} required>
-                        <SelectTrigger id="school" disabled={isSubmitting || isSubmittingMicrosoft}>
+                        <SelectTrigger id="school" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>
                             <SelectValue placeholder="Select your university" />
                         </SelectTrigger>
                         <SelectContent>
@@ -279,7 +334,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                       value={major}
                       onChange={(e) => setMajor(e.target.value)}
                       required
-                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                     />
                   </div>
                    <div>
@@ -293,7 +348,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                       required
                       min="2020"
                       max="2035"
-                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                     />
                   </div>
                 </>
@@ -307,7 +362,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                 />
               </div>
               <div>
@@ -319,10 +374,10 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                 />
               </div>
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}>
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>
                 {isSubmitting ? <Loader2 className="animate-spin" /> : (isSigningUp ? "Create Account" : "Sign In")}
               </Button>
             </form>
@@ -334,20 +389,26 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                     <span className="bg-card px-2 text-muted-foreground">Or</span>
                 </div>
             </div>
-             <Button variant="outline" className="w-full" size="lg" onClick={handleMicrosoftSignIn} disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}>
+            <div className="space-y-3">
+              <Button variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn} disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>
+                {isSubmittingGoogle ? <Loader2 className="animate-spin" /> : <GoogleLogo className="mr-2 h-5 w-5" />}
+                Sign in with Google
+              </Button>
+             <Button variant="outline" className="w-full" size="lg" onClick={handleMicrosoftSignIn} disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>
                 {isSubmittingMicrosoft ? <Loader2 className="animate-spin" /> : <MicrosoftLogo className="mr-2 h-5 w-5" />}
                 Sign in with Outlook
             </Button>
+            </div>
             <p className="px-8 text-center text-sm text-muted-foreground">
               {isSigningUp ? (
                 <>
                   Already have an account?{" "}
-                  <button onClick={() => setIsSigningUp(false)} className="font-semibold text-primary hover:underline" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}>Sign In</button>
+                  <button onClick={() => setIsSigningUp(false)} className="font-semibold text-primary hover:underline" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>Sign In</button>
                 </>
               ) : (
                 <>
                   Don&apos;t have an account?{" "}
-                  <button onClick={() => setIsSigningUp(true)} className="font-semibold text-primary hover:underline" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}>Create one</button>
+                  <button onClick={() => setIsSigningUp(true)} className="font-semibold text-primary hover:underline" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>Create one</button>
                 </>
               )}
             </p>
@@ -357,7 +418,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
               <div className="text-center">
                 <button 
                   onClick={handleGuestLogin}
-                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGuest}
+                  disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
                   className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 flex items-center gap-1 mx-auto"
                 >
                   {isSubmittingGuest ? (
