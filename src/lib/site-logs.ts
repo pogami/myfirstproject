@@ -18,6 +18,23 @@ export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
       date: "2024-09-16",
+      version: "v2.6.0",
+      changes: [
+        "Fixed critical React child error in chat interface - resolved object rendering issues",
+        "Implemented daily usage limits for in-depth analysis (10 per day)",
+        "Added usage tracking system with automatic daily reset",
+        "Enhanced in-depth analysis button with usage counter display",
+        "Added upgrade prompt when daily limit is reached with pricing page redirect",
+        "Improved error handling for AI response objects",
+        "Fixed chat interface stability issues causing application crashes",
+        "Enhanced user experience with better error messages and fallbacks"
+      ],
+      type: "bug-fix",
+      author: "Development Team",
+      impact: "critical"
+    },
+    {
+      date: "2024-09-16",
       version: "v2.5.0",
       changes: [
         "Fixed React child error in chat interface - resolved object rendering issues",
