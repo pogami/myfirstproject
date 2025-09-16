@@ -16,9 +16,11 @@ export type Message = {
 };
 
 export type Chat = {
-    name: string;
-    messages: Message[];
     id: string;
+    title: string;
+    messages: Message[];
+    createdAt?: number;
+    updatedAt?: number;
 };
 
 interface ChatState {
@@ -115,9 +117,16 @@ export const useChatStore = create<ChatState>()(
         return unsubscribe;
       },
 
-      addChat: async (chatName, initialMessage) => {
-        const chatId = getChatId(chatName);
+      addChat: async (chatName, initialMessage, customChatId?: string) => {
+        const chatId = customChatId || getChatId(chatName);
         const { isGuest } = get();
+
+        // Check if chat already exists
+        if (get().chats[chatId]) {
+          // Chat exists, just switch to it
+          set({ currentTab: chatId });
+          return;
+        }
 
         if (isGuest) {
             // For guest users, just add to local state
@@ -126,8 +135,10 @@ export const useChatStore = create<ChatState>()(
                     ...state.chats,
                     [chatId]: {
                         id: chatId,
-                        name: chatName,
-                        messages: [initialMessage]
+                        title: chatName,
+                        messages: [initialMessage],
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
                     }
                 },
                 currentTab: chatId
@@ -144,8 +155,10 @@ export const useChatStore = create<ChatState>()(
                 ...state.chats,
                 [chatId]: {
                     id: chatId,
-                    name: chatName,
-                    messages: [initialMessage]
+                    title: chatName,
+                    messages: [initialMessage],
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
                 }
             },
             currentTab: chatId
@@ -158,8 +171,10 @@ export const useChatStore = create<ChatState>()(
 
             if (!chatDocSnap.exists()) {
                 const newChat: Omit<Chat, 'id'> = {
-                    name: chatName,
-                    messages: [initialMessage]
+                    title: chatName,
+                    messages: [initialMessage],
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
                 };
                 await setDoc(chatDocRef, newChat);
             }

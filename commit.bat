@@ -8,7 +8,7 @@ if "%1"=="" (
     exit /b 1
 )
 
-set COMMIT_MSG=%1
+set "COMMIT_MSG=%*"
 
 echo 🔄 Committing changes...
 git add .
