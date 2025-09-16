@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { auth, rtdb, db } from "@/lib/firebase/client";
 import { ref, onValue, onDisconnect, set, serverTimestamp } from "firebase/database";
 import { doc, getDoc } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 import { Skeleton } from "./ui/skeleton";
 import { User as UserIcon, Settings as SettingsIcon, LogOut, Bell, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -112,7 +113,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     };
   }, [user, isClient]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (!user) {
       router.push('/home');
       return;
@@ -129,24 +130,38 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
       return;
     }
 
-    toast({
-      title: "Logging out...",
-      description: "You are being signed out of your account.",
-    });
+    try {
+      toast({
+        title: "Logging out...",
+        description: "You are being signed out of your account.",
+      });
 
-    const userStatusRef = ref(rtdb, `/status/${user.uid}`);
-    set(userStatusRef, {
-      state: 'offline',
-      last_changed: serverTimestamp(),
-    }).then(() => {
-        auth.signOut().then(() => {
-          toast({
-            title: "Logged out successfully",
-            description: "You have been signed out of your account.",
-          });
-          router.push('/home');
-        });
-    })
+      // Set user status to offline in Realtime Database
+      const userStatusRef = ref(rtdb, `/status/${user.uid}`);
+      await set(userStatusRef, {
+        state: 'offline',
+        last_changed: serverTimestamp(),
+      });
+
+      // Sign out from Firebase Auth
+      await signOut(auth);
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your account.",
+      });
+      
+      // Redirect to home page
+      router.push('/home');
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        variant: "destructive",
+        title: "Logout failed",
+        description: "There was an error signing you out. Please try again.",
+      });
+    }
   };
 
   const getInitials = (name: string | null | undefined) => {
