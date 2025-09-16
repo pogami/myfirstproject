@@ -98,9 +98,9 @@ export default function TermsPage() {
               <div>
                 <h3 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">Development Demo Notice</h3>
                 <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">
-                  <strong>This is a development demonstration project.</strong> CourseConnect is not a real business or service. 
-                  This Terms of Service document is for educational and portfolio purposes only. Do not use this platform 
-                  for actual academic work or rely on any AI-generated content for real assignments.
+                  <strong>This is a development demonstration project.</strong> CourseConnect is not a commercial business or service. 
+                  This Terms of Service document is for educational and portfolio purposes only. The platform can be used for academic work, 
+                  but please verify any AI-generated content for accuracy.
                 </p>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function TermsPage() {
               <p className="font-medium">Development Project</p>
               <p className="text-sm text-muted-foreground">
                 This CourseConnect platform is created for educational and portfolio demonstration purposes.<br />
-                Not intended for commercial use or real academic work.
+                The platform can be used for academic work, but is not a commercial business.
               </p>
             </div>
           </CardContent>
