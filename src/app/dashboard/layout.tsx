@@ -95,14 +95,16 @@ export default function DashboardLayout({
     // Safely handle auth state
     try {
       if (auth && typeof auth.onAuthStateChanged === 'function') {
+        console.log('Dashboard: Setting up auth state listener');
         const unsubscribe = auth.onAuthStateChanged(
           (user: any) => {
+            console.log('Dashboard: Auth state changed - user:', user ? 'authenticated' : 'not authenticated');
             setUser(user);
             setLoading(false);
             setError(null);
           },
           (error: any) => {
-            console.warn("Auth state error in dashboard layout (offline mode):", error);
+            console.warn("Dashboard: Auth state error:", error);
             setUser(null);
             setLoading(false);
             setError(error);
@@ -110,13 +112,14 @@ export default function DashboardLayout({
         );
         return unsubscribe;
       } else {
+        console.warn('Dashboard: Auth not available, using mock mode');
         // Mock auth - no user
         setUser(null);
         setLoading(false);
         setError(null);
       }
     } catch (authError) {
-      console.warn("Auth initialization error in dashboard layout (offline mode):", authError);
+      console.warn("Dashboard: Auth initialization error:", authError);
       setUser(null);
       setLoading(false);
       setError(authError);

@@ -16,17 +16,24 @@ const firebaseConfig = {
   "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com"
 };
 
-// Configure Firebase Auth for localhost
-let authDomain = firebaseConfig.authDomain;
+// Environment-specific configuration
+const isDevelopment = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || 
+   window.location.hostname === '127.0.0.1' ||
+   window.location.hostname.includes('localhost'));
+
+// Log environment info for debugging
 if (typeof window !== 'undefined') {
-  // Set the auth domain to allow localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    authDomain = 'localhost';
-  }
+  console.log('Firebase Environment:', {
+    isDevelopment,
+    hostname: window.location.hostname,
+    port: window.location.port,
+    href: window.location.href
+  });
 }
 
 // Initialize Firebase
-let app;
+let app: any;
 if (!getApps().length) {
   try {
     app = initializeApp(firebaseConfig);
@@ -43,10 +50,14 @@ if (!getApps().length) {
 let storage: any, db: any, auth: any, rtdb: any;
 
 try {
-  storage = getStorage(app);
-  db = getFirestore(app);
-  auth = getAuth(app);
-  rtdb = getDatabase(app);
+  if (app && app.name !== 'offline-app') {
+    storage = getStorage(app);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    rtdb = getDatabase(app);
+  } else {
+    throw new Error('Firebase app not properly initialized');
+  }
 } catch (error) {
   console.warn("Firebase services initialization failed (offline mode):", error);
   // Create mock objects to prevent crashes
