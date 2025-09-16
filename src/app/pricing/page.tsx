@@ -54,7 +54,7 @@ export default function PricingPage() {
     {
       id: 'pro',
       name: 'Pro',
-      price: isAnnual ? '$4.99' : '$5.99',
+      price: isAnnual ? '$9.99' : '$11.99',
       period: isAnnual ? '/month' : '/month',
       description: 'Advanced features for serious students',
       icon: <Crown className="h-6 w-6" />,
