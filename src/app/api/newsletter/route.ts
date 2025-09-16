@@ -6,10 +6,10 @@ const emailSubscribers: string[] = [];
 
 // Email configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // You can use other services like 'outlook', 'yahoo', etc.
+  service: 'outlook', // Changed to Outlook - easier setup
   auth: {
     user: process.env.EMAIL_USER, // Your email
-    pass: process.env.EMAIL_PASS, // Your email password or app password
+    pass: process.env.EMAIL_PASS, // Your email password
   },
 });
 
@@ -19,6 +19,10 @@ async function sendWelcomeEmail(email: string) {
     // Check if email credentials are configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       console.log('Email credentials not configured, skipping email send');
+      console.log('📧 EMAIL CONTENT PREVIEW:');
+      console.log('Subject: Welcome to CourseConnect! 🎓');
+      console.log('To:', email);
+      console.log('Content: Beautiful HTML welcome email with CourseConnect branding, features list, and dashboard link');
       return false;
     }
 
