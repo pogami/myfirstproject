@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'CourseConnect - AI College Platform',
