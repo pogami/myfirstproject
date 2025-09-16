@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
@@ -166,136 +167,136 @@ export default function DashboardLayout({
 
   return (
       <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-6 border-b border-border/50">
-             <Link href="/home" className="flex items-center gap-3 hover:scale-105 transition-all duration-300">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                  <CourseConnectLogo className="size-6 text-primary transition-all group-data-[collapsible=icon]:size-7" />
+        <Sidebar className="sm:translate-x-0">
+          <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-4 sm:p-6 border-b border-border/50">
+             <Link href="/home" className="flex items-center gap-2 sm:gap-3 hover:scale-105 transition-all duration-300">
+                <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                  <CourseConnectLogo className="size-5 sm:size-6 text-primary transition-all group-data-[collapsible=icon]:size-7" />
                 </div>
-                <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+                <span className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
                   CourseConnect
                 </span>
              </Link>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarMenu className="space-y-2 p-2">
+            <SidebarMenu className="space-y-1 sm:space-y-2 p-1 sm:p-2">
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
                     pathname === "/dashboard" 
                       ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
                       : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
                     pathname === "/dashboard" 
                       ? "bg-primary-foreground/20" 
                       : "bg-muted/50 group-hover:bg-primary/20"
                   }`}>
-                    <Home className="size-5" />
+                    <Home className="size-4 sm:size-5" />
                   </div>
-                  <span className="font-medium">Dashboard</span>
+                  <span className="font-medium text-sm sm:text-base">Dashboard</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/upload"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
                     isActive("/dashboard/upload") 
                       ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
                       : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
                     isActive("/dashboard/upload") 
                       ? "bg-primary-foreground/20" 
                       : "bg-muted/50 group-hover:bg-primary/20"
                   }`}>
-                    <FilePlus className="size-5" />
+                    <FilePlus className="size-4 sm:size-5" />
                   </div>
-                  <span className="font-medium">Upload Syllabus</span>
+                  <span className="font-medium text-sm sm:text-base">Upload Syllabus</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/chat"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
                     isActive("/dashboard/chat") 
                       ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
                       : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
                     isActive("/dashboard/chat") 
                       ? "bg-primary-foreground/20" 
                       : "bg-muted/50 group-hover:bg-primary/20"
                   }`}>
-                    <MessageSquare className="size-5" />
+                    <MessageSquare className="size-4 sm:size-5" />
                   </div>
-                  <span className="font-medium">Class Chats</span>
+                  <span className="font-medium text-sm sm:text-base">Class Chats</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/overview"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
                     isActive("/dashboard/overview") 
                       ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
                       : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
                     isActive("/dashboard/overview") 
                       ? "bg-primary-foreground/20" 
                       : "bg-muted/50 group-hover:bg-primary/20"
                   }`}>
-                    <Users className="size-5" />
+                    <Users className="size-4 sm:size-5" />
                   </div>
-                  <span className="font-medium">Classes Overview</span>
+                  <span className="font-medium text-sm sm:text-base">Classes Overview</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/flashcards"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
                     isActive("/dashboard/flashcards") 
                       ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
                       : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
                     isActive("/dashboard/flashcards") 
                       ? "bg-primary-foreground/20" 
                       : "bg-muted/50 group-hover:bg-primary/20"
                   }`}>
-                    <GraduationCap className="size-5" />
+                    <GraduationCap className="size-4 sm:size-5" />
                   </div>
-                  <span className="font-medium">Flashcards</span>
+                  <span className="font-medium text-sm sm:text-base">Flashcards</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/notifications"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
                     isActive("/dashboard/notifications") 
                       ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
                       : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
                   }`}
                 >
-                  <div className={`p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
                     isActive("/dashboard/notifications") 
                       ? "bg-primary-foreground/20" 
                       : "bg-muted/50 group-hover:bg-primary/20"
                   }`}>
-                    <Bell className="size-5" />
+                    <Bell className="size-4 sm:size-5" />
                   </div>
-                  <span className="font-medium">Notifications</span>
+                  <span className="font-medium text-sm sm:text-base">Notifications</span>
                 </Link>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -306,14 +307,29 @@ export default function DashboardLayout({
         </Sidebar>
         <SidebarInset>
           <AnnouncementBanner />
+          
+          {/* Mobile Header with Hamburger Menu */}
+          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:hidden">
+            <div className="flex h-16 items-center justify-between px-4">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="h-8 w-8" />
+                <Link href="/home" className="flex items-center gap-2">
+                  <CourseConnectLogo className="h-6 w-6 text-primary" />
+                  <h1 className="text-lg font-bold text-primary tracking-tight">CourseConnect</h1>
+                </Link>
+              </div>
+              <DashboardHeader user={user || guestUser} />
+            </div>
+          </header>
+          
           <main className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 bg-background/40 relative min-h-screen">
             <div className="max-w-full mx-auto">
               {children}
             </div>
           </main>
           
-          {/* Floating Profile in Top-Right Corner - Mobile Optimized */}
-          <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
+          {/* Floating Profile in Top-Right Corner - Desktop Only */}
+          <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 hidden sm:block">
             <DashboardHeader user={user || guestUser} />
           </div>
         </SidebarInset>
