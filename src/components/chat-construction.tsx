@@ -165,7 +165,7 @@ export function ChatConstruction() {
             {/* Footer Note */}
             <div className="text-center text-xs text-gray-500 pt-4 border-t border-gray-200">
               <p>
-                Expected completion: Early 2025 • 
+                Expected completion: September 2025 • 
                 <span className="text-blue-600 ml-1">Follow our progress on the changelog</span>
               </p>
             </div>
