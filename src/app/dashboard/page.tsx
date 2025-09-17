@@ -147,7 +147,7 @@ export default function DashboardPage() {
                       <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 h-12 sm:h-11 text-sm sm:text-base font-medium min-h-[48px] sm:min-h-[44px]">
                         <Link href="/dashboard/advanced" onClick={() => setIsAdvancedDialogOpen(false)}>
                           <Crown className="h-4 w-4 mr-2" />
-                          Try Demo - Free
+                          Try Pro Features - Free
                         </Link>
                       </Button>
                       <Button asChild variant="outline" className="w-full h-12 sm:h-11 text-sm sm:text-base font-medium min-h-[48px] sm:min-h-[44px]">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                 </DialogContent>
               </Dialog>
               
-              {/* Demo Break Button */}
+              {/* Try Demo Button */}
               <Button 
                 variant="outline" 
                 size="sm"
@@ -168,9 +168,9 @@ export default function DashboardPage() {
                   // Trigger demo break
                   window.dispatchEvent(new CustomEvent('demo-break-trigger'));
                 }}
-                className="text-xs sm:text-sm w-full sm:w-auto h-12 sm:h-10 font-medium min-h-[48px] sm:min-h-[40px]"
+                className="text-xs sm:text-sm w-full sm:w-auto h-12 sm:h-10 font-medium min-h-[48px] sm:min-h-[40px] bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0"
               >
-                ☕ Demo Break
+                ☕ Try Demo
               </Button>
             </div>
           </div>
