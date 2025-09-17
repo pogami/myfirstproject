@@ -18,6 +18,25 @@ export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
       date: "2024-09-16",
+      version: "v2.7.0",
+      changes: [
+        "Fixed email subscription system with dedicated Gmail account (courseconnect.noreply@gmail.com)",
+        "Updated email template with CourseConnect branding and professional HTML design",
+        "Fixed 'Get Started' button to redirect to correct Vercel URL (courseconnect-sooty.vercel.app)",
+        "Resolved favicon issues - now shows CourseConnect logo instead of Firebase logo",
+        "Added comprehensive Open Graph and Twitter Card meta tags for social media previews",
+        "Updated site title to 'CourseConnect - AI College Platform' for mobile tabs",
+        "Removed AI bot from homepage for cleaner, more focused design",
+        "Added browserconfig.xml for Windows tile configuration",
+        "Enhanced email system with beautiful welcome emails and proper branding",
+        "Fixed social media link previews to show CourseConnect logo and description"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2024-09-16",
       version: "v2.6.0",
       changes: [
         "Fixed critical React child error in chat interface - resolved object rendering issues",
