@@ -36,7 +36,13 @@ if (typeof window !== 'undefined') {
 let app: any;
 if (!getApps().length) {
   try {
-    app = initializeApp(firebaseConfig);
+    // Check if we're online before initializing Firebase
+    if (typeof window !== 'undefined' && !navigator.onLine) {
+      console.log("Offline mode - skipping Firebase initialization");
+      app = { name: 'offline-app' };
+    } else {
+      app = initializeApp(firebaseConfig);
+    }
   } catch (error) {
     console.warn("Firebase initialization failed (offline mode):", error);
     // Create a minimal app object to prevent crashes

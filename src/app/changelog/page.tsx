@@ -46,6 +46,30 @@ export default function ChangelogPage() {
     });
   }, [siteLogs, searchTerm, filterType, filterImpact]);
 
+  // Get user-facing stats only
+  const userFacingStats = useMemo(() => {
+    const userFacingLogs = siteLogs.filter(log => 
+      ['launch', 'feature', 'enhancement', 'bug-fix', 'security', 'performance'].includes(log.type)
+    );
+    
+    const byType = userFacingLogs.reduce((acc, log) => {
+      acc[log.type] = (acc[log.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byImpact = userFacingLogs.reduce((acc, log) => {
+      acc[log.impact || 'medium'] = (acc[log.impact || 'medium'] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      totalLogs: userFacingLogs.length,
+      byType,
+      byImpact,
+      latestVersion: userFacingLogs[0]?.version || 'v1.0.0'
+    };
+  }, [siteLogs]);
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'launch': return <Rocket className="h-4 w-4" />;
@@ -70,7 +94,7 @@ export default function ChangelogPage() {
     }
   };
 
-  const stats = SiteLogManager.getStats();
+  // Use filtered stats instead of all stats
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -100,19 +124,22 @@ export default function ChangelogPage() {
             Site Updates & <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Changelog</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-6">
-            Complete history of all improvements, new features, and bug fixes to CourseConnect since project inception. 
-            Track our journey from initial development to continuous improvements.
+            User-focused updates, new features, and improvements to CourseConnect. 
+            Track our journey with user-facing updates, new features, and improvements. 
+            <span className="text-sm text-muted-foreground/70 block mt-2">
+              Only showing changes that directly impact your experience.
+            </span>
           </p>
           
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             <Badge variant="outline" className="text-sm px-3 py-1">
               <Calendar className="h-3 w-3 mr-1" />
-              {stats.totalLogs} Total Updates
+              {userFacingStats.totalLogs} User Updates
             </Badge>
             <Badge variant="outline" className="text-sm px-3 py-1">
               <Rocket className="h-3 w-3 mr-1" />
-              Latest: {stats.latestVersion}
+              Latest: {userFacingStats.latestVersion}
             </Badge>
             <Badge variant="outline" className="text-sm px-3 py-1">
               <Clock className="h-3 w-3 mr-1" />
@@ -262,7 +289,7 @@ export default function ChangelogPage() {
                 or follow us on social media for the latest CourseConnect news.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/home">
+                <Link href="/newsletter">
                   <Button size="lg">
                     Subscribe to Updates <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -281,25 +308,25 @@ export default function ChangelogPage() {
         <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-primary">{stats.totalLogs}</div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Total Updates</div>
+              <div className="text-xl sm:text-2xl font-bold text-primary">{userFacingStats.totalLogs}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">User Updates</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-blue-500">{stats.byType.feature || 0}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-500">{userFacingStats.byType.feature || 0}</div>
               <div className="text-xs sm:text-sm text-muted-foreground">New Features</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-green-500">{stats.byType['bug-fix'] || 0}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-500">{userFacingStats.byType['bug-fix'] || 0}</div>
               <div className="text-xs sm:text-sm text-muted-foreground">Bug Fixes</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-xl sm:text-2xl font-bold text-purple-500">{stats.byType.enhancement || 0}</div>
+              <div className="text-xl sm:text-2xl font-bold text-purple-500">{userFacingStats.byType.enhancement || 0}</div>
               <div className="text-xs sm:text-sm text-muted-foreground">Enhancements</div>
             </CardContent>
           </Card>

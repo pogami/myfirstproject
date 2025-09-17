@@ -74,9 +74,9 @@ export default function LandingPage() {
                 `}
             </style>
             <header className={cn(
-                "sticky top-0 z-50 w-full border-b border-border/40 transition-all duration-300 backdrop-blur supports-[backdrop-filter]:backdrop-blur",
+                "sticky top-0 z-50 w-full transition-all duration-300 backdrop-blur supports-[backdrop-filter]:backdrop-blur",
                 isScrolled 
-                    ? "bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-sm" 
+                    ? "bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border/20" 
                     : "bg-background/80 supports-[backdrop-filter]:bg-background/40"
             )}>
                 <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
@@ -93,7 +93,7 @@ export default function LandingPage() {
                         <Button variant="ghost" size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
                             <Link href="/login">Sign In</Link>
                         </Button>
-                        <Button size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+                        <Button size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" asChild>
                             <Link href="/dashboard">Get Started <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" /></Link>
                         </Button>
                     </div>
@@ -103,10 +103,10 @@ export default function LandingPage() {
                 <Hero />
                 <Tabs defaultValue="features" className="w-full">
                     <div className="container max-w-6xl mx-auto px-3 sm:px-6">
-                        <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-10 sm:h-11 min-h-[40px] sm:min-h-[44px]">
-                            <TabsTrigger value="features" className="text-xs sm:text-sm">Features</TabsTrigger>
-                            <TabsTrigger value="classes" className="text-xs sm:text-sm">Popular Classes</TabsTrigger>
-                            <TabsTrigger value="demo" className="text-xs sm:text-sm">Try Demo</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-10 sm:h-11 min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-200/20 dark:border-purple-800/20">
+                            <TabsTrigger value="features" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">Features</TabsTrigger>
+                            <TabsTrigger value="classes" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">Popular Classes</TabsTrigger>
+                            <TabsTrigger value="demo" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">Try Demo</TabsTrigger>
                         </TabsList>
                         
                         <TabsContent value="features" className="space-y-8 sm:space-y-12 lg:space-y-16">
@@ -363,7 +363,7 @@ export default function LandingPage() {
                         <TabsContent value="demo" className="space-y-8">
                             <div className="w-full">
                                 <div className="text-center mb-8">
-                                    <h2 className="text-3xl font-bold tracking-tight mb-4">Try CourseConnect Demo</h2>
+                                    <h2 className="text-3xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Try CourseConnect Demo</h2>
                                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                                         Experience how CourseConnect works with our interactive demo. Join a sample class chat and see AI assistance in action!
                                     </p>
@@ -476,14 +476,14 @@ export default function LandingPage() {
                                                 placeholder="Ask a question or share something..."
                                                 className="flex-1"
                                             />
-                                            <Button disabled>
+                                            <Button disabled className="bg-gradient-to-r from-purple-500 to-blue-600 text-white">
                                                 <Send className="h-4 w-4" />
                                             </Button>
                                         </div>
 
                                         <div className="text-xs text-muted-foreground text-center mt-2">
                                             💡 <strong>Demo Mode:</strong> This is a preview of CourseConnect's class chat. 
-                                            <Link href="/dashboard/chat" className="text-primary hover:underline ml-1">
+                                            <Link href="/dashboard/chat" className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:underline ml-1 font-semibold">
                                                 Try the real thing →
                                             </Link>
                                         </div>
@@ -492,31 +492,31 @@ export default function LandingPage() {
 
                                 {/* Demo Features */}
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-8">
-                                    <Card className="text-center p-6">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                                            <MessageSquare className="h-6 w-6 text-primary" />
+                                    <Card className="text-center p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200/20 dark:border-purple-800/20">
+                                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                            <MessageSquare className="h-6 w-6 text-white" />
                                         </div>
-                                        <h3 className="font-semibold mb-2">Real-time Chat</h3>
+                                        <h3 className="font-semibold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Real-time Chat</h3>
                                         <p className="text-sm text-muted-foreground">
                                             Instant messaging with classmates and AI assistance
                                         </p>
                                     </Card>
 
-                                    <Card className="text-center p-6">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                                            <Bot className="h-6 w-6 text-primary" />
+                                    <Card className="text-center p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200/20 dark:border-purple-800/20">
+                                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                            <Bot className="h-6 w-6 text-white" />
                                         </div>
-                                        <h3 className="font-semibold mb-2">AI Homework Help</h3>
+                                        <h3 className="font-semibold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">AI Homework Help</h3>
                                         <p className="text-sm text-muted-foreground">
                                             Get instant explanations and step-by-step solutions
                                         </p>
                                     </Card>
 
-                                    <Card className="text-center p-6">
-                                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                                            <Users className="h-6 w-6 text-primary" />
+                                    <Card className="text-center p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200/20 dark:border-purple-800/20">
+                                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                            <Users className="h-6 w-6 text-white" />
                                         </div>
-                                        <h3 className="font-semibold mb-2">Study Groups</h3>
+                                        <h3 className="font-semibold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Study Groups</h3>
                                         <p className="text-sm text-muted-foreground">
                                             Collaborate with classmates on assignments and projects
                                         </p>
@@ -525,7 +525,7 @@ export default function LandingPage() {
 
                                 {/* CTA */}
                                 <div className="text-center mt-8">
-                                    <Button size="lg" asChild>
+                                    <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
                                         <Link href="/dashboard/upload">
                                             Start Your Free Trial <ArrowRight className="ml-2" />
                                         </Link>
@@ -745,41 +745,41 @@ export default function LandingPage() {
                 <div className="py-16 bg-transparent">
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="text-center mb-12">
-                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                                Trusted by Students Worldwide
+                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                                Trusted by Students Across the U.S.
                             </h2>
-                            <p className="text-lg text-blue-700 dark:text-blue-300 max-w-3xl mx-auto">
-                                Join thousands of students who are already succeeding with CourseConnect
+                            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                                Join students who are already succeeding with CourseConnect's AI-powered study tools
                             </p>
                         </div>
                         
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-                            {/* Active Students */}
+                            {/* AI-Powered Tools */}
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">50,000+</div>
-                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Active Students</div>
-                                <div className="text-sm text-blue-600 dark:text-blue-400">Growing daily</div>
+                                <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">AI-Powered</div>
+                                <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">Study Tools</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Smart analysis</div>
                             </div>
 
-                            {/* Universities */}
+                            {/* U.S. Universities */}
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</div>
-                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Universities</div>
-                                <div className="text-sm text-blue-600 dark:text-blue-400">Worldwide coverage</div>
+                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">U.S.</div>
+                                <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">Universities</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Nationwide coverage</div>
                             </div>
 
-                            {/* Study Hours */}
+                            {/* Free to Start */}
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">2M+</div>
-                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Study Hours</div>
-                                <div className="text-sm text-blue-600 dark:text-blue-400">Saved monthly</div>
+                                <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">Free</div>
+                                <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">To Start</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">No upfront cost</div>
                             </div>
 
-                            {/* Success Rate */}
+                            {/* Success Focus */}
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">94%</div>
-                                <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Success Rate</div>
-                                <div className="text-sm text-blue-600 dark:text-blue-400">Grade improvement</div>
+                                <div className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">Success</div>
+                                <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">Focused</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Grade improvement</div>
                             </div>
                         </div>
 

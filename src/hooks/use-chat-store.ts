@@ -121,6 +121,12 @@ export const useChatStore = create<ChatState>()(
         const chatId = customChatId || getChatId(chatName);
         const { isGuest } = get();
 
+        // Ensure initial message text is always a string
+        const safeInitialMessage = {
+          ...initialMessage,
+          text: typeof initialMessage.text === 'string' ? initialMessage.text : JSON.stringify(initialMessage.text)
+        };
+
         // Check if chat already exists
         if (get().chats[chatId]) {
           // Chat exists, just switch to it
@@ -136,7 +142,7 @@ export const useChatStore = create<ChatState>()(
                     [chatId]: {
                         id: chatId,
                         title: chatName,
-                        messages: [initialMessage],
+                        messages: [safeInitialMessage],
                         createdAt: Date.now(),
                         updatedAt: Date.now()
                     }
@@ -156,7 +162,7 @@ export const useChatStore = create<ChatState>()(
                 [chatId]: {
                     id: chatId,
                     title: chatName,
-                    messages: [initialMessage],
+                    messages: [safeInitialMessage],
                     createdAt: Date.now(),
                     updatedAt: Date.now()
                 }
@@ -172,7 +178,7 @@ export const useChatStore = create<ChatState>()(
             if (!chatDocSnap.exists()) {
                 const newChat: Omit<Chat, 'id'> = {
                     title: chatName,
-                    messages: [initialMessage],
+                    messages: [safeInitialMessage],
                     createdAt: Date.now(),
                     updatedAt: Date.now()
                 };
@@ -184,13 +190,22 @@ export const useChatStore = create<ChatState>()(
                 chats: arrayUnion(chatId)
             });
         } catch (error) {
-            console.warn("Failed to save chat to firestore (offline mode):", error);
+            // Only log non-offline errors to reduce noise
+            if (error && typeof error === 'object' && 'code' in error && error.code !== 'unavailable') {
+                console.warn("Failed to save chat to firestore:", error);
+            }
             // Chat is already saved locally, so continue working
         }
       },
 
       addMessage: async (chatId, message, replaceLast = false) => {
         const { isGuest } = get();
+        
+        // Ensure message text is always a string
+        const safeMessage = {
+          ...message,
+          text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
+        };
         
         // Set loading state
         set({ isSendingMessage: true });
@@ -199,7 +214,7 @@ export const useChatStore = create<ChatState>()(
         set((state) => {
           if (!state.chats[chatId]) return state;
           const messages = state.chats[chatId].messages;
-          const newMessages = replaceLast ? [...messages.slice(0, -1), message] : [...messages, message];
+          const newMessages = replaceLast ? [...messages.slice(0, -1), safeMessage] : [...messages, safeMessage];
            return {
             chats: {
               ...state.chats,
@@ -218,11 +233,14 @@ export const useChatStore = create<ChatState>()(
               const chatDocSnap = await getDoc(chatDocRef);
               if (chatDocSnap.exists()) {
                 const currentMessages = chatDocSnap.data().messages || [];
-                const newMessages = replaceLast ? [...currentMessages.slice(0, -1), message] : [...currentMessages, message];
+                const newMessages = replaceLast ? [...currentMessages.slice(0, -1), safeMessage] : [...currentMessages, safeMessage];
                 await updateDoc(chatDocRef, { messages: newMessages });
               }
             } catch (e) {
-                console.warn("Failed to save message to firestore (offline mode):", e);
+                // Only log non-offline errors to reduce noise
+                if (e && typeof e === 'object' && 'code' in e && e.code !== 'unavailable') {
+                    console.warn("Failed to save message to firestore:", e);
+                }
                 // Continue working in offline mode - the message is already in local state
             }
         }
@@ -271,7 +289,7 @@ export const useChatStore = create<ChatState>()(
         if (!chat) return;
 
         const exportData = {
-          chatName: chat.name,
+          chatName: chat.title,
           exportDate: new Date().toISOString(),
           messageCount: chat.messages.length,
           messages: chat.messages.map(msg => ({
@@ -286,7 +304,7 @@ export const useChatStore = create<ChatState>()(
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${chat.name.replace(/[^a-z0-9]/gi, '_')}_chat_export.json`;
+        a.download = `${chat.title.replace(/[^a-z0-9]/gi, '_')}_chat_export.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -353,6 +371,12 @@ export const useChatStore = create<ChatState>()(
   )
 );
 
-// Initialize the auth listener when the app loads
-useChatStore.getState().initializeAuthListener();
+// Initialize the auth listener when the app loads (with error handling)
+try {
+  if (typeof window !== 'undefined') {
+    useChatStore.getState().initializeAuthListener();
+  }
+} catch (error) {
+  console.warn("Failed to initialize auth listener:", error);
+}
 

@@ -17,6 +17,20 @@ export interface SiteLog {
 export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
+      date: "2024-12-19",
+      version: "v2.8.0",
+      changes: [
+        "Enhanced changelog filtering to show only user-facing changes",
+        "Improved chat input clearing behavior for better user experience",
+        "Fixed chat scrolling to keep messages within the chat area",
+        "Optimized AI response handling in class chat",
+        "Updated changelog to focus on features, bug fixes, and enhancements only"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
       date: "2024-09-16",
       version: "v2.7.0",
       changes: [
@@ -337,15 +351,37 @@ export class SiteLogManager {
   }
 
   /**
-   * Get logs formatted for display
+   * Get logs formatted for display (user-facing only)
    */
   static getFormattedLogs(): SiteLog[] {
-    return this.getAllLogs().map(log => ({
-      ...log,
-      changes: log.changes.map(change => 
-        change.charAt(0).toUpperCase() + change.slice(1)
-      )
-    }));
+    return this.getAllLogs()
+      .filter(log => {
+        // Only show user-facing changes
+        const userFacingTypes = ['launch', 'feature', 'enhancement', 'bug-fix', 'security', 'performance'];
+        return userFacingTypes.includes(log.type);
+      })
+      .filter(log => {
+        // Filter out internal/development-only changes
+        const internalKeywords = [
+          'localhost', 'vercel', 'deployment', 'development', 'internal', 
+          'backend', 'database', 'api', 'server', 'environment', 'config',
+          'typescript', 'build', 'compilation', 'error handling', 'logging',
+          'console', 'debug', 'testing', 'workflow', 'tooling', 'setup',
+          'architecture', 'schema', 'migration', 'sync', 'process'
+        ];
+        
+        return !log.changes.some(change => 
+          internalKeywords.some(keyword => 
+            change.toLowerCase().includes(keyword)
+          )
+        );
+      })
+      .map(log => ({
+        ...log,
+        changes: log.changes.map(change => 
+          change.charAt(0).toUpperCase() + change.slice(1)
+        )
+      }));
   }
 
   /**

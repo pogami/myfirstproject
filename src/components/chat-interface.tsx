@@ -22,8 +22,7 @@ import { useChatStore, Message } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase/client";
 import { getInDepthAnalysis } from "@/ai/services/dual-ai-service";
-import { doc, getDoc } from "firebase/firestore";
-import { AvatarImage } from "@/components/ui/avatar";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function ChatInterface() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isGuest, isStoreLoading, resetChat, exportChat, deleteChat } = useChatStore();
@@ -139,10 +138,24 @@ export default function ChatInterface() {
     }, [isGuest, chats, currentTab, setCurrentTab, addChat]);
 
     useEffect(() => {
-        const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-        if (viewport) {
-            viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-        }
+        const scrollToBottom = () => {
+            if (scrollAreaRef.current) {
+                const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+                if (viewport) {
+                    // Use requestAnimationFrame to ensure DOM is updated
+                    requestAnimationFrame(() => {
+                        viewport.scrollTo({ 
+                            top: viewport.scrollHeight, 
+                            behavior: 'smooth' 
+                        });
+                    });
+                }
+            }
+        };
+        
+        // Small delay to ensure message is rendered
+        const timeoutId = setTimeout(scrollToBottom, 100);
+        return () => clearTimeout(timeoutId);
     }, [chats, currentTab]);
 
     // Handle welcome notifications when user joins a chat
@@ -580,10 +593,10 @@ export default function ChatInterface() {
             timestamp: now
         };
 
+        const messageToProcess = inputValue.trim();
         setIsSending(true);
+        setInputValue(""); // Clear input immediately to prevent spam
         await addMessage(currentTab, userMessage);
-        const messageToProcess = inputValue;
-        setInputValue(""); // Clear input immediately
 
         // Try to use AI assistance first, fallback to contextual responses
         try {
@@ -661,7 +674,11 @@ export default function ChatInterface() {
     const currentChat = currentTab ? chats[currentTab] : null;
     
     if (isStoreLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading chats...</div>;
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <LoadingSpinner size="lg" text="Loading chats..." />
+            </div>
+        );
     }
 
     return (

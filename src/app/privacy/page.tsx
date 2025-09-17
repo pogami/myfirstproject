@@ -303,7 +303,7 @@ export default function PrivacyPage() {
                   </Button>
                 </Link>
                 <Link href="/dashboard">
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
                     Get Started
                   </Button>
                 </Link>
