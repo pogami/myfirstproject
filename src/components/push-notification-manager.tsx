@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Bell, BellOff, Smartphone, CheckCircle, AlertCircle, Loader2 } from "lu
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 export function PushNotificationManager() {
+  const [isMobile, setIsMobile] = useState(false);
   const {
     isSupported,
     permission,
@@ -23,6 +24,20 @@ export function PushNotificationManager() {
   } = usePushNotifications();
 
   const [testSent, setTestSent] = useState(false);
+
+  // Detect if user is on mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isSmallScreen = window.innerWidth <= 768;
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleSubscribe = async () => {
     const success = await subscribe();
@@ -44,6 +59,11 @@ export function PushNotificationManager() {
     }
   };
 
+  // Don't render on desktop devices
+  if (!isMobile) {
+    return null;
+  }
+
   if (!isSupported) {
     return (
       <Card>
@@ -57,7 +77,7 @@ export function PushNotificationManager() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Your browser doesn't support push notifications. Please use a modern browser like Chrome, Firefox, or Safari.
+              Your browser doesn't support push notifications. Please use a modern mobile browser like Chrome, Firefox, or Safari.
             </AlertDescription>
           </Alert>
         </CardContent>

@@ -129,7 +129,7 @@ export default function NewsletterPage() {
             </h1>
             <p className="text-xl text-gray-600">
               Get notified about new features, improvements, and exciting developments. 
-              Never miss an update that could enhance your learning experience.
+              Subscribe to our email newsletter for updates, and enable push notifications on mobile devices for instant alerts.
             </p>
           </div>
 
@@ -193,9 +193,9 @@ export default function NewsletterPage() {
               <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                 <Mail className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="font-semibold mb-2">Easy Unsubscribe</h3>
+              <h3 className="font-semibold mb-2">Mobile Push Notifications</h3>
               <p className="text-sm text-gray-600">
-                One-click unsubscribe if you ever want to opt out
+                Instant notifications on mobile devices (Android/iOS only)
               </p>
             </div>
           </div>
