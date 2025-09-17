@@ -20,6 +20,7 @@ import { ChevronUp, Menu } from "lucide-react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { ConstructionBanner } from "@/components/construction-banner";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -125,6 +126,9 @@ export default function LandingPage() {
             </header>
             <main className="flex-1">
                 <Hero />
+                <div className="container max-w-6xl mx-auto px-3 sm:px-6">
+                    <ConstructionBanner />
+                </div>
                 <Tabs defaultValue="features" className="w-full">
                     <div className="container max-w-6xl mx-auto px-3 sm:px-6">
                         <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-10 sm:h-11 min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-200/20 dark:border-purple-800/20">
