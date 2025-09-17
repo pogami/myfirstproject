@@ -71,6 +71,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=4" sizes="120x120" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=4" sizes="76x76" />
         
+        {/* PWA Manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        
         {/* Additional Meta Tags */}
         <meta name="application-name" content="CourseConnect" />
         <meta name="apple-mobile-web-app-title" content="CourseConnect" />
@@ -79,6 +82,11 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#3b82f6" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
+        
+        {/* PWA Meta Tags */}
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         
         {/* Cache Control */}
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />

@@ -1,35 +1,175 @@
-// Service Worker for Push Notifications
+// Service Worker for CourseConnect PWA
 // This file should be placed in the public directory as public/sw.js
 
-const CACHE_NAME = 'courseconnect-v1';
-const urlsToCache = [
+const CACHE_NAME = 'courseconnect-v1.0.0';
+const STATIC_CACHE_NAME = 'courseconnect-static-v1.0.0';
+const DYNAMIC_CACHE_NAME = 'courseconnect-dynamic-v1.0.0';
+
+// Files to cache for offline functionality
+const STATIC_FILES = [
   '/',
   '/dashboard',
+  '/dashboard/chat',
+  '/dashboard/upload',
+  '/newsletter',
   '/changelog',
-  '/newsletter'
+  '/manifest.json',
+  '/favicon.ico',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
-// Install event - cache resources
+// API routes that should be cached
+const API_CACHE_PATTERNS = [
+  '/api/push-notifications/',
+  '/api/newsletter'
+];
+
+// Install event - cache static resources
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
+  
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    Promise.all([
+      // Cache static files
+      caches.open(STATIC_CACHE_NAME).then((cache) => {
+        console.log('Caching static files...');
+        return cache.addAll(STATIC_FILES);
+      }),
+      // Skip waiting to activate immediately
+      self.skipWaiting()
+    ])
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating...');
+  
+  event.waitUntil(
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== DYNAMIC_CACHE_NAME &&
+                cacheName !== CACHE_NAME) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of all clients
+      self.clients.claim()
+    ])
   );
 });
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
-      })
-  );
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Handle different types of requests
+  if (url.pathname.startsWith('/api/')) {
+    // API requests - try network first, then cache
+    event.respondWith(handleApiRequest(request));
+  } else if (url.pathname.startsWith('/_next/static/') || 
+             url.pathname.includes('.') && 
+             !url.pathname.startsWith('/api/')) {
+    // Static assets - cache first
+    event.respondWith(handleStaticRequest(request));
+  } else {
+    // Page requests - network first, then cache
+    event.respondWith(handlePageRequest(request));
+  }
 });
+
+// Handle API requests
+async function handleApiRequest(request) {
+  try {
+    // Try network first
+    const networkResponse = await fetch(request);
+    
+    // Cache successful responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    // Network failed, try cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    // Return offline response for API calls
+    return new Response(
+      JSON.stringify({ 
+        error: 'Offline', 
+        message: 'You are offline. Some features may not be available.' 
+      }),
+      { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
+// Handle static asset requests
+async function handleStaticRequest(request) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    // Return a fallback for missing static assets
+    return new Response('Asset not available offline', { status: 404 });
+  }
+}
+
+// Handle page requests
+async function handlePageRequest(request) {
+  try {
+    // Try network first
+    const networkResponse = await fetch(request);
+    
+    // Cache successful responses
+    if (networkResponse.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    // Network failed, try cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    // Return offline page
+    return caches.match('/') || new Response('Offline', { status: 503 });
+  }
+}
 
 // Push event - handle incoming push notifications
 self.addEventListener('push', (event) => {
