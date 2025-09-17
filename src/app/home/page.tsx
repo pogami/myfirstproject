@@ -14,7 +14,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { Hero } from "@/components/hero";
 import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AIBot } from "@/components/ai-bot";
 import { SiteFooter } from "@/components/site-footer";
 
 const popularClasses = [
@@ -775,8 +774,6 @@ export default function LandingPage() {
             {/* Comprehensive Footer with Links and Logs */}
             <SiteFooter />
 
-            {/* AI Bot */}
-            <AIBot />
 
             <Toaster />
         </div>
