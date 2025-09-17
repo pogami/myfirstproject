@@ -145,7 +145,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     self.registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(
-        'BEl62iUYgUivxIkv69yViEuiBIa40HI0QYyQ1V0l4YI'
+        'BBNTISOni2FGyolL0qVJVJpnMV0d2q7U7uCxF20qT-KOmP_dSj8Q927pJS5CKuHa8BQ20-miUmfDAbThgbdP2YA'
       )
     }).then((subscription) => {
       // Send new subscription to server
@@ -160,14 +160,14 @@ self.addEventListener('pushsubscriptionchange', (event) => {
   );
 });
 
-// Utility function to convert VAPID key
+// Utility function to convert VAPID key (Service Worker compatible)
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
     .replace(/_/g, '/');
 
-  const rawData = window.atob(base64);
+  const rawData = atob(base64);
   const outputArray = new Uint8Array(rawData.length);
 
   for (let i = 0; i < rawData.length; ++i) {
