@@ -27,7 +27,9 @@ export class SiteLogManager {
         "Added subscription system for construction updates and notifications",
         "Fixed chat container overflow and positioning issues",
         "Improved AI response speed and reliability with simplified service",
-        "Added comprehensive error handling and fallback responses"
+        "Added comprehensive error handling and fallback responses",
+        "Added construction banner to homepage for better user awareness",
+        "Made changelog link clickable in construction page for easy navigation"
       ],
       type: "enhancement",
       author: "Development Team",
