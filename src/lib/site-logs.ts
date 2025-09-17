@@ -22,7 +22,7 @@ export class SiteLogManager {
       changes: [
         "🚧 Class Chat temporarily under construction for quality improvements",
         "Added beautiful construction page with feature previews and progress indicators",
-        "Implemented admin-only access to chat functionality during development",
+        "Implemented admin-only access to chat functionality for testing",
         "Enhanced mobile responsiveness with dedicated construction UI",
         "Added subscription system for construction updates and notifications",
         "Fixed chat container overflow and positioning issues",
