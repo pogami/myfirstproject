@@ -551,11 +551,11 @@ export class SiteLogManager {
       .filter(log => {
         // Filter out internal/development-only changes
         const internalKeywords = [
-          'localhost', 'vercel', 'deployment', 'development', 'internal', 
-          'backend', 'database', 'api', 'server', 'environment', 'config',
-          'typescript', 'build', 'compilation', 'error handling', 'logging',
+          'localhost', 'vercel', 'deployment', 'internal', 
+          'backend', 'database', 'api', 'server', 'config',
+          'typescript', 'build', 'compilation', 'logging',
           'console', 'debug', 'testing', 'workflow', 'tooling', 'setup',
-          'architecture', 'schema', 'migration', 'sync', 'process'
+          'schema', 'migration', 'sync', 'process'
         ];
         
         return !log.changes.some(change => 
