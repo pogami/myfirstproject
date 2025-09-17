@@ -18,6 +18,23 @@ export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
       date: "2025-09-16",
+      version: "v2.10.0",
+      changes: [
+        "🔒 Enhanced security measures for admin access control",
+        "Implemented email-based authentication for admin features",
+        "Added secure user permission validation",
+        "Improved data protection for user chat messages",
+        "Enhanced input sanitization for chat messages",
+        "Added secure session management for admin users",
+        "Implemented proper access control for construction features",
+        "Enhanced security headers and protection measures"
+      ],
+      type: "security",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-09-16",
       version: "v2.9.0",
       changes: [
         "🚧 Class Chat temporarily under construction for quality improvements",
