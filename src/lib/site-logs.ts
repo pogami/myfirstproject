@@ -351,6 +351,23 @@ export class SiteLogManager {
   }
 
   /**
+   * Add a new log entry and optionally send email notifications
+   */
+  static async addLog(log: SiteLog, sendEmailNotification: boolean = true): Promise<void> {
+    this.logs.unshift(log); // Add to beginning of array
+    
+    // Send email notification if requested and it's a user-facing change
+    if (sendEmailNotification) {
+      try {
+        const { notifySubscribersOfNewUpdate } = await import('./changelog-email-service');
+        await notifySubscribersOfNewUpdate(log);
+      } catch (error) {
+        console.error('Failed to send changelog email notification:', error);
+      }
+    }
+  }
+
+  /**
    * Get logs formatted for display (user-facing only)
    */
   static getFormattedLogs(): SiteLog[] {
