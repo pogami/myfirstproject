@@ -12,6 +12,8 @@ import { useChatStore } from "@/hooks/use-chat-store";
 import { auth } from "@/lib/firebase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
+import { MobileNavigation } from "@/components/mobile-navigation";
+import { MobileButton } from "@/components/ui/mobile-button";
 
 
 
@@ -74,6 +76,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
+      {/* Mobile Header */}
+      <div className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/20">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h1 className="text-lg font-bold text-primary">CourseConnect</h1>
+          <MobileNavigation user={user} />
+        </div>
+      </div>
+
       <div className="animate-in fade-in-50 space-y-8">
         {/* Header with Notifications - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-4 sm:mb-6">

@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/site-footer";
 import { useState, useEffect } from "react";
 import { ChevronUp, Menu } from "lucide-react";
+import { MobileNavigation } from "@/components/mobile-navigation";
+import { MobileButton } from "@/components/ui/mobile-button";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -79,23 +81,44 @@ export default function LandingPage() {
                     ? "bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border/20" 
                     : "bg-background/80 supports-[backdrop-filter]:bg-background/40"
             )}>
-                <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
+                <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-4 sm:px-6 items-center justify-between">
                     <Link href="/home" className="flex items-center gap-2 sm:gap-3">
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
+                        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary tracking-tight">CourseConnect</h1>
                     </Link>
-                    <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-                        <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+                    
+                    {/* Desktop Navigation */}
+                    <div className="hidden lg:flex items-center gap-4">
+                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[40px]" asChild>
                             <Link href="/about">About</Link>
                         </Button>
-                        <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[40px]" asChild>
                             <Link href="/pricing">Pricing</Link>
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[40px]" asChild>
                             <Link href="/login">Sign In</Link>
                         </Button>
-                        <Button size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" asChild>
-                            <Link href="/dashboard">Get Started <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" /></Link>
+                        <Button size="sm" className="h-10 text-sm min-h-[40px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" asChild>
+                            <Link href="/dashboard">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
                         </Button>
+                    </div>
+
+                    {/* Mobile Navigation */}
+                    <div className="flex lg:hidden items-center gap-2">
+                        <MobileButton 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-10 px-3 text-sm"
+                            asChild
+                        >
+                            <Link href="/login">Sign In</Link>
+                        </MobileButton>
+                        <MobileButton 
+                            size="sm" 
+                            className="h-10 px-3 text-sm bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                            asChild
+                        >
+                            <Link href="/dashboard">Start</Link>
+                        </MobileButton>
                     </div>
                 </div>
             </header>

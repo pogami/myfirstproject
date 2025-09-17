@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Mail, Bell, ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { PushNotificationManager } from "@/components/push-notification-manager";
+import { MobileButton } from "@/components/ui/mobile-button";
+import { MobileInput } from "@/components/ui/mobile-input";
 
 export default function NewsletterPage() {
   const [email, setEmail] = useState("");
@@ -149,18 +151,26 @@ export default function NewsletterPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubscribe} className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <MobileInput
                     type="email"
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="flex-1"
                     required
+                    mobileSize="md"
+                    fullWidthOnMobile={true}
                   />
-                  <Button type="submit" disabled={isLoading || !email.trim()}>
+                  <MobileButton 
+                    type="submit" 
+                    disabled={isLoading || !email.trim()}
+                    mobileSize="md"
+                    fullWidthOnMobile={true}
+                    className="sm:w-auto"
+                  >
                     {isLoading ? "Subscribing..." : "Subscribe"}
-                  </Button>
+                  </MobileButton>
                 </div>
                 <p className="text-sm text-gray-500">
                   We respect your privacy. Unsubscribe at any time.
@@ -202,18 +212,30 @@ export default function NewsletterPage() {
 
           {/* Footer Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/home">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+            <MobileButton 
+              variant="outline" 
+              size="lg" 
+              className="w-full sm:w-auto"
+              fullWidthOnMobile={true}
+              asChild
+            >
+              <Link href="/home">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home
-              </Button>
-            </Link>
-            <Link href="/changelog">
-              <Button variant="ghost" size="lg" className="w-full sm:w-auto">
+              </Link>
+            </MobileButton>
+            <MobileButton 
+              variant="ghost" 
+              size="lg" 
+              className="w-full sm:w-auto"
+              fullWidthOnMobile={true}
+              asChild
+            >
+              <Link href="/changelog">
                 View Recent Updates
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </MobileButton>
           </div>
         </div>
       </div>

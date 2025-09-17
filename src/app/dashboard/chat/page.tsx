@@ -16,6 +16,9 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { MobileNavigation } from "@/components/mobile-navigation";
+import { MobileButton } from "@/components/ui/mobile-button";
+import { MobileInput } from "@/components/ui/mobile-input";
 
 export default function ChatPage() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat } = useChatStore();
@@ -338,6 +341,14 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
     return (
         <>
         <div className="min-h-screen bg-transparent">
+            {/* Mobile Header */}
+            <div className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/20">
+                <div className="flex items-center justify-between px-4 py-3">
+                    <h1 className="text-lg font-bold text-primary">Class Chat</h1>
+                    <MobileNavigation user={user} />
+                </div>
+            </div>
+
             <div className="container mx-auto p-4 max-w-6xl">
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold mb-2">Class Chat</h1>
@@ -434,19 +445,26 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-6 border-t flex-shrink-0">
+                                    <div className="p-4 sm:p-6 border-t flex-shrink-0">
                                         <div className="flex gap-2">
-                                            <Input
+                                            <MobileInput
                                                 value={inputValue}
                                                 onChange={(e) => setInputValue(e.target.value)}
                                                 placeholder="Ask a question or start a discussion..."
                                                 onKeyPress={handleKeyPress}
                                                 disabled={isLoading}
                                                 className="flex-1"
+                                                mobileSize="md"
+                                                fullWidthOnMobile={false}
                                             />
-                                            <Button onClick={handleSendMessage} disabled={isLoading || !inputValue.trim()}>
+                                            <MobileButton 
+                                                onClick={handleSendMessage} 
+                                                disabled={isLoading || !inputValue.trim()}
+                                                mobileSize="md"
+                                                className="px-3"
+                                            >
                                                 <Send className="h-4 w-4" />
-                                            </Button>
+                                            </MobileButton>
                                         </div>
                                     </div>
                                 </CardContent>
