@@ -20,11 +20,10 @@ export class SiteLogManager {
       date: "2024-12-19",
       version: "v2.8.0",
       changes: [
-        "Enhanced changelog filtering to show only user-facing changes",
         "Improved chat input clearing behavior for better user experience",
         "Fixed chat scrolling to keep messages within the chat area",
         "Optimized AI response handling in class chat",
-        "Updated changelog to focus on features, bug fixes, and enhancements only"
+        "Added comprehensive changelog email notification system"
       ],
       type: "enhancement",
       author: "Development Team",
