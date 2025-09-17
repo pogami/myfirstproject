@@ -96,176 +96,218 @@ export default function LandingPage() {
                                 </div>
 
                                 {/* Feature Cards Grid */}
-                                <div className="grid gap-4 sm:gap-6 lg:gap-8 md:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
+                                <div className="grid gap-6 sm:gap-8 lg:gap-10 md:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
                             {/* AI Syllabus Analysis */}
-                            <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                                <CardHeader>
-                                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <FileText className="h-6 w-6 text-primary" />
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-blue-50/50 dark:from-gray-900 dark:to-blue-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <CardHeader className="relative z-10">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                        <FileText className="h-8 w-8 text-white" />
                                     </div>
-                                    <CardTitle className="text-xl">AI Syllabus Analysis</CardTitle>
-                                    <CardDescription>
+                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">AI Syllabus Analysis</CardTitle>
+                                    <CardDescription className="text-base leading-relaxed">
                                         Upload any syllabus and get instant insights about course structure, key topics, and study recommendations.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Automatic topic extraction</span>
+                                <CardContent className="relative z-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Automatic topic extraction</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Study schedule suggestions</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Study schedule suggestions</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Difficulty assessment</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Difficulty assessment</span>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* Smart Study Groups */}
-                            <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                                <CardHeader>
-                                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <Users className="h-6 w-6 text-primary" />
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-green-50/50 dark:from-gray-900 dark:to-green-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <CardHeader className="relative z-10">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                        <Users className="h-8 w-8 text-white" />
                                     </div>
-                                    <CardTitle className="text-xl">Smart Study Groups</CardTitle>
-                                    <CardDescription>
+                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Smart Study Groups</CardTitle>
+                                    <CardDescription className="text-base leading-relaxed">
                                         Join or create study groups for your classes. Connect with classmates and collaborate on assignments.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Auto-match with classmates</span>
+                                <CardContent className="relative z-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Auto-match with classmates</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Real-time collaboration</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Real-time collaboration</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Study session scheduling</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Study session scheduling</span>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* AI Flashcards */}
-                            <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                                <CardHeader>
-                                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <GraduationCap className="h-6 w-6 text-primary" />
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-purple-50/50 dark:from-gray-900 dark:to-purple-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <CardHeader className="relative z-10">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                        <GraduationCap className="h-8 w-8 text-white" />
                                     </div>
-                                    <CardTitle className="text-xl">AI-Generated Flashcards</CardTitle>
-                                    <CardDescription>
+                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">AI-Generated Flashcards</CardTitle>
+                                    <CardDescription className="text-base leading-relaxed">
                                         Automatically create study flashcards from your course materials. Perfect for exam preparation.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Smart question generation</span>
+                                <CardContent className="relative z-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Smart question generation</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Spaced repetition system</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Spaced repetition system</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Progress tracking</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Progress tracking</span>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* CourseConnect AI Assistant */}
-                            <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                                <CardHeader>
-                                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <MessageCircle className="h-6 w-6 text-primary" />
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-indigo-50/50 dark:from-gray-900 dark:to-indigo-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <CardHeader className="relative z-10">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                        <MessageCircle className="h-8 w-8 text-white" />
                                     </div>
-                                    <CardTitle className="text-xl">CourseConnect AI Assistant</CardTitle>
-                                    <CardDescription>
+                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">CourseConnect AI Assistant</CardTitle>
+                                    <CardDescription className="text-base leading-relaxed">
                                         Get instant help with homework, explanations, and study tips from our AI tutor.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>24/7 homework help</span>
+                                <CardContent className="relative z-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">24/7 homework help</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Concept explanations</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Concept explanations</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Study strategy advice</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Study strategy advice</span>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* Progress Tracking */}
-                            <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                                <CardHeader>
-                                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <TrendingUp className="h-6 w-6 text-primary" />
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-emerald-50/50 dark:from-gray-900 dark:to-emerald-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <CardHeader className="relative z-10">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                        <TrendingUp className="h-8 w-8 text-white" />
                                     </div>
-                                    <CardTitle className="text-xl">Progress Tracking</CardTitle>
-                                    <CardDescription>
+                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Progress Tracking</CardTitle>
+                                    <CardDescription className="text-base leading-relaxed">
                                         Monitor your academic progress across all classes with detailed analytics and insights.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Grade predictions</span>
+                                <CardContent className="relative z-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Grade predictions</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Study time analytics</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Study time analytics</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Performance insights</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Performance insights</span>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* Mobile App */}
-                            <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                                <CardHeader>
-                                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                                        <Smartphone className="h-6 w-6 text-primary" />
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-orange-50/50 dark:from-gray-900 dark:to-orange-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <CardHeader className="relative z-10">
+                                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                                        <Smartphone className="h-8 w-8 text-white" />
                                     </div>
-                                    <CardTitle className="text-xl">Study Anywhere</CardTitle>
-                                    <CardDescription>
+                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Study Anywhere</CardTitle>
+                                    <CardDescription className="text-base leading-relaxed">
                                         Access all features on mobile. Study on the go with our responsive web app and mobile-optimized interface.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Mobile flashcards</span>
+                                <CardContent className="relative z-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Mobile flashcards</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Offline study mode</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Offline study mode</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            <span>Push notifications</span>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium">Push notifications</span>
                                         </div>
                                     </div>
                                 </CardContent>

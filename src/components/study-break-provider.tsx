@@ -9,39 +9,36 @@ interface StudyBreakProviderProps {
 }
 
 export function StudyBreakProvider({ children }: StudyBreakProviderProps) {
-  const { studyTime, shouldTakeBreak, startStudying, stopStudying } = useStudyTimer();
+  const { studyTime, shouldTakeBreak, startStudying, stopStudying, isLoading } = useStudyTimer();
   const [showBreakReminder, setShowBreakReminder] = useState(false);
   const [isBreakActive, setIsBreakActive] = useState(false);
   const [isDemoMode] = useState(true); // Demo mode - enable break system for demo
   const [demoBreakTriggered, setDemoBreakTriggered] = useState(false);
 
-  // Auto-start studying when user is on the site
+  // Auto-start studying when user is on the site (including demo mode)
   useEffect(() => {
-    if (!isDemoMode) {
-      startStudying();
-    }
-  }, [startStudying, isDemoMode]);
+    startStudying();
+  }, [startStudying]);
 
-  // Demo break trigger - show after 2 minutes for demo purposes
+  // Demo break trigger - only show when manually triggered
   useEffect(() => {
     if (isDemoMode && !demoBreakTriggered) {
-      const timer = setTimeout(() => {
-        setShowBreakReminder(true);
-        setDemoBreakTriggered(true);
-      }, 120000); // 2 minutes for demo
-      return () => clearTimeout(timer);
+      // Removed automatic trigger - now only responds to manual events
     }
   }, [isDemoMode, demoBreakTriggered]);
 
   // Demo break trigger listener
   useEffect(() => {
     const handleDemoBreak = () => {
-      setShowBreakReminder(true);
+      if (!demoBreakTriggered) {
+        setShowBreakReminder(true);
+        setDemoBreakTriggered(true);
+      }
     };
 
     window.addEventListener('demo-break-trigger', handleDemoBreak);
     return () => window.removeEventListener('demo-break-trigger', handleDemoBreak);
-  }, []);
+  }, [demoBreakTriggered]);
 
   const handleBreakStart = () => {
     setIsBreakActive(true);
@@ -55,13 +52,21 @@ export function StudyBreakProvider({ children }: StudyBreakProviderProps) {
     startStudying();
   };
 
+  const handleBreakSkip = () => {
+    setShowBreakReminder(false);
+    // Don't reset demoBreakTriggered so it can't be triggered again
+  };
+
   return (
     <>
       {children}
       <BreakReminder 
         isOpen={showBreakReminder}
         onClose={handleBreakStart}
+        onSkip={handleBreakSkip}
+        onEndBreak={handleBreakEnd}
         studyTime={studyTime}
+        isLoading={isLoading}
       />
       {isBreakActive && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">

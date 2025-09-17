@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface StudyTimerHook {
   studyTime: number; // in minutes
   isStudying: boolean;
+  isLoading: boolean;
   startStudying: () => void;
   stopStudying: () => void;
   resetTimer: () => void;
@@ -12,8 +13,16 @@ interface StudyTimerHook {
 }
 
 export function useStudyTimer(): StudyTimerHook {
-  const [studyTime, setStudyTime] = useState(0);
+  const [studyTime, setStudyTime] = useState(() => {
+    // Initialize with stored study time or 0
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('studyTime');
+      return stored ? parseFloat(stored) : 0;
+    }
+    return 0;
+  });
   const [isStudying, setIsStudying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   // Check for user activity
@@ -34,6 +43,15 @@ export function useStudyTimer(): StudyTimerHook {
     };
   }, []);
 
+  // Initialize timer loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500); // Show loading for 1.5 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -45,15 +63,22 @@ export function useStudyTimer(): StudyTimerHook {
         
         // Only count time if user has been active in the last 5 minutes
         if (timeSinceLastActivity < 5 * 60 * 1000) {
-          setStudyTime(prev => prev + 1);
+          setStudyTime(prev => prev + 0.17); // Add ~10 seconds worth of minutes (10/60)
         }
-      }, 60000); // Update every minute
+      }, 10000); // Update every 10 seconds for more real-time feel
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isStudying, lastActivity]);
+
+  // Save study time to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('studyTime', studyTime.toString());
+    }
+  }, [studyTime]);
 
   const startStudying = useCallback(() => {
     setIsStudying(true);
@@ -67,6 +92,9 @@ export function useStudyTimer(): StudyTimerHook {
   const resetTimer = useCallback(() => {
     setStudyTime(0);
     setIsStudying(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('studyTime');
+    }
   }, []);
 
   // Should take break after 25 minutes (Pomodoro technique) or 2 hours
@@ -75,6 +103,7 @@ export function useStudyTimer(): StudyTimerHook {
   return {
     studyTime,
     isStudying,
+    isLoading,
     startStudying,
     stopStudying,
     resetTimer,
