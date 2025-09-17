@@ -101,7 +101,7 @@ export function SiteFooter() {
   };
 
   return (
-    <footer className="bg-gradient-to-br from-background via-background to-muted/20 border-t border-border/40">
+    <footer className="bg-transparent border-t border-border/40">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-12 lg:py-16">

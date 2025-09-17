@@ -76,7 +76,7 @@ export default function DashboardPage() {
   const totalMessages = Object.values(chats).reduce((sum, chat) => sum + chat.messages.length, 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-transparent">
       <div className="animate-in fade-in-50 space-y-8">
         {/* Header with Notifications - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-4 sm:mb-6">

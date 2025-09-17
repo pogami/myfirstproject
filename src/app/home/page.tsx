@@ -29,7 +29,7 @@ export default function LandingPage() {
     const { toast } = useToast();
 
     return (
-        <div className="flex min-h-screen flex-col bg-background overflow-hidden relative">
+        <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
             <style>
                 {`
                     :root {
@@ -54,7 +54,7 @@ export default function LandingPage() {
                     }
                 `}
             </style>
-            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
                 <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
                     <Link href="/home" className="flex items-center gap-2 sm:gap-3">
                         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
@@ -516,13 +516,13 @@ export default function LandingPage() {
                 </Tabs>
                 
                 {/* Scholar Features Section */}
-                <div className="py-16 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+                <div className="py-16 bg-transparent">
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="text-center mb-12">
-                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                                 Scholar Features
                             </h2>
-                            <p className="text-lg text-purple-700 dark:text-purple-300 max-w-3xl mx-auto">
+                            <p className="text-lg text-blue-700 dark:text-blue-300 max-w-3xl mx-auto">
                                 Advanced tools designed for serious students who want to excel academically
                             </p>
                         </div>
@@ -705,12 +705,12 @@ export default function LandingPage() {
 
                         {/* CTA for Scholar Features */}
                         <div className="text-center mt-12">
-                            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white" asChild>
+                            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white" asChild>
                                 <Link href="/dashboard/advanced">
                                     Unlock Scholar Features <ArrowRight className="ml-2" />
                                 </Link>
                             </Button>
-                            <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
+                            <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
                                 Try Scholar features free for 14 days • No credit card required
                             </p>
                         </div>
@@ -718,10 +718,10 @@ export default function LandingPage() {
                 </div>
 
                 {/* Statistics Section */}
-                <div className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+                <div className="py-16 bg-transparent">
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="text-center mb-12">
-                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                            <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                                 Trusted by Students Worldwide
                             </h2>
                             <p className="text-lg text-blue-700 dark:text-blue-300 max-w-3xl mx-auto">

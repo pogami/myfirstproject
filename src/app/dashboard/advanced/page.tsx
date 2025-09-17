@@ -221,7 +221,7 @@ export default function AdvancedDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       <div className="container mx-auto px-6 py-8">
         {/* Demo Access Banner */}
         {isDemoMode && (

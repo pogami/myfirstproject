@@ -53,11 +53,36 @@ export default function PricingPage() {
     },
     {
       id: 'pro',
-      name: 'Pro',
+      name: 'Scholar',
       price: isAnnual ? '$9.99' : '$11.99',
       period: isAnnual ? '/month' : '/month',
       description: 'Advanced features for serious students',
-      icon: <Crown className="h-6 w-6" />,
+      icon: (
+        <div className="crown-gradient-container">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="crownOutlineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#9333ea" />
+                <stop offset="50%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#9333ea" />
+                <animateTransform
+                  attributeName="gradientTransform"
+                  type="rotate"
+                  values="0 12 12;360 12 12"
+                  dur="3s"
+                  repeatCount="indefinite"
+                />
+              </linearGradient>
+            </defs>
+            <path 
+              d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z" 
+              stroke="url(#crownOutlineGradient)"
+              strokeWidth="3"
+              fill="none"
+            />
+          </svg>
+        </div>
+      ),
       color: 'bg-purple-500',
       popular: true,
       features: [
@@ -135,9 +160,9 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
         <div className="container flex h-20 max-w-6xl mx-auto px-6 items-center justify-between">
           <Link href="/home" className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
@@ -156,12 +181,14 @@ export default function PricingPage() {
         </div>
       </header>
 
-      <main className="py-24 bg-background">
+      <main className="py-24 bg-transparent">
         <div className="container mx-auto px-6">
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-5xl font-bold tracking-tight mb-6">
-              Choose Your Plan
+              <span className="water-flow" style={{ display: 'inline-block' }}>
+                Choose Your Plan
+              </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Start free and upgrade as you need more advanced features. All plans include our core study tools.
@@ -210,7 +237,7 @@ export default function PricingPage() {
                 )}
                 
                 <CardHeader className="text-center pb-4">
-                  <div className={`w-12 h-12 rounded-full ${plan.color} flex items-center justify-center text-white mx-auto mb-4`}>
+                  <div className={`w-20 h-20 rounded-full ${plan.id === 'pro' ? 'bg-transparent' : plan.color} flex items-center justify-center ${plan.id === 'pro' ? '' : 'text-white'} mx-auto mb-4`}>
                     {plan.icon}
                   </div>
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
@@ -322,7 +349,7 @@ export default function PricingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-8 border-t bg-background/95">
+      <footer className="py-8 border-t bg-transparent">
         <div className="container max-w-6xl mx-auto px-6 text-center text-muted-foreground">
           © {new Date().getFullYear()} CourseConnect. All rights reserved.
         </div>

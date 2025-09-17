@@ -178,7 +178,7 @@ export default function DashboardLayout({
 
    if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-transparent">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-primary mx-auto mb-4"></div>
           <h2 className="text-lg font-semibold mb-2">Loading Dashboard</h2>
@@ -190,7 +190,7 @@ export default function DashboardLayout({
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-screen items-center justify-center bg-transparent">
         <div className="text-center">
           <div className="text-red-500 mb-4">
             <AlertTriangle className="h-12 w-12 mx-auto" />
@@ -210,7 +210,7 @@ export default function DashboardLayout({
       if (Object.keys(chats).length >= 2 && pathname !== '/dashboard/upload' && pathname !== '/dashboard/chat') {
           router.push('/login?state=signup');
           return (
-            <div className="flex h-screen items-center justify-center bg-background">
+            <div className="flex h-screen items-center justify-center bg-transparent">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-primary mx-auto mb-4"></div>
                 <h2 className="text-lg font-semibold mb-2">Redirecting to Sign Up</h2>
@@ -223,8 +223,8 @@ export default function DashboardLayout({
 
 
   return (
-      <SidebarProvider>
-        <Sidebar className="sm:translate-x-0">
+      <SidebarProvider className="bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
+        <Sidebar className="sm:translate-x-0 bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950">
           <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-4 sm:p-6 border-b border-border/50">
              <Link href="/home" className="flex items-center gap-2 sm:gap-3 hover:scale-105 transition-all duration-300">
                 <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
@@ -385,11 +385,11 @@ export default function DashboardLayout({
             {/* User profile moved to header */}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
+        <SidebarInset className="bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
           <AnnouncementBanner />
           
           {/* Header with Hamburger Menu - Always Visible */}
-          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="h-8 w-8" />
@@ -401,7 +401,7 @@ export default function DashboardLayout({
             </div>
           </header>
           
-          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-background/40 relative min-h-screen">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-transparent relative min-h-screen">
             <div className="max-w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
               {children}
             </div>

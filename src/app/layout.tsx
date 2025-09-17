@@ -86,7 +86,7 @@ export default function RootLayout({
         <meta httpEquiv="Expires" content="0" />
         <meta name="theme-color" content="#3b82f6" />
       </head>
-      <body className="font-body antialiased" suppressHydrationWarning>
+      <body className="font-body antialiased bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen" suppressHydrationWarning>
         <PageTransitionBar />
         <StudyBreakProvider>
           {children}

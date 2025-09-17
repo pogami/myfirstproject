@@ -102,7 +102,7 @@ export default function FlashcardsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-transparent">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 border border-primary/20">
