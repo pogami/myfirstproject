@@ -113,7 +113,7 @@ export default function ChatPage() {
         // Small delay to ensure message is rendered
         const timeoutId = setTimeout(scrollToBottom, 100);
         return () => clearTimeout(timeoutId);
-    }, [currentChat?.messages]);
+    }, [currentChat?.messages, isLoading]);
 
     // Initialize general chat if it doesn't exist and set current tab
     useEffect(() => {
@@ -167,43 +167,28 @@ export default function ChatPage() {
         await addMessage(currentTab, userMessage);
 
         try {
-            // Get AI response with error handling
+            // Get AI response with error handling and timeout
             let aiResponse;
             try {
                 const { getInDepthAnalysis } = await import("@/ai/services/dual-ai-service");
-                aiResponse = await getInDepthAnalysis({
+                
+                // Add timeout to prevent long waits
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('AI response timeout')), 30000)
+                );
+                
+                const aiPromise = getInDepthAnalysis({
                     question: messageText,
                     context: 'General'
                 });
+                
+                aiResponse = await Promise.race([aiPromise, timeoutPromise]);
             } catch (importError) {
                 console.warn("AI service import failed, using fallback:", importError);
                 aiResponse = {
-                    answer: `I'd be happy to help with your question: "${messageText}". 
-
-Here's a comprehensive approach to understanding this topic:
-
-1. Start with the Basics:
-   • Break down the main concepts
-   • Look up definitions of key terms
-   • Understand the fundamental principles
-
-2. Find Examples:
-   • Look for concrete examples that illustrate the concept
-   • Practice with simple cases before complex ones
-   • Try to relate it to things you already know
-
-3. Practice and Apply:
-   • Work through practice problems
-   • Try explaining the concept to someone else
-   • Apply it to real-world situations
-
-4. Additional Resources:
-   • Check your textbook for detailed explanations
-   • Look for online tutorials or videos
-   • Use practice problems from your course materials
-
-Remember: Learning takes time and practice. Don't hesitate to ask for help when you need it!`,
-                    provider: 'fallback'
+                    response: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+                    sources: [],
+                    confidence: 0.5
                 };
             }
             
@@ -214,7 +199,9 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
             let messageText = 'I apologize, but I couldn\'t generate a response.';
             
             if (aiResponse && typeof aiResponse === 'object') {
-                if (typeof aiResponse.answer === 'string') {
+                if (aiResponse.response && typeof aiResponse.response === 'string') {
+                    messageText = aiResponse.response;
+                } else if (aiResponse.answer && typeof aiResponse.answer === 'string') {
                     messageText = aiResponse.answer;
                 } else if (aiResponse.answer && typeof aiResponse.answer === 'object') {
                     // If answer is an object, try to extract text from it
@@ -225,8 +212,6 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
                     } else {
                         messageText = 'I apologize, but I couldn\'t generate a proper response.';
                     }
-                } else if (typeof aiResponse.answer === 'string') {
-                    messageText = aiResponse.answer;
                 }
             } else if (typeof aiResponse === 'string') {
                 messageText = aiResponse;
@@ -374,7 +359,7 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
 
                     {generalChat && (
                         <TabsContent value="general-chat" className="mt-0">
-                            <Card className="h-[600px] flex flex-col">
+                            <Card className="h-[600px] flex flex-col overflow-hidden">
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
@@ -403,7 +388,7 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
                                         </DropdownMenu>
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+                                <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
                                     <ScrollArea className="flex-1 px-6 min-h-0" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {generalChat.messages.map((message, index) => (
@@ -445,7 +430,7 @@ Remember: Learning takes time and practice. Don't hesitate to ask for help when 
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 sm:p-6 border-t flex-shrink-0">
+                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background sticky bottom-0">
                                         <div className="flex gap-2">
                                             <MobileInput
                                                 value={inputValue}
