@@ -16,6 +16,7 @@ import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/site-footer";
 import { useState, useEffect } from "react";
+import { ChevronUp, Menu } from "lucide-react";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -29,16 +30,22 @@ const popularClasses = [
 export default function LandingPage() {
     const { toast } = useToast();
     const [isScrolled, setIsScrolled] = useState(false);
+    const [showFloatingMenu, setShowFloatingMenu] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
             setIsScrolled(scrollTop > 50);
+            setShowFloatingMenu(scrollTop > 200);
         };
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     return (
         <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
@@ -67,10 +74,10 @@ export default function LandingPage() {
                 `}
             </style>
             <header className={cn(
-                "sticky top-0 z-50 w-full border-b border-border/40 transition-all duration-300",
+                "sticky top-0 z-50 w-full border-b border-border/40 transition-all duration-300 backdrop-blur supports-[backdrop-filter]:backdrop-blur",
                 isScrolled 
-                    ? "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm" 
-                    : "bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent"
+                    ? "bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-sm" 
+                    : "bg-background/80 supports-[backdrop-filter]:bg-background/40"
             )}>
                 <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
                     <Link href="/home" className="flex items-center gap-2 sm:gap-3">
@@ -835,6 +842,38 @@ export default function LandingPage() {
 
 
             <Toaster />
+
+            {/* Floating Menu Arrow */}
+            {showFloatingMenu && (
+                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+                    {/* Quick Navigation Menu */}
+                    <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40 rounded-lg shadow-lg p-2">
+                        <div className="flex flex-col gap-1">
+                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
+                                <Link href="/about">About</Link>
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
+                                <Link href="/pricing">Pricing</Link>
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
+                                <Link href="/login">Sign In</Link>
+                            </Button>
+                            <Button size="sm" className="h-8 text-xs" asChild>
+                                <Link href="/dashboard">Get Started</Link>
+                            </Button>
+                        </div>
+                    </div>
+                    
+                    {/* Back to Top Arrow */}
+                    <Button
+                        onClick={scrollToTop}
+                        size="lg"
+                        className="h-12 w-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                    >
+                        <ChevronUp className="h-6 w-6" />
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
