@@ -85,6 +85,70 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
+}
+
+@keyframes water-flow {
+  0% {
+    background: linear-gradient(90deg, #9333ea 0%, #3b82f6 25%, #9333ea 50%, #3b82f6 75%, #9333ea 100%);
+    background-size: 200% 100%;
+    background-position: 200% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  100% {
+    background: linear-gradient(90deg, #9333ea 0%, #3b82f6 25%, #9333ea 50%, #3b82f6 75%, #9333ea 100%);
+    background-size: 200% 100%;
+    background-position: -200% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}
+
+.water-flow {
+  animation: water-flow 4s linear infinite;
+  display: inline-block;
+}
+
+/* Alternative approach for SVG icons */
+.water-flow-svg {
+  animation: water-flow 4s linear infinite;
+  fill: url(#waterGradient);
+}
+
+@keyframes crown-bounce {
+  0% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: hue-rotate(0deg) saturate(1.5);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-2deg) scale(1.05);
+    filter: hue-rotate(90deg) saturate(1.5);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0deg) scale(1.1);
+    filter: hue-rotate(180deg) saturate(1.5);
+  }
+  75% {
+    transform: translateY(-3px) rotate(2deg) scale(1.05);
+    filter: hue-rotate(270deg) saturate(1.5);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: hue-rotate(360deg) saturate(1.5);
+  }
+}
+
+.crown-bounce {
+  animation: crown-bounce 2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.crown-gradient-container {
+  display: inline-block;
 }

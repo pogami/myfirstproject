@@ -54,14 +54,14 @@ export function Hero({
       className="relative overflow-hidden py-12 sm:py-16 md:py-20 lg:py-24 text-center"
       style={backgroundStyle}
     >
-      {/* Enhanced gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950 dark:via-indigo-950 dark:to-purple-950" />
+      {/* Transparent background to show page-level gradient */}
+      <div className="absolute inset-0 bg-transparent" />
       
-      {/* Animated gradient orbs */}
+      {/* Animated gradient orbs - purple to blue transition */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-indigo-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse delay-500" />
       </div>
 
       {/* Reactive radial background */}
@@ -97,13 +97,6 @@ export function Hero({
         `}
       </style>
 
-      {/* Floating decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-4 h-4 bg-blue-400/30 rounded-full animate-bounce delay-100" />
-        <div className="absolute top-40 right-20 w-3 h-3 bg-purple-400/30 rounded-full animate-bounce delay-300" />
-        <div className="absolute bottom-32 left-20 w-5 h-5 bg-indigo-400/30 rounded-full animate-bounce delay-500" />
-        <div className="absolute bottom-20 right-10 w-2 h-2 bg-pink-400/30 rounded-full animate-bounce delay-700" />
-      </div>
 
       {/* Content */}
       <div className="relative z-10 container max-w-6xl mx-auto px-3 sm:px-6 flex flex-col items-center gap-6 sm:gap-8">
@@ -116,7 +109,7 @@ export function Hero({
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tighter !leading-[1.05] px-2 sm:px-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
           Ace your{" "}
           <span
-            className={`bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent inline-block transition-all duration-500 ${
+            className={`bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent inline-block transition-all duration-500 ${
               fading ? "opacity-0 scale-95" : "opacity-100 scale-100"
             }`}
             aria-live="polite"
@@ -129,7 +122,7 @@ export function Hero({
         <p className="max-w-3xl text-lg sm:text-xl lg:text-2xl text-gray-600 dark:text-gray-300 px-4 sm:px-0 leading-relaxed">{subtitle}</p>
 
         <div className="flex flex-col sm:flex-row gap-4 mt-2 sm:mt-4">
-          <Button size="lg" className="h-14 px-8 text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
+          <Button size="lg" className="h-14 px-8 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
             <Link href={ctaHref}>
               {ctaText} <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

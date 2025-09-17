@@ -51,7 +51,7 @@ export default function ClassOverviewPage() {
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="min-h-screen bg-transparent">
             <div className="space-y-8 animate-in fade-in-50">
                 {/* Hero Section - Mobile Optimized */}
                 <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-6 md:p-8 border border-primary/20">

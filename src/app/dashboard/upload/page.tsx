@@ -37,7 +37,7 @@ export default function SyllabusUploadPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-transparent">
       {/* How It Works Section - Moved to Top */}
       <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10 mb-6 sm:mb-8">
         <CardHeader className="p-4 sm:p-6">
