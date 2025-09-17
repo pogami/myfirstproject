@@ -6,6 +6,7 @@ import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://courseconnect-sooty.vercel.app'),
   title: 'CourseConnect - AI College Platform',
   description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
   keywords: ['college', 'AI', 'study', 'education', 'platform', 'academic'],
