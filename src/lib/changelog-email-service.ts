@@ -20,6 +20,10 @@ export async function sendChangelogEmails(changelogData: {
     
     if (response.ok) {
       console.log('Changelog emails sent successfully:', result);
+      
+      // Also send push notifications
+      await sendChangelogPushNotifications(changelogData);
+      
       return { success: true, ...result };
     } else {
       console.error('Failed to send changelog emails:', result);
@@ -27,6 +31,65 @@ export async function sendChangelogEmails(changelogData: {
     }
   } catch (error) {
     console.error('Error sending changelog emails:', error);
+    return { success: false, error: 'Network error' };
+  }
+}
+
+// Function to send push notifications for changelog updates
+async function sendChangelogPushNotifications(changelogData: {
+  date: string;
+  version: string;
+  changes: string[];
+  type: string;
+  author: string;
+  impact: string;
+}) {
+  try {
+    const notificationData = {
+      title: `CourseConnect Update - ${changelogData.version}`,
+      body: `${changelogData.changes[0]}${changelogData.changes.length > 1 ? ` (+${changelogData.changes.length - 1} more)` : ''}`,
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      tag: `changelog-${changelogData.version}`,
+      data: {
+        url: '/changelog',
+        version: changelogData.version,
+        type: changelogData.type,
+        impact: changelogData.impact
+      },
+      actions: [
+        {
+          action: 'view',
+          title: 'View Update',
+          icon: '/favicon.ico'
+        },
+        {
+          action: 'dismiss',
+          title: 'Dismiss',
+          icon: '/favicon.ico'
+        }
+      ]
+    };
+
+    const response = await fetch('/api/push-notifications/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notificationData),
+    });
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      console.log('Changelog push notifications sent successfully:', result);
+      return { success: true, ...result };
+    } else {
+      console.error('Failed to send changelog push notifications:', result);
+      return { success: false, error: result.error };
+    }
+  } catch (error) {
+    console.error('Error sending changelog push notifications:', error);
     return { success: false, error: 'Network error' };
   }
 }
