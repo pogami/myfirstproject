@@ -166,7 +166,9 @@ export function ChatConstruction() {
             <div className="text-center text-xs text-gray-500 pt-4 border-t border-gray-200">
               <p>
                 Expected completion: September 2025 • 
-                <span className="text-blue-600 ml-1">Follow our progress on the changelog</span>
+                <Link href="/changelog" className="text-blue-600 hover:text-blue-800 underline ml-1">
+                  Follow our progress on the changelog
+                </Link>
               </p>
             </div>
           </CardContent>
