@@ -103,23 +103,22 @@ export function Hero({
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-primary/20 rounded-full text-sm font-medium text-primary shadow-lg">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          Trusted by 50,000+ students worldwide
+          Trusted by students across the U.S.
         </div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tighter !leading-[1.05] px-2 sm:px-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tighter !leading-[1.15] px-2 sm:px-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
           Ace your{" "}
           <span
-            className={`bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent inline-block transition-all duration-500 ${
-              fading ? "opacity-0 scale-95" : "opacity-100 scale-100"
-            }`}
+            className={`bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent inline-block transition-all duration-500 leading-[1.2] ${fading ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
             aria-live="polite"
+            style={{ paddingBottom: '0.1em' }}
           >
             {words[index]}
           </span>
-          , together.
+          <span style={{ marginLeft: '0.1em' }}>, together.</span>
         </h1>
 
-        <p className="max-w-3xl text-lg sm:text-xl lg:text-2xl text-gray-600 dark:text-gray-300 px-4 sm:px-0 leading-relaxed">{subtitle}</p>
+        <p className="max-w-3xl text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 px-4 sm:px-0 leading-relaxed">{subtitle}</p>
 
         <div className="flex flex-col sm:flex-row gap-4 mt-2 sm:mt-4">
           <Button size="lg" className="h-14 px-8 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
@@ -137,16 +136,16 @@ export function Hero({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-8 mt-8 sm:mt-12">
           <div className="text-center">
-            <div className="text-3xl sm:text-4xl font-bold text-primary">50K+</div>
-            <div className="text-sm text-muted-foreground">Active Students</div>
+            <div className="text-3xl sm:text-4xl font-bold text-primary">AI-Powered</div>
+            <div className="text-sm text-muted-foreground">Study Tools</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl sm:text-4xl font-bold text-primary">500+</div>
+            <div className="text-3xl sm:text-4xl font-bold text-primary">U.S.</div>
             <div className="text-sm text-muted-foreground">Universities</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl sm:text-4xl font-bold text-primary">94%</div>
-            <div className="text-sm text-muted-foreground">Success Rate</div>
+            <div className="text-3xl sm:text-4xl font-bold text-primary">Free</div>
+            <div className="text-sm text-muted-foreground">To Start</div>
           </div>
         </div>
       </div>

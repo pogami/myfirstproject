@@ -174,7 +174,7 @@ export default function PricingPage() {
             <Button variant="ghost" size="lg" asChild>
               <Link href="/about">About</Link>
             </Button>
-            <Button size="lg" asChild>
+            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
               <Link href="/dashboard">Get Started <ArrowRight className="ml-2" /></Link>
             </Button>
           </div>

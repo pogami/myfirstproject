@@ -29,6 +29,7 @@ import {
   MessageSquare,
   Loader2
 } from 'lucide-react';
+import { HamburgerMenu } from '@/components/hamburger-menu';
 import { useToast } from '@/hooks/use-toast';
 
 interface AIMessage {
@@ -75,6 +76,47 @@ export function AdvancedAITutor({
   const [lastQuestion, setLastQuestion] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Hamburger menu handlers
+  const handleCopyConversation = () => {
+    const conversationText = messages.map(msg => 
+      `${msg.role === 'user' ? 'You' : 'AI Tutor'}: ${msg.content}`
+    ).join('\n\n');
+    navigator.clipboard.writeText(conversationText);
+  };
+
+  const handleExportConversation = () => {
+    const conversationData = {
+      timestamp: new Date().toISOString(),
+      subject: selectedTutor?.name || 'General',
+      messages: messages
+    };
+    
+    const blob = new Blob([JSON.stringify(conversationData, null, 2)], { 
+      type: 'application/json' 
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-tutor-conversation-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleResetConversation = () => {
+    setMessages([]);
+    setLastQuestion('');
+    setShowInDepth(false);
+  };
+
+  const handleDeleteConversation = () => {
+    setMessages([]);
+    setLastQuestion('');
+    setShowInDepth(false);
+    setSelectedTutor(null);
+  };
 
   const subjectTutors: SubjectTutor[] = [
     {
@@ -1366,7 +1408,7 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 </Badge>
               )}
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               {lastQuestion && !showInDepth && (
                 <Button
                   variant="outline"
@@ -1378,33 +1420,16 @@ I'm here to help you understand whatever concepts are presented in this visual m
                   In-Depth Analysis
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={copyChat}
-                disabled={messages.length === 0}
-                className="text-xs"
-              >
-                Copy
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportChat}
-                disabled={messages.length === 0}
-                className="text-xs"
-              >
-                Export
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetChat}
-                disabled={messages.length === 0}
-                className="text-xs"
-              >
-                Reset
-              </Button>
+              <HamburgerMenu
+                onCopy={handleCopyConversation}
+                onExport={handleExportConversation}
+                onReset={handleResetConversation}
+                onDelete={handleDeleteConversation}
+                copyLabel="Copy Chat"
+                exportLabel="Export Chat"
+                resetLabel="Reset Chat"
+                deleteLabel="Clear All"
+              />
             </div>
           </div>
         </CardHeader>

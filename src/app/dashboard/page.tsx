@@ -5,75 +5,72 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { MessageSquare, Upload, BookOpen, Users, TrendingUp, Clock, Star, ArrowRight, Sparkles, Target, Zap, Crown } from "lucide-react";
+import { MessageSquare, Upload, BookOpen, Users, TrendingUp, Clock, Sparkles, Crown } from "lucide-react";
 import Notifications from "@/components/notifications";
 import { StatCards } from "@/components/stat-cards";
 import { useChatStore } from "@/hooks/use-chat-store";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const quickActionCards = [
-    {
-        title: "Upload Syllabus",
-        description: "Add a new class syllabus to join study groups and unlock AI-powered features",
-        icon: <Upload className="size-8 text-primary" />,
-        href: "/dashboard/upload",
-        buttonText: "Upload Now",
-        variant: "default" as const,
-        gradient: "from-blue-500 to-purple-600",
-        stats: "AI Analysis",
-        features: ["Smart parsing", "Auto-class detection", "Study group matching"]
-    },
-    {
-        title: "Join Class Chats",
-        description: "Connect with classmates in real-time with AI-powered study assistance",
-        icon: <MessageSquare className="size-8 text-green-500" />,
-        href: "/dashboard/chat",
-        buttonText: "Start Chatting",
-        variant: "default" as const,
-        gradient: "from-green-500 to-emerald-600",
-        stats: "Live Support",
-        features: ["Real-time chat", "AI tutoring", "Group collaboration"]
-    },
-    {
-        title: "Browse Classes",
-        description: "Discover all available classes and see student engagement metrics",
-        icon: <BookOpen className="size-8 text-amber-500" />,
-        href: "/dashboard/overview",
-        buttonText: "Explore",
-        variant: "default" as const,
-        gradient: "from-amber-500 to-orange-600",
-        stats: "Active Classes",
-        features: ["Class discovery", "Student counts", "Activity tracking"]
-    }
-]
 
-const featureHighlights = [
-    {
-        icon: <Sparkles className="size-6 text-purple-500" />,
-        title: "AI-Powered Learning",
-        description: "Get instant help with homework and study questions"
-    },
-    {
-        icon: <Target className="size-6 text-blue-500" />,
-        title: "Smart Flashcards",
-        description: "Auto-generated flashcards from your syllabus content"
-    },
-    {
-        icon: <Zap className="size-6 text-yellow-500" />,
-        title: "Instant Notifications",
-        description: "Stay updated with class announcements and deadlines"
-    }
-]
 
 export default function DashboardPage() {
   const { chats } = useChatStore();
-  const [user] = useAuthState(auth);
+  const [user, setUser] = useState<any>(null);
   const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(12);
   const classCount = Object.keys(chats).filter(key => key !== 'general-chat').length;
   const totalMessages = Object.values(chats).reduce((sum, chat) => sum + chat.messages.length, 0);
+
+  // Safely handle auth state
+  useEffect(() => {
+    try {
+      if (auth && typeof auth.onAuthStateChanged === 'function') {
+        const unsubscribe = auth.onAuthStateChanged(
+          (user) => setUser(user),
+          (error) => {
+            console.warn("Auth state error in dashboard page:", error);
+            setUser(null);
+          }
+        );
+        return unsubscribe;
+      } else {
+        setUser(null);
+      }
+    } catch (authError) {
+      console.warn("Auth initialization error in dashboard page:", authError);
+      setUser(null);
+    }
+  }, []);
+
+  // Calculate trial days left (this would normally come from your backend/database)
+  useEffect(() => {
+    // For demo purposes, we'll simulate a trial that started 2 days ago
+    // In a real app, you'd fetch this from your user's trial data
+    const trialStartDate = new Date();
+    trialStartDate.setDate(trialStartDate.getDate() - 2); // Started 2 days ago
+    
+    const calculateDaysLeft = () => {
+      const now = new Date();
+      const trialEndDate = new Date(trialStartDate);
+      trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
+      
+      const timeDiff = trialEndDate.getTime() - now.getTime();
+      const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      return Math.max(0, daysLeft);
+    };
+    
+    setTrialDaysLeft(calculateDaysLeft());
+    
+    // Update every hour
+    const interval = setInterval(() => {
+      setTrialDaysLeft(calculateDaysLeft());
+    }, 3600000); // 1 hour
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -92,6 +89,86 @@ export default function DashboardPage() {
             <Notifications />
           </div>
         </div>
+
+        {/* Scholar Features Status - Compact Square Card */}
+        {trialDaysLeft > 0 && (
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10 p-4 border border-purple-200/20 dark:border-purple-800/20 mb-4 max-w-sm mt-2">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5 opacity-50"></div>
+          <div className="relative">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-blue-600 flex-shrink-0">
+                <Crown className="size-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0 text-xs">
+                    Scholar Active
+                  </Badge>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Days Left */}
+            <div className="text-center mb-3">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+                {trialDaysLeft}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-300">
+                {trialDaysLeft === 1 ? 'day left' : 'days left'} in trial
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <span>Progress</span>
+                <span>{Math.round(((14 - trialDaysLeft) / 14) * 100)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-purple-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${((14 - trialDaysLeft) / 14) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 h-8 text-xs font-medium"
+                asChild
+              >
+                <Link href="/pricing">
+                  Upgrade
+                </Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 h-8 text-xs"
+                onClick={() => {
+                  // Enable demo mode when accessing features
+                  const { setIsDemoMode } = useChatStore.getState();
+                  setIsDemoMode(true);
+                }}
+                asChild
+              >
+                <Link href="/dashboard/advanced">
+                  Features
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        )}
+
+        {/* Today's Focus Section */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+        </div>
+
 
         {/* Compact Welcome Section - Mobile Optimized */}
         <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-3 sm:p-4 lg:p-6 xl:p-8 border border-primary/20 mb-4 sm:mb-6">
@@ -235,53 +312,6 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Quick Actions - Mobile Optimized */}
-        <div>
-          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 lg:mb-6">
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">Quick Actions</h2>
-            <Badge variant="outline" className="text-xs">Get Started</Badge>
-          </div>
-          <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {quickActionCards.map((card, index) => (
-              <Card key={card.title} className="group relative overflow-hidden border-0 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 hover:bg-card/80">
-                <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-                <CardContent className="relative p-3 sm:p-4 lg:p-6">
-                  <div className="flex items-start justify-between mb-2 sm:mb-3 lg:mb-4">
-                    <div className={`p-1.5 sm:p-2 lg:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-lg flex-shrink-0`}>
-                      {card.icon}
-                    </div>
-                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary flex-shrink-0">
-                      {card.stats}
-                    </Badge>
-                  </div>
-                  
-                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-1 sm:mb-2 group-hover:text-primary transition-colors">
-                    {card.title}
-                  </h3>
-                  <p className="text-muted-foreground mb-2 sm:mb-3 lg:mb-4 text-xs sm:text-sm leading-relaxed">
-                    {card.description}
-                  </p>
-                  
-                  <div className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 lg:mb-6">
-                    {card.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
-                        <div className="w-1 h-1 rounded-full bg-primary flex-shrink-0"></div>
-                        <span className="truncate">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <Button asChild className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-0 h-12 sm:h-11 text-sm sm:text-base font-medium min-h-[48px] sm:min-h-[44px]" variant="default">
-                    <Link href={card.href} className="flex items-center justify-center gap-2 font-medium text-sm sm:text-base">
-                      {card.buttonText}
-                      <ArrowRight className="size-3 sm:size-4 group-hover:translate-x-1 transition-transform duration-300" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
 
         {/* Bottom Section - Mobile Optimized */}
         <div className="grid gap-6 lg:gap-8 lg:grid-cols-1">

@@ -320,7 +320,7 @@ export default function TermsPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/dashboard">
-                  <Button size="lg">
+                  <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
                     Accept Terms & Get Started <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>

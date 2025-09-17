@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { GoogleCalendarIntegration } from '@/components/google-calendar-integration';
-import { SpotifyIntegration } from '@/components/spotify-integration';
+import { EnhancedSpotifyIntegration } from '@/components/enhanced-spotify-integration';
 import { AdvancedAITutor } from '@/components/advanced-ai-tutor';
 import { GradePredictionSystem } from '@/components/grade-prediction-system';
 import { EnhancedStudyGroups } from '@/components/enhanced-study-groups';
@@ -92,16 +92,20 @@ export default function AdvancedDashboard() {
   
   const [activeTab, setActiveTab] = useState('overview');
   const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
+  const [trialDaysLeft, setTrialDaysLeft] = useState(12); // Trial days remaining
   const { isDemoMode, setIsDemoMode } = useChatStore();
   
-  // Redirect if demo mode is disabled and user doesn't have subscription
+  // Check if user has Scholar Features access (trial or subscription)
   useEffect(() => {
-    if (!isDemoMode) {
-      // In a real app, you would check subscription status here
-      // For now, redirect to dashboard if not in demo mode
+    // For demo purposes, we'll allow access if user has trial days left
+    // In a real app, you would check subscription status here
+    const hasScholarAccess = isDemoMode || trialDaysLeft > 0;
+    
+    if (!hasScholarAccess) {
+      // Only redirect if user truly doesn't have access
       window.location.href = '/dashboard';
     }
-  }, [isDemoMode]);
+  }, [isDemoMode, trialDaysLeft]);
   const [stats, setStats] = useState<DashboardStats>({
     studyTimeToday: 2.5,
     assignmentsCompleted: 8,
@@ -480,7 +484,7 @@ export default function AdvancedDashboard() {
           <TabsContent value="calendar">
             <div className="space-y-6">
               <GoogleCalendarIntegration courses={['CS-101', 'MATH-201', 'BIO-101']} />
-              <SpotifyIntegration />
+              <EnhancedSpotifyIntegration />
             </div>
           </TabsContent>
 
