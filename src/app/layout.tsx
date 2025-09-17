@@ -7,18 +7,47 @@ import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: 'CourseConnect - AI College Platform',
-  description: 'Your unified platform for college success.',
+  description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
+  keywords: ['college', 'AI', 'study', 'education', 'platform', 'academic'],
+  authors: [{ name: 'CourseConnect' }],
+  creator: 'CourseConnect',
+  publisher: 'CourseConnect',
   manifest: '/manifest.json',
+  openGraph: {
+    title: 'CourseConnect - AI College Platform',
+    description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
+    url: 'https://courseconnect-sooty.vercel.app',
+    siteName: 'CourseConnect',
+    images: [
+      {
+        url: '/courseconnect-favicon.svg',
+        width: 32,
+        height: 32,
+        alt: 'CourseConnect Logo',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'CourseConnect - AI College Platform',
+    description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
+    images: ['/courseconnect-favicon.svg'],
+  },
   icons: {
     icon: [
-      { url: '/courseconnect-favicon.svg?v=3', type: 'image/svg+xml' }
+      { url: '/courseconnect-favicon.svg?v=4', type: 'image/svg+xml' },
+      { url: '/courseconnect-favicon.svg?v=4', sizes: '32x32', type: 'image/svg+xml' },
+      { url: '/courseconnect-favicon.svg?v=4', sizes: '16x16', type: 'image/svg+xml' }
     ],
     apple: [
-      { url: '/apple-touch-icon.svg?v=3', sizes: '180x180', type: 'image/svg+xml' },
-      { url: '/apple-touch-icon.svg?v=3', sizes: '152x152', type: 'image/svg+xml' },
-      { url: '/apple-touch-icon.svg?v=3', sizes: '120x120', type: 'image/svg+xml' },
-      { url: '/apple-touch-icon.svg?v=3', sizes: '76x76', type: 'image/svg+xml' }
-    ]
+      { url: '/apple-touch-icon.svg?v=4', sizes: '180x180', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=4', sizes: '152x152', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=4', sizes: '120x120', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.svg?v=4', sizes: '76x76', type: 'image/svg+xml' }
+    ],
+    shortcut: '/courseconnect-favicon.svg?v=4'
   }
 };
 
@@ -33,12 +62,25 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
-        <link rel="icon" href="/courseconnect-favicon.svg?v=3" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/courseconnect-favicon.svg?v=3" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="180x180" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="152x152" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="120x120" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=3" sizes="76x76" />
+        
+        {/* Favicon and Icons */}
+        <link rel="icon" href="/courseconnect-favicon.svg?v=4" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/courseconnect-favicon.svg?v=4" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=4" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=4" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=4" sizes="120x120" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.svg?v=4" sizes="76x76" />
+        
+        {/* Additional Meta Tags */}
+        <meta name="application-name" content="CourseConnect" />
+        <meta name="apple-mobile-web-app-title" content="CourseConnect" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content="#3b82f6" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        
+        {/* Cache Control */}
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />

@@ -6,10 +6,10 @@ const emailSubscribers: string[] = [];
 
 // Email configuration
 const transporter = nodemailer.createTransport({
-  service: 'outlook', // Changed to Outlook - easier setup
+  service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Your email
-    pass: process.env.EMAIL_PASS, // Your email password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -31,10 +31,36 @@ async function sendWelcomeEmail(email: string) {
       to: email,
       subject: 'Welcome to CourseConnect! 🎓',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">Welcome to CourseConnect!</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your AI-powered study companion</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to CourseConnect</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <div style="display: inline-block; margin-bottom: 15px;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
+                <defs>
+                  <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#f0f9ff;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+                <rect width="60" height="60" rx="12" fill="url(#grad1)"/>
+                <g>
+                  <path d="M 15 15 C 21 9, 39 51, 45 45" stroke="#3b82f6" stroke-width="4.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M 15 45 C 21 51, 39 9, 45 15" stroke="#3b82f6" stroke-width="4.8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                  <circle cx="15" cy="15" r="2.4" fill="#3b82f6" />
+                  <circle cx="45" cy="45" r="2.4" fill="#3b82f6" />
+                  <circle cx="15" cy="45" r="2.4" fill="#3b82f6" />
+                  <circle cx="45" cy="15" r="2.4" fill="#3b82f6" />
+                </g>
+              </svg>
+            </div>
+            <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to CourseConnect!</h1>
+            <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">Your AI-powered study companion</p>
           </div>
           
           <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -56,9 +82,10 @@ async function sendWelcomeEmail(email: string) {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002'}/dashboard" 
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://courseconnect-sooty.vercel.app'}/dashboard" 
+                 target="_blank"
                  style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-                Get Started Now
+                🚀 Get Started Now
               </a>
             </div>
             
