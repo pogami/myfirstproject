@@ -170,11 +170,11 @@ export default function ChatPage() {
             // Get AI response with error handling and timeout
             let aiResponse;
             try {
-                const { getInDepthAnalysis } = await import("@/ai/services/dual-ai-service");
+                const { getInDepthAnalysis } = await import("@/ai/services/simple-ai-service");
                 
                 // Add timeout to prevent long waits
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('AI response timeout')), 30000)
+                    setTimeout(() => reject(new Error('AI response timeout')), 10000)
                 );
                 
                 const aiPromise = getInDepthAnalysis({
@@ -212,6 +212,8 @@ export default function ChatPage() {
                     } else {
                         messageText = 'I apologize, but I couldn\'t generate a proper response.';
                     }
+                } else {
+                    messageText = 'I apologize, but I couldn\'t generate a proper response.';
                 }
             } else if (typeof aiResponse === 'string') {
                 messageText = aiResponse;
@@ -359,7 +361,7 @@ export default function ChatPage() {
 
                     {generalChat && (
                         <TabsContent value="general-chat" className="mt-0">
-                            <Card className="h-[600px] flex flex-col overflow-hidden">
+                            <Card className="h-[600px] flex flex-col overflow-hidden relative">
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
@@ -389,7 +391,7 @@ export default function ChatPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
-                                    <ScrollArea className="flex-1 px-6 min-h-0" ref={scrollAreaRef}>
+                                    <ScrollArea className="flex-1 px-6 pb-20" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {generalChat.messages.map((message, index) => (
                                                 <div key={message.id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -430,7 +432,7 @@ export default function ChatPage() {
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background sticky bottom-0">
+                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background absolute bottom-0 left-0 right-0 z-10">
                                         <div className="flex gap-2">
                                             <MobileInput
                                                 value={inputValue}
@@ -497,7 +499,7 @@ export default function ChatPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex-1 flex flex-col p-0">
-                                    <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
+                                    <ScrollArea className="flex-1 px-6 pb-20" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {chat.messages.map((message, index) => (
                                                 <div key={message.id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
