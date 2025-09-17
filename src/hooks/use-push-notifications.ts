@@ -89,9 +89,15 @@ export function usePushNotifications() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log('Starting push notification subscription...');
+      
       // Register service worker
       const registration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service Worker registered:', registration);
+
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+      console.log('Service Worker is ready');
 
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
@@ -100,6 +106,8 @@ export function usePushNotifications() {
           process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BBNTISOni2FGyolL0qVJVJpnMV0d2q7U7uCxF20qT-KOmP_dSj8Q927pJS5CKuHa8BQ20-miUmfDAbThgbdP2YA'
         )
       });
+
+      console.log('Push subscription created:', subscription);
 
       // Send subscription to server
       const response = await fetch('/api/push-notifications/subscribe', {
@@ -110,7 +118,12 @@ export function usePushNotifications() {
         body: JSON.stringify(subscription)
       });
 
+      console.log('Server response:', response.status, response.statusText);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('Subscription saved successfully:', result);
+        
         setState(prev => ({
           ...prev,
           isSubscribed: true,
@@ -119,14 +132,16 @@ export function usePushNotifications() {
         }));
         return true;
       } else {
-        throw new Error('Failed to save subscription');
+        const errorData = await response.json();
+        console.error('Failed to save subscription:', errorData);
+        throw new Error(`Server error: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Push subscription error:', error);
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Failed to subscribe to push notifications'
+        error: `Failed to subscribe: ${error.message}`
       }));
       return false;
     }
@@ -184,6 +199,8 @@ export function usePushNotifications() {
     }
 
     try {
+      console.log('Sending test notification...');
+      
       const response = await fetch('/api/push-notifications/send', {
         method: 'POST',
         headers: {
@@ -197,14 +214,20 @@ export function usePushNotifications() {
         })
       });
 
+      console.log('Test notification response:', response.status, response.statusText);
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('Test notification sent successfully:', result);
         return true;
       } else {
-        throw new Error('Failed to send test notification');
+        const errorData = await response.json();
+        console.error('Failed to send test notification:', errorData);
+        throw new Error(`Server error: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Test notification error:', error);
-      setState(prev => ({ ...prev, error: 'Failed to send test notification' }));
+      setState(prev => ({ ...prev, error: `Failed to send test notification: ${error.message}` }));
       return false;
     }
   }, [state.isSubscribed]);
