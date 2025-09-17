@@ -15,6 +15,7 @@ import { Hero } from "@/components/hero";
 import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/site-footer";
+import { useState, useEffect } from "react";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -27,6 +28,17 @@ const popularClasses = [
 
 export default function LandingPage() {
     const { toast } = useToast();
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollTop = window.scrollY;
+            setIsScrolled(scrollTop > 50);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     return (
         <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
@@ -54,7 +66,12 @@ export default function LandingPage() {
                     }
                 `}
             </style>
-            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
+            <header className={cn(
+                "sticky top-0 z-50 w-full border-b border-border/40 transition-all duration-300",
+                isScrolled 
+                    ? "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm" 
+                    : "bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent"
+            )}>
                 <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
                     <Link href="/home" className="flex items-center gap-2 sm:gap-3">
                         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
