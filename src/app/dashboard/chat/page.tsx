@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { MobileInput } from "@/components/ui/mobile-input";
+import { ChatConstruction } from "@/components/chat-construction";
 
 export default function ChatPage() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat } = useChatStore();
@@ -30,6 +31,7 @@ export default function ChatPage() {
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const { toast } = useToast();
+    const [isAdmin, setIsAdmin] = useState(false);
 
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
@@ -44,6 +46,21 @@ export default function ChatPage() {
             console.warn('Failed to initialize auth listener:', error);
         }
     }, [initializeAuthListener]);
+
+    // Check if user is admin (you)
+    useEffect(() => {
+        if (user) {
+            // Replace with your actual email or user ID
+            const adminEmails = [
+                'kawai@example.com', // Replace with your actual email
+                'admin@courseconnect.com',
+                'developer@courseconnect.com'
+            ];
+            setIsAdmin(adminEmails.includes(user.email?.toLowerCase() || ''));
+        } else {
+            setIsAdmin(false);
+        }
+    }, [user]);
 
     // Handle online/offline state changes
     useEffect(() => {
@@ -323,6 +340,11 @@ export default function ChatPage() {
                 <LoadingSpinner size="xl" text="Loading Chat..." />
             </div>
         );
+    }
+
+    // Show construction page for non-admin users
+    if (!isAdmin) {
+        return <ChatConstruction />;
     }
 
     return (

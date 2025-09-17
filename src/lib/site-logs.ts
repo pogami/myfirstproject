@@ -18,6 +18,23 @@ export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
       date: "2025-09-16",
+      version: "v2.9.0",
+      changes: [
+        "🚧 Class Chat temporarily under construction for quality improvements",
+        "Added beautiful construction page with feature previews and progress indicators",
+        "Implemented admin-only access to chat functionality during development",
+        "Enhanced mobile responsiveness with dedicated construction UI",
+        "Added subscription system for construction updates and notifications",
+        "Fixed chat container overflow and positioning issues",
+        "Improved AI response speed and reliability with simplified service",
+        "Added comprehensive error handling and fallback responses"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-09-16",
       version: "v2.8.0",
       changes: [
         "Improved chat input clearing behavior for better user experience",
