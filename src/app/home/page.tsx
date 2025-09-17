@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { ChevronUp, Menu } from "lucide-react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -897,6 +898,9 @@ export default function LandingPage() {
                     </Button>
                 </div>
             )}
+            
+            {/* PWA Install Prompt */}
+            <PWAInstallPrompt />
         </div>
     );
 }

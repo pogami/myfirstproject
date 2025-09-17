@@ -1,0 +1,52 @@
+<!-- CourseConnect App Icon Generator -->
+<!-- This creates a simple app icon for CourseConnect -->
+
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#gradient)"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Inner gradient for the C -->
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f0f9ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main C Shape -->
+  <path d="M 150 150 C 150 100, 200 50, 250 50 C 300 50, 350 100, 350 150 C 350 200, 350 250, 350 300 C 350 350, 300 400, 250 400 C 200 400, 150 350, 150 300 C 150 250, 150 200, 150 150 Z" 
+        fill="url(#innerGradient)" 
+        stroke="#ffffff" 
+        stroke-width="8" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Connection lines inside the C -->
+  <path d="M 200 200 C 220 180, 240 180, 260 200" 
+        stroke="#3b82f6" 
+        stroke-width="12" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <path d="M 200 300 C 220 320, 240 320, 260 300" 
+        stroke="#3b82f6" 
+        stroke-width="12" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Connection dots -->
+  <circle cx="200" cy="200" r="8" fill="#3b82f6"/>
+  <circle cx="260" cy="200" r="8" fill="#3b82f6"/>
+  <circle cx="200" cy="300" r="8" fill="#3b82f6"/>
+  <circle cx="260" cy="300" r="8" fill="#3b82f6"/>
+  
+  <!-- Central connection -->
+  <circle cx="230" cy="250" r="12" fill="#ffffff"/>
+  <circle cx="230" cy="250" r="6" fill="#3b82f6"/>
+</svg>

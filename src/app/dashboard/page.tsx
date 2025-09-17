@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useState, useEffect } from "react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 
 
 
@@ -370,6 +371,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

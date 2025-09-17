@@ -1,41 +1,96 @@
 {
   "name": "CourseConnect - AI College Platform",
   "short_name": "CourseConnect",
-  "description": "Your unified platform for college success.",
-  "start_url": "/",
+  "description": "AI-powered study companion for college students with chat, syllabus analysis, and collaborative features",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/courseconnect-favicon.svg?v=3",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/apple-touch-icon.svg?v=3",
-      "sizes": "180x180",
+      "src": "/icons/icon-192x192.svg",
+      "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/apple-touch-icon.svg?v=3",
-      "sizes": "152x152",
+      "src": "/icons/icon-512x512.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/apple-touch-icon.svg?v=3",
-      "sizes": "120x120",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/apple-touch-icon.svg?v=3",
-      "sizes": "76x76",
-      "type": "image/svg+xml",
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon",
       "purpose": "any"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-dashboard.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/mobile-chat.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/desktop-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Class Chat",
+      "short_name": "Chat",
+      "description": "Access class chat and AI assistance",
+      "url": "/dashboard/chat",
+      "icons": [
+        {
+          "src": "/icons/chat-icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Upload Syllabus",
+      "short_name": "Upload",
+      "description": "Upload and analyze course syllabus",
+      "url": "/dashboard/upload",
+      "icons": [
+        {
+          "src": "/icons/upload-icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Study Groups",
+      "short_name": "Groups",
+      "description": "Join study groups and collaborate",
+      "url": "/dashboard/groups",
+      "icons": [
+        {
+          "src": "/icons/groups-icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
