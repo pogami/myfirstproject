@@ -15,20 +15,20 @@ export const metadata: Metadata = {
     url: "https://www.courseconnectai.com",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
-    images: [
-      {
-        url: "https://www.courseconnectai.com/courseconnect-logo-profile.png?v=5",
-        width: 1200,
-        height: 630,
-        alt: "CourseConnect Logo",
-      },
-    ],
+        images: [
+          {
+            url: "https://www.courseconnectai.com/test-logo.png?v=6",
+            width: 1200,
+            height: 630,
+            alt: "CourseConnect Logo",
+          },
+        ],
   },
   twitter: {
     card: "summary_large_image",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
-    images: ["https://www.courseconnectai.com/courseconnect-logo-profile.png?v=5"],
+    images: ["https://www.courseconnectai.com/test-logo.png?v=6"],
   },
   icons: {
     icon: [
