@@ -8,7 +8,7 @@ import { FirebaseConnectionManager } from "@/components/firebase-connection-mana
 import { ThemeProvider } from "@/contexts/theme-context";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://courseconnect-sooty.vercel.app'),
+  metadataBase: new URL('https://www.courseconnectai.com'),
   title: 'CourseConnect - AI College Platform',
   description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
   keywords: ['college', 'AI', 'study', 'education', 'platform', 'academic'],
@@ -19,13 +19,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'CourseConnect - AI College Platform',
     description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
-    url: 'https://courseconnect-sooty.vercel.app',
+    url: 'https://www.courseconnectai.com',
     siteName: 'CourseConnect',
     images: [
       {
-        url: '/courseconnect-favicon.svg',
-        width: 32,
-        height: 32,
+        url: '/courseconnect-logo-profile.svg',
+        width: 1200,
+        height: 630,
         alt: 'CourseConnect Logo',
       },
     ],
@@ -33,10 +33,10 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'CourseConnect - AI College Platform',
     description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
-    images: ['/courseconnect-favicon.svg'],
+    images: ['/courseconnect-logo-profile.svg'],
   },
   icons: {
     icon: [
