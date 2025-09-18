@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     description: "Your unified platform for college success with AI-powered study tools",
         images: [
           {
-            url: "https://www.courseconnectai.com/test-logo.png?v=6",
+            url: "https://www.courseconnectai.com/final-logo.png?v=7",
             width: 1200,
             height: 630,
             alt: "CourseConnect Logo",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
-    images: ["https://www.courseconnectai.com/test-logo.png?v=6"],
+    images: ["https://www.courseconnectai.com/final-logo.png?v=7"],
   },
   icons: {
     icon: [
