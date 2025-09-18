@@ -20,6 +20,12 @@ export const metadata: Metadata = {
   verification: {
     google: 'your-google-verification-code',
   },
+  other: {
+    'og:image:width': '1200',
+    'og:image:height': '630',
+    'og:image:type': 'image/svg+xml',
+    'og:image:alt': 'CourseConnect Logo',
+  },
   openGraph: {
     title: 'CourseConnect - AI College Platform',
     description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
@@ -27,9 +33,15 @@ export const metadata: Metadata = {
     siteName: 'CourseConnect',
     images: [
       {
-        url: '/icons/icon-512x512.svg?v=2',
+        url: '/courseconnect-logo-profile.svg?v=3',
         width: 1200,
         height: 630,
+        alt: 'CourseConnect Logo',
+      },
+      {
+        url: '/icons/icon-512x512.svg?v=3',
+        width: 512,
+        height: 512,
         alt: 'CourseConnect Logo',
       },
     ],
@@ -40,7 +52,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'CourseConnect - AI College Platform',
     description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
-    images: ['/icons/icon-512x512.svg?v=2'],
+    images: ['/courseconnect-logo-profile.svg?v=3'],
   },
   icons: {
     icon: [
