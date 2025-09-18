@@ -34,6 +34,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { OnboardingSlideshow } from "@/components/onboarding-slideshow";
+import { FirebaseOfflineDisabler } from "@/components/firebase-offline-disabler";
+import { FirebaseConnectionMonitor } from "@/components/firebase-connection-monitor";
+import { FirebaseConnectionManager } from "@/components/firebase-connection-manager";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 function AnnouncementBanner() {
   const [isVisible, setIsVisible] = useState(true);
@@ -90,9 +95,10 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
-    // Safely handle auth state
+    // Safely handle auth state and guest users
     try {
       if (auth && typeof auth.onAuthStateChanged === 'function') {
         console.log('Dashboard: Setting up auth state listener');
@@ -100,27 +106,74 @@ export default function DashboardLayout({
           (user: any) => {
             console.log('Dashboard: Auth state changed - user:', user ? 'authenticated' : 'not authenticated');
             setUser(user);
+            // If no Firebase user, check for guest user in localStorage
+            if (!user) {
+              const guestUserData = localStorage.getItem('guestUser');
+              if (guestUserData) {
+                try {
+                  const guestUser = JSON.parse(guestUserData);
+                  console.log("Dashboard: Found guest user in localStorage:", guestUser);
+                  setUser(guestUser);
+                } catch (error) {
+                  console.warn("Dashboard: Error parsing guest user data:", error);
+                }
+              }
+            }
             setLoading(false);
             setError(null);
           },
           (error: any) => {
             console.warn("Dashboard: Auth state error:", error);
             setUser(null);
+            // Check for guest user even on auth error
+            const guestUserData = localStorage.getItem('guestUser');
+            if (guestUserData) {
+              try {
+                const guestUser = JSON.parse(guestUserData);
+                console.log("Dashboard: Found guest user after auth error:", guestUser);
+                setUser(guestUser);
+              } catch (error) {
+                console.warn("Dashboard: Error parsing guest user data:", error);
+              }
+            }
             setLoading(false);
             setError(error);
           }
         );
         return unsubscribe;
       } else {
-        console.warn('Dashboard: Auth not available, using mock mode');
-        // Mock auth - no user
-        setUser(null);
+        console.warn('Dashboard: Auth not available, checking for guest user');
+        // Check for guest user when auth is not available
+        const guestUserData = localStorage.getItem('guestUser');
+        if (guestUserData) {
+          try {
+            const guestUser = JSON.parse(guestUserData);
+            console.log("Dashboard: Found guest user when auth unavailable:", guestUser);
+            setUser(guestUser);
+          } catch (error) {
+            console.warn("Dashboard: Error parsing guest user data:", error);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
         setLoading(false);
         setError(null);
       }
     } catch (authError) {
       console.warn("Dashboard: Auth initialization error:", authError);
       setUser(null);
+      // Check for guest user even on initialization error
+      const guestUserData = localStorage.getItem('guestUser');
+      if (guestUserData) {
+        try {
+          const guestUser = JSON.parse(guestUserData);
+          console.log("Dashboard: Found guest user after init error:", guestUser);
+          setUser(guestUser);
+        } catch (error) {
+          console.warn("Dashboard: Error parsing guest user data:", error);
+        }
+      }
       setLoading(false);
       setError(authError);
     }
@@ -167,13 +220,18 @@ export default function DashboardLayout({
     }
   }, [user, loading, router, pathname]);
 
+  // Check for onboarding flag
   useEffect(() => {
-    // Show upgrade modal for guests with 2 or more classes
-    if (isGuest && Object.keys(chats).length >= 2 && !pathname.startsWith('/dashboard/upload')) {
-      // Small delay to prevent flash of content
-      setTimeout(() => setShowUpgrade(true), 100);
+    if (!loading && user) {
+      const shouldShowOnboarding = localStorage.getItem('showOnboarding');
+      if (shouldShowOnboarding === 'true') {
+        setShowOnboarding(true);
+        localStorage.removeItem('showOnboarding');
+      }
     }
-  }, [isGuest, chats, pathname, setShowUpgrade]);
+  }, [user, loading]);
+
+  // Guest users can now upload unlimited syllabi without restrictions
 
 
    if (loading) {
@@ -205,21 +263,8 @@ export default function DashboardLayout({
     );
   }
   
-  // This logic is for guest users.
-  if (!user && (isGuest || guestUser)) {
-      if (Object.keys(chats).length >= 2 && pathname !== '/dashboard/upload' && pathname !== '/dashboard/chat') {
-          router.push('/login?state=signup');
-          return (
-            <div className="flex h-screen items-center justify-center bg-transparent">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-muted border-t-primary mx-auto mb-4"></div>
-                <h2 className="text-lg font-semibold mb-2">Redirecting to Sign Up</h2>
-                <p className="text-sm text-muted-foreground">Please wait while we redirect you...</p>
-              </div>
-            </div>
-          );
-      }
-  }
+  // Allow guest users to access the dashboard without restrictions
+  // Guest users can explore the platform freely
 
 
   return (
@@ -393,11 +438,14 @@ export default function DashboardLayout({
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="h-8 w-8" />
-                <Link href="/home" className="flex items-center gap-2">
+                <Link href="/dashboard" className="flex items-center gap-2">
                   <h1 className="text-lg font-bold text-primary tracking-tight">CourseConnect</h1>
                 </Link>
               </div>
-              <DashboardHeader user={user || guestUser} />
+              <div className="flex items-center gap-3">
+                <ThemeToggle variant="ghost" size="sm" />
+                <DashboardHeader user={user || guestUser} />
+              </div>
             </div>
           </header>
           
@@ -408,29 +456,17 @@ export default function DashboardLayout({
           </main>
         </SidebarInset>
 
-        <AlertDialog open={showUpgrade} onOpenChange={setShowUpgrade}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-               <div className="flex justify-center">
-                <div className="rounded-full bg-primary/10 p-3 border-2 border-primary/20">
-                  <AlertTriangle className="h-8 w-8 text-primary" />
-                </div>
-              </div>
-              <AlertDialogTitle className="text-center text-2xl">Create an Account to Continue</AlertDialogTitle>
-              <AlertDialogDescription className="text-center">
-                You've used your 2 free syllabus uploads. Please create a free account to save your classes and unlock unlimited access.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col gap-2">
-              <AlertDialogAction asChild className="w-full">
-                <Link href="/login?state=signup">Create Account</Link>
-              </AlertDialogAction>
-              <AlertDialogCancel asChild className="w-full mt-0">
-                 <Link href="/home">Maybe Later</Link>
-              </AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Onboarding Slideshow */}
+        <OnboardingSlideshow 
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={() => setShowOnboarding(false)}
+        />
+        
+        {/* Firebase Connection Management */}
+        <FirebaseOfflineDisabler />
+        <FirebaseConnectionMonitor />
+        <FirebaseConnectionManager />
       </SidebarProvider>
   );
 }

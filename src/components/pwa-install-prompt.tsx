@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Download, Smartphone, Monitor, X, CheckCircle, Info } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -13,6 +14,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallPrompt() {
+  const isMobile = useIsMobile();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -90,8 +92,8 @@ export function PWAInstallPrompt() {
     sessionStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show if already installed or dismissed this session
-  if (isInstalled || !showInstallPrompt || sessionStorage.getItem('pwa-install-dismissed')) {
+  // Don't show if already installed, dismissed this session, or not on mobile
+  if (isInstalled || !showInstallPrompt || sessionStorage.getItem('pwa-install-dismissed') || !isMobile) {
     return null;
   }
 

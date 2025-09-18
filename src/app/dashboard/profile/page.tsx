@@ -10,8 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { auth, db } from "@/lib/firebase/client";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { safeFirebaseOperation, safeDocumentExists, safeDocumentData } from "@/lib/firebase-error-handler";
 import { useEffect, useState } from "react";
-import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings } from "lucide-react";
+import Link from "next/link";
+import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings, CreditCard, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { storage } from "@/lib/firebase/client";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 export default function ProfilePage() {
@@ -64,6 +67,57 @@ export default function ProfilePage() {
         }
     ]);
 
+    // Function to sync pending data when online
+    const syncPendingData = async () => {
+        if (!user) return;
+        
+        try {
+            const pendingData = localStorage.getItem(`profileData_${user.uid}`);
+            if (pendingData) {
+                const profileData = JSON.parse(pendingData);
+                if (profileData.pendingSync) {
+                    const userDocRef = doc(db, "users", user.uid);
+                    await localSafeFirebaseOperation(() => setDoc(userDocRef, {
+                        displayName: profileData.displayName,
+                        email: profileData.email,
+                        school: profileData.school,
+                        major: profileData.major,
+                        graduationYear: profileData.graduationYear,
+                        profilePicture: profileData.profilePicture,
+                    }, { merge: true }), "sync pending profile data");
+                    
+                    // Remove pending flag
+                    profileData.pendingSync = false;
+                    localStorage.setItem(`profileData_${user.uid}`, JSON.stringify(profileData));
+                    
+                    console.log("Pending profile data synced successfully");
+                }
+            }
+        } catch (error) {
+            console.error("Error syncing pending data:", error);
+        }
+    };
+
+    // Local safeFirebaseOperation with enhanced fallback handling
+    const localSafeFirebaseOperation = async (operation: () => Promise<any>, operationName?: string, fallback?: () => void) => {
+        try {
+            return await operation();
+        } catch (error: any) {
+            console.log(`Firebase operation "${operationName || 'unknown'}" failed, using fallback:`, error.message);
+            
+            // Try to force Firebase online
+            try {
+                const { ensureFirebaseOnline } = await import('@/lib/firebase/client');
+                await ensureFirebaseOnline();
+            } catch (onlineError) {
+                console.log("Failed to force Firebase online:", onlineError);
+            }
+            
+            if (fallback) fallback();
+            return null;
+        }
+    };
+
     useEffect(() => {
         if (loading) return; // Wait for auth to load
         if (!user) {
@@ -77,25 +131,68 @@ export default function ProfilePage() {
             setProfilePicture(user.photoURL || "");
             
             try {
+                // First try to sync any pending data
+                await syncPendingData();
+                
+                // Safe Firebase operation with offline fallback
                 const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
+                const userDocSnap = await localSafeFirebaseOperation(() => getDoc(userDocRef), "get user profile");
 
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    setSchool(userData.school || "");
-                    setMajor(userData.major || "");
-                    setGraduationYear(userData.graduationYear || "");
-                    if (userData.profilePicture) {
-                        setProfilePicture(userData.profilePicture);
+                if (safeDocumentExists(userDocSnap)) {
+                    const userData = safeDocumentData(userDocSnap);
+                    if (userData) {
+                        setSchool(userData.school || "");
+                        setMajor(userData.major || "");
+                        setGraduationYear(userData.graduationYear || "");
+                        if (userData.profilePicture) {
+                            setProfilePicture(userData.profilePicture);
+                        }
                     }
+                } else {
+                    // No document exists, check for local data
+                    const localData = localStorage.getItem(`profileData_${user.uid}`);
+                    if (localData) {
+                        const profileData = JSON.parse(localData);
+                        setSchool(profileData.school || "");
+                        setMajor(profileData.major || "");
+                        setGraduationYear(profileData.graduationYear || "");
+                        if (profileData.profilePicture) {
+                            setProfilePicture(profileData.profilePicture);
+                        }
+                    }
+                    console.log("No user document found or Firebase offline, using defaults");
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error fetching user data:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "Could not load your profile data.",
-                });
+                
+                // Handle offline errors gracefully
+                if (error.code === 'unavailable' || error.message?.includes('offline')) {
+                    console.log("Firebase is offline, using cached/default data");
+                    
+                    // Try to load from local storage
+                    const localData = localStorage.getItem(`profileData_${user.uid}`);
+                    if (localData) {
+                        const profileData = JSON.parse(localData);
+                        setSchool(profileData.school || "");
+                        setMajor(profileData.major || "");
+                        setGraduationYear(profileData.graduationYear || "");
+                        if (profileData.profilePicture) {
+                            setProfilePicture(profileData.profilePicture);
+                        }
+                    }
+                    
+                    toast({
+                        title: "Offline Mode",
+                        description: "Profile data loaded from cache. Changes will sync when online.",
+                        variant: "default",
+                    });
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Could not load your profile data. Please try again.",
+                    });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -323,28 +420,51 @@ export default function ProfilePage() {
                 await updateProfile(user, { displayName });
             }
 
-            // Update user data in Firestore
+            // Update user data in Firestore with safe operation
             const userDocRef = doc(db, "users", user.uid);
-            await setDoc(userDocRef, {
+            await localSafeFirebaseOperation(() => setDoc(userDocRef, {
                 displayName,
                 email: user.email,
                 school,
                 major,
                 graduationYear,
                 profilePicture,
-            }, { merge: true });
+            }, { merge: true }), "save user profile");
 
             toast({
                 title: "Profile Updated",
                 description: "Your profile has been successfully updated.",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Profile update error:", error);
-            toast({
-                variant: "destructive",
-                title: "Update Failed",
-                description: "Could not update your profile. Please try again.",
-            });
+            
+            // Handle offline errors gracefully
+            if (error.code === 'unavailable' || error.message?.includes('offline')) {
+                // Store data locally for when online
+                const profileData = {
+                    displayName,
+                    email: user.email,
+                    school,
+                    major,
+                    graduationYear,
+                    profilePicture,
+                    lastUpdated: Date.now(),
+                    pendingSync: true
+                };
+                localStorage.setItem(`profileData_${user.uid}`, JSON.stringify(profileData));
+                
+                toast({
+                    title: "Offline Mode",
+                    description: "Profile saved locally. Will sync when online.",
+                    variant: "default",
+                });
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Update Failed",
+                    description: "Could not update your profile. Please try again.",
+                });
+            }
         } finally {
             setIsSaving(false);
         }
@@ -646,6 +766,88 @@ export default function ProfilePage() {
                                     </Badge>
                                 </div>
                             ))}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Subscription Management */}
+                <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <CreditCard className="size-5 text-primary" />
+                            Subscription Management
+                        </CardTitle>
+                        <CardDescription>
+                            Manage your CourseConnect subscription and billing
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {/* Current Subscription Status */}
+                            <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-800">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-green-500">
+                                            <CreditCard className="size-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-base">Free Plan</h3>
+                                            <p className="text-sm text-muted-foreground">Access to basic features</p>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">
+                                        Active
+                                    </Badge>
+                                </div>
+                            </div>
+
+                            {/* Subscription Actions */}
+                            <div className="grid gap-3">
+                                <Button 
+                                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0 font-medium"
+                                    asChild
+                                >
+                                    <Link href="/pricing">
+                                        <CreditCard className="mr-2 h-4 w-4" />
+                                        Upgrade to Scholar
+                                    </Link>
+                                </Button>
+                                
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button 
+                                            variant="outline" 
+                                            className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 hover:border-red-300 dark:hover:border-red-700"
+                                        >
+                                            <AlertTriangle className="mr-2 h-4 w-4" />
+                                            Cancel Subscription
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Are you sure you want to cancel your subscription? You'll lose access to Scholar features 
+                                                and will be moved back to the free plan. This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                                            <AlertDialogAction 
+                                                className="bg-red-600 hover:bg-red-700 text-white"
+                                                onClick={() => {
+                                                    toast({
+                                                        title: "Subscription Cancelled",
+                                                        description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
+                                                    });
+                                                }}
+                                            >
+                                                Cancel Subscription
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

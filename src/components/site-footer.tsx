@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
+import { SafeCompactThemeToggle } from "@/components/theme-toggle";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -215,6 +216,9 @@ export function SiteFooter() {
               <span>Made with</span>
               <Heart className="h-4 w-4 text-red-500" />
               <span>for students worldwide</span>
+              <div className="ml-2">
+                <SafeCompactThemeToggle />
+              </div>
             </div>
           </div>
         </div>
