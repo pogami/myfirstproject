@@ -26,13 +26,6 @@ const contactMethods = [
     description: "Chat with our support team",
     contact: "Available 24/7",
     response: "Instant response"
-  },
-  {
-    icon: <Phone className="h-6 w-6 text-primary" />,
-    title: "Phone Support",
-    description: "Call us directly",
-    contact: "+1 (555) 123-4567",
-    response: "Mon-Fri 9AM-6PM EST"
   }
 ];
 
@@ -272,22 +265,21 @@ export default function ContactPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Our Office
+                  <Clock className="h-5 w-5 text-primary" />
+                  Support Hours
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="font-medium">CourseConnect Headquarters</p>
+                  <p className="font-medium">Email Support Available</p>
                   <p className="text-sm text-muted-foreground">
-                    123 Education Street<br />
-                    San Francisco, CA 94105<br />
-                    United States
+                    We provide email support for all users.<br />
+                    Our team responds to inquiries within 24 hours.
                   </p>
                   <div className="flex items-center gap-2 mt-4">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      Monday - Friday: 9:00 AM - 6:00 PM PST
+                      Response time: Within 24 hours
                     </span>
                   </div>
                 </div>

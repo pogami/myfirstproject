@@ -31,11 +31,16 @@ interface ChatState {
   isStoreLoading: boolean;
   isSendingMessage: boolean; // Loading state for message sending
   isDemoMode: boolean; // Demo mode for Advanced AI features
+  trialActivated: boolean; // Whether user has activated their trial
+  trialStartDate: number | null; // When the trial started (timestamp)
+  trialDaysLeft: number; // Days remaining in trial
   addChat: (chatName: string, initialMessage: Message) => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   setCurrentTab: (tabId: string | undefined) => void;
   setShowUpgrade: (show: boolean) => void;
   setIsDemoMode: (isDemo: boolean) => void;
+  activateTrial: () => void; // Activate the 14-day trial
+  updateTrialDaysLeft: () => void; // Update trial days remaining
   initializeAuthListener: () => () => void; // Returns an unsubscribe function
   clearGuestData: () => void;
   resetChat: (chatId: string) => Promise<void>;
@@ -55,9 +60,19 @@ export const useChatStore = create<ChatState>()(
       isGuest: true,
       isStoreLoading: true,
       isSendingMessage: false,
-      isDemoMode: true, // Default to demo mode enabled
+      isDemoMode: false, // Only enable demo mode when trial is activated
+      trialActivated: false, // Trial not activated by default
+      trialStartDate: null, // No trial start date initially
+      trialDaysLeft: 14, // Full 14 days available
 
       initializeAuthListener: () => {
+        // Check if auth is properly initialized
+        if (!auth || typeof auth !== 'object' || typeof auth.onAuthStateChanged !== 'function') {
+          console.warn("Auth object not properly initialized, falling back to guest mode");
+          set({ isGuest: true, isStoreLoading: false });
+          return () => {}; // Return empty unsubscribe function
+        }
+        
         const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
           try {
             if (user) {
@@ -152,6 +167,12 @@ export const useChatStore = create<ChatState>()(
             return;
         }
 
+        // Check if auth is properly initialized before accessing currentUser
+        if (!auth || typeof auth !== 'object' || typeof auth.currentUser === 'undefined') {
+          console.warn("Auth object not properly initialized, skipping Firestore operations");
+          return;
+        }
+        
         const user = (auth as Auth)?.currentUser;
         if (!user) return;
 
@@ -251,6 +272,43 @@ export const useChatStore = create<ChatState>()(
       setCurrentTab: (tabId) => set({ currentTab: tabId }),
       setShowUpgrade: (show) => set({ showUpgrade: show }),
       setIsDemoMode: (isDemo) => set({ isDemoMode: isDemo }),
+      
+      // Trial management functions
+      activateTrial: () => {
+        const now = Date.now();
+        set({ 
+          trialActivated: true, 
+          trialStartDate: now,
+          trialDaysLeft: 14,
+          isDemoMode: true // Enable demo mode when trial is activated
+        });
+        console.log("Trial activated! Started at:", new Date(now).toISOString());
+      },
+      
+      updateTrialDaysLeft: () => {
+        const { trialActivated, trialStartDate } = get();
+        if (!trialActivated || !trialStartDate) {
+          return; // No trial active
+        }
+        
+        const now = Date.now();
+        const trialEndTime = trialStartDate + (14 * 24 * 60 * 60 * 1000); // 14 days in milliseconds
+        const timeRemaining = trialEndTime - now;
+        
+        if (timeRemaining <= 0) {
+          // Trial expired
+          set({ 
+            trialDaysLeft: 0, 
+            isDemoMode: false,
+            trialActivated: false 
+          });
+        } else {
+          // Calculate days remaining
+          const daysRemaining = Math.ceil(timeRemaining / (24 * 60 * 60 * 1000));
+          set({ trialDaysLeft: daysRemaining });
+        }
+      },
+      
       clearGuestData: () => set({ chats: {}, currentTab: undefined }),
       
       resetChat: async (chatId) => {
@@ -335,6 +393,12 @@ export const useChatStore = create<ChatState>()(
         // Update Firestore if user is logged in
         if (!isGuest) {
           try {
+            // Check if auth is properly initialized before accessing currentUser
+            if (!auth || typeof auth !== 'object' || typeof auth.currentUser === 'undefined') {
+              console.warn("Auth object not properly initialized, skipping Firestore operations");
+              return;
+            }
+            
             // Remove chat from user's chat list
             const user = (auth as Auth)?.currentUser;
             if (user) {

@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 import { Analytics } from '@vercel/analytics/next';
+import { FirebaseConnectionManager } from "@/components/firebase-connection-manager";
+import { ThemeProvider } from "@/contexts/theme-context";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://courseconnect-sooty.vercel.app'),
@@ -96,12 +98,15 @@ export default function RootLayout({
         <meta name="theme-color" content="#3b82f6" />
       </head>
       <body className="font-body antialiased bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen" suppressHydrationWarning>
-        <PageTransitionBar />
-        <StudyBreakProvider>
-          {children}
-        </StudyBreakProvider>
-        <Toaster />
-        <Analytics />
+        <ThemeProvider>
+          <PageTransitionBar />
+          <StudyBreakProvider>
+            {children}
+          </StudyBreakProvider>
+          <FirebaseConnectionManager />
+          <Toaster />
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );

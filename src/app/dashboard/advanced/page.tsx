@@ -92,20 +92,23 @@ export default function AdvancedDashboard() {
   
   const [activeTab, setActiveTab] = useState('overview');
   const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
-  const [trialDaysLeft, setTrialDaysLeft] = useState(12); // Trial days remaining
-  const { isDemoMode, setIsDemoMode } = useChatStore();
+  const { isDemoMode, trialActivated, trialDaysLeft, updateTrialDaysLeft } = useChatStore();
   
   // Check if user has Scholar Features access (trial or subscription)
   useEffect(() => {
-    // For demo purposes, we'll allow access if user has trial days left
-    // In a real app, you would check subscription status here
+    // Update trial countdown
+    if (trialActivated) {
+      updateTrialDaysLeft();
+    }
+    
+    // Check if user has access to Scholar Features
     const hasScholarAccess = isDemoMode || trialDaysLeft > 0;
     
     if (!hasScholarAccess) {
       // Only redirect if user truly doesn't have access
       window.location.href = '/dashboard';
     }
-  }, [isDemoMode, trialDaysLeft]);
+  }, [isDemoMode, trialDaysLeft, trialActivated, updateTrialDaysLeft]);
   const [stats, setStats] = useState<DashboardStats>({
     studyTimeToday: 2.5,
     assignmentsCompleted: 8,
