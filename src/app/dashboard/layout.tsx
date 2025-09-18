@@ -179,6 +179,20 @@ export default function DashboardLayout({
     }
   }, []);
   
+  // Close sidebar on navigation (mobile)
+  useEffect(() => {
+    // Close sidebar when pathname changes on mobile
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    if (isMobile) {
+      // Find and close any open sidebar/sheet
+      const sidebarTrigger = document.querySelector('[data-sidebar="trigger"]');
+      if (sidebarTrigger) {
+        // Trigger click to close sidebar
+        (sidebarTrigger as HTMLElement).click();
+      }
+    }
+  }, [pathname]);
+  
   const { chats, showUpgrade, setShowUpgrade, isGuest, isDemoMode, setIsDemoMode } = useChatStore();
   const [guestUser, setGuestUser] = useState<any>(null);
   const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
