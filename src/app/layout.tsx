@@ -8,45 +8,27 @@ import { FirebaseConnectionManager } from "@/components/firebase-connection-mana
 import { ThemeProvider } from "@/contexts/theme-context";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.courseconnectai.com'),
-  title: 'CourseConnect - AI College Platform',
-  description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
-  keywords: ['college', 'AI', 'study', 'education', 'platform', 'academic'],
-  authors: [{ name: 'CourseConnect' }],
-  creator: 'CourseConnect',
-  publisher: 'CourseConnect',
-  manifest: '/manifest.json',
-  robots: 'index, follow',
-  verification: {
-    google: 'your-google-verification-code',
-  },
-  other: {
-    'og:image:width': '1200',
-    'og:image:height': '630',
-    'og:image:type': 'image/png',
-    'og:image:alt': 'CourseConnect Logo',
-  },
+  title: "CourseConnect - AI College Platform",
+  description: "Your unified platform for college success with AI-powered study tools",
   openGraph: {
-    title: 'CourseConnect - AI College Platform',
-    description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
-    url: 'https://www.courseconnectai.com',
-    siteName: 'CourseConnect',
+    type: "website",
+    url: "https://www.courseconnectai.com",
+    title: "CourseConnect - AI College Platform",
+    description: "Your unified platform for college success with AI-powered study tools",
     images: [
       {
-        url: '/courseconnect-logo-profile.png?v=4',
+        url: "https://www.courseconnectai.com/courseconnect-logo-profile.png?v=5",
         width: 1200,
         height: 630,
-        alt: 'CourseConnect Logo',
+        alt: "CourseConnect Logo",
       },
     ],
-    locale: 'en_US',
-    type: 'website',
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'CourseConnect - AI College Platform',
-    description: 'Your unified platform for college success with AI-powered study tools, syllabus analysis, and collaborative features.',
-    images: ['/courseconnect-logo-profile.png?v=4'],
+    card: "summary_large_image",
+    title: "CourseConnect - AI College Platform",
+    description: "Your unified platform for college success with AI-powered study tools",
+    images: ["https://www.courseconnectai.com/courseconnect-logo-profile.png?v=5"],
   },
   icons: {
     icon: [
