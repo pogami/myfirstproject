@@ -6,16 +6,25 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Better touch targets */
+/* Better touch targets - Enhanced for mobile */
 button, 
 input, 
 select, 
 textarea,
 [role="button"],
 [role="tab"],
-[role="menuitem"] {
+[role="menuitem"],
+a {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* Enhanced mobile button styles */
+button {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Prevent zoom on input focus (iOS) */
@@ -28,6 +37,7 @@ input[type="url"],
 textarea,
 select {
   font-size: 16px;
+  min-height: 44px;
 }
 
 /* Mobile-first responsive breakpoints */
@@ -92,6 +102,49 @@ select {
   .mobile-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+  }
+  
+  /* Enhanced mobile footer */
+  .footer-mobile {
+    padding: 1rem 0;
+  }
+  
+  .footer-mobile .grid {
+    gap: 1.5rem;
+  }
+  
+  /* Mobile-optimized forms */
+  .mobile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .mobile-form input,
+  .mobile-form button {
+    min-height: 48px;
+    font-size: 16px;
+  }
+  
+  /* Better mobile spacing */
+  .mobile-padding {
+    padding: 0.75rem;
+  }
+  
+  /* Mobile-optimized buttons */
+  .mobile-button {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 16px;
+  }
+  
+  /* Mobile link spacing */
+  .mobile-link {
+    padding: 0.75rem 0;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
   }
 }
 
