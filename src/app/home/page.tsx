@@ -88,48 +88,40 @@ export default function LandingPage() {
                     
                     {/* Desktop Navigation */}
                     <div className="hidden lg:flex items-center gap-4">
-                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[40px]" asChild>
+                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
                             <Link href="/about">About</Link>
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[40px]" asChild>
+                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
                             <Link href="/pricing">Pricing</Link>
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[40px]" asChild>
+                        <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
                             <Link href="/login">Sign In</Link>
                         </Button>
-                        <Button size="sm" className="h-10 text-sm min-h-[40px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" asChild>
+                        <Button size="sm" className="h-10 text-sm min-h-[44px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" asChild>
                             <Link href="/dashboard">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
                         </Button>
                     </div>
-
+                    
                     {/* Mobile Navigation */}
                     <div className="flex lg:hidden items-center gap-2">
-                        <MobileButton 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-10 px-3 text-sm"
-                            asChild
-                        >
+                        <Button variant="ghost" size="sm" className="h-10 text-xs min-h-[44px] px-2" asChild>
                             <Link href="/login">Sign In</Link>
-                        </MobileButton>
-                        <MobileButton 
-                            size="sm" 
-                            className="h-10 px-3 text-sm bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                            asChild
-                        >
+                        </Button>
+                        <Button size="sm" className="h-10 text-xs min-h-[44px] px-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white" asChild>
                             <Link href="/dashboard">Start</Link>
-                        </MobileButton>
+                        </Button>
                     </div>
+
                 </div>
             </header>
             <main className="flex-1">
                 <Hero />
                 <Tabs defaultValue="features" className="w-full">
                     <div className="container max-w-6xl mx-auto px-3 sm:px-6">
-                        <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-10 sm:h-11 min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-200/20 dark:border-purple-800/20">
-                            <TabsTrigger value="features" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">Features</TabsTrigger>
-                            <TabsTrigger value="classes" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">Popular Classes</TabsTrigger>
-                            <TabsTrigger value="demo" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">Try Demo</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-12 sm:h-11 min-h-[48px] sm:min-h-[44px] bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-200/20 dark:border-purple-800/20">
+                            <TabsTrigger value="features" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white min-h-[48px] sm:min-h-[44px]">Features</TabsTrigger>
+                            <TabsTrigger value="classes" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white min-h-[48px] sm:min-h-[44px]">Popular Classes</TabsTrigger>
+                            <TabsTrigger value="demo" className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white min-h-[48px] sm:min-h-[44px]">Try Demo</TabsTrigger>
                         </TabsList>
                         
                         <TabsContent value="features" className="space-y-8 sm:space-y-12 lg:space-y-16">
