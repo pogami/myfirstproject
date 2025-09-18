@@ -15,65 +15,123 @@ import { useState, useEffect } from "react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { FirebaseDebug } from "@/components/firebase-debug";
 
 
 
 export default function DashboardPage() {
-  const { chats } = useChatStore();
+  const { chats, trialActivated, trialDaysLeft, updateTrialDaysLeft } = useChatStore();
   const [user, setUser] = useState<any>(null);
   const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false);
-  const [trialDaysLeft, setTrialDaysLeft] = useState(12);
   const classCount = Object.keys(chats).filter(key => key !== 'general-chat').length;
   const totalMessages = Object.values(chats).reduce((sum, chat) => sum + chat.messages.length, 0);
 
-  // Safely handle auth state
-  useEffect(() => {
+  // Function to handle Firebase operations with offline fallback
+  const safeFirebaseOperation = async (operation: () => Promise<any>, fallback?: () => void) => {
     try {
-      if (auth && typeof auth.onAuthStateChanged === 'function') {
-        const unsubscribe = auth.onAuthStateChanged(
-          (user) => setUser(user),
+      return await operation();
+    } catch (error: any) {
+      console.log("Firebase operation failed, using fallback:", error.message);
+      if (fallback) fallback();
+      return null;
+    }
+  };
+
+  // Safely handle auth state and guest users
+  useEffect(() => {
+    const setupAuth = async () => {
+      try {
+        if (auth && typeof auth === 'object' && typeof auth.onAuthStateChanged === 'function') {
+          const unsubscribe = await safeFirebaseOperation(() => {
+            return auth.onAuthStateChanged(
+          (user) => {
+            setUser(user);
+            // If no Firebase user, check for guest user in localStorage
+            if (!user) {
+              const guestUserData = localStorage.getItem('guestUser');
+              if (guestUserData) {
+                try {
+                  const guestUser = JSON.parse(guestUserData);
+                  console.log("Found guest user in localStorage:", guestUser);
+                  setUser(guestUser);
+                } catch (error) {
+                  console.warn("Error parsing guest user data:", error);
+                }
+              }
+            }
+          },
           (error) => {
             console.warn("Auth state error in dashboard page:", error);
             setUser(null);
+            // Check for guest user even on auth error
+            const guestUserData = localStorage.getItem('guestUser');
+            if (guestUserData) {
+              try {
+                const guestUser = JSON.parse(guestUserData);
+                console.log("Found guest user after auth error:", guestUser);
+                setUser(guestUser);
+              } catch (error) {
+                console.warn("Error parsing guest user data:", error);
+              }
+            }
           }
-        );
-        return unsubscribe;
-      } else {
+            );
+          });
+          
+          if (unsubscribe) {
+            return unsubscribe;
+          }
+        } else {
+          console.warn("Auth object not available, checking for guest user");
+          // Check for guest user when auth is not available
+          const guestUserData = localStorage.getItem('guestUser');
+          if (guestUserData) {
+            try {
+              const guestUser = JSON.parse(guestUserData);
+              console.log("Found guest user when auth unavailable:", guestUser);
+              setUser(guestUser);
+            } catch (error) {
+              console.warn("Error parsing guest user data:", error);
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        }
+      } catch (authError) {
+        console.warn("Auth initialization error in dashboard page:", authError);
         setUser(null);
+        // Check for guest user even on initialization error
+        const guestUserData = localStorage.getItem('guestUser');
+        if (guestUserData) {
+          try {
+            const guestUser = JSON.parse(guestUserData);
+            console.log("Found guest user after init error:", guestUser);
+            setUser(guestUser);
+          } catch (error) {
+            console.warn("Error parsing guest user data:", error);
+          }
+        }
       }
-    } catch (authError) {
-      console.warn("Auth initialization error in dashboard page:", authError);
-      setUser(null);
-    }
-  }, []);
-
-  // Calculate trial days left (this would normally come from your backend/database)
-  useEffect(() => {
-    // For demo purposes, we'll simulate a trial that started 2 days ago
-    // In a real app, you'd fetch this from your user's trial data
-    const trialStartDate = new Date();
-    trialStartDate.setDate(trialStartDate.getDate() - 2); // Started 2 days ago
-    
-    const calculateDaysLeft = () => {
-      const now = new Date();
-      const trialEndDate = new Date(trialStartDate);
-      trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
-      
-      const timeDiff = trialEndDate.getTime() - now.getTime();
-      const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
-      
-      return Math.max(0, daysLeft);
     };
     
-    setTrialDaysLeft(calculateDaysLeft());
-    
-    // Update every hour
-    const interval = setInterval(() => {
-      setTrialDaysLeft(calculateDaysLeft());
-    }, 3600000); // 1 hour
-    
-    return () => clearInterval(interval);
+    setupAuth();
   }, []);
+
+  // Update trial days left in real-time
+  useEffect(() => {
+    if (trialActivated) {
+      // Update immediately
+      updateTrialDaysLeft();
+      
+      // Update every hour to keep countdown accurate
+      const interval = setInterval(() => {
+        updateTrialDaysLeft();
+      }, 3600000); // 1 hour
+      
+      return () => clearInterval(interval);
+    }
+  }, [trialActivated, updateTrialDaysLeft]);
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -101,55 +159,54 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Scholar Features Status - Compact Square Card */}
-        {trialDaysLeft > 0 && (
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10 p-4 border border-purple-200/20 dark:border-purple-800/20 mb-4 max-w-sm mt-2">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5 opacity-50"></div>
-          <div className="relative">
+        {/* Scholar Features Status - Only show if trial is activated */}
+        {trialActivated && trialDaysLeft > 0 && (
+        <Card className="border-0 bg-gradient-to-br from-card/80 to-card/40 shadow-xl mb-6 max-w-md mx-auto sm:mx-0">
+          <CardContent className="p-6">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-blue-600 flex-shrink-0">
-                <Crown className="size-4 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0 text-xs">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 shadow-lg">
+                  <Crown className="size-5 text-white" />
+                </div>
+                <div>
+                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0 text-sm font-medium px-3 py-1">
                     Scholar Active
                   </Badge>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
               </div>
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg"></div>
             </div>
             
             {/* Days Left */}
-            <div className="text-center mb-3">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+            <div className="text-center mb-6">
+              <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
                 {trialDaysLeft}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-300">
+              <div className="text-sm text-muted-foreground font-medium">
                 {trialDaysLeft === 1 ? 'day left' : 'days left'} in trial
               </div>
             </div>
             
             {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                <span>Progress</span>
-                <span>{Math.round(((14 - trialDaysLeft) / 14) * 100)}%</span>
+            <div className="mb-6">
+              <div className="flex justify-between text-sm text-muted-foreground mb-2">
+                <span className="font-medium">Progress</span>
+                <span className="font-semibold">{Math.round(((14 - trialDaysLeft) / 14) * 100)}%</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-muted/30 rounded-full h-3 overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-purple-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-purple-500 to-blue-600 h-3 rounded-full transition-all duration-700 ease-out shadow-sm"
                   style={{ width: `${((14 - trialDaysLeft) / 14) * 100}%` }}
                 ></div>
               </div>
             </div>
             
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
                 size="sm" 
-                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 h-8 text-xs font-medium"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 h-10 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 asChild
               >
                 <Link href="/pricing">
@@ -159,7 +216,7 @@ export default function DashboardPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 h-8 text-xs"
+                className="flex-1 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/30 h-10 text-sm font-medium transition-all duration-300 hover:scale-105"
                 onClick={() => {
                   // Enable demo mode when accessing features
                   const { setIsDemoMode } = useChatStore.getState();
@@ -172,8 +229,8 @@ export default function DashboardPage() {
                 </Link>
               </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         )}
 
         {/* Today's Focus Section */}
@@ -374,6 +431,13 @@ export default function DashboardPage() {
       
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
+      
+      {/* Firebase Debug - Only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 z-40">
+          <FirebaseDebug />
+        </div>
+      )}
     </div>
   );
 }

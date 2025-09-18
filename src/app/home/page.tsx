@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { useChatStore } from "@/hooks/use-chat-store";
 import { Hero } from "@/components/hero";
 import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,7 +21,6 @@ import { ChevronUp, Menu } from "lucide-react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { ConstructionBanner } from "@/components/construction-banner";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -34,13 +34,11 @@ const popularClasses = [
 export default function LandingPage() {
     const { toast } = useToast();
     const [isScrolled, setIsScrolled] = useState(false);
-    const [showFloatingMenu, setShowFloatingMenu] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
             setIsScrolled(scrollTop > 50);
-            setShowFloatingMenu(scrollTop > 200);
         };
 
         window.addEventListener('scroll', handleScroll);
@@ -126,9 +124,6 @@ export default function LandingPage() {
             </header>
             <main className="flex-1">
                 <Hero />
-                <div className="container max-w-6xl mx-auto px-3 sm:px-6">
-                    <ConstructionBanner />
-                </div>
                 <Tabs defaultValue="features" className="w-full">
                     <div className="container max-w-6xl mx-auto px-3 sm:px-6">
                         <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-10 sm:h-11 min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-200/20 dark:border-purple-800/20">
@@ -757,10 +752,24 @@ export default function LandingPage() {
 
                         {/* CTA for Scholar Features */}
                         <div className="text-center mt-12">
-                            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white" asChild>
-                                <Link href="/dashboard/advanced">
-                                    Unlock Scholar Features <ArrowRight className="ml-2" />
-                                </Link>
+                            <Button 
+                                size="lg" 
+                                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                                onClick={() => {
+                                    // Activate trial and redirect to advanced dashboard
+                                    const { activateTrial } = useChatStore.getState();
+                                    activateTrial();
+                                    toast({
+                                        title: "Trial Activated! 🎉",
+                                        description: "Your 14-day Scholar Features trial has started. Enjoy unlimited access!",
+                                    });
+                                    // Small delay to show toast, then redirect
+                                    setTimeout(() => {
+                                        window.location.href = '/dashboard/advanced';
+                                    }, 1000);
+                                }}
+                            >
+                                Unlock Scholar Features <ArrowRight className="ml-2" />
                             </Button>
                             <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
                                 Try Scholar features free for 14 days • No credit card required
@@ -871,37 +880,15 @@ export default function LandingPage() {
 
             <Toaster />
 
-            {/* Floating Menu Arrow */}
-            {showFloatingMenu && (
-                <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-                    {/* Quick Navigation Menu */}
-                    <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border border-border/40 rounded-lg shadow-lg p-2">
-                        <div className="flex flex-col gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
-                                <Link href="/about">About</Link>
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
-                                <Link href="/pricing">Pricing</Link>
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
-                                <Link href="/login">Sign In</Link>
-                            </Button>
-                            <Button size="sm" className="h-8 text-xs" asChild>
-                                <Link href="/dashboard">Get Started</Link>
-                            </Button>
-                        </div>
-                    </div>
-                    
-                    {/* Back to Top Arrow */}
-                    <Button
-                        onClick={scrollToTop}
-                        size="lg"
-                        className="h-12 w-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                    >
-                        <ChevronUp className="h-6 w-6" />
-                    </Button>
-                </div>
-            )}
+            {/* Floating Scroll-to-Top Arrow */}
+            <button
+                onClick={scrollToTop}
+                className="fixed bottom-6 right-6 z-50 h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group"
+                aria-label="Scroll to top"
+            >
+                <ChevronUp className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+            </button>
+
             
             {/* PWA Install Prompt */}
             <PWAInstallPrompt />

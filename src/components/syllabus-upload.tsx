@@ -62,11 +62,6 @@ export default function SyllabusUpload() {
 
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (isGuest && Object.keys(chats).length >= 2) {
-            setShowUpgrade(true);
-            return;
-        }
-
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
             if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
@@ -83,11 +78,6 @@ export default function SyllabusUpload() {
 
     const handleAnalyze = async () => {
         if (!file) return;
-
-        if (isGuest && Object.keys(chats).length >= 2) {
-            setShowUpgrade(true);
-            return;
-        }
 
         setIsAnalyzing(true);
         
@@ -165,10 +155,6 @@ export default function SyllabusUpload() {
     };
 
     const triggerFileIput = () => {
-        if (isGuest && Object.keys(chats).length >= 2) {
-            setShowUpgrade(true);
-            return;
-        }
         fileInputRef.current?.click();
     }
 
@@ -177,7 +163,7 @@ export default function SyllabusUpload() {
         <Card className="transform transition-all hover:shadow-xl hover:-translate-y-1">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Upload /> Upload Syllabus</CardTitle>
-                <CardDescription>Upload syllabi to find your classes and connect with classmates. Guests get 2 free uploads.</CardDescription>
+                <CardDescription>Upload syllabi to find your classes and connect with classmates.</CardDescription>
             </CardHeader>
             <CardContent>
                 <input

@@ -4,37 +4,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { ArrowRight, Users, BookOpen, MessageSquare, Upload, GraduationCap, Sparkles, Heart, Target, Zap, Brain, Mic, Camera, BarChart3, Calendar, Music, Star, CheckCircle } from "lucide-react";
+import { ArrowRight, Users, BookOpen, MessageSquare, Upload, GraduationCap, Sparkles, Heart, Target, Zap, Brain, Mic, Camera, BarChart3, Calendar, Music, Star, CheckCircle, Rocket, Shield, Clock, TrendingUp } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
+import { useState, useEffect } from "react";
 
-const teamMembers = [
+const features = [
   {
-    name: "Alex Chen",
-    role: "Founder & CEO",
-    description: "Computer Science graduate with 5+ years in EdTech",
-    image: "AC",
-    color: "bg-blue-500"
+    icon: <Brain className="h-12 w-12 text-white drop-shadow-lg" />,
+    title: "AI-Powered Learning",
+    description: "Advanced artificial intelligence that adapts to your learning style and provides personalized assistance",
+    gradient: "from-blue-500 to-cyan-500",
+    bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20"
   },
   {
-    name: "Sarah Johnson",
-    role: "CTO",
-    description: "Full-stack developer specializing in AI integration",
-    image: "SJ",
-    color: "bg-green-500"
+    icon: <Users className="h-12 w-12 text-white drop-shadow-lg" />,
+    title: "Study Groups",
+    description: "Connect with classmates and form study groups for collaborative learning",
+    gradient: "from-green-500 to-emerald-500",
+    bgGradient: "from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20"
   },
   {
-    name: "Michael Rodriguez",
-    role: "Head of Product",
-    description: "UX/UI designer with focus on student experience",
-    image: "MR",
-    color: "bg-purple-500"
+    icon: <BookOpen className="h-12 w-12 text-white drop-shadow-lg" />,
+    title: "Syllabus Analysis",
+    description: "Upload your course syllabus and get instant insights and study materials",
+    gradient: "from-purple-500 to-violet-500",
+    bgGradient: "from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20"
   },
   {
-    name: "Emily Davis",
-    role: "AI Research Lead",
-    description: "Machine Learning engineer and education specialist",
-    image: "ED",
-    color: "bg-pink-500"
+    icon: <MessageSquare className="h-12 w-12 text-white drop-shadow-lg" />,
+    title: "24/7 Support",
+    description: "Get help whenever you need it with our comprehensive support system",
+    gradient: "from-pink-500 to-rose-500",
+    bgGradient: "from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20"
   }
 ];
 
@@ -62,6 +63,52 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const [animatedStats, setAnimatedStats] = useState({
+    students: 0,
+    universities: 0,
+    studyHours: 0,
+    successRate: 0
+  });
+
+  const targetStats = {
+    students: 10000,
+    universities: 50,
+    studyHours: 50000,
+    successRate: 94
+  };
+
+  useEffect(() => {
+    const animateStats = () => {
+      const duration = 2000; // 2 seconds
+      const steps = 60;
+      const stepDuration = duration / steps;
+
+      let step = 0;
+      const timer = setInterval(() => {
+        step++;
+        const progress = step / steps;
+        
+        setAnimatedStats({
+          students: Math.floor(targetStats.students * progress),
+          universities: Math.floor(targetStats.universities * progress),
+          studyHours: Math.floor(targetStats.studyHours * progress),
+          successRate: Math.floor(targetStats.successRate * progress)
+        });
+
+        if (step >= steps) {
+          clearInterval(timer);
+          setAnimatedStats(targetStats);
+        }
+      }, stepDuration);
+
+      return () => clearInterval(timer);
+    };
+
+    // Start animation after a short delay
+    const timer = setTimeout(animateStats, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-transparent">
       {/* Header */}
@@ -89,25 +136,59 @@ export default function AboutPage() {
 
       <main className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Hero Section */}
-        <div className="text-center mb-12 sm:mb-16">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
-            About <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">CourseConnect</span>
+        <div className="text-center mb-16 sm:mb-20">
+          <div className="relative">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 -z-10">
+              <div className="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+            </div>
+            
+            <Badge className="mb-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 px-4 py-2 text-sm font-medium animate-bounce">
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI-Powered Education Platform
+            </Badge>
+            
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 sm:mb-8">
+              About <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">CourseConnect</span>
           </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            We're on a mission to revolutionize how college students learn, collaborate, and succeed academically through AI-powered tools and seamless collaboration.
-          </p>
+            
+            <p className="text-xl sm:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-8">
+              CourseConnect is an <span className="text-primary font-semibold">AI-powered platform</span> designed to help college students succeed academically through intelligent study tools, collaborative features, and personalized learning experiences.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 h-14 px-8 text-lg font-semibold" asChild>
+                <Link href="/dashboard">
+                  <Rocket className="mr-2 h-5 w-5" />
+                  Get Started Free
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="h-14 px-8 text-lg font-semibold border-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300" asChild>
+                <Link href="/contact">
+                  <MessageSquare className="mr-2 h-5 w-5" />
+                  Contact Us
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Mission Section */}
-        <div className="mb-12 sm:mb-16">
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-            <CardContent className="p-6 sm:p-8">
+        <div className="mb-16 sm:mb-20">
+          <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-cyan-500/10 border-purple-200/20 dark:border-purple-800/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-blue-400/20 rounded-full blur-2xl"></div>
+            <CardContent className="relative p-8 sm:p-12">
               <div className="text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-primary">Our Mission</h2>
-                <p className="text-lg text-muted-foreground leading-relaxed max-w-4xl mx-auto">
-                  To empower every college student with intelligent tools that enhance learning, foster collaboration, 
-                  and accelerate academic success. We believe that with the right technology and community support, 
-                  every student can achieve their full potential.
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl mb-6">
+                  <Target className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Our Mission</h2>
+                <p className="text-xl text-muted-foreground leading-relaxed max-w-4xl mx-auto">
+                  Our mission is to provide college students with <span className="text-primary font-semibold">accessible, intelligent tools</span> that enhance learning, 
+                  foster collaboration, and accelerate academic success. We believe that with the right technology 
+                  and community support, <span className="text-primary font-semibold">every student can achieve their full potential</span>.
                 </p>
               </div>
             </CardContent>
@@ -132,19 +213,24 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Team Section */}
-        <div className="mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Meet Our Team</h2>
-          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {teamMembers.map((member, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className={`w-16 h-16 rounded-full ${member.color} text-white flex items-center justify-center mx-auto mb-4 text-lg font-semibold`}>
-                    {member.image}
+        {/* Features Section */}
+        <div className="mb-16 sm:mb-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Key Features</h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Discover the powerful tools that make CourseConnect the ultimate study companion
+            </p>
+          </div>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature, index) => (
+              <Card key={index} className={`group relative overflow-hidden bg-gradient-to-br ${feature.bgGradient} border-0 hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardContent className="relative p-8 text-center">
+                  <div className={`inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r ${feature.gradient} rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    {feature.icon}
                   </div>
-                  <h3 className="text-lg font-semibold mb-1">{member.name}</h3>
-                  <p className="text-sm text-primary mb-2">{member.role}</p>
-                  <p className="text-xs text-muted-foreground">{member.description}</p>
+                  <h3 className="text-xl font-bold mb-4 text-foreground">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -152,30 +238,45 @@ export default function AboutPage() {
         </div>
 
         {/* Stats Section */}
-        <div className="mb-12 sm:mb-16">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-            <CardContent className="p-6 sm:p-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 text-blue-800 dark:text-blue-200">Our Impact</h2>
-              <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">50,000+</div>
-                  <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Active Students</div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Growing daily</div>
+        <div className="mb-16 sm:mb-20">
+          <Card className="relative overflow-hidden bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-200/20 dark:border-blue-800/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+            <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-br from-pink-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+            <CardContent className="relative p-8 sm:p-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Platform Highlights</h2>
+              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                <div className="text-center group">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-4xl sm:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">24/7</div>
+                  <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">AI Support</div>
+                  <div className="text-sm text-blue-600 dark:text-blue-400">Always available</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</div>
-                  <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Universities</div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Worldwide coverage</div>
+                <div className="text-center group">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-4xl sm:text-5xl font-bold text-green-600 dark:text-green-400 mb-2">100%</div>
+                  <div className="text-lg font-semibold text-green-800 dark:text-green-200 mb-1">Free to Start</div>
+                  <div className="text-sm text-green-600 dark:text-green-400">No credit card required</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">2M+</div>
-                  <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Study Hours</div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Saved monthly</div>
+                <div className="text-center group">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-violet-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Brain className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-4xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400 mb-2">AI-Powered</div>
+                  <div className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-1">Study Tools</div>
+                  <div className="text-sm text-purple-600 dark:text-purple-400">Personalized learning</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">94%</div>
-                  <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">Success Rate</div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Grade improvement</div>
+                <div className="text-center group">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="text-4xl sm:text-5xl font-bold text-pink-600 dark:text-pink-400 mb-2">Secure</div>
+                  <div className="text-lg font-semibold text-pink-800 dark:text-pink-200 mb-1">Privacy First</div>
+                  <div className="text-sm text-pink-600 dark:text-pink-400">Your data is safe</div>
                 </div>
               </div>
             </CardContent>
@@ -272,21 +373,61 @@ export default function AboutPage() {
           </div>
         </div>
 
+        {/* Support Section */}
+        <div className="mb-16 sm:mb-20">
+          <Card className="relative overflow-hidden bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 border-green-200/20 dark:border-green-800/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-2xl"></div>
+            <CardContent className="relative p-8 sm:p-12">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-6">
+                  <MessageSquare className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Need Help?</h2>
+                <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+                  Our support team is here to help you succeed. Get in touch with any questions or concerns.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                  <div className="flex items-center gap-3 text-green-800 dark:text-green-200 bg-green-50 dark:bg-green-950/20 px-6 py-4 rounded-xl">
+                    <MessageSquare className="h-6 w-6 text-green-600" />
+                    <div>
+                      <span className="font-semibold text-lg">Email Support:</span>
+                      <a href="mailto:courseconnect.noreply@gmail.com?subject=CourseConnect Support Request&body=Hello CourseConnect Team,%0D%0A%0D%0AI need help with:%0D%0A%0D%0A%0D%0AThank you!" className="text-green-600 dark:text-green-400 hover:underline ml-2 text-lg font-medium">
+                        courseconnect.noreply@gmail.com
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-green-600 dark:text-green-400 mt-6 flex items-center justify-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  We typically respond within 24 hours
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* CTA Section */}
         <div className="text-center">
-          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-6 sm:p-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to Transform Your Learning?</h2>
-              <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-                Join thousands of students who are already succeeding with CourseConnect
+          <Card className="relative overflow-hidden bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-cyan-500/10 border-purple-200/20 dark:border-purple-800/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5"></div>
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+            <CardContent className="relative p-8 sm:p-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl mb-6">
+                <Rocket className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Ready to Transform Your Learning?</h2>
+              <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+                Start your academic journey with CourseConnect today and experience the future of education
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
+                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 h-14 px-8 text-lg font-semibold" asChild>
                   <Link href="/dashboard">
-                    Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+                    <Rocket className="mr-2 h-5 w-5" />
+                    Get Started Free
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" asChild>
+                <Button variant="outline" size="lg" className="h-14 px-8 text-lg font-semibold border-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300" asChild>
                   <Link href="/pricing">View Pricing</Link>
                 </Button>
               </div>
