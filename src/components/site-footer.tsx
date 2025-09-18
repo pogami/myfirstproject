@@ -105,8 +105,8 @@ export function SiteFooter() {
     <footer className="bg-transparent border-t border-border/40">
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
-        <div className="py-12 lg:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="py-8 sm:py-12 lg:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-12">
             
             {/* Brand Section */}
             <div className="lg:col-span-1">
@@ -117,13 +117,13 @@ export function SiteFooter() {
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 The ultimate platform for college students to connect, collaborate, and succeed academically with AI-powered tools.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 {socialLinks.map((social) => (
                   <Button
                     key={social.name}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 p-0"
+                    className="h-10 w-10 sm:h-9 sm:w-9 p-0 min-h-[44px] min-w-[44px]"
                     asChild
                   >
                     <Link href={social.href} target="_blank" rel="noopener noreferrer">
@@ -138,12 +138,12 @@ export function SiteFooter() {
             {/* Quick Links */}
             <div>
               <h4 className="font-semibold text-foreground mb-4">Quick Access</h4>
-              <ul className="space-y-3">
+              <ul className="space-y-2 sm:space-y-3">
                 {quickLinks.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-1 min-h-[44px]"
                     >
                       {link.icon}
                       {link.name}
@@ -156,12 +156,12 @@ export function SiteFooter() {
             {/* Company Links */}
             <div>
               <h4 className="font-semibold text-foreground mb-4">Company</h4>
-              <ul className="space-y-3">
+              <ul className="space-y-2 sm:space-y-3">
                 {companyLinks.map((link) => (
                   <li key={link.name}>
                     <Link 
                       href={link.href}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-1 min-h-[44px]"
                     >
                       {link.icon}
                       {link.name}
@@ -177,11 +177,11 @@ export function SiteFooter() {
               <p className="text-sm text-muted-foreground mb-4">
                 Get the latest updates on new features and improvements. You can also use this email to create your CourseConnect account.
               </p>
-              <form onSubmit={handleEmailSubmit} className="flex gap-2">
+              <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-2">
                 <Input 
                   type="email" 
                   placeholder="Enter your email" 
-                  className="flex-1" 
+                  className="flex-1 min-h-[44px]" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -189,7 +189,7 @@ export function SiteFooter() {
                 <Button 
                   type="submit" 
                   size="sm" 
-                  className="px-4"
+                  className="px-4 min-h-[44px] min-w-[44px] sm:w-auto"
                   disabled={isSubmittingEmail}
                 >
                   {isSubmittingEmail ? (
@@ -207,16 +207,20 @@ export function SiteFooter() {
 
         {/* Bottom Footer */}
         <div className="py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 text-sm text-muted-foreground">
               <span>© {new Date().getFullYear()} CourseConnect.</span>
+              <span className="hidden sm:inline">•</span>
               <span>All rights reserved.</span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Made with</span>
-              <Heart className="h-4 w-4 text-red-500" />
-              <span>for students worldwide</span>
-              <div className="ml-2">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>Made with</span>
+                <Heart className="h-4 w-4 text-red-500" />
+                <span>for students worldwide</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs">Theme:</span>
                 <SafeCompactThemeToggle />
               </div>
             </div>
