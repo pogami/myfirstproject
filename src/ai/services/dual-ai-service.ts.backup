@@ -24,6 +24,12 @@ const deepseek = new OpenAI({
 
 // Initialize Google AI
 const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+const ai = genkit({
+  plugins: [googleAI({
+    apiKey: googleApiKey || 'demo-key',
+  })],
+  model: 'googleai/gemini-2.5-flash',
+});
 
 // AI Provider Types
 export type AIProvider = 'google' | 'deepseek' | 'openai' | 'fallback';

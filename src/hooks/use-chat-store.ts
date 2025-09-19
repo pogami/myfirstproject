@@ -136,6 +136,8 @@ export const useChatStore = create<ChatState>()(
         const chatId = customChatId || getChatId(chatName);
         const { isGuest } = get();
 
+        console.log('addChat called:', { chatName, chatId, customChatId, isGuest });
+
         // Ensure initial message text is always a string
         const safeInitialMessage = {
           ...initialMessage,
@@ -145,6 +147,7 @@ export const useChatStore = create<ChatState>()(
         // Check if chat already exists
         if (get().chats[chatId]) {
           // Chat exists, just switch to it
+          console.log('Chat already exists, switching to:', chatId);
           set({ currentTab: chatId });
           return;
         }
@@ -174,22 +177,30 @@ export const useChatStore = create<ChatState>()(
         }
         
         const user = (auth as Auth)?.currentUser;
-        if (!user) return;
+        if (!user) {
+          console.log('No authenticated user, skipping Firestore operations');
+          return;
+        }
+
+        console.log('User authenticated, persisting chat to Firestore:', user.uid);
 
         // Optimistically update local state first
-        set((state) => ({
-            chats: {
-                ...state.chats,
-                [chatId]: {
-                    id: chatId,
-                    title: chatName,
-                    messages: [safeInitialMessage],
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                }
-            },
-            currentTab: chatId
-        }));
+        set((state) => {
+            console.log('Adding chat to local state:', { chatId, chatName });
+            return {
+                chats: {
+                    ...state.chats,
+                    [chatId]: {
+                        id: chatId,
+                        title: chatName,
+                        messages: [safeInitialMessage],
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
+                    }
+                },
+                currentTab: chatId
+            };
+        });
 
         // Try to persist to Firestore (but don't fail if offline)
         try {
@@ -269,7 +280,11 @@ export const useChatStore = create<ChatState>()(
         // Clear loading state
         set({ isSendingMessage: false });
       },
-      setCurrentTab: (tabId) => set({ currentTab: tabId }),
+      setCurrentTab: (tabId) => {
+        console.log('setCurrentTab called with:', tabId);
+        console.log('Available chats:', Object.keys(get().chats));
+        set({ currentTab: tabId });
+      },
       setShowUpgrade: (show) => set({ showUpgrade: show }),
       setIsDemoMode: (isDemo) => set({ isDemoMode: isDemo }),
       
