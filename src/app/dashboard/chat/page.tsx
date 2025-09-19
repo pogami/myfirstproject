@@ -19,7 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { MobileInput } from "@/components/ui/mobile-input";
-import { ChatConstruction } from "@/components/chat-construction";
 
 export default function ChatPage() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat } = useChatStore();
@@ -31,7 +30,6 @@ export default function ChatPage() {
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const { toast } = useToast();
-    const [isAdmin, setIsAdmin] = useState(false);
 
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
@@ -46,21 +44,6 @@ export default function ChatPage() {
             console.warn('Failed to initialize auth listener:', error);
         }
     }, [initializeAuthListener]);
-
-    // Check if user is admin (you)
-    useEffect(() => {
-        if (user) {
-            // Replace with your actual email or user ID
-            const adminEmails = [
-                'kawai@example.com', // Replace with your actual email
-                'admin@courseconnect.com',
-                'developer@courseconnect.com'
-            ];
-            setIsAdmin(adminEmails.includes(user.email?.toLowerCase() || ''));
-        } else {
-            setIsAdmin(false);
-        }
-    }, [user]);
 
     // Handle online/offline state changes
     useEffect(() => {
@@ -187,25 +170,24 @@ export default function ChatPage() {
             // Get AI response with error handling and timeout
             let aiResponse;
             try {
-                const { getInDepthAnalysis } = await import("@/ai/services/simple-ai-service");
+                const { provideStudyAssistanceWithFallback } = await import("@/ai/services/dual-ai-service");
                 
                 // Add timeout to prevent long waits
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('AI response timeout')), 10000)
+                    setTimeout(() => reject(new Error('AI response timeout')), 15000)
                 );
                 
-                const aiPromise = getInDepthAnalysis({
+                const aiPromise = provideStudyAssistanceWithFallback({
                     question: messageText,
-                    context: 'General'
+                    context: chats[currentTab!]?.title || 'General Chat'
                 });
                 
                 aiResponse = await Promise.race([aiPromise, timeoutPromise]);
             } catch (importError) {
                 console.warn("AI service import failed, using fallback:", importError);
                 aiResponse = {
-                    response: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-                    sources: [],
-                    confidence: 0.5
+                    answer: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+                    provider: 'fallback'
                 };
             }
             
@@ -216,19 +198,10 @@ export default function ChatPage() {
             let messageText = 'I apologize, but I couldn\'t generate a response.';
             
             if (aiResponse && typeof aiResponse === 'object') {
-                if (aiResponse.response && typeof aiResponse.response === 'string') {
-                    messageText = aiResponse.response;
-                } else if (aiResponse.answer && typeof aiResponse.answer === 'string') {
+                if (aiResponse.answer && typeof aiResponse.answer === 'string') {
                     messageText = aiResponse.answer;
-                } else if (aiResponse.answer && typeof aiResponse.answer === 'object') {
-                    // If answer is an object, try to extract text from it
-                    if (aiResponse.answer.text) {
-                        messageText = aiResponse.answer.text;
-                    } else if (aiResponse.answer.content) {
-                        messageText = aiResponse.answer.content;
-                    } else {
-                        messageText = 'I apologize, but I couldn\'t generate a proper response.';
-                    }
+                } else if (aiResponse.response && typeof aiResponse.response === 'string') {
+                    messageText = aiResponse.response;
                 } else {
                     messageText = 'I apologize, but I couldn\'t generate a proper response.';
                 }
@@ -332,6 +305,8 @@ export default function ChatPage() {
 
     // Debug logging
     console.log('ChatPage - isStoreLoading:', isStoreLoading, 'forceLoad:', forceLoad, 'chats:', Object.keys(chats), 'currentTab:', currentTab);
+    console.log('ChatPage - classChats:', classChats);
+    console.log('ChatPage - generalChat:', generalChat);
 
     // Show loading state while chat store is initializing (but not if force loaded)
     if (isStoreLoading && !forceLoad) {
@@ -340,11 +315,6 @@ export default function ChatPage() {
                 <LoadingSpinner size="xl" text="Loading Chat..." />
             </div>
         );
-    }
-
-    // Show construction page for non-admin users
-    if (!isAdmin) {
-        return <ChatConstruction />;
     }
 
     return (
@@ -413,12 +383,12 @@ export default function ChatPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
-                                    <ScrollArea className="flex-1 px-6 pb-20" ref={scrollAreaRef}>
+                                    <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {generalChat.messages.map((message, index) => (
                                                 <div key={message.id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                     <div className={`flex gap-3 max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                        <Avatar className="w-8 h-8">
+                                                        <Avatar className="w-8 h-8 flex-shrink-0">
                                                             <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
                                                             <AvatarFallback className="text-xs">
                                                                 {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : 'AI'}
@@ -432,7 +402,7 @@ export default function ChatPage() {
                                                             <div className="text-xs opacity-70 mb-1">
                                                                 {message.name}
                                                             </div>
-                                                            <p className="text-sm whitespace-pre-wrap">
+                                                            <p className="text-sm whitespace-pre-wrap break-words">
                                                                 {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
                                                             </p>
                                                         </div>
@@ -440,8 +410,8 @@ export default function ChatPage() {
                                                 </div>
                                             ))}
                                             {isLoading && (
-                                                <div className="flex gap-3">
-                                                    <Avatar className="w-8 h-8">
+                                                <div className="flex gap-3 justify-start">
+                                                    <Avatar className="w-8 h-8 flex-shrink-0">
                                                         <AvatarFallback className="text-xs">AI</AvatarFallback>
                                                     </Avatar>
                                                     <div className="bg-muted rounded-lg p-3">
@@ -454,7 +424,7 @@ export default function ChatPage() {
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background absolute bottom-0 left-0 right-0 z-10">
+                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background">
                                         <div className="flex gap-2">
                                             <MobileInput
                                                 value={inputValue}
@@ -520,13 +490,13 @@ export default function ChatPage() {
                                         </DropdownMenu>
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="flex-1 flex flex-col p-0">
-                                    <ScrollArea className="flex-1 px-6 pb-20" ref={scrollAreaRef}>
+                                <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
+                                    <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {chat.messages.map((message, index) => (
                                                 <div key={message.id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                     <div className={`flex gap-3 max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                        <Avatar className="w-8 h-8">
+                                                        <Avatar className="w-8 h-8 flex-shrink-0">
                                                             <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
                                                             <AvatarFallback className="text-xs">
                                                                 {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : 'AI'}
@@ -540,7 +510,7 @@ export default function ChatPage() {
                                                             <div className="text-xs opacity-70 mb-1">
                                                                 {message.name}
                                                             </div>
-                                                            <p className="text-sm whitespace-pre-wrap">
+                                                            <p className="text-sm whitespace-pre-wrap break-words">
                                                                 {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
                                                             </p>
                                                         </div>
@@ -548,8 +518,8 @@ export default function ChatPage() {
                                                 </div>
                                             ))}
                                             {isLoading && (
-                                                <div className="flex gap-3">
-                                                    <Avatar className="w-8 h-8">
+                                                <div className="flex gap-3 justify-start">
+                                                    <Avatar className="w-8 h-8 flex-shrink-0">
                                                         <AvatarFallback className="text-xs">AI</AvatarFallback>
                                                     </Avatar>
                                                     <div className="bg-muted rounded-lg p-3">
@@ -562,19 +532,26 @@ export default function ChatPage() {
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-6 border-t flex-shrink-0">
+                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background">
                                         <div className="flex gap-2">
-                                            <Input
+                                            <MobileInput
                                                 value={inputValue}
                                                 onChange={(e) => setInputValue(e.target.value)}
                                                 placeholder={`Ask about ${chat.title}...`}
                                                 onKeyPress={handleKeyPress}
                                                 disabled={isLoading}
                                                 className="flex-1"
+                                                mobileSize="md"
+                                                fullWidthOnMobile={false}
                                             />
-                                            <Button onClick={handleSendMessage} disabled={isLoading || !inputValue.trim()}>
+                                            <MobileButton 
+                                                onClick={handleSendMessage} 
+                                                disabled={isLoading || !inputValue.trim()}
+                                                mobileSize="md"
+                                                className="px-3"
+                                            >
                                                 <Send className="h-4 w-4" />
-                                            </Button>
+                                            </MobileButton>
                                         </div>
                                     </div>
                                 </CardContent>

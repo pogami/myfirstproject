@@ -375,10 +375,10 @@ export default function ChatInterface() {
             
             try {
                 // Import AI functions dynamically to avoid build issues
-                const { provideStudyAssistance } = await import("@/ai/flows/provide-study-assistance");
+                const { provideStudyAssistanceWithFallback } = await import("@/ai/services/dual-ai-service");
                 
                 const context = chats[currentTab!]?.title || 'General Chat';
-                const result = await provideStudyAssistance({
+                const result = await provideStudyAssistanceWithFallback({
                     question: messageToProcess.text,
                     context: context
                 });
@@ -601,10 +601,10 @@ export default function ChatInterface() {
         // Try to use AI assistance first, fallback to contextual responses
         try {
             // Import AI functions dynamically to avoid build issues
-            const { provideStudyAssistance } = await import("@/ai/flows/provide-study-assistance");
+            const { provideStudyAssistanceWithFallback } = await import("@/ai/services/dual-ai-service");
             
             const context = chats[currentTab!]?.title || 'General Chat';
-            const result = await provideStudyAssistance({
+            const result = await provideStudyAssistanceWithFallback({
                 question: messageToProcess,
                 context: context
             });
