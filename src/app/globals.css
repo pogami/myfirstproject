@@ -509,7 +509,7 @@ body {
 .chat-container .border-t {
   position: sticky !important;
   bottom: 0 !important;
-  z-index: 10 !important;
+  z-index: 50 !important; /* Higher z-index to prevent blocking */
   background: inherit !important;
 }
 
@@ -627,12 +627,15 @@ body {
     margin: 0.25rem !important;
   }
 
-  /* Mobile-optimized chat input */
-  .chat-input-container {
-    height: 44px !important; /* iOS-friendly height */
-    padding: 0.5rem !important;
-    font-size: 16px !important; /* Prevents zoom on iOS */
-  }
+/* Mobile-optimized chat input */
+.chat-input-container {
+  height: 44px !important; /* iOS-friendly height */
+  padding: 0.5rem !important;
+  font-size: 16px !important; /* Prevents zoom on iOS */
+  position: relative !important;
+  z-index: 60 !important; /* Ensure input is clickable */
+  pointer-events: auto !important; /* Ensure input is interactive */
+}
 
   .chat-input-container input {
     font-size: 16px !important; /* Prevents zoom on iOS */
@@ -645,12 +648,22 @@ body {
     height: 16px !important;
   }
 
-  /* Mobile-optimized tabs */
-  [data-radix-tabs-trigger] {
-    font-size: 12px !important;
-    padding: 0.5rem 0.75rem !important;
-    min-height: 36px !important;
-  }
+/* Mobile-optimized tabs */
+[data-radix-tabs-trigger] {
+  font-size: 12px !important;
+  padding: 0.5rem 0.75rem !important;
+  min-height: 36px !important;
+  border-radius: 0.5rem !important; /* Remove ovalish appearance */
+  background: transparent !important;
+  border: 1px solid transparent !important;
+}
+
+/* Active tab styling for mobile */
+[data-radix-tabs-trigger][data-state="active"] {
+  background: rgba(59, 130, 246, 0.1) !important; /* Light blue background */
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: rgb(59, 130, 246) !important;
+}
 
   /* Mobile-optimized message bubbles */
   .chat-message {
@@ -714,6 +727,20 @@ body {
   .ai-response .max-h-80 {
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior: contain !important;
+  }
+
+  /* Ensure chat input is not blocked on mobile */
+  .chat-input-container {
+    z-index: 100 !important; /* Very high z-index for mobile */
+    position: relative !important;
+    pointer-events: auto !important;
+    background: inherit !important;
+  }
+
+  .chat-input-container input {
+    z-index: 101 !important;
+    position: relative !important;
+    pointer-events: auto !important;
   }
 }
 
@@ -784,6 +811,16 @@ body {
     font-size: 11px !important;
     padding: 0.375rem 0.5rem !important;
     min-height: 32px !important;
+    border-radius: 0.375rem !important; /* Less rounded on small screens */
+    background: transparent !important;
+    border: 1px solid transparent !important;
+  }
+
+  /* Active tab styling for small mobile */
+  [data-radix-tabs-trigger][data-state="active"] {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    color: rgb(59, 130, 246) !important;
   }
 
   /* Smaller message bubbles */
