@@ -109,10 +109,10 @@ export function FuturisticChatInput({
         <div
           onClick={triggerFileInput}
           className={cn(
-            "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0",
+            "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation",
             isDark 
               ? "text-white/60" 
-              : "text-gray-500",
+              : "text-gray-600",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -133,6 +133,7 @@ export function FuturisticChatInput({
               "w-full h-7 bg-transparent text-sm border-0 outline-none focus:outline-none placeholder:opacity-70 resize-none",
               isDark ? "text-white placeholder-white/70" : "text-gray-900 placeholder-gray-500"
             )}
+            style={{ fontSize: '16px' }} // Prevents zoom on iOS
           />
           {/* Cursor Effect */}
           <div className={cn(
@@ -146,14 +147,14 @@ export function FuturisticChatInput({
         <div
           onClick={toggleVoice}
           className={cn(
-            "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0",
+            "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation",
             isVoiceActive
               ? isDark 
                 ? "text-red-400" 
                 : "text-red-600"
               : isDark 
                 ? "text-white/60" 
-                : "text-gray-500",
+                : "text-gray-600",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -168,7 +169,7 @@ export function FuturisticChatInput({
         <div
           onClick={handleSend}
           className={cn(
-            "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0",
+            "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation",
             isDark 
               ? "text-purple-400" 
               : "text-purple-600",
@@ -188,8 +189,8 @@ export function FuturisticChatInput({
         />
       </div>
 
-      {/* Floating Particles Effect */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg">
+      {/* Floating Particles Effect - Hidden on mobile for performance */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg hidden md:block">
         <div className="absolute top-2 left-4 w-0.5 h-0.5 bg-orange-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '0s' }} />
         <div className="absolute top-3 right-16 w-0.5 h-0.5 bg-purple-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '1.5s' }} />
         <div className="absolute bottom-2 left-8 w-0.5 h-0.5 bg-blue-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '3s' }} />

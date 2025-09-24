@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import MathRender from './math-render';
 import BotResponse from './bot-response';
+import { TruncatedText } from './truncated-text';
 
 interface AIResponseRendererProps {
   content: string;
@@ -455,9 +456,11 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
   return (
     <div className={className}>
       {parsedResponse.type === 'text' && (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-          {parsedResponse.content}
-        </p>
+        <TruncatedText 
+          text={parsedResponse.content}
+          maxLength={500}
+          className="ai-response"
+        />
       )}
       
       {parsedResponse.type === 'code' && (

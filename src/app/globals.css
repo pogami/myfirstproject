@@ -492,6 +492,368 @@ body {
   border-color: #ffffff !important;
 }
 
+/* Fix chat layout - prevent input area from moving */
+.chat-container {
+  position: relative !important;
+  height: calc(100vh - 200px) !important;
+  max-height: calc(100vh - 200px) !important;
+  overflow: hidden !important;
+}
+
+.chat-container .scroll-area {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.chat-container .border-t {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+  background: inherit !important;
+}
+
+/* Prevent AI responses from breaking layout and ensure they stay in message bubbles */
+.ai-response {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: pre-wrap !important;
+  position: relative !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Ensure expanded AI responses stay within message boundaries */
+.ai-response .max-h-80 {
+  max-height: 20rem !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+  position: relative !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Prevent horizontal scrollbars in AI responses */
+.ai-response * {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  word-wrap: break-word !important;
+}
+
+/* Ensure math expressions don't create horizontal scroll */
+.katex-display {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  margin: 0.5rem 0 !important;
+  word-wrap: break-word !important;
+}
+
+.katex {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  word-wrap: break-word !important;
+}
+
+/* Prevent scroll conflicts - only scroll within the container when focused */
+.ai-response .max-h-80:focus {
+  outline: none !important;
+}
+
+/* Custom scrollbar for AI responses */
+.ai-response .max-h-80::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.ai-response .max-h-80::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.ai-response .max-h-80::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5) !important;
+  border-radius: 3px !important;
+}
+
+.ai-response .max-h-80::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7) !important;
+}
+
+/* Mobile-optimized chat layout */
+@media (max-width: 768px) {
+  /* Chat container mobile optimization */
+  .chat-container {
+    height: calc(100vh - 120px) !important;
+    max-height: calc(100vh - 120px) !important;
+  }
+
+  /* Mobile-optimized AI responses */
+  .ai-response {
+    max-width: 100% !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Mobile-optimized expanded responses */
+  .ai-response .max-h-80 {
+    max-height: 16rem !important; /* Smaller on mobile */
+    padding: 0.75rem !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Mobile-optimized math expressions */
+  .katex-display {
+    font-size: 14px !important;
+    margin: 0.25rem 0 !important;
+    padding: 0.25rem !important;
+  }
+
+  .katex {
+    font-size: 13px !important;
+  }
+
+  /* Mobile-optimized scrollbars */
+  .ai-response .max-h-80::-webkit-scrollbar {
+    width: 4px !important; /* Thinner on mobile */
+  }
+
+  /* Mobile-optimized buttons */
+  .ai-response button {
+    font-size: 12px !important;
+    padding: 0.25rem 0.5rem !important;
+    margin: 0.25rem !important;
+  }
+
+  /* Mobile-optimized chat input */
+  .chat-input-container {
+    height: 44px !important; /* iOS-friendly height */
+    padding: 0.5rem !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  .chat-input-container input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    height: 32px !important;
+  }
+
+  /* Mobile-optimized icons */
+  .chat-input-container .h-4 {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Mobile-optimized tabs */
+  [data-radix-tabs-trigger] {
+    font-size: 12px !important;
+    padding: 0.5rem 0.75rem !important;
+    min-height: 36px !important;
+  }
+
+  /* Mobile-optimized message bubbles */
+  .chat-message {
+    max-width: 90% !important;
+    margin: 0.5rem 0 !important;
+  }
+
+  /* Mobile-optimized avatar */
+  .chat-message .w-8 {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Mobile-optimized scroll area */
+  .chat-container .scroll-area {
+    padding: 0.5rem !important;
+  }
+
+  /* Mobile touch optimizations */
+  .ai-response button {
+    min-height: 44px !important; /* iOS touch target */
+    min-width: 44px !important;
+    touch-action: manipulation !important;
+  }
+
+  /* Mobile-optimized truncation */
+  .ai-response .max-h-80 {
+    max-height: 12rem !important; /* Even smaller on very small screens */
+  }
+
+  /* Mobile-optimized math rendering */
+  .katex-display {
+    font-size: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .katex {
+    font-size: 11px !important;
+  }
+
+  /* Mobile-optimized message spacing */
+  .chat-message {
+    margin: 0.75rem 0 !important;
+    padding: 0.75rem !important;
+  }
+
+  /* Mobile-optimized input icons */
+  .chat-input-container .h-7 {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Mobile-optimized tab layout */
+  [data-radix-tabs-list] {
+    gap: 0.25rem !important;
+    padding: 0.25rem !important;
+  }
+
+  /* Mobile-optimized scroll behavior */
+  .ai-response .max-h-80 {
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+  }
+}
+
+/* Extra small mobile screens (phones) */
+@media (max-width: 480px) {
+  /* Even smaller chat container */
+  .chat-container {
+    height: calc(100vh - 100px) !important;
+    max-height: calc(100vh - 100px) !important;
+  }
+
+  /* Smaller AI responses */
+  .ai-response {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    padding: 0.375rem !important;
+  }
+
+  /* Smaller expanded responses */
+  .ai-response .max-h-80 {
+    max-height: 10rem !important;
+    padding: 0.5rem !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Smaller math expressions */
+  .katex-display {
+    font-size: 11px !important;
+    margin: 0.125rem 0 !important;
+    padding: 0.125rem !important;
+  }
+
+  .katex {
+    font-size: 10px !important;
+  }
+
+  /* Smaller buttons */
+  .ai-response button {
+    font-size: 11px !important;
+    padding: 0.375rem 0.5rem !important;
+    margin: 0.125rem !important;
+  }
+
+  /* Smaller chat input */
+  .chat-input-container {
+    height: 40px !important;
+    padding: 0.375rem !important;
+  }
+
+  .chat-input-container input {
+    height: 28px !important;
+  }
+
+  /* Smaller icons */
+  .chat-input-container .h-4 {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .chat-input-container .h-7 {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Smaller tabs */
+  [data-radix-tabs-trigger] {
+    font-size: 11px !important;
+    padding: 0.375rem 0.5rem !important;
+    min-height: 32px !important;
+  }
+
+  /* Smaller message bubbles */
+  .chat-message {
+    max-width: 95% !important;
+    margin: 0.5rem 0 !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Smaller avatars */
+  .chat-message .w-8 {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Smaller scrollbars */
+  .ai-response .max-h-80::-webkit-scrollbar {
+    width: 3px !important;
+  }
+}
+
+/* Mobile-specific math and text optimizations */
+.mobile-math-display {
+  font-size: 12px !important;
+  margin: 0.25rem 0 !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.mobile-math-inline {
+  font-size: 11px !important;
+}
+
+.mobile-text {
+  word-break: break-word !important;
+  hyphens: auto !important;
+}
+
+/* Ensure chat tabs are clickable and prevent scroll on click */
+[data-radix-tabs-list] {
+  pointer-events: auto !important;
+}
+
+[data-radix-tabs-trigger] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Prevent scroll behavior when clicking tabs */
+[data-radix-tabs-trigger]:focus {
+  outline: none !important;
+}
+
+[data-radix-tabs-trigger]:active {
+  transform: none !important;
+}
+
+/* Ensure upload and voice icons are visible in light mode */
+.chat-input-container .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.chat-input-container .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+.chat-input-container .text-gray-600 {
+  color: #4b5563 !important;
+}
+
 /* Ensure consistent text sizing across light and dark modes */
 .chat-message,
 .chat-message *,

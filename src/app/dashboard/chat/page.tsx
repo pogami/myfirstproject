@@ -25,15 +25,55 @@ import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { RippleText } from "@/components/ripple-text";
 
 export default function ChatPage() {
-    const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat } = useChatStore();
+    const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat, initializeGeneralChat } = useChatStore();
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [forceLoad, setForceLoad] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const { toast } = useToast();
+
+    // Auto-scroll to bottom function
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    // Auto-scroll when page loads or messages change (but not when switching tabs)
+    useEffect(() => {
+        // Only auto-scroll when chats change, not when currentTab changes
+        const timer = setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [chats]);
+
+    // Auto-scroll when new messages are added
+    useEffect(() => {
+        if (currentTab && chats[currentTab]) {
+            scrollToBottom();
+        }
+    }, [chats]);
+
+    // Auto-scroll when switching to a different tab
+    useEffect(() => {
+        if (currentTab && chats[currentTab]) {
+            // Small delay to ensure the new tab content is rendered
+            const timer = setTimeout(() => {
+                scrollToBottom();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [currentTab]);
+
+    // Initialize general chat when component mounts
+    useEffect(() => {
+        initializeGeneralChat();
+    }, [initializeGeneralChat]);
 
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
@@ -514,6 +554,9 @@ export default function ChatPage() {
                                                 </div>
                                             ))}
                                             
+                                            {/* Scroll target for auto-scroll */}
+                                            <div ref={messagesEndRef} />
+                                            
                                             {/* AI Thinking Animation */}
                                             {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (                                                    
                                                 <div className="flex items-start gap-3 w-full max-w-full">
@@ -646,6 +689,9 @@ export default function ChatPage() {
                                                     </div>
                                                 </div>
                                             ))}
+                                            
+                                            {/* Scroll target for auto-scroll */}
+                                            <div ref={messagesEndRef} />
                                             
                                             {/* AI Thinking Animation */}
                                             {isLoading && chat?.messages?.at(-1)?.sender !== 'bot' && (
