@@ -14,7 +14,7 @@ export interface AIResponse {
 export async function getInDepthAnalysis({ question, context }: { question: string; context: string }): Promise<AIResponse> {
   try {
     // Simple, reliable AI responses for common academic questions
-    const responses = {
+    const responses: Record<string, string> = {
       'hi': 'Hello! I\'m CourseConnect AI, your academic assistant. I can help you with homework, explain concepts, provide study tips, and answer questions about any subject. What would you like to know?',
       'hello': 'Hi there! I\'m here to help with your academic needs. Whether it\'s math, science, literature, or any other subject, I\'m ready to assist. What can I help you with today?',
       'help': 'I\'m CourseConnect AI, your academic study companion! I can help you with:\n\n• Homework questions and problem-solving\n• Concept explanations and definitions\n• Study strategies and tips\n• Writing assistance\n• Test preparation\n• Research guidance\n\nJust ask me anything related to your studies!',
@@ -70,7 +70,7 @@ export async function getQuickAnswer(question: string): Promise<string> {
 }
 
 export async function getStudyTips(subject: string): Promise<string> {
-  const tips = {
+  const tips: Record<string, string> = {
     'math': 'Math Study Tips:\n\n• Practice daily with different problem types\n• Understand concepts before memorizing formulas\n• Work through examples step-by-step\n• Use visual aids and diagrams\n• Practice explaining solutions to others\n• Review mistakes to learn from them',
     'science': 'Science Study Tips:\n\n• Understand the scientific method\n• Connect concepts to real-world examples\n• Use diagrams and models\n• Practice lab procedures\n• Review key terminology\n• Connect different science disciplines',
     'english': 'English Study Tips:\n\n• Read actively and take notes\n• Practice writing regularly\n• Analyze literary devices\n• Build vocabulary systematically\n• Understand essay structure\n• Practice critical thinking',

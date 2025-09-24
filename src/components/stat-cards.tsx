@@ -17,11 +17,11 @@ export function StatCards() {
         try {
             if (auth && typeof auth.onAuthStateChanged === 'function') {
                 const unsubscribe = auth.onAuthStateChanged(
-                    (user) => {
+                    (user: any) => {
                         setUser(user);
                         setLoading(false);
                     },
-                    (error) => {
+                    (error: any) => {
                         console.warn("Auth state error in stat cards (offline mode):", error);
                         setUser(null);
                         setLoading(false);

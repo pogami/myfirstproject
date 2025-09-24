@@ -7,7 +7,7 @@
  * automatically falls back to OpenAI (ChatGPT).
  */
 
-import { genkit } from 'genkit';
+import { genkit, z } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import OpenAI from 'openai';
 
@@ -50,8 +50,8 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
 
     const prompt = ai.definePrompt({
       name: 'provideStudyAssistancePrompt',
-      input: { schema: { question: 'string', context: 'string' } },
-      output: { schema: { answer: 'string' } },
+      input: { schema: z.object({ question: z.string(), context: z.string() }) },
+      output: { schema: z.object({ answer: z.string() }) },
       prompt: `IMPORTANT: You must NEVER use markdown formatting symbols like ** or ## or ### or * or #. Write ONLY in plain text. Do not use bold, italics, headers, or any markdown syntax.
 
 You are CourseConnect AI, an expert teaching assistant that helps students with academic questions across all subjects. You provide concise, direct answers first, with optional detailed explanations available on request.
@@ -385,8 +385,8 @@ export async function getInDepthAnalysis(input: StudyAssistanceInput): Promise<A
       try {
         const prompt = ai.definePrompt({
           name: 'inDepthAnalysisPrompt',
-          input: { schema: { question: 'string', context: 'string' } },
-          output: { schema: { answer: 'string' } },
+          input: { schema: z.object({ question: z.string(), context: z.string() }) },
+          output: { schema: z.object({ answer: z.string() }) },
           prompt: `IMPORTANT: You must NEVER use markdown formatting symbols like ** or ## or ### or * or #. Write ONLY in plain text. Do not use bold, italics, headers, or any markdown syntax.
 
 You are CourseConnect AI, providing a comprehensive, detailed analysis of the student's question.
@@ -429,8 +429,8 @@ For mathematical expressions, use LaTeX formatting:
         console.warn('OpenAI failed for in-depth analysis, trying Google AI:', openaiError);
         const prompt = ai.definePrompt({
           name: 'inDepthAnalysisPrompt',
-          input: { schema: { question: 'string', context: 'string' } },
-          output: { schema: { answer: 'string' } },
+          input: { schema: z.object({ question: z.string(), context: z.string() }) },
+          output: { schema: z.object({ answer: z.string() }) },
           prompt: `IMPORTANT: You must NEVER use markdown formatting symbols like ** or ## or ### or * or #. Write ONLY in plain text. Do not use bold, italics, headers, or any markdown syntax.
 
 You are CourseConnect AI, providing a comprehensive, detailed analysis of the student's question.

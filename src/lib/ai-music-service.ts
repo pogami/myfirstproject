@@ -110,12 +110,12 @@ class AIMusicService {
     };
   }
 
-  private getRandomPrompt(mood: string): string {
+  private getRandomPrompt(mood: AIGeneratedTrack['mood']): string {
     const prompts = musicPrompts[mood as keyof typeof musicPrompts] || musicPrompts.calm;
     return prompts[Math.floor(Math.random() * prompts.length)];
   }
 
-  private getDemoAudioUrl(mood: string): string {
+  private getDemoAudioUrl(mood: AIGeneratedTrack['mood']): string {
     // Demo audio URLs - in production, these would be actual generated audio files
     const demoUrls = {
       calm: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
@@ -127,7 +127,7 @@ class AIMusicService {
     return demoUrls[mood as keyof typeof demoUrls] || demoUrls.calm;
   }
 
-  private getDemoImageUrl(mood: string): string {
+  private getDemoImageUrl(mood: AIGeneratedTrack['mood']): string {
     const imageUrls = {
       calm: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=64&h=64&fit=crop',
       focus: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=64&h=64&fit=crop',
@@ -138,7 +138,7 @@ class AIMusicService {
     return imageUrls[mood as keyof typeof imageUrls] || imageUrls.calm;
   }
 
-  private getBPMForMood(mood: string): number {
+  private getBPMForMood(mood: AIGeneratedTrack['mood']): number {
     const bpmMap = {
       calm: 60,
       focus: 80,
@@ -150,7 +150,7 @@ class AIMusicService {
   }
 
   private generateTags(request: MusicGenerationRequest): string[] {
-    const tags = [request.mood];
+    const tags: string[] = [request.mood];
     
     if (request.style) tags.push(request.style);
     if (request.instruments) tags.push(...request.instruments);
@@ -160,7 +160,7 @@ class AIMusicService {
   }
 
   // Get suggested prompts for different moods
-  getSuggestedPrompts(mood: string): string[] {
+  getSuggestedPrompts(mood: AIGeneratedTrack['mood']): string[] {
     return musicPrompts[mood as keyof typeof musicPrompts] || musicPrompts.calm;
   }
 

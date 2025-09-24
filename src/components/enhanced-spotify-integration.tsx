@@ -295,7 +295,7 @@ export function EnhancedSpotifyIntegration({ isConnected = false }: SpotifyInteg
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.src = 'preview_url' in currentTrack ? currentTrack.preview_url || '' : currentTrack.audio_url;
+        audioRef.current.src = 'preview_url' in currentTrack ? (currentTrack.preview_url || '') : ((currentTrack as AIGeneratedTrack).audio_url || '');
         audioRef.current.play().catch(console.error);
       }
       setIsPlaying(!isPlaying);
@@ -355,7 +355,7 @@ export function EnhancedSpotifyIntegration({ isConnected = false }: SpotifyInteg
   };
 
   const isAITrack = (track: SpotifyTrack | AIGeneratedTrack): track is AIGeneratedTrack => {
-    return 'mood' in track;
+    return (track as any).audio_url !== undefined;
   };
 
   return (
@@ -422,8 +422,8 @@ export function EnhancedSpotifyIntegration({ isConnected = false }: SpotifyInteg
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium">{currentTrack.name}</h4>
-                          <p className="text-sm text-muted-foreground">{currentTrack.artist}</p>
-                          <p className="text-xs text-muted-foreground">{currentTrack.album}</p>
+                          <p className="text-sm text-muted-foreground">{'artist' in currentTrack ? currentTrack.artist : 'AI Generated'}</p>
+                          <p className="text-xs text-muted-foreground">{'album' in currentTrack ? currentTrack.album : 'AI Music'}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="text-sm text-muted-foreground">

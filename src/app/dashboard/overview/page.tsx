@@ -146,7 +146,7 @@ export default function ClassOverviewPage() {
                                                     </div>
                                                     <div className="flex-1">
                                                         <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                                                            {chat.name}
+                                                            {chat.title}
                                                         </CardTitle>
                                                         <CardDescription className="mt-1">
                                                             {stats.students} students enrolled
@@ -195,7 +195,7 @@ export default function ClassOverviewPage() {
                                                         Join Chat
                                                         <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                                                     </Button>
-                                                    <Button 
+                                <Button 
                                                         className="bg-gradient-to-r from-red-500/10 to-red-500/5 hover:from-red-500/20 hover:to-red-500/10 text-red-500 border-red-500/20 hover:border-red-500/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
                                                         variant="outline"
                                                         size="sm"

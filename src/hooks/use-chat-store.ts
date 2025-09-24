@@ -34,7 +34,7 @@ interface ChatState {
   trialActivated: boolean; // Whether user has activated their trial
   trialStartDate: number | null; // When the trial started (timestamp)
   trialDaysLeft: number; // Days remaining in trial
-  addChat: (chatName: string, initialMessage: Message) => Promise<void>;
+  addChat: (chatName: string, initialMessage: Message, customChatId?: string) => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   setCurrentTab: (tabId: string | undefined) => void;
   setShowUpgrade: (show: boolean) => void;

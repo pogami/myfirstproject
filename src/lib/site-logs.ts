@@ -510,15 +510,12 @@ export class SiteLogManager {
   /**
    * Add a new log entry
    */
-  static addLog(log: Omit<SiteLog, 'date'>): void {
+  static addLogSimple(log: Omit<SiteLog, 'date'>): void {
     const newLog: SiteLog = {
       ...log,
-      date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+      date: new Date().toISOString().split('T')[0]
     };
-    
     this.logs.unshift(newLog);
-    
-    // Log to console for development
     console.log(`📝 Site Log Added: ${newLog.version} - ${newLog.type}`);
     console.log(`Changes: ${newLog.changes.join(', ')}`);
   }
@@ -533,7 +530,14 @@ export class SiteLogManager {
     if (sendEmailNotification) {
       try {
         const { notifySubscribersOfNewUpdate } = await import('./changelog-email-service');
-        await notifySubscribersOfNewUpdate(log);
+        await notifySubscribersOfNewUpdate({
+          date: log.date,
+          version: log.version,
+          changes: log.changes,
+          type: log.type,
+          author: log.author || 'Development Team',
+          impact: log.impact || 'medium'
+        });
       } catch (error) {
         console.error('Failed to send changelog email notification:', error);
       }
@@ -624,7 +628,7 @@ export function addSiteLog(
   impact: SiteLog['impact'] = 'medium',
   author: string = 'Development Team'
 ): void {
-  SiteLogManager.addLog({
+  SiteLogManager.addLogSimple({
     version,
     type,
     changes,

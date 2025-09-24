@@ -40,7 +40,7 @@ export default function FlashcardGenerator() {
                 .join('\n');
 
             const result = await generateFlashcards({ 
-                className: chat.name,
+                className: chat.title,
                 chatHistory,
              });
 
@@ -54,7 +54,7 @@ export default function FlashcardGenerator() {
                 setFlashcards(result.flashcards);
                 toast({
                     title: "Flashcards Generated!",
-                    description: `Created ${result.flashcards.length} flashcards for ${chat.name}.`,
+                    description: `Created ${result.flashcards.length} flashcards for ${chat.title}.`,
                 });
             }
 
@@ -191,7 +191,7 @@ export default function FlashcardGenerator() {
                                     <Button key={id} variant="outline" className="w-full justify-start h-auto py-3" onClick={() => handleGenerateFromClass(chat)}>
                                         <BookUser className="mr-4 text-primary" />
                                         <span className="text-left">
-                                            <span className="font-bold">{chat.name}</span>
+                                            <span className="font-bold">{chat.title}</span>
                                             <br />
                                             <span className="text-xs text-muted-foreground">{chat.messages.length} messages in chat</span>
                                         </span>
