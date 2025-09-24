@@ -400,7 +400,11 @@ export default function ChatInterface() {
                 const context = chats[currentTab!]?.title || 'General Chat';
                 const result = await provideStudyAssistanceWithFallback({
                     question: messageToProcess.text,
-                    context: context
+                    context: context,
+                    conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
+                        role: msg.sender === 'bot' ? 'assistant' as const : 'user' as const,
+                        content: msg.text
+                    })) || []
                 });
                 
                 const assistanceMessage: Message = {
@@ -529,7 +533,11 @@ export default function ChatInterface() {
         try {
             const result = await getInDepthAnalysis({
                 question,
-                context
+                context,
+                conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
+                    role: msg.sender === 'bot' ? 'assistant' as const : 'user' as const,
+                    content: msg.text
+                })) || []
             });
             
             setAnalysisContent(result.answer || 'I apologize, but I couldn\'t generate a detailed analysis.');
