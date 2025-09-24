@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "recharts";
 import "katex/dist/katex.min.css";
+import { TruncatedText } from './truncated-text';
 
 // Detect if content looks like data points (array of {x, y})
 function looksLikeGraph(content: string): boolean {
@@ -62,7 +63,15 @@ export default function BotResponse({ content, className = "" }: BotResponseProp
   // Otherwise treat as text + math
   return (
     <div className={`leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response ${className}`}>
-      {content.split("\n").map((line, i) => renderMathLine(line, i))}
+      {content.length > 500 ? (
+        <TruncatedText 
+          text={content}
+          maxLength={500}
+          className="ai-response"
+        />
+      ) : (
+        content.split("\n").map((line, i) => renderMathLine(line, i))
+      )}
     </div>
   );
 }

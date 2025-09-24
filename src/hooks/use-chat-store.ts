@@ -53,6 +53,7 @@ interface ChatState {
   resetChat: (chatId: string) => Promise<void>;
   exportChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
+  initializeGeneralChat: () => void;
 }
 
 const getChatId = (chatName: string) => chatName.toLowerCase().replace(/[\\s:]/g, '-');
@@ -403,6 +404,12 @@ export const useChatStore = create<ChatState>()(
       deleteChat: async (chatId) => {
         const { isGuest, currentTab } = get();
         
+        // Prevent deletion of general chat
+        if (chatId === 'general-chat') {
+          console.log('Cannot delete general chat');
+          return;
+        }
+        
         // Update local state
         set((state) => {
           const newChats = { ...state.chats };
@@ -445,6 +452,34 @@ export const useChatStore = create<ChatState>()(
           } catch (error) {
             console.warn("Failed to delete chat from firestore:", error);
           }
+        }
+      },
+      
+      initializeGeneralChat: () => {
+        const { chats } = get();
+        
+        // Only create general chat if it doesn't exist
+        if (!chats['general-chat']) {
+          const generalChatMessage = {
+            sender: 'bot' as const,
+            name: 'CourseConnect AI',
+            text: `Welcome to General Chat! 🎓\n\n**General Chat Features:**\n• Ask questions about any topic\n• Get AI assistance with homework\n• Discuss academic concepts\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant materials\n• Help others when you can\n\nStart by asking a question!`,
+            timestamp: Date.now()
+          };
+          
+          set((state) => ({
+            chats: {
+              ...state.chats,
+              'general-chat': {
+                id: 'general-chat',
+                title: 'General Chat',
+                messages: [generalChatMessage],
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+              }
+            },
+            currentTab: state.currentTab || 'general-chat'
+          }));
         }
       },
     }),
