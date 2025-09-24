@@ -6,6 +6,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X, Home, MessageSquare, Upload, BookOpen, Users, Settings, LogOut, Bell } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth, rtdb } from "@/lib/firebase/client";
+import { ref, set, serverTimestamp } from "firebase/database";
+import { useToast } from "@/hooks/use-toast";
+import { useChatStore } from "@/hooks/use-chat-store";
 
 interface MobileNavigationProps {
   user?: any;
@@ -14,6 +20,9 @@ interface MobileNavigationProps {
 
 export function MobileNavigation({ user, className }: MobileNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { clearGuestData } = useChatStore();
 
   const navigationItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -25,6 +34,89 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
   ];
 
   const closeSheet = () => setIsOpen(false);
+
+  const handleLogout = async () => {
+    console.log('=== MOBILE LOGOUT INITIATED ===');
+    console.log('User:', user);
+    
+    if (!user) {
+      window.location.href = '/home';
+      return;
+    }
+
+    // Handle guest logout
+    if (user.isGuest || user.isAnonymous) {
+      console.log('Mobile guest user logout');
+      localStorage.removeItem('guestUser');
+      clearGuestData();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your guest account.",
+      });
+      setTimeout(() => {
+        window.location.href = '/home';
+      }, 1000);
+      return;
+    }
+
+    try {
+      console.log('Mobile starting Firebase logout process');
+      toast({
+        title: "Logging out...",
+        description: "You are being signed out of your account.",
+      });
+
+      // Set user status to offline in Realtime Database
+      try {
+        const userStatusRef = ref(rtdb, `/status/${user.uid}`);
+        await set(userStatusRef, {
+          state: 'offline',
+          last_changed: serverTimestamp(),
+        });
+        console.log('Mobile user status set to offline');
+      } catch (dbError) {
+        console.warn('Mobile failed to set user status offline:', dbError);
+      }
+
+      // Sign out from Firebase Auth
+      await signOut(auth);
+      console.log('Mobile Firebase signOut completed');
+      
+      // Clear any local state
+      clearGuestData();
+      localStorage.removeItem('guestUser');
+      localStorage.removeItem('showOnboarding');
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your account.",
+      });
+      
+      // Force redirect with multiple methods
+      setTimeout(() => {
+        console.log('Mobile executing redirect...');
+        window.location.href = '/home';
+        setTimeout(() => {
+          if (window.location.pathname !== '/home') {
+            console.log('Mobile backup redirect triggered');
+            window.location.replace('/home');
+          }
+        }, 500);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Mobile logout error:', error);
+      toast({
+        variant: "destructive",
+        title: "Logout failed",
+        description: "There was an error signing you out. Please try again.",
+      });
+      
+      setTimeout(() => {
+        window.location.href = '/home';
+      }, 2000);
+    }
+  };
 
   return (
     <div className={cn("lg:hidden", className)}>
@@ -113,8 +205,8 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
                 variant="ghost"
                 className="w-full justify-start text-destructive hover:text-destructive"
                 onClick={() => {
-                  // Add logout logic here
                   closeSheet();
+                  handleLogout();
                 }}
               >
                 <LogOut className="h-4 w-4 mr-2" />

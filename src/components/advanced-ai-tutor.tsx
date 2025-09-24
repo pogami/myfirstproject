@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { RippleText } from '@/components/ripple-text';
 import { 
   Bot, 
   Mic, 
@@ -1444,23 +1445,31 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 {message.role === 'assistant' && (
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot className="h-4 w-4" />
+                      <img 
+                        src="/final-logo.png" 
+                        alt="CourseConnect AI" 
+                        className="h-4 w-4 object-contain"
+                      />
                     </AvatarFallback>
                   </Avatar>
                 )}
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background border'
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                  <div className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString()}
-                    {message.subject && ` • ${message.subject}`}
+                {message.role === 'assistant' ? (
+                  <div className="px-3 pb-3">
+                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    <div className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString()}
+                      {message.subject && ` • ${message.subject}`}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="max-w-[80%] p-3 rounded-lg bg-primary text-primary-foreground">
+                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    <div className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString()}
+                      {message.subject && ` • ${message.subject}`}
+                    </div>
+                  </div>
+                )}
                 {message.role === 'user' && (
                   <Avatar className="h-8 w-8">
                     {user?.photoURL ? (
@@ -1482,15 +1491,11 @@ I'm here to help you understand whatever concepts are presented in this visual m
               <div className="flex gap-3 justify-start">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    <Bot className="h-4 w-4" />
+                    <CourseConnectLogo className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
                 <div className="bg-background border p-3 rounded-lg">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
+                  <RippleText text="Loading..." className="text-sm text-muted-foreground" />
                 </div>
               </div>
             )}

@@ -376,8 +376,12 @@ export default function SyllabusUpload() {
                                     }
                                 />
                                 <Label htmlFor="ai-only" className="flex items-center gap-2 cursor-pointer">
-                                    <Bot className="h-4 w-4" />
-                                    AI-Only Personal Chat
+                                    <img 
+                                        src="/final-logo.png" 
+                                        alt="CourseConnect AI" 
+                                        className="h-4 w-4 object-contain"
+                                    />
+                                    CourseConnect AI Personal Chat
                                 </Label>
                             </div>
                         </div>

@@ -6,6 +6,138 @@ body {
   font-family: 'PT Sans', sans-serif;
 }
 
+/* Prevent large text from breaking layout */
+.katex-display {
+  font-size: 1rem !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.katex {
+  font-size: 1rem !important;
+  max-width: 100% !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Constrain all text in chat messages */
+.chat-message * {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+/* Ensure proper text colors in chat messages */
+.chat-message p {
+  color: hsl(var(--foreground)) !important;
+}
+
+.chat-message .text-foreground {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* User message bubbles - ChatGPT style */
+.user-message-bubble {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-size: 0.875rem !important; /* Consistent font size */
+  line-height: 1.5 !important; /* Consistent line height */
+  padding: 8px 12px !important; /* Consistent padding */
+}
+
+/* AI responses - blend with background */
+.ai-response {
+  color: hsl(var(--foreground)) !important;
+  background: transparent !important;
+}
+
+/* Ensure proper contrast in light mode */
+.light .chat-message .text-foreground {
+  color: black !important; /* Black text on white background */
+}
+
+.light .ai-response {
+  color: black !important; /* Black text for AI responses in light mode */
+  background-color: white !important; /* White background for AI responses */
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 0.875rem !important; /* Consistent font size */
+  line-height: 1.5 !important; /* Consistent line height */
+}
+
+/* Ensure dark mode AI responses have same sizing */
+.dark .ai-response {
+  font-size: 0.875rem !important; /* Same font size as light mode */
+  line-height: 1.5 !important; /* Same line height as light mode */
+  padding: 8px 12px !important; /* Same padding as light mode */
+}
+
+
+/* Ensure entire chat area is white in light mode */
+.light .chat-container {
+  background-color: white !important;
+}
+
+.light .chat-message {
+  background-color: white !important;
+}
+
+.light .scroll-area {
+  background-color: white !important;
+}
+
+.light .card {
+  background-color: white !important;
+}
+
+.light .card-content {
+  background-color: white !important;
+}
+
+.light .tabs-content {
+  background-color: white !important;
+}
+
+.light .tabs {
+  background-color: white !important;
+}
+
+.light [data-radix-scroll-area-viewport] {
+  background-color: white !important;
+}
+
+
+
+
+
+/* Fill the thin vertical border/gap with white in light mode only */
+.light [data-radix-scroll-area-scrollbar],
+.light [data-radix-scroll-area-scrollbar-vertical],
+.light [data-radix-scroll-area-scrollbar-horizontal],
+.light [data-radix-scroll-area-corner],
+.light .scrollbar,
+.light .scrollbar-track,
+.light .scrollbar-thumb,
+.light .overflow-y-auto,
+.light .overflow-x-hidden {
+  background-color: white !important;
+}
+
+/* Fill gaps in chat response area */
+.light .chat-container,
+.light .scroll-area,
+.light [data-radix-scroll-area-viewport],
+.light .flex-1,
+.light .min-h-0 {
+  background-color: white !important;
+}
+
+/* Prevent horizontal scrolling */
+.chat-container {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
 @layer base {
   :root {
     --background: 204 100% 96%; /* light blue */
@@ -151,4 +283,273 @@ body {
 
 .crown-gradient-container {
   display: inline-block;
+}
+
+/* View Transition API for theme switching */
+::view-transition-new(root) {
+  mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="white"/></svg>')
+    center / 0 no-repeat;
+  animation: scale 1s;
+}
+
+::view-transition-old(root),
+.dark::view-transition-old(root) {
+  animation: none;
+  z-index: -1;
+}
+
+.dark::view-transition-new(root) {
+  animation: scale 1s;
+}
+
+@keyframes scale {
+  to {
+    mask-size: 200vmax;
+  }
+}
+
+/* Futuristic Chat Input Styles */
+.futuristic-input-container {
+  position: relative;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  border-radius: 1rem;
+  padding: 0.5rem;
+}
+
+.futuristic-input-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  padding: 2px;
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: gradient-rotate 3s linear infinite;
+}
+
+@keyframes gradient-rotate {
+  0% {
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4);
+  }
+  33% {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4, #8b5cf6);
+  }
+  66% {
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6, #3b82f6);
+  }
+  100% {
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4);
+  }
+}
+
+/* Glowing button effects */
+.glow-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.glow-button:hover::before {
+  left: 100%;
+}
+
+/* Matrix-like background pattern */
+.matrix-bg {
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+  background-size: 200px 200px, 300px 300px, 250px 250px;
+  animation: matrix-float 20s ease-in-out infinite;
+}
+
+@keyframes matrix-float {
+  0%, 100% {
+    background-position: 0% 0%, 100% 100%, 50% 50%;
+  }
+  50% {
+    background-position: 100% 100%, 0% 0%, 25% 75%;
+  }
+}
+
+/* Enhanced chat container */
+.chat-container {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(30, 30, 30, 0.9));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 
+    0 0 20px rgba(139, 92, 246, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode (force white background in chat only) */
+.light .chat-panel, 
+.light .messages {
+  background: #ffffff !important;
+  color: #111827 !important; /* dark readable text */
+}
+
+/* Dark mode (keep it dark as designed) */
+.dark .chat-panel, 
+.dark .messages {
+  background: #0b1220 !important;
+  color: #e6eef8 !important; /* light readable text */
+}
+
+/* Light mode: make input area fully white */
+.light .chat-input-container {
+  background: #ffffff !important;   /* whole bar background white */
+  border: 1px solid #e5e7eb !important; /* subtle border */
+}
+
+.light .chat-input-container input,
+.light .chat-input-container textarea {
+  background: #ffffff !important;   /* input background white */
+  color: #111827 !important;        /* dark readable text */
+}
+
+.light .chat-input-container input::placeholder,
+.light .chat-input-container textarea::placeholder {
+  color: #9ca3af !important;        /* medium gray placeholder */
+}
+
+/* Also target FuturisticChatInput container in light mode */
+.light .relative.flex.items-center.gap-2.p-2.rounded-lg.border {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.light .relative.flex.items-center.gap-2.p-2.rounded-lg.border input {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light .relative.flex.items-center.gap-2.p-2.rounded-lg.border input::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Fix grey gaps/borders in class chat */
+.light .chat-container {
+  background: #ffffff !important;
+}
+
+.light .chat-container .border-t {
+  border-color: #ffffff !important;
+}
+
+.light .chat-container .bg-background {
+  background: #ffffff !important;
+}
+
+.light .chat-container .border-border {
+  border-color: #ffffff !important;
+}
+
+/* Fix ScrollArea gaps in light mode */
+.light [data-radix-scroll-area-viewport] {
+  background: #ffffff !important;
+}
+
+.light [data-radix-scroll-area-scrollbar] {
+  background: #ffffff !important;
+}
+
+.light [data-radix-scroll-area-scrollbar-vertical] {
+  background: #ffffff !important;
+}
+
+.light [data-radix-scroll-area-scrollbar-horizontal] {
+  background: #ffffff !important;
+}
+
+.light [data-radix-scroll-area-corner] {
+  background: #ffffff !important;
+}
+
+/* Fix Card gaps in light mode */
+.light .card {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+.light .card-content {
+  background: #ffffff !important;
+}
+
+.light .card-header {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+/* Ensure consistent text sizing across light and dark modes */
+.chat-message,
+.chat-message *,
+.ai-response,
+.ai-response *,
+.user-message-bubble,
+.user-message-bubble * {
+  font-size: 0.875rem !important; /* 14px - consistent across themes */
+  line-height: 1.5 !important; /* Consistent line height */
+  font-weight: normal !important; /* Consistent font weight */
+}
+
+/* Ensure consistent text sizing for all chat text elements */
+.light .chat-message,
+.light .chat-message *,
+.light .ai-response,
+.light .ai-response *,
+.light .user-message-bubble,
+.light .user-message-bubble *,
+.dark .chat-message,
+.dark .chat-message *,
+.dark .ai-response,
+.dark .ai-response *,
+.dark .user-message-bubble,
+.dark .user-message-bubble * {
+  font-size: 0.875rem !important; /* 14px - same in both themes */
+  line-height: 1.5 !important; /* Same line height in both themes */
+  font-weight: normal !important; /* Same font weight in both themes */
+}
+
+/* Dark mode: make typing bar black to match chat interface */
+.dark .chat-input-container {
+  background: #000000 !important;   /* black background to match chat */
+  border: 1px solid #374151 !important; /* subtle dark border */
+}
+
+.dark .chat-input-container input,
+.dark .chat-input-container textarea {
+  background: #000000 !important;   /* black input background */
+  color: #ffffff !important;        /* white readable text */
+}
+
+.dark .chat-input-container input::placeholder,
+.dark .chat-input-container textarea::placeholder {
+  color: #9ca3af !important;        /* medium gray placeholder */
+}
+
+/* Also target FuturisticChatInput container in dark mode */
+.dark .relative.flex.items-center.gap-2.p-2.rounded-lg.border {
+  background: #000000 !important;
+  border: 1px solid #374151 !important;
+}
+
+.dark .relative.flex.items-center.gap-2.p-2.rounded-lg.border input {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+.dark .relative.flex.items-center.gap-2.p-2.rounded-lg.border input::placeholder {
+  color: #9ca3af !important;
 }

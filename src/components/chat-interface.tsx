@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Bot, User, AlertTriangle, MessageCircle, Info, Upload, ChevronDown, ChevronUp, Copy, Check, BookOpen, Loader2, X, Download, RotateCcw, Trash2, MoreVertical } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -17,12 +17,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { EnhancedFileDisplay } from "@/components/enhanced-file-display";
+import { fileAnalysisService } from "@/ai/services/file-analysis-service";
+import { AIResponseRenderer } from "@/components/ai-response-renderer";
 import Link from "next/link";
 import { useChatStore, Message } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase/client";
+import { doc, getDoc } from "firebase/firestore";
 import { getInDepthAnalysis } from "@/ai/services/dual-ai-service";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { FuturisticChatInput } from "@/components/futuristic-chat-input";
+import { RealTimeSearchAnimation } from "@/components/real-time-search-animation";
+import { RippleText } from "@/components/ripple-text";
+import dynamic from 'next/dynamic';
+
+const DigitalClock = dynamic(() => import('@/components/digital-clock').then(mod => ({ default: mod.DigitalClock })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+      <div className="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded animate-pulse" />
+      <span className="font-mono">--:--:--</span>
+    </div>
+  )
+});
 
 export default function ChatInterface() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isGuest, isStoreLoading, resetChat, exportChat, deleteChat } = useChatStore();
@@ -47,6 +65,8 @@ export default function ChatInterface() {
     const [isMuted, setIsMuted] = useState<boolean>(false);
     const [muteEndTime, setMuteEndTime] = useState<number>(0);
     const [userProfiles, setUserProfiles] = useState<Record<string, { photoURL?: string; displayName?: string }>>({});
+    const [showRealTimeSearch, setShowRealTimeSearch] = useState(false);
+    const [currentSearchQuery, setCurrentSearchQuery] = useState("");
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
     const [user, setUser] = useState<any>(null);
@@ -59,8 +79,8 @@ export default function ChatInterface() {
         try {
             if (auth && typeof auth.onAuthStateChanged === 'function') {
                 const unsubscribe = auth.onAuthStateChanged(
-                    (user) => setUser(user),
-                    (error) => {
+                    (user: any) => setUser(user),
+                    (error: any) => {
                         console.warn("Auth state error in chat interface (offline mode):", error);
                         setUser(null);
                     }
@@ -113,7 +133,7 @@ export default function ChatInterface() {
             if (isGuest && !chats['general-chat']) {
                  addChat('General Chat', { 
                     sender: 'bot', 
-                    name: 'CourseConnect AI', 
+                    name: 'AI', 
                     text: 'Welcome to the General Chat! Feel free to ask any questions here.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.',
                     timestamp: Date.now()
                 });
@@ -168,7 +188,7 @@ export default function ChatInterface() {
                     const welcomeMessage: Message = {
                         sender: "bot",
                         text: `Welcome ${user.displayName || user.email || 'Student'} to ${currentChat.title}! 🎓\n\nFeel free to ask questions, collaborate with classmates, and get AI assistance with your studies.`,
-                        name: "CourseConnect AI",
+                        name: "AI",
                         timestamp: Date.now()
                     };
                     
@@ -386,7 +406,7 @@ export default function ChatInterface() {
                 const assistanceMessage: Message = {
                     sender: "bot",
                     text: result.answer || 'I apologize, but I couldn\'t generate a response.',
-                    name: "CourseConnect AI",
+                    name: "AI",
                     timestamp: Date.now()
                 };
                 
@@ -539,6 +559,104 @@ export default function ChatInterface() {
         }
     };
 
+    const handleFileUpload = async (file: File) => {
+        if (!currentTab) return;
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            toast({
+                variant: "destructive",
+                title: "File Too Large",
+                description: "Please upload files smaller than 10MB.",
+            });
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'image/png',
+            'image/jpeg',
+            'image/jpg',
+            'image/gif',
+            'image/webp'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            toast({
+                variant: "destructive",
+                title: "Invalid File Type",
+                description: "Please upload PDF, Word documents, text files, or images.",
+            });
+            return;
+        }
+
+        // Create file message
+        const fileMessage = {
+            id: Date.now().toString(),
+            text: `📎 Uploaded file: ${file.name}`,
+            sender: 'user' as const,
+            name: user?.displayName || 'Anonymous',
+            timestamp: Date.now(),
+            file: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: URL.createObjectURL(file)
+            }
+        };
+
+        // Add file message to chat
+        await addMessage(currentTab, fileMessage);
+
+        // Show success toast
+        toast({
+            title: "File Uploaded",
+            description: `${file.name} has been uploaded successfully.`,
+        });
+
+        // Automatically analyze the file with AI
+        try {
+            const analysisResult = await fileAnalysisService.analyzeFile({ file });
+            
+            if (analysisResult.success && analysisResult.content) {
+                const analysisMessage = {
+                    id: (Date.now() + 1).toString(),
+                    text: `I've analyzed your file "${file.name}". Here's what I found:\n\n${analysisResult.content}`,
+                    sender: 'bot' as const,
+                    name: 'AI',
+                    timestamp: Date.now() + 1
+                };
+                
+                await addMessage(currentTab, analysisMessage);
+            } else {
+                const errorMessage = {
+                    id: (Date.now() + 1).toString(),
+                    text: `I received your file "${file.name}" but encountered an issue analyzing it: ${analysisResult.error || 'Unknown error'}. You can still ask me questions about it!`,
+                    sender: 'bot' as const,
+                    name: 'AI',
+                    timestamp: Date.now() + 1
+                };
+                
+                await addMessage(currentTab, errorMessage);
+            }
+        } catch (error) {
+            console.error('File analysis error:', error);
+            const fallbackMessage = {
+                id: (Date.now() + 1).toString(),
+                text: `I've received your file "${file.name}". While I couldn't analyze it automatically, you can ask me specific questions about it and I'll do my best to help!`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                timestamp: Date.now() + 1
+            };
+            
+            await addMessage(currentTab, fallbackMessage);
+        }
+    };
+
     const handleSendMessage = async (e: FormEvent) => {
         e.preventDefault();
         if (!inputValue.trim() || isSending || !currentTab) return;
@@ -600,13 +718,27 @@ export default function ChatInterface() {
 
         // Try to use AI assistance first, fallback to contextual responses
         try {
+            // Show real-time search animation
+            setShowRealTimeSearch(true);
+            setCurrentSearchQuery(messageToProcess);
+            
             // Import AI functions dynamically to avoid build issues
             const { provideStudyAssistanceWithFallback } = await import("@/ai/services/dual-ai-service");
             
             const context = chats[currentTab!]?.title || 'General Chat';
+            
+            // Build conversation history from recent messages
+            const currentChat = chats[currentTab!];
+            const recentMessages = currentChat?.messages.slice(-10) || []; // Last 10 messages for context
+            const conversationHistory = recentMessages.map(msg => ({
+                role: msg.sender === 'bot' ? 'assistant' as const : 'user' as const,
+                content: msg.text
+            }));
+            
             const result = await provideStudyAssistanceWithFallback({
                 question: messageToProcess,
-                context: context
+                context: context,
+                conversationHistory: conversationHistory
             });
             
             const assistanceMessage: Message = {
@@ -622,7 +754,7 @@ export default function ChatInterface() {
             
             // Provide contextual fallback response based on chat name
             const lowerQuestion = messageToProcess.toLowerCase();
-            const chatName = chats[currentTab!]?.name || '';
+            const chatName = chats[currentTab!]?.title || '';
             const lowerChatName = chatName.toLowerCase();
         
             let fallbackText = `I'd be happy to help with your question: "${messageToProcess}"\n\n`;
@@ -668,6 +800,7 @@ export default function ChatInterface() {
         });
         
         setIsSending(false);
+        setShowRealTimeSearch(false);
     };
 
     const hasChats = Object.keys(chats).length > 0;
@@ -682,7 +815,13 @@ export default function ChatInterface() {
     }
 
     return (
-        <div className="space-y-4 sm:space-y-6">
+        <>
+            <RealTimeSearchAnimation 
+                query={currentSearchQuery}
+                onComplete={() => setShowRealTimeSearch(false)}
+                isVisible={showRealTimeSearch}
+            />
+            <div className="space-y-4 sm:space-y-6">
             <Card className="h-[70vh] sm:h-[75vh] flex flex-col shadow-2xl border border-border/50 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-background to-muted/20">
                 <CardHeader className="pb-3 sm:pb-4">
                     <div className="flex items-center justify-between">
@@ -775,7 +914,13 @@ export default function ChatInterface() {
                                                                 />
                                                             ) : null}
                                                             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                                                                {msg.sender === 'bot' && <Bot className="size-6 text-primary-foreground"/>}
+                                                                {msg.sender === 'bot' && (
+                                                                    <img 
+                                                                        src="/courseconnect-logo-profile.png" 
+                                                                        alt="AI" 
+                                                                        className="size-6 object-contain"
+                                                                    />
+                                                                )}
                                                                 {msg.sender === 'moderator' && <AlertTriangle className="size-6 text-destructive"/>}
                                                                 {msg.sender === 'user' && (
                                                                     userProfiles[msg.userId || '']?.displayName 
@@ -787,15 +932,21 @@ export default function ChatInterface() {
                                                 )}
                                                     
                                                 <div className={cn(
-                                                        "max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg shadow-lg ring-1 ring-black/5",
+                                                        "max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg",
                                                         msg.userId === user?.uid 
-                                                            ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl rounded-br-md' 
-                                                            : 'bg-gradient-to-br from-background to-muted/30 text-foreground rounded-xl sm:rounded-2xl rounded-bl-md border border-border/50',
-                                                        msg.sender === 'moderator' && 'bg-gradient-to-br from-destructive/10 to-destructive/5 text-destructive border border-destructive/20'
+                                                            ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-xl sm:rounded-2xl rounded-br-md shadow-lg ring-1 ring-black/5' 
+                                                            : msg.sender === 'bot' 
+                                                                ? 'text-foreground' // No bubble styling for AI responses
+                                                                : 'bg-gradient-to-br from-background to-muted/30 text-foreground rounded-xl sm:rounded-2xl rounded-bl-md border border-border/50 shadow-lg ring-1 ring-black/5',
+                                                        msg.sender === 'moderator' && 'bg-gradient-to-br from-destructive/10 to-destructive/5 text-destructive border border-destructive/20 shadow-lg ring-1 ring-black/5'
                                                     )}>
                                                         {/* Message Header */}
-                                                        <div className="flex items-center justify-between p-2 sm:p-3 pb-1 sm:pb-2">
-                                                            <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
+                                                        {msg.sender !== 'bot' && (
+                                                            <div className="flex items-center justify-between p-2 sm:p-3 pb-1 sm:pb-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
+                                                                    <DigitalClock timestamp={msg.timestamp} />
+                                                                </div>
                                                             <div className="flex items-center gap-1">
                                                                 {isLong && (
                                                                     <Button
@@ -845,9 +996,17 @@ export default function ChatInterface() {
                                                                 </Button>
                                                             </div>
                                                         </div>
+                                                        )}
+                                                        
+                                                        {/* AI Response Name */}
+                                                        {msg.sender === 'bot' && (
+                                                            <div className="text-xs text-muted-foreground mb-1">
+                                                                {msg.name}
+                                                            </div>
+                                                        )}
                                                         
                                                         {/* Message Content */}
-                                                        <div className="px-2 sm:px-3 pb-2 sm:pb-3">
+                                                        <div className={msg.sender === 'bot' ? '' : 'px-2 sm:px-3 pb-2 sm:pb-3'}>
                                                             {isLong && isCollapsed ? (
                                                                 <div>
                                                                     <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed opacity-90">
@@ -863,14 +1022,26 @@ export default function ChatInterface() {
                                                                     </Button>
                                                 </div>
                                                             ) : (
-                                                                <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed opacity-90">
-                                                                    {msg.text}
-                                                                </p>
+                                                                <div>
+                                                                    <AIResponseRenderer 
+                                                                        content={msg.text}
+                                                                        className="text-xs sm:text-sm leading-relaxed opacity-90 ai-response"
+                                                                    />
+                                                                    {msg.file && (
+                                                                        <div className="mt-3">
+                                                                            <EnhancedFileDisplay 
+                                                                                file={msg.file} 
+                                                                                compact={true}
+                                                                                className="bg-white/5 border-white/10"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </div>
                                                         
                                                         {/* Message Footer */}
-                                                        {isLong && !isCollapsed && (
+                                                        {isLong && !isCollapsed && msg.sender !== 'bot' && (
                                                             <div className="px-2 sm:px-3 pb-1 sm:pb-2">
                                                                 <Button
                                                                     variant="link"
@@ -898,63 +1069,42 @@ export default function ChatInterface() {
                                              <div className="flex items-start gap-3 w-full mb-4">
                                                 <Avatar className="h-10 w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
-                                                        <Bot className="size-6 text-primary-foreground animate-bounce"/>
+                                                        <img 
+                                                            src="/courseconnect-logo-profile.png" 
+                                                            alt="AI" 
+                                                            className="size-6 object-contain"
+                                                        />
                                                     </div>
                                                 </Avatar>
-                                                <div className="max-w-xs md:max-w-md lg:max-w-lg shadow-lg ring-1 ring-black/5 bg-gradient-to-br from-background to-muted/30 text-foreground rounded-2xl rounded-bl-md border border-border/50">
-                                                    <div className="flex items-center justify-between p-3 pb-2">
-                                                        <p className="font-semibold text-sm opacity-90">CourseConnect AI</p>
-                                                    </div>
-                                                    <div className="px-3 pb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex gap-1">
-                                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                                                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
-                                                            </div>
-                                                            <span className="text-xs opacity-70">Thinking...</span>
-                                                        </div>
-                                                    </div>
+                                                <div className="px-3 pb-3">
+                                                    <RippleText text="AI is thinking..." className="text-xs opacity-70" />
                                                 </div>
                                             </div>
                                         )}
                                      </div>
                                  </ScrollArea>
                                  
-                                <form onSubmit={handleSendMessage} className="mt-3 sm:mt-4 flex gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-border/50">
-                                    <div className="flex-1 relative">
-                                    <Input
+                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border/50">
+                                    <FuturisticChatInput
+                                        value={inputValue}
+                                        onChange={e => setInputValue(e.target.value)}
+                                        onSend={() => handleSendMessage(new Event('submit') as any)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSendMessage(new Event('submit') as any);
+                                            }
+                                        }}
+                                        onFileUpload={handleFileUpload}
                                         placeholder={
                                             isMuted 
                                                 ? `You're muted for ${Math.ceil((muteEndTime - Date.now()) / 1000)}s...`
-                                                : "Ask a question or type a message..."
+                                                : "Ask anything"
                                         }
-                                        value={inputValue}
-                                        onChange={e => setInputValue(e.target.value)}
                                         disabled={isSending || isMuted}
-                                        autoComplete="off"
-                                            className="text-sm sm:text-base pr-12 rounded-xl sm:rounded-2xl border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 shadow-sm"
-                                        />
-                                        <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground flex items-center gap-2">
-                                            {isMuted && (
-                                                <div className="flex items-center gap-1 text-red-600">
-                                                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                                    <span className="font-medium text-xs">MUTED</span>
-                                                </div>
-                                            )}
-                                            {inputValue.length > 0 && `${inputValue.length} chars`}
-                                        </div>
-                                    </div>
-                                    <Button 
-                                        type="submit" 
-                                        size="icon" 
-                                        disabled={!inputValue.trim() || isSending || isMuted} 
-                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-br from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
-                                    >
-                                        <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-                                        <span className="sr-only">Send</span>
-                                    </Button>
-                                </form>
+                                        className="w-full"
+                                    />
+                                </div>
                              </TabsContent>
                         )}
                     </Tabs>
@@ -1085,6 +1235,7 @@ export default function ChatInterface() {
                 </DialogContent>
             </Dialog>
         </div>
+        </>
     );
 }
 

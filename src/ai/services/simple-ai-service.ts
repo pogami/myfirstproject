@@ -15,6 +15,8 @@ export async function getInDepthAnalysis({ question, context }: { question: stri
   try {
     // Simple, reliable AI responses for common academic questions
     const responses = {
+      'who are you': 'I\'m CourseConnect AI, your intelligent study assistant! I\'m part of CourseConnect, the unified platform that helps college students succeed with AI-powered study tools, class chats, syllabus analysis, and personalized learning support. How can I help you with your studies today?',
+      'what are you': 'I\'m CourseConnect AI, your intelligent study assistant! I\'m part of CourseConnect, the unified platform that helps college students succeed with AI-powered study tools, class chats, syllabus analysis, and personalized learning support. How can I help you with your studies today?',
       'hi': 'Hello! I\'m CourseConnect AI, your academic assistant. I can help you with homework, explain concepts, provide study tips, and answer questions about any subject. What would you like to know?',
       'hello': 'Hi there! I\'m here to help with your academic needs. Whether it\'s math, science, literature, or any other subject, I\'m ready to assist. What can I help you with today?',
       'help': 'I\'m CourseConnect AI, your academic study companion! I can help you with:\n\n• Homework questions and problem-solving\n• Concept explanations and definitions\n• Study strategies and tips\n• Writing assistance\n• Test preparation\n• Research guidance\n\nJust ask me anything related to your studies!',

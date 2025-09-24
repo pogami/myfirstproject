@@ -6,24 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles, LogOut } from "lucide-react";
 import Link from "next/link";
-import React from 'react';
+import React, { useState } from 'react';
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/client";
 import { useToast } from "@/hooks/use-toast";
+import { UnifiedLoadingAnimation } from "@/components/unified-loading-animation";
 
 export default function ClassOverviewPage() {
     const { chats, setCurrentTab, deleteChat } = useChatStore();
     const router = useRouter();
     const [user] = useAuthState(auth);
     const { toast } = useToast();
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [transitioningTo, setTransitioningTo] = useState("");
 
     const classChats = Object.entries(chats).filter(([key]) => key !== 'general-chat');
 
-    const handleCardClick = (chatId: string) => {
+    const handleCardClick = (chatId: string, chatTitle: string) => {
+        setIsTransitioning(true);
+        setTransitioningTo(chatTitle);
         setCurrentTab(chatId);
-        router.push('/dashboard/chat');
+        
+        // Add a small delay to show the transition animation
+        setTimeout(() => {
+            router.push('/dashboard/chat');
+        }, 1500);
     }
 
     const handleLeaveClass = async (chatId: string, chatTitle: string) => {
@@ -52,6 +61,14 @@ export default function ClassOverviewPage() {
 
     return (
         <div className="min-h-screen bg-transparent">
+            {/* Transition Loader */}
+            {isTransitioning && (
+                <UnifiedLoadingAnimation 
+                    mode="transition"
+                    fromPage="Dashboard" 
+                    toPage={transitioningTo}
+                />
+            )}
             <div className="space-y-8 animate-in fade-in-50">
                 {/* Hero Section - Mobile Optimized */}
                 <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-6 md:p-8 border border-primary/20">
@@ -135,7 +152,7 @@ export default function ClassOverviewPage() {
                                 return (
                                     <Card 
                                         key={id} 
-                                        onClick={() => handleCardClick(id)}
+                                        onClick={() => handleCardClick(id, chat.title)}
                                         className="group cursor-pointer border-0 bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:bg-card/80"
                                     >
                                         <CardHeader className="pb-4">

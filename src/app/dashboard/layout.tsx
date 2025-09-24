@@ -38,7 +38,7 @@ import { OnboardingSlideshow } from "@/components/onboarding-slideshow";
 import { FirebaseOfflineDisabler } from "@/components/firebase-offline-disabler";
 import { FirebaseConnectionMonitor } from "@/components/firebase-connection-monitor";
 import { FirebaseConnectionManager } from "@/components/firebase-connection-manager";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ClientThemeToggle } from "@/components/client-theme-toggle";
 
 function AnnouncementBanner() {
   const [isVisible, setIsVisible] = useState(true);
@@ -93,87 +93,80 @@ export default function DashboardLayout({
   
   // Safely handle auth state
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
-    // Safely handle auth state and guest users
+    // Reduced timeout to 1 second for faster loading
+    const authTimeout = setTimeout(() => {
+      console.warn('Dashboard: Auth initialization timeout, proceeding without auth');
+      setLoading(false);
+      setError(new Error('Auth timeout'));
+    }, 1000); // 1 second timeout
+
+    // Check for guest user first (faster than Firebase auth)
+    const guestUserData = localStorage.getItem('guestUser');
+    if (guestUserData) {
+      try {
+        const guestUser = JSON.parse(guestUserData);
+        console.log("Dashboard: Found guest user in localStorage:", guestUser);
+        setUser(guestUser);
+        setLoading(false);
+        setError(null);
+        clearTimeout(authTimeout);
+        return; // Exit early for guest users
+      } catch (error) {
+        console.warn("Dashboard: Error parsing guest user data:", error);
+        localStorage.removeItem('guestUser');
+      }
+    }
+
+    // Safely handle auth state for authenticated users
     try {
       if (auth && typeof auth.onAuthStateChanged === 'function') {
         console.log('Dashboard: Setting up auth state listener');
         const unsubscribe = auth.onAuthStateChanged(
           (user: any) => {
+            clearTimeout(authTimeout); // Clear timeout when auth resolves
             console.log('Dashboard: Auth state changed - user:', user ? 'authenticated' : 'not authenticated');
-            setUser(user);
-            // If no Firebase user, check for guest user in localStorage
-            if (!user) {
-              const guestUserData = localStorage.getItem('guestUser');
-              if (guestUserData) {
-                try {
-                  const guestUser = JSON.parse(guestUserData);
-                  console.log("Dashboard: Found guest user in localStorage:", guestUser);
-                  setUser(guestUser);
-                } catch (error) {
-                  console.warn("Dashboard: Error parsing guest user data:", error);
-                }
-              }
+            
+            // Check if we're in the middle of a logout process
+            const isLoggingOut = localStorage.getItem('isLoggingOut');
+            if (isLoggingOut === 'true') {
+              console.log('Dashboard: Logout in progress, skipping auth state update');
+              return;
             }
+            
+            setUser(user);
             setLoading(false);
             setError(null);
           },
           (error: any) => {
+            clearTimeout(authTimeout); // Clear timeout when auth resolves (even with error)
             console.warn("Dashboard: Auth state error:", error);
             setUser(null);
-            // Check for guest user even on auth error
-            const guestUserData = localStorage.getItem('guestUser');
-            if (guestUserData) {
-              try {
-                const guestUser = JSON.parse(guestUserData);
-                console.log("Dashboard: Found guest user after auth error:", guestUser);
-                setUser(guestUser);
-              } catch (error) {
-                console.warn("Dashboard: Error parsing guest user data:", error);
-              }
-            }
             setLoading(false);
             setError(error);
           }
         );
-        return unsubscribe;
+        
+        // Return cleanup function that clears both timeout and unsubscribe
+        return () => {
+          clearTimeout(authTimeout);
+          if (unsubscribe) unsubscribe();
+        };
       } else {
-        console.warn('Dashboard: Auth not available, checking for guest user');
-        // Check for guest user when auth is not available
-        const guestUserData = localStorage.getItem('guestUser');
-        if (guestUserData) {
-          try {
-            const guestUser = JSON.parse(guestUserData);
-            console.log("Dashboard: Found guest user when auth unavailable:", guestUser);
-            setUser(guestUser);
-          } catch (error) {
-            console.warn("Dashboard: Error parsing guest user data:", error);
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
+        clearTimeout(authTimeout);
+        console.warn('Dashboard: Auth not available');
+        setUser(null);
         setLoading(false);
         setError(null);
       }
     } catch (authError) {
+      clearTimeout(authTimeout);
       console.warn("Dashboard: Auth initialization error:", authError);
       setUser(null);
-      // Check for guest user even on initialization error
-      const guestUserData = localStorage.getItem('guestUser');
-      if (guestUserData) {
-        try {
-          const guestUser = JSON.parse(guestUserData);
-          console.log("Dashboard: Found guest user after init error:", guestUser);
-          setUser(guestUser);
-        } catch (error) {
-          console.warn("Dashboard: Error parsing guest user data:", error);
-        }
-      }
       setLoading(false);
       setError(authError);
     }
@@ -254,7 +247,10 @@ export default function DashboardLayout({
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-primary mx-auto mb-4"></div>
           <h2 className="text-lg font-semibold mb-2">Loading Dashboard</h2>
-          <p className="text-sm text-muted-foreground">Please wait while we prepare your workspace</p>
+          <p className="text-sm text-muted-foreground mb-4">Please wait while we prepare your workspace</p>
+          <div className="text-xs text-muted-foreground">
+            Taking too long? <Link href="/login" className="text-primary hover:underline">Click here to sign in</Link>
+          </div>
         </div>
       </div>
     );
@@ -269,9 +265,14 @@ export default function DashboardLayout({
           </div>
           <h2 className="text-lg font-semibold mb-2 text-red-600">Authentication Error</h2>
           <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
-          <Button onClick={() => window.location.reload()} variant="outline">
-            Try Again
-          </Button>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+            <Button asChild>
+              <Link href="/login">Go to Login</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -457,7 +458,7 @@ export default function DashboardLayout({
                 </Link>
               </div>
               <div className="flex items-center gap-3">
-                <ThemeToggle variant="ghost" size="sm" />
+                <ClientThemeToggle />
                 <DashboardHeader user={user || guestUser} />
               </div>
             </div>

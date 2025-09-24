@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, OAuthProvider, GoogleAuthProvider, signInWithPopup, updateProfile, signInAnonymously } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/client";
-import { doc, setDoc, getDoc, writeBatch } from "firebase/firestore";
+import { doc, setDoc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { useChatStore, Chat } from "@/hooks/use-chat-store";
+import { StudentIdVerification } from "@/components/student-id-verification";
 
 
 interface LoginFormProps {
@@ -37,9 +38,26 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   const [isSubmittingGoogle, setIsSubmittingGoogle] = useState(false);
   const [isSubmittingGuest, setIsSubmittingGuest] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(initialState === 'signup');
+  const [isStudentVerified, setIsStudentVerified] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { chats: guestChats, clearGuestData } = useChatStore();
+
+  // Check existing verification status
+  const checkVerificationStatus = async (userId: string) => {
+    try {
+      const userDocRef = doc(db, "users", userId);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        if (userData.isStudentVerified) {
+          setIsStudentVerified(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check verification status:', error);
+    }
+  };
 
   useEffect(() => {
     setIsSigningUp(initialState === 'signup');
@@ -120,6 +138,9 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       migrateGuestData(user.uid).catch(error => {
         console.error('Guest data migration failed:', error);
       });
+      
+      // Check existing verification status
+      checkVerificationStatus(user.uid);
       
       // For new signups, show onboarding slideshow
       if (isSigningUp) {
@@ -283,10 +304,8 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       
       console.log("Redirecting to dashboard...");
       
-      // Small delay to ensure toast shows
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 500);
+      // Immediate redirect for faster loading
+      router.push('/dashboard');
       
     } catch (error: any) {
       console.error("Guest login error:", error);
@@ -299,6 +318,42 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       setIsSubmittingGuest(false);
     }
   }
+
+  const handleVerificationComplete = async (isVerified: boolean, verificationData?: any) => {
+    setIsStudentVerified(isVerified);
+    
+    if (isVerified && user) {
+      try {
+        // Save verification status to user profile
+        const userDocRef = doc(db, "users", user.uid);
+        await updateDoc(userDocRef, {
+          isStudentVerified: true,
+          verificationDate: new Date().toISOString(),
+          verificationMethod: 'student_id_ocr',
+          verificationData: {
+            confidence: verificationData?.confidence,
+            extractedText: verificationData?.extractedText?.substring(0, 100) // Store first 100 chars only
+          }
+        });
+        
+        toast({
+          title: "Student Status Verified!",
+          description: "Your verification status has been saved to your profile.",
+        });
+      } catch (error) {
+        console.error('Failed to save verification status:', error);
+        toast({
+          title: "Verification Successful",
+          description: "Your student status is verified, but there was an issue saving it to your profile.",
+        });
+      }
+    } else if (isVerified) {
+      toast({
+        title: "Student Status Verified!",
+        description: "You now have access to verified student features.",
+      });
+    }
+  };
 
   return (
       <div className="w-full max-w-md animate-in fade-in-50 zoom-in-95">
@@ -445,6 +500,27 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                   className="h-12 border-2 border-gray-200/50 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 transition-all duration-300 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 dark:border-gray-700/50 dark:focus:border-purple-400"
                 />
               </div>
+              
+              {/* Student Verification for Signup */}
+              {isSigningUp && (
+                <div className="space-y-3">
+                  <StudentIdVerification 
+                    onVerificationComplete={handleVerificationComplete}
+                    isSignup={true}
+                  />
+                  {isStudentVerified && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                      <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                        Student status verified
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <Button type="submit" className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed" size="lg" disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}>
                 {isSubmitting ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : (isSigningUp ? "Create Account" : "Sign In")}
               </Button>
@@ -482,6 +558,26 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                 )}
               </p>
               
+              {/* Student Verification for Login */}
+              {!isSigningUp && (
+                <div className="space-y-3">
+                  <StudentIdVerification 
+                    onVerificationComplete={handleVerificationComplete}
+                    isSignup={false}
+                  />
+                  {isStudentVerified && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                      <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                        Student status verified
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Guest login option for login mode */}
               {!isSigningUp && (
                 <div className="text-center">

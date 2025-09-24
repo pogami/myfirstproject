@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
     <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="6" fill="url(#grad1)"/>
+  <rect width="200" height="200" rx="40" fill="url(#grad1)"/>
   <g>
-    <path d="M 8 8 C 11 5, 21 27, 24 24" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M 8 24 C 11 27, 21 5, 24 8" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-    <circle cx="8" cy="8" r="1.5" fill="white" />
-    <circle cx="24" cy="24" r="1.5" fill="white" />
-    <circle cx="8" cy="24" r="1.5" fill="white" />
-    <circle cx="24" cy="8" r="1.5" fill="white" />
+    <path d="M 50 50 C 70 30, 130 170, 150 150" stroke="white" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 50 150 C 70 170, 130 30, 150 50" stroke="white" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="50" cy="50" r="8" fill="white" />
+    <circle cx="150" cy="150" r="8" fill="white" />
+    <circle cx="50" cy="150" r="8" fill="white" />
+    <circle cx="150" cy="50" r="8" fill="white" />
   </g>
 </svg>
