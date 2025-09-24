@@ -69,7 +69,7 @@ export function usePushNotifications() {
         }));
         return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       setState(prev => ({ 
         ...prev, 
         isLoading: false, 
@@ -136,12 +136,12 @@ export function usePushNotifications() {
         console.error('Failed to save subscription:', errorData);
         throw new Error(`Server error: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Push subscription error:', error);
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: `Failed to subscribe: ${error.message}`
+        error: `Failed to subscribe: ${error.message || 'Unknown error'}`
       }));
       return false;
     }
@@ -180,7 +180,7 @@ export function usePushNotifications() {
       } else {
         throw new Error('Failed to remove subscription from server');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Push unsubscription error:', error);
       setState(prev => ({
         ...prev,
@@ -225,9 +225,9 @@ export function usePushNotifications() {
         console.error('Failed to send test notification:', errorData);
         throw new Error(`Server error: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Test notification error:', error);
-      setState(prev => ({ ...prev, error: `Failed to send test notification: ${error.message}` }));
+      setState(prev => ({ ...prev, error: `Failed to send test notification: ${error.message || 'Unknown error'}` }));
       return false;
     }
   }, [state.isSubscribed]);

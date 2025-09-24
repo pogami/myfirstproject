@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useChatStore, Message } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase/client";
+import { doc, getDoc } from "firebase/firestore";
 import { getInDepthAnalysis } from "@/ai/services/dual-ai-service";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -59,8 +60,8 @@ export default function ChatInterface() {
         try {
             if (auth && typeof auth.onAuthStateChanged === 'function') {
                 const unsubscribe = auth.onAuthStateChanged(
-                    (user) => setUser(user),
-                    (error) => {
+                    (user: any) => setUser(user),
+                    (error: any) => {
                         console.warn("Auth state error in chat interface (offline mode):", error);
                         setUser(null);
                     }
@@ -622,7 +623,7 @@ export default function ChatInterface() {
             
             // Provide contextual fallback response based on chat name
             const lowerQuestion = messageToProcess.toLowerCase();
-            const chatName = chats[currentTab!]?.name || '';
+            const chatName = chats[currentTab!]?.title || '';
             const lowerChatName = chatName.toLowerCase();
         
             let fallbackText = `I'd be happy to help with your question: "${messageToProcess}"\n\n`;
@@ -769,9 +770,10 @@ export default function ChatInterface() {
                                                 {msg.userId !== user?.uid && (
                                                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                             {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
-                                                                <AvatarImage 
+                                                                <img 
                                                                     src={userProfiles[msg.userId || ''].photoURL} 
                                                                     alt={userProfiles[msg.userId || ''].displayName || msg.name} 
+                                                                    className="aspect-square h-full w-full"
                                                                 />
                                                             ) : null}
                                                             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">

@@ -100,16 +100,7 @@ export default function SyllabusUpload() {
                     `class-${result.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-')}` : 
                     `course-${file.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
                 
-                await addChat(
-                    chatName,
-                    { 
-                        sender: 'bot', 
-                        name: 'CourseConnect AI', 
-                        text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
-                        timestamp: Date.now() 
-                    },
-                    chatId
-                );
+                await addChat(chatName, { sender: 'bot', name: 'CourseConnect AI', text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, timestamp: Date.now() }, chatId);
 
                 toast({
                     title: "Upload Complete",

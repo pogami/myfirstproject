@@ -91,8 +91,8 @@ export default function ChatPage() {
         try {
             if (auth && typeof auth.onAuthStateChanged === 'function') {
                 const unsubscribe = auth.onAuthStateChanged(
-                    (user) => setUser(user),
-                    (error) => {
+                    (user: any) => setUser(user),
+                    (error: any) => {
                         console.warn("Auth state error in chat page:", error);
                         setUser(null);
                     }
@@ -167,11 +167,11 @@ export default function ChatPage() {
     const handleSendMessage = async () => {
         if (!inputValue.trim() || !currentTab) return;
 
-        const messageText = inputValue.trim();
+        const messageTextLocal = inputValue.trim();
         const userMessage = {
             id: Date.now().toString(),
-            text: messageText,
-            sender: 'user',
+            text: messageTextLocal,
+            sender: 'user' as const,
             name: user?.displayName || 'Anonymous',
             timestamp: Date.now()
         };
@@ -195,7 +195,7 @@ export default function ChatPage() {
                 );
                 
                 const aiPromise = getInDepthAnalysis({
-                    question: messageText,
+                    question: messageTextLocal,
                     context: 'General'
                 });
                 
@@ -210,22 +210,23 @@ export default function ChatPage() {
             }
             
             // Debug logging to see what aiResponse contains
-            console.log('ChatPage - aiResponse:', aiResponse, 'type:', typeof aiResponse, 'answer type:', typeof aiResponse.answer);
+            console.log('ChatPage - aiResponse:', aiResponse, 'type:', typeof aiResponse);
 
             // Ensure we always have a string for the message text
-            let messageText = 'I apologize, but I couldn\'t generate a response.';
+            let messageText: string = 'I apologize, but I couldn\'t generate a response.';
             
             if (aiResponse && typeof aiResponse === 'object') {
-                if (aiResponse.response && typeof aiResponse.response === 'string') {
-                    messageText = aiResponse.response;
-                } else if (aiResponse.answer && typeof aiResponse.answer === 'string') {
-                    messageText = aiResponse.answer;
-                } else if (aiResponse.answer && typeof aiResponse.answer === 'object') {
+                const possible: any = aiResponse as any;
+                if (typeof possible.response === 'string') {
+                    messageText = possible.response;
+                } else if (typeof possible.answer === 'string') {
+                    messageText = possible.answer;
+                } else if (possible.answer && typeof possible.answer === 'object') {
                     // If answer is an object, try to extract text from it
-                    if (aiResponse.answer.text) {
-                        messageText = aiResponse.answer.text;
-                    } else if (aiResponse.answer.content) {
-                        messageText = aiResponse.answer.content;
+                    if (typeof possible.answer.text === 'string') {
+                        messageText = possible.answer.text;
+                    } else if (typeof possible.answer.content === 'string') {
+                        messageText = possible.answer.content;
                     } else {
                         messageText = 'I apologize, but I couldn\'t generate a proper response.';
                     }
@@ -239,29 +240,29 @@ export default function ChatPage() {
             const aiMessage = {
                 id: (Date.now() + 1).toString(),
                 text: messageText || 'I apologize, but I couldn\'t generate a response.',
-                sender: 'bot',
+                sender: 'bot' as const,
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
             };
 
             // Add AI response
-            await addMessage(currentTab, aiMessage);
-        } catch (error) {
+            await addMessage(currentTab, aiMessage as any);
+        } catch (error: any) {
             console.error('AI Error:', error);
             const errorMessage = {
                 id: (Date.now() + 1).toString(),
                 text: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-                sender: 'bot',
+                sender: 'bot' as const,
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
             };
-            await addMessage(currentTab, errorMessage);
+            await addMessage(currentTab, errorMessage as any);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
@@ -416,7 +417,7 @@ export default function ChatPage() {
                                     <ScrollArea className="flex-1 px-6 pb-20" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {generalChat.messages.map((message, index) => (
-                                                <div key={message.id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                <div key={(message as any).id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                     <div className={`flex gap-3 max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         <Avatar className="w-8 h-8">
                                                             <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
@@ -454,7 +455,7 @@ export default function ChatPage() {
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background absolute bottom-0 left-0 right-0 z-10">
+                                <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background absolute bottom-0 left-0 right-0 z-10">
                                         <div className="flex gap-2">
                                             <MobileInput
                                                 value={inputValue}
@@ -524,7 +525,7 @@ export default function ChatPage() {
                                     <ScrollArea className="flex-1 px-6 pb-20" ref={scrollAreaRef}>
                                         <div className="space-y-4 pb-4">
                                             {chat.messages.map((message, index) => (
-                                                <div key={message.id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                <div key={(message as any).id || index} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                     <div className={`flex gap-3 max-w-[80%] ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         <Avatar className="w-8 h-8">
                                                             <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />

@@ -58,7 +58,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
 
                 if (!chatDocSnap.exists()) {
                     batch.set(chatDocRef, { 
-                        name: chat.name, 
+                        title: chat.title, 
                         messages: chat.messages,
                         userId: userId,
                         createdAt: new Date().toISOString()

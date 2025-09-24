@@ -44,7 +44,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     const checkGuestStatus = async () => {
       if (user) {
         // Check if it's a guest user from localStorage
-        if (user.isGuest || user.isAnonymous) {
+        if ((user as any).isGuest || (user as any).isAnonymous) {
           setIsGuest(true);
           return;
         }
@@ -120,7 +120,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     }
 
     // Handle guest logout
-    if (user.isGuest || user.isAnonymous) {
+    if ((user as any).isGuest || (user as any).isAnonymous) {
       localStorage.removeItem('guestUser');
       toast({
         title: "Logged out successfully",

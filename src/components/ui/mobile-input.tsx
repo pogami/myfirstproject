@@ -1,10 +1,11 @@
 "use client";
 
-import { Input, InputProps } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { forwardRef } from "react";
+import type { ComponentProps } from "react";
 
-interface MobileInputProps extends InputProps {
+interface MobileInputProps extends ComponentProps<"input"> {
   mobileSize?: "sm" | "md" | "lg";
   fullWidthOnMobile?: boolean;
 }

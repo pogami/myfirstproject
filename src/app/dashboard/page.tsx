@@ -44,7 +44,7 @@ export default function DashboardPage() {
         if (auth && typeof auth === 'object' && typeof auth.onAuthStateChanged === 'function') {
           const unsubscribe = await safeFirebaseOperation(() => {
             return auth.onAuthStateChanged(
-          (user) => {
+          (user: any) => {
             setUser(user);
             // If no Firebase user, check for guest user in localStorage
             if (!user) {
@@ -60,7 +60,7 @@ export default function DashboardPage() {
               }
             }
           },
-          (error) => {
+          (error: any) => {
             console.warn("Auth state error in dashboard page:", error);
             setUser(null);
             // Check for guest user even on auth error
