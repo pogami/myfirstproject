@@ -24,6 +24,7 @@ import { signOut } from "firebase/auth";
 import { Skeleton } from "./ui/skeleton";
 import { User as UserIcon, Settings as SettingsIcon, LogOut, Bell, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useChatStore } from "@/hooks/use-chat-store";
 
 interface DashboardHeaderProps {
     user: User | null;
@@ -35,6 +36,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isGuest, setIsGuest] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { clearGuestData } = useChatStore();
 
   useEffect(() => {
     setIsClient(true);
@@ -114,53 +116,103 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   }, [user, isClient]);
 
   const handleLogout = async () => {
+    console.log('=== LOGOUT INITIATED ===');
+    console.log('User:', user);
+    
+    // Set a flag to prevent auth state listeners from interfering
+    localStorage.setItem('isLoggingOut', 'true');
+    
     if (!user) {
-      router.push('/home');
+      console.log('No user found, redirecting to home');
+      localStorage.removeItem('isLoggingOut');
+      window.location.href = '/home';
       return;
     }
 
     // Handle guest logout
     if (user.isGuest || user.isAnonymous) {
+      console.log('Guest user logout');
       localStorage.removeItem('guestUser');
+      clearGuestData();
       toast({
         title: "Logged out successfully",
         description: "You have been signed out of your guest account.",
       });
-      router.push('/home');
+      localStorage.removeItem('isLoggingOut');
+      // Force redirect after a short delay
+      setTimeout(() => {
+        window.location.href = '/home';
+      }, 1000);
       return;
     }
 
     try {
+      console.log('Starting Firebase logout process');
       toast({
         title: "Logging out...",
         description: "You are being signed out of your account.",
       });
 
       // Set user status to offline in Realtime Database
-      const userStatusRef = ref(rtdb, `/status/${user.uid}`);
-      await set(userStatusRef, {
-        state: 'offline',
-        last_changed: serverTimestamp(),
-      });
+      console.log('Setting user status to offline');
+      try {
+        const userStatusRef = ref(rtdb, `/status/${user.uid}`);
+        await set(userStatusRef, {
+          state: 'offline',
+          last_changed: serverTimestamp(),
+        });
+        console.log('User status set to offline');
+      } catch (dbError) {
+        console.warn('Failed to set user status offline:', dbError);
+        // Continue with logout even if this fails
+      }
 
       // Sign out from Firebase Auth
+      console.log('Signing out from Firebase Auth');
       await signOut(auth);
+      console.log('Firebase signOut completed');
+      
+      // Clear any local state
+      console.log('Clearing local state');
+      clearGuestData();
+      
+      // Clear localStorage
+      localStorage.removeItem('guestUser');
+      localStorage.removeItem('showOnboarding');
+      localStorage.removeItem('isLoggingOut');
       
       toast({
         title: "Logged out successfully",
         description: "You have been signed out of your account.",
       });
       
-      // Redirect to home page
-      router.push('/home');
+      // Force redirect with multiple methods
+      console.log('Redirecting to home page');
+      setTimeout(() => {
+        console.log('Executing redirect...');
+        window.location.href = '/home';
+        // Backup redirect method
+        setTimeout(() => {
+          if (window.location.pathname !== '/home') {
+            console.log('Backup redirect triggered');
+            window.location.replace('/home');
+          }
+        }, 500);
+      }, 1000);
       
     } catch (error) {
       console.error('Logout error:', error);
+      localStorage.removeItem('isLoggingOut');
       toast({
         variant: "destructive",
         title: "Logout failed",
         description: "There was an error signing you out. Please try again.",
       });
+      
+      // Force redirect even on error
+      setTimeout(() => {
+        window.location.href = '/home';
+      }, 2000);
     }
   };
 

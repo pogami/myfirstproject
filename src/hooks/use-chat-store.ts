@@ -8,11 +8,18 @@ import { db, auth } from '@/lib/firebase/client';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 
 export type Message = {
+    id?: string;
     sender: "user" | "bot" | "moderator";
     text: string;
     name: string;
     timestamp: number;
     userId?: string;
+    file?: {
+        name: string;
+        size: number;
+        type: string;
+        url: string;
+    };
 };
 
 export type Chat = {
@@ -72,6 +79,15 @@ export const useChatStore = create<ChatState>()(
           set({ isGuest: true, isStoreLoading: false });
           return () => {}; // Return empty unsubscribe function
         }
+        
+        // Set loading to false immediately to prevent infinite loading
+        setTimeout(() => {
+          const currentState = get();
+          if (currentState.isStoreLoading) {
+            console.log("Setting store loading to false after timeout");
+            set({ isStoreLoading: false });
+          }
+        }, 1000); // 1 second timeout
         
         const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
           try {

@@ -32,17 +32,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.png', type: 'image/png' },
-      { url: '/courseconnect-favicon.svg?v=5', type: 'image/svg+xml' },
+      { url: '/courseconnect-logo-profile.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
-      { url: '/favicon.png', sizes: '152x152', type: 'image/png' },
-      { url: '/favicon.png', sizes: '120x120', type: 'image/png' },
-      { url: '/favicon.png', sizes: '76x76', type: 'image/png' }
+      { url: '/courseconnect-logo-profile.svg', sizes: '180x180', type: 'image/svg+xml' },
+      { url: '/courseconnect-logo-profile.svg', sizes: '152x152', type: 'image/svg+xml' },
+      { url: '/courseconnect-logo-profile.svg', sizes: '120x120', type: 'image/svg+xml' },
+      { url: '/courseconnect-logo-profile.svg', sizes: '76x76', type: 'image/svg+xml' }
     ],
-    shortcut: '/favicon.ico'
+    shortcut: '/courseconnect-logo-profile.svg'
   }
 };
 
@@ -59,13 +57,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         
         {/* Favicon and Icons */}
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/favicon.png" sizes="180x180" />
-        <link rel="apple-touch-icon" href="/favicon.png" sizes="152x152" />
-        <link rel="apple-touch-icon" href="/favicon.png" sizes="120x120" />
-        <link rel="apple-touch-icon" href="/favicon.png" sizes="76x76" />
+        <link rel="icon" href="/courseconnect-logo-profile.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/courseconnect-logo-profile.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="120x120" />
+        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="76x76" />
         
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />

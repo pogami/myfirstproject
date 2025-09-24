@@ -23,9 +23,21 @@ export function Hero({
   const [isClient, setIsClient] = useState(false);
   const [mouse, setMouse] = useState({ x: -100, y: -100 });
 
-  // Rotating word in the title
-  const [index, setIndex] = useState(0);
-  const [fading, setFading] = useState(false);
+  // Typewriter effect states
+  const [currentText, setCurrentText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [textIndex, setTextIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  
+  // Solutions only
+  const solutions = [
+    "homework",
+    "tests", 
+    "quizzes",
+    "projects",
+    "labs",
+    "classes"
+  ];
 
   useEffect(() => {
     setIsClient(true);
@@ -34,16 +46,33 @@ export function Hero({
     return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
+  // Typewriter effect
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setIndex((i) => (i + 1) % words.length);
-        setFading(false);
-      }, 200); // fade out before switching
-    }, 2600); // rotate every ~2.6s
-    return () => clearInterval(interval);
-  }, [words.length]);
+    const typewriterInterval = setInterval(() => {
+      const currentWord = solutions[textIndex];
+      
+      if (!isDeleting && charIndex < currentWord.length) {
+        // Typing
+        setCurrentText(currentWord.substring(0, charIndex + 1));
+        setCharIndex(charIndex + 1);
+      } else if (isDeleting && charIndex > 0) {
+        // Deleting
+        setCurrentText(currentWord.substring(0, charIndex - 1));
+        setCharIndex(charIndex - 1);
+      } else if (!isDeleting && charIndex === currentWord.length) {
+        // Finished typing, wait then start deleting
+        setTimeout(() => setIsDeleting(true), 2000);
+      } else if (isDeleting && charIndex === 0) {
+        // Finished deleting, wait a moment then move to next word
+        setTimeout(() => {
+          setIsDeleting(false);
+          setTextIndex((textIndex + 1) % solutions.length);
+        }, 500);
+      }
+    }, isDeleting ? 50 : 100); // Faster deleting, slower typing
+
+    return () => clearInterval(typewriterInterval);
+  }, [charIndex, isDeleting, textIndex, solutions]);
 
   const backgroundStyle: React.CSSProperties = isClient
     ? ({ "--mouse-x": `${mouse.x}px`, "--mouse-y": `${mouse.y}px` } as React.CSSProperties)
@@ -108,17 +137,16 @@ export function Hero({
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tighter !leading-[1.15] px-2 sm:px-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
           Ace your{" "}
-          <span
-            className={`bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent inline-block transition-all duration-500 leading-[1.2] ${fading ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
-            aria-live="polite"
-            style={{ paddingBottom: '0.1em' }}
-          >
-            {words[index]}
+          <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            {currentText}
+            <span className="animate-pulse text-purple-600">|</span>
           </span>
           <span style={{ marginLeft: '0.1em' }}>, together.</span>
         </h1>
 
-        <p className="max-w-3xl text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 px-4 sm:px-0 leading-relaxed">{subtitle}</p>
+        <p className="max-w-3xl text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 px-4 sm:px-0 leading-relaxed">
+          {subtitle}
+        </p>
 
         <div className="flex flex-col sm:flex-row gap-4 mt-2 sm:mt-4">
           <Button size="lg" className="h-14 px-8 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>

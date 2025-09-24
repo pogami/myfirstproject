@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { MessageSquare, Upload, BookOpen, Users, TrendingUp, Clock, Sparkles, Crown } from "lucide-react";
-import Notifications from "@/components/notifications";
 import { StatCards } from "@/components/stat-cards";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { auth } from "@/lib/firebase/client";
@@ -16,6 +15,12 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { FirebaseDebug } from "@/components/firebase-debug";
+import dynamic from "next/dynamic";
+
+// Lazy load heavy components
+const Notifications = dynamic(() => import("@/components/notifications"), {
+  loading: () => <div className="w-8 h-8 bg-muted rounded animate-pulse" />
+});
 
 
 
@@ -37,86 +42,20 @@ export default function DashboardPage() {
     }
   };
 
-  // Safely handle auth state and guest users
+  // Get user from layout context (no need for duplicate auth state)
   useEffect(() => {
-    const setupAuth = async () => {
+    // Check for guest user in localStorage as fallback
+    const guestUserData = localStorage.getItem('guestUser');
+    if (guestUserData && !user) {
       try {
-        if (auth && typeof auth === 'object' && typeof auth.onAuthStateChanged === 'function') {
-          const unsubscribe = await safeFirebaseOperation(() => {
-            return auth.onAuthStateChanged(
-          (user) => {
-            setUser(user);
-            // If no Firebase user, check for guest user in localStorage
-            if (!user) {
-              const guestUserData = localStorage.getItem('guestUser');
-              if (guestUserData) {
-                try {
-                  const guestUser = JSON.parse(guestUserData);
-                  console.log("Found guest user in localStorage:", guestUser);
-                  setUser(guestUser);
-                } catch (error) {
-                  console.warn("Error parsing guest user data:", error);
-                }
-              }
-            }
-          },
-          (error) => {
-            console.warn("Auth state error in dashboard page:", error);
-            setUser(null);
-            // Check for guest user even on auth error
-            const guestUserData = localStorage.getItem('guestUser');
-            if (guestUserData) {
-              try {
-                const guestUser = JSON.parse(guestUserData);
-                console.log("Found guest user after auth error:", guestUser);
-                setUser(guestUser);
-              } catch (error) {
-                console.warn("Error parsing guest user data:", error);
-              }
-            }
-          }
-            );
-          });
-          
-          if (unsubscribe) {
-            return unsubscribe;
-          }
-        } else {
-          console.warn("Auth object not available, checking for guest user");
-          // Check for guest user when auth is not available
-          const guestUserData = localStorage.getItem('guestUser');
-          if (guestUserData) {
-            try {
-              const guestUser = JSON.parse(guestUserData);
-              console.log("Found guest user when auth unavailable:", guestUser);
-              setUser(guestUser);
-            } catch (error) {
-              console.warn("Error parsing guest user data:", error);
-              setUser(null);
-            }
-          } else {
-            setUser(null);
-          }
-        }
-      } catch (authError) {
-        console.warn("Auth initialization error in dashboard page:", authError);
-        setUser(null);
-        // Check for guest user even on initialization error
-        const guestUserData = localStorage.getItem('guestUser');
-        if (guestUserData) {
-          try {
-            const guestUser = JSON.parse(guestUserData);
-            console.log("Found guest user after init error:", guestUser);
-            setUser(guestUser);
-          } catch (error) {
-            console.warn("Error parsing guest user data:", error);
-          }
-        }
+        const guestUser = JSON.parse(guestUserData);
+        console.log("Dashboard page: Found guest user in localStorage:", guestUser);
+        setUser(guestUser);
+      } catch (error) {
+        console.warn("Dashboard page: Error parsing guest user data:", error);
       }
-    };
-    
-    setupAuth();
-  }, []);
+    }
+  }, [user]);
 
   // Update trial days left in real-time
   useEffect(() => {

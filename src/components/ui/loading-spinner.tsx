@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { RippleText } from "@/components/ripple-text";
 
 interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -69,11 +70,9 @@ export function PageLoadingSpinner() {
           </p>
         </div>
         
-        {/* Progress Dots */}
-        <div className="flex justify-center space-x-2">
-          <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        {/* Progress Text */}
+        <div className="flex justify-center">
+          <RippleText text="Loading..." className="text-sm text-muted-foreground" />
         </div>
       </div>
     </div>

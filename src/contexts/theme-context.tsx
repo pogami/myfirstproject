@@ -46,13 +46,32 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
-    setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
+    
+    // Use View Transition API if supported
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as any).startViewTransition(() => {
+        setThemeState(newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    } else {
+      // Fallback for browsers that don't support View Transition API
+      setThemeState(newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
   };
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
+    // Use View Transition API if supported
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as any).startViewTransition(() => {
+        setThemeState(newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    } else {
+      // Fallback for browsers that don't support View Transition API
+      setThemeState(newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
   };
 
   // Don't render until mounted to prevent hydration mismatch

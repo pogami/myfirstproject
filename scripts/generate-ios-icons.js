@@ -141,3 +141,4 @@ console.log('4. Place them in the AppIcon.appiconset folder');
 console.log('');
 console.log('Or use this command to convert SVG to PNG (requires rsvg-convert):');
 console.log('for file in *.html; do rsvg-convert -h ${file%.html} -w ${file%.html} "$file" > "${file%.html}.png"; done');
+

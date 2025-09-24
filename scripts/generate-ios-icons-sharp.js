@@ -89,3 +89,4 @@ const generatePNGIcons = async () => {
 
 // Run the generation
 generatePNGIcons().catch(console.error);
+

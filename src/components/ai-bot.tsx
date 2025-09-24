@@ -154,7 +154,7 @@ export function AIBot({ className = "" }: AIBotProps) {
           
           {/* Bot Icon */}
           <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
-            <Bot className="w-6 h-6 text-white" />
+            <CourseConnectLogo className="w-6 h-6" />
           </div>
           
           {/* Pulsing Ring */}
@@ -177,8 +177,12 @@ export function AIBot({ className = "" }: AIBotProps) {
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-blue-600" />
-                  <span className="font-semibold text-blue-600">AI Assistant</span>
+                  <img 
+                    src="/final-logo.png" 
+                    alt="CourseConnect AI" 
+                    className="w-5 h-5 object-contain"
+                  />
+                  <span className="font-semibold text-blue-600">CourseConnect AI</span>
                 </div>
                 <Button
                   variant="ghost"
