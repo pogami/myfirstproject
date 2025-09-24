@@ -12,6 +12,7 @@ import { ai } from '@/ai/genkit';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { searchCurrentInformation, needsCurrentInformation, formatSearchResultsForAI } from './web-search-service';
+import { extractUrlsFromText, scrapeMultiplePages, formatScrapedContentForAI } from './web-scraping-service';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -69,6 +70,25 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
         currentInfo = formatSearchResultsForAI(searchResults);
       } catch (error) {
         console.warn('Failed to fetch current information:', error);
+      }
+    }
+    
+    // Check if the question contains URLs to scrape
+    let scrapedContent = '';
+    const urls = extractUrlsFromText(input.question);
+    if (urls.length > 0) {
+      console.log('Found URLs to scrape:', urls);
+      try {
+        const { successful, failed } = await scrapeMultiplePages(urls);
+        if (successful.length > 0) {
+          scrapedContent = formatScrapedContentForAI(successful);
+          console.log(`Successfully scraped ${successful.length} pages`);
+        }
+        if (failed.length > 0) {
+          console.warn('Failed to scrape some URLs:', failed);
+        }
+      } catch (error) {
+        console.warn('Failed to scrape URLs:', error);
       }
     }
     
@@ -214,7 +234,14 @@ GRAPH GENERATION RULES:
 7. When asked to "graph" or "show" an equation, immediately provide the JSON data points
 
 Current Question: ${input.question}
-Context: ${input.context || 'General'}${conversationContext}${fileContext}${currentInfo}
+Context: ${input.context || 'General'}${conversationContext}${fileContext}${currentInfo}${scrapedContent}
+
+WEB CONTENT ANALYSIS RULES:
+1. If web content is provided above, use it to answer questions about those specific pages
+2. Reference specific information from the scraped content when relevant
+3. If the content doesn't contain the needed information, let the student know
+4. Summarize key points from the web content when appropriate
+5. Be conversational about the content - don't just repeat it verbatim
 
 Remember: This is part of an ongoing conversation. Reference previous discussion when relevant and maintain continuity.`
           }]
@@ -265,6 +292,25 @@ async function tryOpenAI(input: StudyAssistanceInput): Promise<AIResponse> {
         currentInfo = formatSearchResultsForAI(searchResults);
       } catch (error) {
         console.warn('Failed to fetch current information:', error);
+      }
+    }
+    
+    // Check if the question contains URLs to scrape
+    let scrapedContent = '';
+    const urls = extractUrlsFromText(input.question);
+    if (urls.length > 0) {
+      console.log('Found URLs to scrape:', urls);
+      try {
+        const { successful, failed } = await scrapeMultiplePages(urls);
+        if (successful.length > 0) {
+          scrapedContent = formatScrapedContentForAI(successful);
+          console.log(`Successfully scraped ${successful.length} pages`);
+        }
+        if (failed.length > 0) {
+          console.warn('Failed to scrape some URLs:', failed);
+        }
+      } catch (error) {
+        console.warn('Failed to scrape URLs:', error);
       }
     }
     
@@ -385,7 +431,14 @@ For mathematical expressions, use LaTeX formatting:
         },
         {
           role: 'user',
-          content: `Context: ${input.context}${conversationContext}${currentInfo}\n\nCurrent Question: ${input.question}\n\nRemember: This is part of an ongoing conversation. Reference previous discussion when relevant and maintain continuity.`
+          content: `Context: ${input.context}${conversationContext}${currentInfo}${scrapedContent}\n\nCurrent Question: ${input.question}\n\nWEB CONTENT ANALYSIS RULES:
+1. If web content is provided above, use it to answer questions about those specific pages
+2. Reference specific information from the scraped content when relevant
+3. If the content doesn't contain the needed information, let the student know
+4. Summarize key points from the web content when appropriate
+5. Be conversational about the content - don't just repeat it verbatim
+
+Remember: This is part of an ongoing conversation. Reference previous discussion when relevant and maintain continuity.`
         }
       ],
       max_tokens: 1000,
