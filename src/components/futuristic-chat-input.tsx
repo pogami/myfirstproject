@@ -23,7 +23,7 @@ export function FuturisticChatInput({
   onSend,
   onKeyPress,
   onFileUpload,
-  placeholder = "Ask CourseConnect AI anything",
+  placeholder,
   disabled = false,
   className = ""
 }: FuturisticChatInputProps) {
@@ -33,8 +33,22 @@ export function FuturisticChatInput({
   console.log('FuturisticChatInput rendering with theme:', theme);
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Detect mobile on mount
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Set appropriate placeholder
+  const displayPlaceholder = placeholder || (isMobile ? "Ask anything" : "Ask CourseConnect AI anything");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e);
@@ -127,7 +141,7 @@ export function FuturisticChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={placeholder}
+            placeholder={displayPlaceholder}
             disabled={disabled}
             className={cn(
               "w-full h-7 bg-transparent text-sm border-0 outline-none focus:outline-none placeholder:opacity-70 resize-none",
