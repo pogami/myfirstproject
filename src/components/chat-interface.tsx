@@ -1008,13 +1008,9 @@ export default function ChatInterface() {
                                                                     input?.focus();
                                                                 }}
                                                             >
-                                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background cursor-pointer hover:ring-primary/50 transition-all duration-200">
-                                                                    <img 
-                                                                        src="/courseconnect-logo-profile.png" 
-                                                                        alt="AI" 
-                                                                        className="size-6 object-contain"
-                                                                    />
-                                                                </Avatar>
+                                                                <div className="bg-red-500 text-white p-2 rounded">
+                                                                    TEST AVATAR - HOVER ME
+                                                                </div>
                                                             </ProfileHoverCard>
                                                         );
                                                     }
