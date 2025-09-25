@@ -28,6 +28,7 @@ export function ProfileHoverCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   const showCard = () => {
+    console.log('ProfileHoverCard showCard called for profile:', profile.name);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
