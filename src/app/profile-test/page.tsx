@@ -14,7 +14,6 @@ const testProfiles: ProfileData[] = [
     bio: 'Your intelligent study companion powered by advanced AI. I can help with homework, explain concepts, and provide personalized learning assistance.',
     capabilities: ['Homework Help', 'Concept Explanation', 'Study Planning', 'Test Prep'],
     subjects: ['Mathematics', 'Science', 'English', 'History', 'Computer Science'],
-    rating: 4.9,
     experience: 'Always Available'
   },
   {
@@ -24,20 +23,15 @@ const testProfiles: ProfileData[] = [
     school: 'Stanford University',
     major: 'Computer Science',
     year: 'Junior',
-    skills: ['React', 'Python', 'Machine Learning'],
-    rating: 4.8,
-    earnings: 2500
+    skills: ['React', 'Python', 'Machine Learning', 'Data Structures', 'Algorithms', 'Web Development']
   },
   {
     id: 'instructor-sarah',
     name: 'Dr. Sarah Chen',
     role: 'instructor',
     school: 'MIT',
-    subjects: ['Advanced Mathematics', 'Calculus', 'Linear Algebra'],
-    coursesCreated: 12,
-    rating: 4.9,
-    hourlyRate: 85,
-    earnings: 45000
+    subjects: ['Advanced Mathematics', 'Calculus', 'Linear Algebra', 'Statistics', 'Discrete Math'],
+    coursesCreated: 12
   }
 ];
 

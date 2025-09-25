@@ -59,40 +59,64 @@ export function ProfileCard({ profile, className, onAction }: ProfileCardProps) 
   const getStats = () => {
     const stats = [];
     
-    if (profile.rating) {
-      stats.push({
-        icon: Star,
-        value: profile.rating.toFixed(1),
-        label: 'rating',
-        color: 'text-yellow-400'
-      });
+    // Student stats
+    if (profile.role === 'student') {
+      if (profile.year) {
+        stats.push({
+          icon: GraduationCap,
+          value: profile.year,
+          label: 'year',
+          color: 'text-blue-400'
+        });
+      }
+      if (profile.skills && profile.skills.length > 0) {
+        stats.push({
+          icon: BookOpen,
+          value: profile.skills.length.toString(),
+          label: 'skills',
+          color: 'text-green-400'
+        });
+      }
     }
     
-    if (profile.earnings) {
-      stats.push({
-        icon: DollarSign,
-        value: `$${profile.earnings.toLocaleString()}`,
-        label: 'earned',
-        color: 'text-green-400'
-      });
+    // Instructor stats
+    if (profile.role === 'instructor') {
+      if (profile.coursesCreated) {
+        stats.push({
+          icon: BookOpen,
+          value: profile.coursesCreated.toString(),
+          label: 'courses',
+          color: 'text-purple-400'
+        });
+      }
+      if (profile.subjects && profile.subjects.length > 0) {
+        stats.push({
+          icon: GraduationCap,
+          value: profile.subjects.length.toString(),
+          label: 'subjects',
+          color: 'text-blue-400'
+        });
+      }
     }
     
-    if (profile.hourlyRate) {
-      stats.push({
-        icon: Clock,
-        value: `$${profile.hourlyRate}/hr`,
-        label: 'rate',
-        color: 'text-blue-400'
-      });
-    }
-    
-    if (profile.coursesCreated) {
-      stats.push({
-        icon: BookOpen,
-        value: profile.coursesCreated.toString(),
-        label: 'courses',
-        color: 'text-purple-400'
-      });
+    // AI Tutor stats
+    if (profile.role === 'ai-tutor') {
+      if (profile.capabilities && profile.capabilities.length > 0) {
+        stats.push({
+          icon: BookOpen,
+          value: profile.capabilities.length.toString(),
+          label: 'capabilities',
+          color: 'text-purple-400'
+        });
+      }
+      if (profile.subjects && profile.subjects.length > 0) {
+        stats.push({
+          icon: GraduationCap,
+          value: profile.subjects.length.toString(),
+          label: 'subjects',
+          color: 'text-blue-400'
+        });
+      }
     }
     
     return stats.slice(0, 3); // Limit to 3 stats
