@@ -9,11 +9,12 @@ import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 
 export type Message = {
     id?: string;
-    sender: "user" | "bot" | "moderator";
+    sender: "user" | "bot" | "moderator" | "system";
     text: string;
     name: string;
     timestamp: number;
     userId?: string;
+    isJoinMessage?: boolean;
     file?: {
         name: string;
         size: number;
@@ -28,6 +29,9 @@ export type Chat = {
     messages: Message[];
     createdAt?: number;
     updatedAt?: number;
+    chatType?: 'private' | 'public' | 'class';
+    classGroupId?: string;
+    members?: string[];
 };
 
 interface ChatState {
@@ -41,8 +45,9 @@ interface ChatState {
   trialActivated: boolean; // Whether user has activated their trial
   trialStartDate: number | null; // When the trial started (timestamp)
   trialDaysLeft: number; // Days remaining in trial
-  addChat: (chatName: string, initialMessage: Message) => Promise<void>;
+  addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class') => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
+  addUserJoinMessage: (chatId: string, userName: string, userId: string) => Promise<void>;
   setCurrentTab: (tabId: string | undefined) => void;
   setShowUpgrade: (show: boolean) => void;
   setIsDemoMode: (isDemo: boolean) => void;
@@ -53,7 +58,7 @@ interface ChatState {
   resetChat: (chatId: string) => Promise<void>;
   exportChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
-  initializeGeneralChat: () => void;
+  initializeGeneralChats: () => void;
 }
 
 const getChatId = (chatName: string) => chatName.toLowerCase().replace(/[\\s:]/g, '-');
@@ -149,9 +154,19 @@ export const useChatStore = create<ChatState>()(
         return unsubscribe;
       },
 
-      addChat: async (chatName, initialMessage, customChatId?: string) => {
+      addChat: async (chatName, initialMessage, customChatId?: string, chatType: 'private' | 'public' | 'class' = 'private') => {
         const chatId = customChatId || getChatId(chatName);
         const { isGuest } = get();
+        
+        const newChat: Chat = {
+          id: chatId,
+          title: chatName,
+          messages: [initialMessage],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          chatType,
+          members: chatType !== 'private' ? [] : undefined
+        };
 
         console.log('addChat called:', { chatName, chatId, customChatId, isGuest });
 
@@ -296,6 +311,20 @@ export const useChatStore = create<ChatState>()(
         
         // Clear loading state
         set({ isSendingMessage: false });
+      },
+
+      addUserJoinMessage: async (chatId: string, userName: string, userId: string) => {
+        const joinMessage: Message = {
+          sender: 'system',
+          name: 'System',
+          text: `${userName} has joined the chat`,
+          timestamp: Date.now(),
+          userId,
+          isJoinMessage: true
+        };
+
+        const { addMessage } = get();
+        await addMessage(chatId, joinMessage);
       },
       setCurrentTab: (tabId) => {
         console.log('setCurrentTab called with:', tabId);
@@ -455,30 +484,56 @@ export const useChatStore = create<ChatState>()(
         }
       },
       
-      initializeGeneralChat: () => {
+      initializeGeneralChats: () => {
         const { chats } = get();
         
-        // Only create general chat if it doesn't exist
-        if (!chats['general-chat']) {
-          const generalChatMessage = {
+        // Create Private General Chat
+        if (!chats['private-general-chat']) {
+          const privateGeneralMessage = {
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to General Chat! 🎓\n\n**General Chat Features:**\n• Ask questions about any topic\n• Get AI assistance with homework\n• Discuss academic concepts\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant materials\n• Help others when you can\n\nStart by asking a question!`,
+            text: `Welcome to Private General Chat! 🤖\n\n**Private Chat Features:**\n• Direct AI assistance with any topic\n• Personalized study help\n• Homework support\n• Academic guidance\n\n**How to use:**\n• Just type your question - AI responds automatically\n• No need for @ mentions here\n• Get detailed, step-by-step explanations\n\nWhat can I help you with today?`,
             timestamp: Date.now()
           };
           
           set((state) => ({
             chats: {
               ...state.chats,
-              'general-chat': {
-                id: 'general-chat',
-                title: 'General Chat',
-                messages: [generalChatMessage],
+              'private-general-chat': {
+                id: 'private-general-chat',
+                title: 'Private General Chat',
+                messages: [privateGeneralMessage],
                 createdAt: Date.now(),
-                updatedAt: Date.now()
+                updatedAt: Date.now(),
+                chatType: 'private'
               }
             },
-            currentTab: state.currentTab || 'general-chat'
+            currentTab: state.currentTab || 'private-general-chat'
+          }));
+        }
+
+        // Create Public General Chat
+        if (!chats['public-general-chat']) {
+          const publicGeneralMessage = {
+            sender: 'bot' as const,
+            name: 'CourseConnect AI',
+            text: `Welcome to Public General Chat! 👥\n\n**Public Chat Features:**\n• Chat with other students\n• Share study resources\n• Collaborate on topics\n• Get AI help when needed\n\n**How to use:**\n• Chat normally with other users\n• Type @ai to call the AI assistant\n• Be helpful and respectful\n• Share knowledge and resources\n\nStart a conversation or ask for help!`,
+            timestamp: Date.now()
+          };
+          
+          set((state) => ({
+            chats: {
+              ...state.chats,
+              'public-general-chat': {
+                id: 'public-general-chat',
+                title: 'Public General Chat',
+                messages: [publicGeneralMessage],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                chatType: 'public',
+                members: []
+              }
+            }
           }));
         }
       },

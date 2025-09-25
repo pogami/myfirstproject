@@ -25,7 +25,7 @@ const Notifications = dynamic(() => import("@/components/notifications"), {
 
 
 export default function DashboardPage() {
-  const { chats, trialActivated, trialDaysLeft, updateTrialDaysLeft } = useChatStore();
+  const { chats, trialActivated, trialDaysLeft, updateTrialDaysLeft, setIsDemoMode } = useChatStore();
   const [user, setUser] = useState<any>(null);
   const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false);
   const classCount = Object.keys(chats).filter(key => key !== 'general-chat').length;
@@ -158,7 +158,6 @@ export default function DashboardPage() {
                 className="flex-1 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/30 h-10 text-sm font-medium transition-all duration-300 hover:scale-105"
                 onClick={() => {
                   // Enable demo mode when accessing features
-                  const { setIsDemoMode } = useChatStore.getState();
                   setIsDemoMode(true);
                 }}
                 asChild
@@ -252,7 +251,7 @@ export default function DashboardPage() {
                   // Trigger demo break
                   window.dispatchEvent(new CustomEvent('demo-break-trigger'));
                 }}
-                className="text-xs sm:text-sm w-full sm:w-auto h-12 sm:h-10 font-medium min-h-[48px] sm:min-h-[40px] bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0"
+                className="text-xs sm:text-sm w-full sm:w-auto h-12 sm:h-10 font-medium min-h-[48px] sm:min-h-[40px] bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0"
               >
                 ☕ Try Demo
               </Button>

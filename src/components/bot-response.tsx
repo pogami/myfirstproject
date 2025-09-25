@@ -32,6 +32,26 @@ function renderMathLine(line: string, i: number) {
     const expr = line.replace(/\$/g, "");
     return <InlineMath key={i} math={expr} />;
   } else {
+    // Check if line contains boxed math answers
+    if (line.includes("\\boxed{")) {
+      // Extract boxed content and render it prominently
+      const boxedMatch = line.match(/\\boxed\{([^}]+)\}/);
+      if (boxedMatch) {
+        const boxedContent = boxedMatch[1];
+        const beforeBoxed = line.substring(0, boxedMatch.index);
+        const afterBoxed = line.substring(boxedMatch.index! + boxedMatch[0].length);
+        
+        return (
+          <div key={i} className="mb-2 flex items-center gap-2">
+            {beforeBoxed && <span className="text-sm">{beforeBoxed}</span>}
+            <div className="inline-flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-700 rounded-md px-2 py-0.5 min-h-[24px] text-sm">
+              <InlineMath math={boxedContent} />
+            </div>
+            {afterBoxed && <span className="text-sm">{afterBoxed}</span>}
+          </div>
+        );
+      }
+    }
     return <p key={i} className="text-sm break-words ai-response mb-2">{line}</p>;
   }
 }

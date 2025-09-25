@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
-import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2 } from "lucide-react";
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,15 +22,30 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { MobileInput } from "@/components/ui/mobile-input";
 import { ExpandableUserMessage } from "@/components/expandable-user-message";
-import { FuturisticChatInput } from "@/components/futuristic-chat-input";
+import { EnhancedChatInput } from "@/components/enhanced-chat-input";
+import { MessageTimestamp } from "@/components/message-timestamp";
 import BotResponse from "@/components/bot-response";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { RippleText } from "@/components/ripple-text";
 import { InDepthAnalysis } from "@/components/in-depth-analysis";
-import { MessageTimestamp } from "@/components/message-timestamp";
+import { JoinMessage } from "@/components/join-message";
 
 export default function ChatPage() {
-    const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat, initializeGeneralChat } = useChatStore();
+    const searchParams = useSearchParams();
+    const { 
+        chats, 
+        addMessage, 
+        setCurrentTab, 
+        currentTab, 
+        addChat, 
+        addUserJoinMessage,
+        isStoreLoading, 
+        initializeAuthListener, 
+        exportChat, 
+        resetChat, 
+        deleteChat, 
+        initializeGeneralChats 
+    } = useChatStore();
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
@@ -74,10 +90,18 @@ export default function ChatPage() {
         }
     }, [currentTab]);
 
-    // Initialize general chat when component mounts
+    // Initialize general chats when component mounts
     useEffect(() => {
-        initializeGeneralChat();
-    }, [initializeGeneralChat]);
+        initializeGeneralChats();
+    }, [initializeGeneralChats]);
+
+    // Handle URL parameters for specific chat tabs
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+            if (tabParam && chats[tabParam]) {
+                setCurrentTab(tabParam);
+            }
+    }, [searchParams, chats, setCurrentTab]);
 
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
@@ -200,10 +224,20 @@ export default function ChatPage() {
         return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     };
 
-    const handleSendMessage = async () => {
-        if (!inputValue.trim() || !currentTab) return;
+    const handleSendMessage = async (shouldCallAI: boolean = true) => {
+        if (!inputValue.trim()) return;
 
         const messageText = inputValue.trim();
+        const currentChat = chats['general-chat'];
+        const isPublicChat = currentChat?.chatType === 'public' || currentChat?.chatType === 'class';
+        const isClassChat = currentChat?.chatType === 'class';
+
+        // Determine if this message mentions AI
+        const hasAIMention = messageText.includes('@ai') || messageText.includes('@AI');
+        
+        // For public chats, only call AI if explicitly mentioned
+        const shouldCallAIFinal = isPublicChat ? hasAIMention : shouldCallAI;
+
         const userMessage = {
             id: generateMessageId(),
             text: messageText,
@@ -214,91 +248,91 @@ export default function ChatPage() {
 
         // Clear input immediately to prevent spam
         setInputValue("");
-        setIsLoading(true);
 
         // Add user message
-        await addMessage(currentTab, userMessage);
+        await addMessage('general-chat', userMessage);
 
-        try {
-            // Get AI response via API call
-            let aiResponse;
+        // Only get AI response if appropriate
+        if (shouldCallAIFinal) {
             try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: messageText,
-                        context: chats[currentTab!]?.title || 'General Chat',
-                        conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
-                            role: msg.sender === 'user' ? 'user' : 'assistant',
-                            content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
-                        })) || []
-                    })
-                });
+                // Get AI response via API call
+                let aiResponse;
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            question: messageText,
+                            context: chats['general-chat']?.title || 'General Chat',
+                            conversationHistory: chats['general-chat']?.messages?.slice(-10).map(msg => ({
+                                role: msg.sender === 'user' ? 'user' : 'assistant',
+                                content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+                            })) || [],
+                            shouldCallAI: shouldCallAIFinal,
+                            isPublicChat
+                        })
+                    });
 
-                if (!response.ok) {
-                    throw new Error(`API call failed: ${response.status}`);
+                    if (!response.ok) {
+                        throw new Error(`API call failed: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    aiResponse = data;
+                } catch (apiError) {
+                    console.warn("API call failed, using fallback:", apiError);
+                    aiResponse = {
+                        answer: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+                        provider: 'fallback'
+                    };
+                }
+                
+                // Debug logging to see what aiResponse contains
+                console.log('ChatPage - aiResponse:', aiResponse, 'type:', typeof aiResponse, 'answer type:', typeof (aiResponse as any)?.answer);
+
+                // Ensure we always have a string for the message text
+                let responseText = 'I apologize, but I couldn\'t generate a response.';
+                
+                if (aiResponse && typeof aiResponse === 'object') {
+                    const responseObj = aiResponse as any;
+                    if (responseObj.answer && typeof responseObj.answer === 'string') {
+                        responseText = responseObj.answer;
+                    } else if (responseObj.response && typeof responseObj.response === 'string') {
+                        responseText = responseObj.response;
+                    } else {
+                        responseText = 'I apologize, but I couldn\'t generate a proper response.';
+                    }
+                } else if (typeof aiResponse === 'string') {
+                    responseText = aiResponse;
                 }
 
-                const data = await response.json();
-                aiResponse = data;
-            } catch (apiError) {
-                console.warn("API call failed, using fallback:", apiError);
-                aiResponse = {
-                    answer: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-                    provider: 'fallback'
+                const aiMessage = {
+                    id: generateMessageId(),
+                    text: responseText || 'I apologize, but I couldn\'t generate a response.',
+                    sender: 'bot' as const,
+                    name: 'CourseConnect AI',
+                    timestamp: Date.now()
                 };
+
+                // Add AI response
+                await addMessage('general-chat', aiMessage);
+            } catch (error) {
+                console.error('AI Error:', error);
+                const errorMessage = {
+                    id: generateMessageId(),
+                    text: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+                    sender: 'bot' as const,
+                    name: 'CourseConnect AI',
+                    timestamp: Date.now()
+                };
+                await addMessage('general-chat', errorMessage);
             }
-            
-            // Debug logging to see what aiResponse contains
-            console.log('ChatPage - aiResponse:', aiResponse, 'type:', typeof aiResponse, 'answer type:', typeof (aiResponse as any)?.answer);
-
-            // Ensure we always have a string for the message text
-            let responseText = 'I apologize, but I couldn\'t generate a response.';
-            
-            if (aiResponse && typeof aiResponse === 'object') {
-                const responseObj = aiResponse as any;
-                if (responseObj.answer && typeof responseObj.answer === 'string') {
-                    responseText = responseObj.answer;
-                } else if (responseObj.response && typeof responseObj.response === 'string') {
-                    responseText = responseObj.response;
-                } else {
-                    responseText = 'I apologize, but I couldn\'t generate a proper response.';
-                }
-            } else if (typeof aiResponse === 'string') {
-                responseText = aiResponse;
-            }
-
-            const aiMessage = {
-                id: generateMessageId(),
-                text: responseText || 'I apologize, but I couldn\'t generate a response.',
-                sender: 'bot' as const,
-                name: 'CourseConnect AI',
-                timestamp: Date.now()
-            };
-
-            // Add AI response
-            await addMessage(currentTab, aiMessage);
-        } catch (error) {
-            console.error('AI Error:', error);
-            const errorMessage = {
-                id: generateMessageId(),
-                text: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-                sender: 'bot' as const,
-                name: 'CourseConnect AI',
-                timestamp: Date.now()
-            };
-            await addMessage(currentTab, errorMessage);
-        } finally {
-            setIsLoading(false);
         }
     };
 
     const handleFileUpload = async (file: File) => {
-        if (!currentTab) return;
-
         // Show loading state
         setIsLoading(true);
 
@@ -319,7 +353,7 @@ export default function ChatPage() {
             };
 
             // Add upload message
-            await addMessage(currentTab, uploadMessage);
+            await addMessage('general-chat', uploadMessage);
 
             // Simulate AI processing of the file
             const aiResponse = {
@@ -330,7 +364,7 @@ export default function ChatPage() {
                 timestamp: Date.now()
             };
 
-            await addMessage(currentTab, aiResponse);
+            await addMessage('general-chat', aiResponse);
 
             toast({
                 title: "File uploaded successfully",
@@ -351,9 +385,8 @@ export default function ChatPage() {
 
     // Handler functions for menu actions
     const handleExportChat = () => {
-        if (!currentTab) return;
         try {
-            exportChat(currentTab);
+            exportChat('general-chat');
             toast({
                 title: "Chat Exported",
                 description: "Chat has been exported and downloaded.",
@@ -368,13 +401,11 @@ export default function ChatPage() {
     };
 
     const handleResetChat = async () => {
-        if (!currentTab) return;
-        
         // Close dialog immediately
         setShowResetDialog(false);
         
         try {
-            await resetChat(currentTab);
+            await resetChat('general-chat');
             toast({
                 title: "Chat Reset",
                 description: "Chat has been reset to its initial state.",
@@ -389,13 +420,11 @@ export default function ChatPage() {
     };
 
     const handleDeleteChat = async () => {
-        if (!currentTab) return;
-        
         // Close dialog immediately
         setShowDeleteDialog(false);
         
         try {
-            await deleteChat(currentTab);
+            await deleteChat('general-chat');
             toast({
                 title: "Chat Deleted",
                 description: "Chat has been permanently deleted.",
@@ -460,32 +489,22 @@ export default function ChatPage() {
                     </p>
                 </div>
 
-                <Tabs value={currentTab || 'general-chat'} onValueChange={setCurrentTab} className="w-full flex-1 flex flex-col">
-                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mb-6">
-                        <TabsTrigger value="general-chat" className="flex items-center gap-2">
-                            <MessageSquare className="h-4 w-4" />
-                            <span className="hidden sm:inline">General Chat</span>
-                        </TabsTrigger>
-                        {classChats.map(([id, chat]) => (
-                            <TabsTrigger key={id} value={id} className="flex items-center gap-2">
-                                <span className="truncate max-w-[120px] sm:max-w-[200px]">{chat.title}</span>
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
+                {/* Simple chat interface - no tabs needed */}
+                <div className="w-full flex-1 flex flex-col">
 
-                    <TabsContent value="general-chat" className="mt-0 flex-1 flex flex-col">
+                    {/* General Chat Interface */}
                         <Card className="flex-1 flex flex-col overflow-hidden relative">
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
                                         General Chat
-                                        <Badge variant="secondary" className="ml-auto">
+                                        <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
                                             All Users
                                         </Badge>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 ml-2">
+                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 hover:bg-transparent hover:text-current">
                                                     <MoreVertical className="h-4 w-4" />
                                                     <span className="sr-only">Chat options</span>
                                                 </Button>
@@ -506,7 +525,18 @@ export default function ChatPage() {
                                 <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden chat-container">
                                     <ScrollArea className="h-[calc(100vh-300px)] px-4" ref={scrollAreaRef}>
                                         <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
-                                            {generalChat?.messages?.map((message, index) => (
+                                            {generalChat?.messages?.map((message, index) => {
+                                                // Handle system messages (join notifications)
+                                                if (message.sender === 'system') {
+                                                    return (
+                                                        <JoinMessage 
+                                                            key={`${message.id || 'msg'}-${index}-${message.timestamp}`}
+                                                            message={message}
+                                                        />
+                                                    );
+                                                }
+                                                
+                                                return (
                                                 <div key={`${message.id || 'msg'}-${index}-${message.timestamp}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
                                                     <div className={`flex gap-3 max-w-[85%] min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         <Avatar className="w-8 h-8 flex-shrink-0">
@@ -537,12 +567,24 @@ export default function ChatPage() {
                                                                 <div className="flex items-center gap-2 mb-1">
                                                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                                                                         {message.name}
-                                                                        {isMathOrPhysicsContent(typeof message.text === 'string' ? message.text : JSON.stringify(message.text)) && (
-                                                                            <InDepthAnalysis 
-                                                                                question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                                conversationHistory={currentTab ? chats[currentTab]?.messages || [] : []}
-                                                                            />
-                                                                        )}
+                                                                        {(() => {
+                                                                            // Check if this is a bot message and if the previous user message contained math
+                                                                            const previousMessage = index > 0 ? generalChat?.messages[index - 1] : null;
+                                                                            const userAskedMathQuestion = previousMessage && 
+                                                                                previousMessage.sender === 'user' && 
+                                                                                isMathOrPhysicsContent(typeof previousMessage.text === 'string' ? previousMessage.text : JSON.stringify(previousMessage.text));
+                                                                            
+                                                                            // Only show math analysis if bot responded to a math question AND response contains math
+                                                                            const shouldShowMathAnalysis = userAskedMathQuestion && 
+                                                                                isMathOrPhysicsContent(typeof message.text === 'string' ? message.text : JSON.stringify(message.text));
+                                                                            
+                                                                            return shouldShowMathAnalysis ? (
+                                                                                <InDepthAnalysis 
+                                                                                    question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                                    conversationHistory={chats['general-chat']?.messages || []}
+                                                                                />
+                                                                            ) : null;
+                                                                        })()}
                                                                     </div>
                                                                     <MessageTimestamp timestamp={message.timestamp} />
                                                                 </div>
@@ -552,233 +594,34 @@ export default function ChatPage() {
                                                                 />
                                                             </div>
                                                         )}
-                                                        {message.file && (
-                                                            <div className="mt-2 p-3 bg-muted/30 rounded-lg border border-border/50">                           
-                                                                <div className="flex items-center gap-2">                                                   
-                                                                    <Upload className="h-4 w-4" />                                                          
-                                                                    <span className="text-sm font-medium">{message.file.name}</span>                        
-                                                                    <span className="text-xs text-muted-foreground">                                                   
-                                                                        ({(message.file.size / 1024).toFixed(1)} KB)                                        
-                                                                    </span>
                                                                 </div>
-                                                                <a 
-                                                                    href={message.file.url}                                                                 
-                                                                    target="_blank"                                                                         
-                                                                    rel="noopener noreferrer"                                                               
-                                                                    className="text-xs text-primary hover:text-primary/80 underline mt-1 block"              
-                                                                >
-                                                                    View File                                                                               
-                                                                </a>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                            );
+                                            })}
                                             
                                             {/* Scroll target for auto-scroll */}
                                             <div ref={messagesEndRef} />
                                             
-                                            {/* AI Thinking Animation */}
-                                            {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (                                                    
-                                                <div className="flex items-start gap-3 w-full max-w-full">
-                                                    <Avatar className="w-6 h-6 flex-shrink-0">
-                                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
-                                                            <CourseConnectLogo className="w-3 h-3" />
-                                                        </div>
-                                                    </Avatar>
-                                                    <div className="text-left min-w-0">
-                                                        <div className="text-xs text-muted-foreground mb-1">
-                                                            CourseConnect AI
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            <RippleText text="thinking..." className="opacity-70" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                            {/* AI Thinking Animation - Removed to prevent flicker */}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background h-20">
-                                        <FuturisticChatInput
+                                    <div className="p-4 sm:p-6 flex-shrink-0 bg-background pb-safe">
+                                        <EnhancedChatInput
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}
                                             onSend={handleSendMessage}
                                             onFileUpload={handleFileUpload}
-                                            placeholder="Ask AI anything"
-                                            disabled={isLoading}
+                                        placeholder="Ask AI anything or chat with classmates"
+                                            disabled={false}
                                             className="w-full"
+                                            isPublicChat={false}
+                                            isClassChat={false}
                                         />
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-
-                    {classChats.map(([id, chat]) => (
-                        <TabsContent key={id} value={id} className="mt-0 flex-1 flex flex-col">
-                            <Card className="flex-1 flex flex-col overflow-hidden">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="flex items-center gap-2">
-                                        <BookOpen className="h-5 w-5" />
-                                        {chat.title}
-                                        <Badge variant="outline" className="ml-auto">
-                                            <Users className="h-3 w-3 mr-1" />
-                                            Class Chat
-                                        </Badge>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 ml-2">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                    <span className="sr-only">Chat options</span>
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={handleExportChat}>
-                                                    <Download className="h-4 w-4 mr-2" />
-                                                    Export Chat
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => setShowResetDialog(true)}>
-                                                    <RotateCcw className="h-4 w-4 mr-2" />
-                                                    Reset Chat
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem 
-                                                    onClick={() => setShowDeleteDialog(true)}
-                                                    className="text-destructive focus:text-destructive"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Delete Chat
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden chat-container">
-                                    <ScrollArea className="h-[calc(100vh-300px)] px-4" ref={scrollAreaRef}>
-                                        <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
-                                            {chat?.messages?.map((message, index) => (
-                                                <div key={`${message.id || 'msg'}-${index}-${message.timestamp}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
-                                                    <div className={`flex gap-3 max-w-[85%] min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                        <Avatar className="w-8 h-8 flex-shrink-0">
-                                                            <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
-                                                            <AvatarFallback className="text-xs">
-                                                                {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : (
-                                                                    <CourseConnectLogo className="w-4 h-4" />
-                                                                )}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        {message.sender === 'user' ? (
-                                                            <div className="text-right min-w-0">
-                                                                <div className="flex items-center justify-end gap-2 mb-1">
-                                                                    <MessageTimestamp timestamp={message.timestamp} />
-                                                                    <div className="text-xs text-muted-foreground">
-                                                                        {message.name}
                                                                     </div>
                                                                 </div>
-                                                                <div className="inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble">
-                                                                    <ExpandableUserMessage 
-                                                                        content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                        className="text-primary-foreground"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-left min-w-0">
-                                                                <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                                                                    {message.name}
-                                                                    {isMathOrPhysicsContent(typeof message.text === 'string' ? message.text : JSON.stringify(message.text)) && (
-                                                                        <InDepthAnalysis 
-                                                                            question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                            conversationHistory={currentTab ? chats[currentTab]?.messages || [] : []}
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                                <BotResponse 
-                                                                    content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                    className="text-sm ai-response leading-relaxed max-w-full overflow-hidden"
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        {message.file && (
-                                                            <div className="mt-2 p-3 bg-muted/30 rounded-lg border border-border/50">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Upload className="h-4 w-4" />
-                                                                    <span className="text-sm font-medium">{message.file.name}</span>
-                                                                    <span className="text-xs text-muted-foreground">
-                                                                        ({(message.file.size / 1024).toFixed(1)} KB)
-                                                                    </span>
-                                                                </div>
-                                                                <a 
-                                                                    href={message.file.url} 
-                                                                    target="_blank" 
-                                                                    rel="noopener noreferrer"
-                                                                    className="text-xs text-primary hover:text-primary/80 underline mt-1 block"
-                                                                >
-                                                                    View File
-                                                                </a>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            
-                                            {/* Scroll target for auto-scroll */}
-                                            <div ref={messagesEndRef} />
-                                            
-                                            {/* AI Thinking Animation */}
-                                            {isLoading && chat?.messages?.at(-1)?.sender !== 'bot' && (
-                                                <div className="flex items-start gap-3 w-full max-w-full">
-                                                    <Avatar className="w-6 h-6 flex-shrink-0">
-                                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
-                                                            <CourseConnectLogo className="w-3 h-3" />
-                                                        </div>
-                                                    </Avatar>
-                                                    <div className="text-left min-w-0">
-                                                        <div className="text-xs text-muted-foreground mb-1">
-                                                            CourseConnect AI
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            <RippleText text="thinking..." className="opacity-70" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </ScrollArea>
-                                    <div className="p-4 sm:p-6 border-t flex-shrink-0 bg-background h-20">
-                                        <FuturisticChatInput
-                                            value={inputValue}
-                                            onChange={(e) => setInputValue(e.target.value)}
-                                            onSend={handleSendMessage}
-                                            onFileUpload={handleFileUpload}
-                                            placeholder={chat.title === 'General Chat' ? 'Ask anything...' : `Ask about ${chat.title}...`}
-                                            disabled={isLoading}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    ))}
-                </Tabs>
-
-                {Object.keys(chats).length === 0 && (
-                    <Card className="h-[400px] flex items-center justify-center">
-                        <div className="text-center">
-                            <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <h3 className="text-lg font-semibold mb-2">No Chats Available</h3>
-                            <p className="text-muted-foreground mb-4">
-                                Upload a syllabus to create a class chat or start with the general chat.
-                            </p>
-                            <Button asChild>
-                                <Link href="/dashboard/upload">
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Upload Syllabus
-                                </Link>
-                            </Button>
-                        </div>
-                    </Card>
-                )}
-            </div>
         </div>
 
         {/* Reset Chat Confirmation Dialog */}
