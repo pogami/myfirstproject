@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import React from 'react';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -60,40 +59,7 @@ function findSafeTruncationPoint(text: string, maxLength: number): number {
   return Math.min(truncateAt, text.length);
 }
 
-export function TruncatedText({ text, maxLength = 500, className = "" }: TruncatedTextProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Prevent scroll conflicts
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (scrollContainerRef.current && isExpanded) {
-        const container = scrollContainerRef.current;
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        
-        // If scrolling up and at top, or scrolling down and at bottom
-        if ((e.deltaY < 0 && scrollTop === 0) || 
-            (e.deltaY > 0 && scrollTop + clientHeight >= scrollHeight)) {
-          // Allow page scroll
-          return;
-        }
-        
-        // Otherwise, prevent page scroll and scroll within container
-        e.preventDefault();
-        container.scrollTop += e.deltaY;
-      }
-    };
-    
-    if (isExpanded && scrollContainerRef.current) {
-      scrollContainerRef.current.addEventListener('wheel', handleWheel, { passive: false });
-      return () => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.removeEventListener('wheel', handleWheel);
-        }
-      };
-    }
-  }, [isExpanded]);
-  
+export function TruncatedText({ text, maxLength = 300, className = "" }: TruncatedTextProps) {
   // If text is shorter than maxLength, don't truncate
   if (text.length <= maxLength) {
     return (
@@ -109,37 +75,8 @@ export function TruncatedText({ text, maxLength = 500, className = "" }: Truncat
   return (
     <div className={`${className} max-w-full overflow-hidden`}>
       <div className="whitespace-pre-wrap text-sm leading-relaxed">
-        {isExpanded ? (
-          <div 
-            ref={scrollContainerRef}
-            className="max-h-80 overflow-y-auto overflow-x-hidden pr-2 border border-border/20 rounded-md p-3 bg-muted/10 w-full max-w-full"
-          >
-            {text.split("\n").map((line, i) => renderMathLine(line, i))}
-          </div>
-        ) : (
-          <>
-            {truncatedText.split("\n").map((line, i) => renderMathLine(line, i))}
-            <span className="text-muted-foreground">...</span>
-            <button
-              onClick={() => setIsExpanded(true)}
-              className="ml-2 inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-            >
-              Show more
-              <ChevronDown className="h-3 w-3" />
-            </button>
-          </>
-        )}
-        {isExpanded && (
-          <div className="mt-2 flex justify-end">
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-            >
-              Show less
-              <ChevronUp className="h-3 w-3" />
-            </button>
-          </div>
-        )}
+        {truncatedText.split("\n").map((line, i) => renderMathLine(line, i))}
+        <span className="text-muted-foreground">...</span>
       </div>
     </div>
   );

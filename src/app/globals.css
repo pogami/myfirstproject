@@ -20,6 +20,28 @@ body {
   color: hsl(var(--foreground)) !important;
 }
 
+/* Ensure boxed answers are visible and properly styled */
+.katex .mord {
+  color: hsl(var(--foreground)) !important;
+}
+
+.katex .mrel {
+  color: hsl(var(--foreground)) !important;
+}
+
+.katex .mbin {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Make sure boxed answers have proper contrast */
+.katex .boxed {
+  border: 2px solid hsl(var(--primary)) !important;
+  border-radius: 4px !important;
+  padding: 0.25rem 0.5rem !important;
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
 /* Constrain all text in chat messages */
 .chat-message * {
   max-width: 100% !important;

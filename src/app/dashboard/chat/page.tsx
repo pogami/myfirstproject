@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Bot, User, MessageSquare, Users, BookOpen, Upload, MoreVertical, Download, RotateCcw, Trash2 } from "lucide-react";
+import { isMathOrPhysicsContent } from '@/utils/math-detection';
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2 } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,10 +20,13 @@ import { useToast } from "@/hooks/use-toast";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { MobileInput } from "@/components/ui/mobile-input";
+import { ExpandableUserMessage } from "@/components/expandable-user-message";
 import { FuturisticChatInput } from "@/components/futuristic-chat-input";
 import BotResponse from "@/components/bot-response";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { RippleText } from "@/components/ripple-text";
+import { InDepthAnalysis } from "@/components/in-depth-analysis";
+import { MessageTimestamp } from "@/components/message-timestamp";
 
 export default function ChatPage() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isStoreLoading, initializeAuthListener, exportChat, resetChat, deleteChat, initializeGeneralChat } = useChatStore();
@@ -216,28 +220,32 @@ export default function ChatPage() {
         await addMessage(currentTab, userMessage);
 
         try {
-            // Get AI response with error handling and timeout
+            // Get AI response via API call
             let aiResponse;
             try {
-                const { provideStudyAssistanceWithFallback } = await import("@/ai/services/dual-ai-service");
-                
-                // Add timeout to prevent long waits
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('AI response timeout')), 15000)
-                );
-                
-                const aiPromise = provideStudyAssistanceWithFallback({
-                    question: messageText,
-                    context: chats[currentTab!]?.title || 'General Chat',
-                    conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
-                        role: msg.sender === 'user' ? 'user' : 'assistant',
-                        content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
-                    })) || []
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: messageText,
+                        context: chats[currentTab!]?.title || 'General Chat',
+                        conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
+                            role: msg.sender === 'user' ? 'user' : 'assistant',
+                            content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+                        })) || []
+                    })
                 });
-                
-                aiResponse = await Promise.race([aiPromise, timeoutPromise]);
-            } catch (importError) {
-                console.warn("AI service import failed, using fallback:", importError);
+
+                if (!response.ok) {
+                    throw new Error(`API call failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                aiResponse = data;
+            } catch (apiError) {
+                console.warn("API call failed, using fallback:", apiError);
                 aiResponse = {
                     answer: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
                     provider: 'fallback'
@@ -511,19 +519,32 @@ export default function ChatPage() {
                                                         </Avatar>
                                                         {message.sender === 'user' ? (
                                                             <div className="text-right min-w-0">
-                                                                <div className="text-xs text-muted-foreground mb-1">
-                                                                    {message.name}
+                                                                <div className="flex items-center justify-end gap-2 mb-1">
+                                                                    <MessageTimestamp timestamp={message.timestamp} />
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {message.name}
+                                                                    </div>
                                                                 </div>
                                                                 <div className="inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble">
-                                                                    <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-                                                                        {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                    </div>
+                                                                    <ExpandableUserMessage 
+                                                                        content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                        className="text-primary-foreground"
+                                                                    />
                                                                 </div>
                                                             </div>
                                                         ) : (
                                                             <div className="text-left min-w-0">
-                                                                <div className="text-xs text-muted-foreground mb-1">
-                                                                    {message.name}
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                        {message.name}
+                                                                        {isMathOrPhysicsContent(typeof message.text === 'string' ? message.text : JSON.stringify(message.text)) && (
+                                                                            <InDepthAnalysis 
+                                                                                question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                                conversationHistory={currentTab ? chats[currentTab]?.messages || [] : []}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                    <MessageTimestamp timestamp={message.timestamp} />
                                                                 </div>
                                                                 <BotResponse 
                                                                     content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
@@ -647,19 +668,29 @@ export default function ChatPage() {
                                                         </Avatar>
                                                         {message.sender === 'user' ? (
                                                             <div className="text-right min-w-0">
-                                                                <div className="text-xs text-muted-foreground mb-1">
-                                                                    {message.name}
+                                                                <div className="flex items-center justify-end gap-2 mb-1">
+                                                                    <MessageTimestamp timestamp={message.timestamp} />
+                                                                    <div className="text-xs text-muted-foreground">
+                                                                        {message.name}
+                                                                    </div>
                                                                 </div>
                                                                 <div className="inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble">
-                                                                    <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-                                                                        {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                    </div>
+                                                                    <ExpandableUserMessage 
+                                                                        content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                        className="text-primary-foreground"
+                                                                    />
                                                                 </div>
                                                             </div>
                                                         ) : (
                                                             <div className="text-left min-w-0">
-                                                                <div className="text-xs text-muted-foreground mb-1">
+                                                                <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                                                                     {message.name}
+                                                                    {isMathOrPhysicsContent(typeof message.text === 'string' ? message.text : JSON.stringify(message.text)) && (
+                                                                        <InDepthAnalysis 
+                                                                            question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                            conversationHistory={currentTab ? chats[currentTab]?.messages || [] : []}
+                                                                        />
+                                                                    )}
                                                                 </div>
                                                                 <BotResponse 
                                                                     content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}

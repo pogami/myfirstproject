@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, Brain } from "lucide-react";
+import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, Brain, FileText } from "lucide-react";
 import {
   SidebarProvider,
   Sidebar,
@@ -335,6 +335,26 @@ export default function DashboardLayout({
                   </div>
                   <span className="font-medium text-sm sm:text-base">Upload Syllabus</span>
                 </Link>
+              
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link 
+                  href="/dashboard/upload"
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                    isActive("/dashboard/upload") 
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                  }`}
+                >
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                    isActive("/dashboard/upload") 
+                      ? "bg-primary-foreground/20" 
+                      : "bg-muted/50 group-hover:bg-primary/20"
+                  }`}>
+                    <Brain className="size-4 sm:size-5" />
+                  </div>
+                  <span className="font-medium text-sm sm:text-base">Enhanced Upload</span>
+                </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
@@ -394,6 +414,26 @@ export default function DashboardLayout({
                     <GraduationCap className="size-4 sm:size-5" />
                   </div>
                   <span className="font-medium text-sm sm:text-base">Flashcards</span>
+                </Link>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <Link 
+                  href="/dashboard/academic-tools"
+                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                    isActive("/dashboard/academic-tools") 
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                  }`}
+                >
+                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                    isActive("/dashboard/academic-tools") 
+                      ? "bg-primary-foreground/20" 
+                      : "bg-muted/50 group-hover:bg-primary/20"
+                  }`}>
+                    <FileText className="size-4 sm:size-5" />
+                  </div>
+                  <span className="font-medium text-sm sm:text-base">Citation & Plagiarism</span>
                 </Link>
               </SidebarMenuItem>
               

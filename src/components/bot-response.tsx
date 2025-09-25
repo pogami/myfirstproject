@@ -32,8 +32,42 @@ function renderMathLine(line: string, i: number) {
     const expr = line.replace(/\$/g, "");
     return <InlineMath key={i} math={expr} />;
   } else {
-    return <p key={i} className="text-sm break-words ai-response">{line}</p>;
+    return <p key={i} className="text-sm break-words ai-response mb-2">{line}</p>;
   }
+}
+
+// Function to break long text into paragraphs
+function breakIntoParagraphs(text: string): string[] {
+  // Split by double newlines first (paragraph breaks)
+  let paragraphs = text.split('\n\n');
+  
+  // If no paragraph breaks, try to create them from long sentences
+  if (paragraphs.length === 1) {
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const result: string[] = [];
+    let currentParagraph = '';
+    
+    for (const sentence of sentences) {
+      const trimmedSentence = sentence.trim();
+      if (trimmedSentence.length === 0) continue;
+      
+      // If adding this sentence would make the paragraph too long, start a new one
+      if (currentParagraph.length + trimmedSentence.length > 200 && currentParagraph.length > 0) {
+        result.push(currentParagraph.trim());
+        currentParagraph = trimmedSentence;
+      } else {
+        currentParagraph += (currentParagraph ? '. ' : '') + trimmedSentence;
+      }
+    }
+    
+    if (currentParagraph.trim()) {
+      result.push(currentParagraph.trim());
+    }
+    
+    return result.length > 0 ? result : [text];
+  }
+  
+  return paragraphs.filter(p => p.trim().length > 0);
 }
 
 interface BotResponseProps {
@@ -63,15 +97,11 @@ export default function BotResponse({ content, className = "" }: BotResponseProp
   // Otherwise treat as text + math
   return (
     <div className={`leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response ${className}`}>
-      {content.length > 500 ? (
-        <TruncatedText 
-          text={content}
-          maxLength={500}
-          className="ai-response"
-        />
-      ) : (
-        content.split("\n").map((line, i) => renderMathLine(line, i))
-      )}
+      {breakIntoParagraphs(content).map((paragraph, i) => (
+        <div key={i} className="mb-3">
+          {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
+        </div>
+      ))}
     </div>
   );
 }

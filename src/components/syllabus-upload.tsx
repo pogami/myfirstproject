@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, X, Users, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { analyzeSyllabus } from "@/ai/flows/analyze-syllabus";
+import { DocumentProcessorClient } from '@/lib/syllabus-parser/document-processor-client';
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -98,93 +98,57 @@ export default function SyllabusUpload() {
 
         setIsAnalyzing(true);
         
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async (readerEvent) => {
-            const fileDataUri = readerEvent.target?.result as string;
+        try {
+            // Step 1: Extract text from document
+            const documentText = await DocumentProcessorClient.extractText(file);
+            const extractedText = documentText.text;
+            
+            // Step 2: Send to AI for parsing
+            const response = await fetch('/api/syllabus-parser/ai-extract', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: extractedText,
+                    filename: file.name,
+                    format: file.type.includes('pdf') ? 'pdf' : 
+                           file.type.includes('docx') ? 'docx' : 
+                           file.type.includes('image') ? 'image' : 'txt'
+                })
+            });
 
-            try {
-                const result = await analyzeSyllabus({ fileDataUri });
-                 setProgress(100);
+            if (!response.ok) {
+                throw new Error(`AI parsing failed: ${response.status}`);
+            }
 
-                if (!result.isSyllabus) {
-                    // Handle non-syllabus files
-                    const chatName = `Course: ${file.name.replace(/\.[^/.]+$/, "")}`;
-                    const chatId = `course-${file.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
-                    
-                    await addChat(
-                        chatName,
-                        { 
-                            sender: 'bot', 
-                            name: 'CourseConnect AI', 
-                            text: `Welcome to the ${chatName} chat! 🎓\n\n**Chat Features:**\n• Ask questions about course topics\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n\nStart by asking a question about the course!`, 
-                            timestamp: Date.now() 
-                        },
-                        chatId
-                    );
+            const parsedData = await response.json();
+            setProgress(100);
 
-                    toast({
-                        title: "Upload Complete",
-                        description: `Created chat room: ${chatName}`,
-                    });
+            // Extract course information from parsed data
+            const courseInfo = parsedData.courseInfo || {};
+            const className = courseInfo.title || file.name.replace(/\.[^/.]+$/, "");
+            const classCode = courseInfo.courseCode || "UNKNOWN";
 
-                    router.push('/dashboard/chat');
-                    return;
-                }
-
-                // Create syllabus data
-                const syllabusData: SyllabusData = {
-                    id: generateSyllabusId({
-                        className: result.className,
-                        classCode: result.classCode,
-                        uploadedBy: user?.uid || 'guest',
-                        uploadedAt: Date.now(),
-                        isPublic: chatPreference.type === 'public-chat'
-                    }),
-                    className: result.className,
-                    classCode: result.classCode,
+            // Create syllabus data
+            const syllabusData: SyllabusData = {
+                id: generateSyllabusId({
+                    className: className,
+                    classCode: classCode,
                     uploadedBy: user?.uid || 'guest',
                     uploadedAt: Date.now(),
                     isPublic: chatPreference.type === 'public-chat'
-                };
+                }),
+                className: className,
+                classCode: classCode,
+                uploadedBy: user?.uid || 'guest',
+                uploadedAt: Date.now(),
+                isPublic: chatPreference.type === 'public-chat'
+            };
 
-                // If user wants AI-only chat, create it directly
-                if (chatPreference.type === 'ai-only') {
-                    const chatName = `${result.classCode}: ${result.className}`;
-                    const chatId = generateClassChatId(syllabusData);
-                    
-                    await addChat(
-                        chatName,
-                        { 
-                            sender: 'bot', 
-                            name: 'CourseConnect AI', 
-                            text: `Welcome to your personal ${chatName} AI chat! 🤖\n\n**AI Chat Features:**\n• Ask questions about course topics\n• Get AI assistance with homework\n• Request study materials\n• Get explanations of concepts\n\n**Chat Guidelines:**\n• Ask specific, detailed questions\n• Request help with assignments\n• Get clarification on topics\n\nStart by asking a question about the course!`, 
-                            timestamp: Date.now() 
-                        },
-                        chatId
-                    );
-
-                    toast({
-                        title: "Upload Complete",
-                        description: `Created AI chat: ${chatName}`,
-                    });
-
-                    router.push('/dashboard/chat');
-                    return;
-                }
-
-                // For public chats, find matching groups
-                const matchingGroups = await findMatchingClassGroups(syllabusData);
-                
-                if (matchingGroups.length > 0) {
-                    setMatchingGroups(matchingGroups);
-                    setShowGroupSelection(true);
-                    setIsAnalyzing(false);
-                    return;
-                }
-
-                // No matching groups found, create new one
-                const chatName = `${result.classCode}: ${result.className}`;
+            // If user wants AI-only chat, create it directly
+            if (chatPreference.type === 'ai-only') {
+                const chatName = `${classCode}: ${className}`;
                 const chatId = generateClassChatId(syllabusData);
                 
                 await addChat(
@@ -192,57 +156,81 @@ export default function SyllabusUpload() {
                     { 
                         sender: 'bot', 
                         name: 'CourseConnect AI', 
-                        text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
+                        text: `Welcome to your personal ${chatName} AI chat! 🤖\n\n**AI Chat Features:**\n• Ask questions about course topics\n• Get AI assistance with homework\n• Request study materials\n• Get explanations of concepts\n\n**Chat Guidelines:**\n• Ask specific, detailed questions\n• Request help with assignments\n• Get clarification on topics\n\nStart by asking a question about the course!`, 
                         timestamp: Date.now() 
                     },
                     chatId
                 );
 
-                // Create class group
-                await createClassGroup(syllabusData, chatId, chatPreference);
-
-                console.log('Created class chat:', { chatName, chatId, syllabusData });
-
                 toast({
                     title: "Upload Complete",
-                    description: `Created new class chat: ${chatName}`,
+                    description: `Created AI chat: ${chatName}`,
                 });
 
                 router.push('/dashboard/chat');
-
-            } catch (aiError) {
-                console.error("AI Error:", aiError);
-                
-                // Fallback: create a generic chat room even if AI fails
-                const chatName = `Course: ${file.name.replace(/\.[^/.]+$/, "")}`;
-                
-                await addChat(
-                    chatName,
-                    { sender: 'bot', name: 'CourseConnect AI', text: `Welcome to the chat for ${chatName}! Ask a question to get started.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.`, timestamp: Date.now() }
-                );
-
-                toast({
-                    title: "Upload Complete",
-                    description: `Created chat room: ${chatName} (AI analysis unavailable)`,
-                });
-
-                router.push('/dashboard/chat');
-            } finally {
-                // Check if the component is still mounted before setting state
-                 if (fileInputRef.current) {
-                    setIsAnalyzing(false);
-                    setFile(null);
-                 }
+                return;
             }
-        };
-        reader.onerror = (error) => {
-            console.error("File Reader Error:", error);
+
+            // For public chats, find matching groups
+            const matchingGroups = await findMatchingClassGroups(syllabusData);
+            
+            if (matchingGroups.length > 0) {
+                setMatchingGroups(matchingGroups);
+                setShowGroupSelection(true);
+                setIsAnalyzing(false);
+                return;
+            }
+
+            // No matching groups found, create new one
+            const chatName = `${classCode}: ${className}`;
+            const chatId = generateClassChatId(syllabusData);
+            
+            await addChat(
+                chatName,
+                { 
+                    sender: 'bot', 
+                    name: 'CourseConnect AI', 
+                    text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
+                    timestamp: Date.now() 
+                },
+                chatId
+            );
+
+            // Create class group
+            await createClassGroup(syllabusData, chatId, chatPreference);
+
+            console.log('Created class chat:', { chatName, chatId, syllabusData });
+
             toast({
-                variant: "destructive",
-                title: "File Read Error",
-                description: "Could not read the selected file.",
+                title: "Upload Complete",
+                description: `Created new class chat: ${chatName}`,
             });
-            setIsAnalyzing(false);
+
+            router.push('/dashboard/chat');
+
+        } catch (aiError) {
+            console.error("AI Error:", aiError);
+            
+            // Fallback: create a generic chat room even if AI fails
+            const chatName = `Course: ${file.name.replace(/\.[^/.]+$/, "")}`;
+            
+            await addChat(
+                chatName,
+                { sender: 'bot', name: 'CourseConnect AI', text: `Welcome to the chat for ${chatName}! Ask a question to get started.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.`, timestamp: Date.now() }
+            );
+
+            toast({
+                title: "Upload Complete",
+                description: `Created chat room: ${chatName} (AI analysis unavailable)`,
+            });
+
+            router.push('/dashboard/chat');
+        } finally {
+            // Check if the component is still mounted before setting state
+             if (fileInputRef.current) {
+                setIsAnalyzing(false);
+                setFile(null);
+             }
         }
     };
 

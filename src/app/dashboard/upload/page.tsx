@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Sparkles, CheckCircle, ArrowRight } from "lucide-react";
-import SyllabusUpload from "@/components/syllabus-upload";
+import EnhancedSyllabusUpload from "@/components/syllabus-upload";
 import { HowItWorksSlideshow } from "@/components/how-it-works-slideshow";
 
 const features = [
@@ -25,7 +25,7 @@ const features = [
   }
 ];
 
-export default function SyllabusUploadPage() {
+export default function EnhancedSyllabusUploadPage() {
   const [showSlideshow, setShowSlideshow] = useState(false);
 
   useEffect(() => {
@@ -137,7 +137,7 @@ export default function SyllabusUploadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-8">
-            <SyllabusUpload />
+            <EnhancedSyllabusUpload />
           </CardContent>
         </Card>
 

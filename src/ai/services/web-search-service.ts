@@ -21,9 +21,20 @@ export interface WebSearchResponse {
 /**
  * Search for current information using real web search
  */
+// Rate limiting for DuckDuckGo (minimal - no strict limits)
+let lastSearchTime = 0;
+const MIN_SEARCH_INTERVAL = 1000; // 1 second between searches (very generous)
+
 export async function searchCurrentInformation(query: string): Promise<WebSearchResponse> {
   try {
     console.log('🔍 Starting real-time web search for:', query);
+    
+    // Check rate limits (very generous for DuckDuckGo)
+    const now = Date.now();
+    if (now - lastSearchTime < MIN_SEARCH_INTERVAL) {
+      console.log('⚠️ Rate limiting: waiting before next search');
+      await new Promise(resolve => setTimeout(resolve, MIN_SEARCH_INTERVAL - (now - lastSearchTime)));
+    }
     
     const searchQuery = encodeURIComponent(query);
     const results: WebSearchResult[] = [];
@@ -31,55 +42,143 @@ export async function searchCurrentInformation(query: string): Promise<WebSearch
     const currentDate = new Date().toLocaleDateString();
     const currentTime = new Date().toLocaleTimeString();
     
-    // Use Google Custom Search API for real-time results
+    // Use DuckDuckGo Instant Answer API (more reliable)
     try {
-      console.log('🔍 Searching Google for real-time results...');
+      console.log('🔍 Searching DuckDuckGo Instant Answer API...');
       
-      // Use Google Custom Search API (requires API key)
-      const googleApiKey = process.env.GOOGLE_SEARCH_API_KEY;
-      const googleSearchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+      // Try DuckDuckGo Instant Answer API first (more reliable)
+      const instantAnswerUrl = `https://api.duckduckgo.com/?q=${searchQuery}&format=json&no_html=1&skip_disambig=1`;
       
-      if (googleApiKey && googleSearchEngineId) {
-        const googleResponse = await fetch(
-          `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleSearchEngineId}&q=${searchQuery}&num=5`
-        );
+      const instantResponse = await fetch(instantAnswerUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; CourseConnect-AI/1.0; +https://courseconnectai.com)',
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (instantResponse.ok) {
+        const instantData = await instantResponse.json();
         
-        if (googleResponse.ok) {
-          const googleData = await googleResponse.json();
-          
-          if (googleData.items && googleData.items.length > 0) {
-            googleData.items.forEach((item: any) => {
+        // Check for instant answer
+        if (instantData.Abstract) {
+          results.push({
+            title: instantData.Heading || query,
+            snippet: instantData.Abstract,
+            url: instantData.AbstractURL || 'https://duckduckgo.com/',
+            date: new Date().toISOString()
+          });
+          console.log('✅ DuckDuckGo Instant Answer found');
+        }
+        
+        // Check for related topics
+        if (instantData.RelatedTopics && instantData.RelatedTopics.length > 0) {
+          instantData.RelatedTopics.slice(0, 3).forEach((topic: any) => {
+            if (topic.Text && topic.FirstURL) {
               results.push({
-                title: item.title,
-                snippet: item.snippet,
-                url: item.link,
+                title: topic.Text.split(' - ')[0] || topic.Text,
+                snippet: topic.Text,
+                url: topic.FirstURL,
                 date: new Date().toISOString()
               });
-            });
-            console.log('✅ Google search completed, found', googleData.items.length, 'results');
-          }
-        } else {
-          console.warn('❌ Google API request failed:', googleResponse.status);
+            }
+          });
+          console.log('✅ DuckDuckGo Related Topics found');
         }
+      }
+      
+      // If no instant answer, try HTML scraping as fallback
+      if (results.length === 0) {
+        console.log('🔍 No instant answer, trying HTML scraping...');
+        
+        const duckDuckGoUrl = `https://html.duckduckgo.com/html/?q=${searchQuery}&kl=us-en`;
+        
+        const response = await fetch(duckDuckGoUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+          },
+          signal: AbortSignal.timeout(10000)
+        });
+        
+        if (response.ok) {
+          const html = await response.text();
+          
+          // Debug: log a snippet of the HTML to see what we're getting
+          console.log('🔍 HTML snippet:', html.substring(0, 500));
+          
+          // Try multiple parsing approaches
+          const patterns = [
+            // Pattern 1: Look for result links
+            /<a[^>]*href="(https?:\/\/[^"]*)"[^>]*class="[^"]*result[^"]*"[^>]*>([^<]*)<\/a>/g,
+            // Pattern 2: Look for any external links
+            /<a[^>]*href="(https?:\/\/[^"]*)"[^>]*>([^<]{10,})<\/a>/g
+          ];
+          
+          let resultCount = 0;
+          
+          for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(html)) !== null && resultCount < 3) {
+              const url = match[1];
+              const title = match[2].trim();
+              
+              // Skip DuckDuckGo internal links and validate results
+              if (!url.includes('duckduckgo.com') && 
+                  !url.includes('javascript:') && 
+                  !url.includes('mailto:') &&
+                  title && 
+                  title.length > 10) {
+                
+                results.push({
+                  title: title,
+                  snippet: `Search result for: ${query}`,
+                  url: url,
+                  date: new Date().toISOString()
+                });
+                resultCount++;
+              }
+            }
+            
+            if (resultCount > 0) break;
+          }
+        }
+      }
+      
+      if (results.length > 0) {
+        console.log('✅ DuckDuckGo search completed, found', results.length, 'results');
+        lastSearchTime = Date.now();
       } else {
-        console.log('⚠️ Google Search API not configured. Please set up GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID in .env.local');
-        throw new Error('Google Search API not configured');
+        console.log('⚠️ No results found from DuckDuckGo');
       }
     } catch (error) {
-      console.warn('❌ Google search failed:', error);
-      throw error; // Re-throw to ensure we don't fall back to DuckDuckGo
+      console.warn('❌ DuckDuckGo search failed:', error);
+      
+      // Provide helpful fallback information
+      console.log('🔄 Providing fallback information due to search failure');
+      results.push({
+        title: 'Search Temporarily Unavailable',
+        snippet: 'Unable to fetch search results at the moment. Please try again later or ask about specific topics that don\'t require real-time information.',
+        url: 'https://duckduckgo.com/',
+        date: new Date().toISOString()
+      });
     }
     
     // Strategy 2: Enhanced real-time information based on query
     const lowerQuery = query.toLowerCase();
     
-    // Always provide current context
-    results.push({
-      title: `Real-Time Search Results`,
-      snippet: `Search conducted in real-time to provide the most accurate and up-to-date information available.`,
-      url: 'https://www.google.com/search',
-      date: new Date().toISOString()
-    });
+    // Only add generic context if we have no results from DuckDuckGo
+    if (results.length === 0) {
+      results.push({
+        title: `Real-Time Search Results`,
+        snippet: `Search conducted in real-time to provide the most accurate and up-to-date information available.`,
+        url: 'https://duckduckgo.com/',
+        date: new Date().toISOString()
+      });
+    }
     
     // Add specific real-time information (updated for 2025)
     if (lowerQuery.includes('richest') && (lowerQuery.includes('person') || lowerQuery.includes('man') || lowerQuery.includes('world'))) {
@@ -122,7 +221,7 @@ export async function searchCurrentInformation(query: string): Promise<WebSearch
         results.push({
           title: `Real-Time Information Context`,
           snippet: `This information is current and up-to-date. For the most recent information on this topic, check recent news sources or official websites.`,
-          url: 'https://www.google.com/search',
+          url: 'https://duckduckgo.com/',
           date: new Date().toISOString()
         });
     }

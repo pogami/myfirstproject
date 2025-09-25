@@ -458,7 +458,7 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
       {parsedResponse.type === 'text' && (
         <TruncatedText 
           text={parsedResponse.content}
-          maxLength={500}
+          maxLength={300}
           className="ai-response"
         />
       )}
