@@ -1469,12 +1469,14 @@ I'm here to help you understand whatever concepts are presented in this visual m
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-[80%] p-3 rounded-lg bg-primary text-primary-foreground">
-                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                    <div className="flex items-center gap-2 mt-1">
+                  <div className="max-w-[80%]">
+                    <div className="p-3 rounded-lg bg-primary text-primary-foreground">
+                      <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 justify-end">
                       <MessageTimestamp timestamp={message.timestamp.getTime()} />
                       {message.subject && (
-                        <span className="text-xs text-primary-foreground/70">• {message.subject}</span>
+                        <span className="text-xs text-muted-foreground">• {message.subject}</span>
                       )}
                     </div>
                   </div>
