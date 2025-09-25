@@ -17,7 +17,7 @@ import Link from "next/link";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { ProfileHoverCard, ProfileData } from "@/components/profile-hover-card";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { MobileInput } from "@/components/ui/mobile-input";
@@ -55,6 +55,69 @@ export default function ChatPage() {
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const { toast } = useToast();
+
+    // Sample profile data for demonstration
+    const sampleProfiles: Record<string, ProfileData> = {
+        'ai-tutor': {
+            id: 'ai-tutor',
+            name: 'CourseConnect AI',
+            role: 'ai-tutor',
+            bio: 'Advanced AI tutor specializing in personalized learning. I can help with homework, explain complex concepts, create study plans, and provide exam preparation across all subjects.',
+            capabilities: ['Homework Assistance', 'Concept Explanation', 'Study Planning', 'Exam Prep', 'Research Help', 'Writing Support'],
+            subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English Literature', 'History', 'Computer Science', 'Economics'],
+            experience: '24/7 Available'
+        },
+        'student-alex': {
+            id: 'student-alex',
+            name: 'Alex Johnson',
+            role: 'student',
+            school: 'University of California, Berkeley',
+            major: 'Computer Science',
+            year: 'Junior',
+            skills: ['Python Programming', 'Machine Learning', 'Data Analysis', 'Web Development', 'Database Design', 'Software Engineering']
+        },
+        'instructor-sarah': {
+            id: 'instructor-sarah',
+            name: 'Dr. Sarah Chen',
+            role: 'instructor',
+            school: 'Massachusetts Institute of Technology',
+            subjects: ['Calculus I & II', 'Linear Algebra', 'Statistics', 'Discrete Mathematics', 'Probability Theory'],
+            coursesCreated: 8
+        }
+    };
+
+    // Function to get profile data for a message sender
+    const getProfileForSender = (sender: string, name?: string): ProfileData | null => {
+        console.log('getProfileForSender called with:', { sender, name });
+        
+        // Always return AI tutor profile for bot messages
+        if (sender === 'bot' || name === 'CourseConnect AI' || name === 'AI') {
+            console.log('Returning AI tutor profile');
+            return sampleProfiles['ai-tutor'];
+        }
+        
+        // For demo purposes, assign profiles based on name patterns
+        if (name?.includes('Alex')) {
+            console.log('Returning Alex student profile');
+            return sampleProfiles['student-alex'];
+        }
+        if (name?.includes('Dr.') || name?.includes('Sarah')) {
+            console.log('Returning Sarah instructor profile');
+            return sampleProfiles['instructor-sarah'];
+        }
+        
+        // Default student profile for ALL users (including current user)
+        console.log('Returning default student profile for:', name);
+        return {
+            id: sender,
+            name: name || 'Student',
+            role: 'student',
+            school: 'University',
+            major: 'Undecided',
+            year: 'Freshman',
+            skills: ['Learning', 'Studying', 'Academic Work']
+        };
+    };
 
     // Auto-scroll to bottom function
     const scrollToBottom = () => {
@@ -577,14 +640,47 @@ export default function ChatPage() {
                                                 return (
                                                 <div key={`${message.id || 'msg'}-${index}-${message.timestamp}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
                                                     <div className={`flex gap-3 max-w-[85%] min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                        <Avatar className="w-8 h-8 flex-shrink-0">
-                                                            <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
-                                                            <AvatarFallback className="text-xs">
-                                                                {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : (
-                                                                    <CourseConnectLogo className="w-4 h-4" />
-                                                                )}
-                                                            </AvatarFallback>
-                                                        </Avatar>
+                                                        {(() => {
+                                                            const profile = getProfileForSender(message.sender, message.sender === 'user' ? user?.displayName : 'CourseConnect AI');
+                                                            console.log('Dashboard chat - Rendering profile card for:', { sender: message.sender, name: message.sender === 'user' ? user?.displayName : 'CourseConnect AI', profile });
+                                                            
+                                                            return profile ? (
+                                                                <ProfileHoverCard 
+                                                                    profile={profile}
+                                                                    placement="top"
+                                                                    delay={200}
+                                                                    onAction={() => {
+                                                                        if (profile.role === 'ai-tutor') {
+                                                                            const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                                                                            input?.focus();
+                                                                        } else {
+                                                                            toast({
+                                                                                title: `Connect with ${profile.name}`,
+                                                                                description: `Starting a conversation with ${profile.name}...`,
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                                                        <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
+                                                                        <AvatarFallback className="text-xs">
+                                                                            {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : (
+                                                                                <CourseConnectLogo className="w-4 h-4" />
+                                                                            )}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                </ProfileHoverCard>
+                                                            ) : (
+                                                                <Avatar className="w-8 h-8 flex-shrink-0">
+                                                                    <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
+                                                                    <AvatarFallback className="text-xs">
+                                                                        {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : (
+                                                                            <CourseConnectLogo className="w-4 h-4" />
+                                                                        )}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                            );
+                                                        })()}
                                                         {message.sender === 'user' ? (
                                                             <div className="text-right min-w-0">
                                                                 <div className="flex items-center justify-end gap-2 mb-1">
