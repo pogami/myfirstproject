@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 // import { provideStudyAssistance } from "@/ai/flows/provide-study-assistance";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EnhancedFileDisplay } from "@/components/enhanced-file-display";
@@ -629,6 +630,23 @@ export default function ChatInterface() {
         }
     };
 
+    const { extractText, isExtracting } = useTextExtraction({
+        onExtractionComplete: async (result, fileName) => {
+            // Add extracted text as a message
+            const extractedTextMessage = {
+                id: (Date.now() + 2).toString(),
+                text: `📄 **Text extracted from ${fileName}**\n\n${result.text}`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                timestamp: Date.now() + 2
+            };
+            await addMessage(currentTab!, extractedTextMessage);
+        },
+        onExtractionError: (error, fileName) => {
+            console.error('Text extraction failed:', error);
+        }
+    });
+
     const handleFileUpload = async (file: File) => {
         if (!currentTab) return;
 
@@ -647,6 +665,8 @@ export default function ChatInterface() {
             'application/pdf',
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
             'text/plain',
             'image/png',
             'image/jpeg',
@@ -659,7 +679,7 @@ export default function ChatInterface() {
             toast({
                 variant: "destructive",
                 title: "Invalid File Type",
-                description: "Please upload PDF, Word documents, text files, or images.",
+                description: "Please upload PDF, Word documents, Excel files, text files, or images.",
             });
             return;
         }
@@ -682,48 +702,58 @@ export default function ChatInterface() {
         // Add file message to chat
         await addMessage(currentTab, fileMessage);
 
-        // Show success toast
-        toast({
-            title: "File Uploaded",
-            description: `${file.name} has been uploaded successfully.`,
-        });
+        // Extract text from the file
+        const extractionResult = await extractText(file);
+        
+        if (extractionResult?.success) {
+            // Text extraction was successful - the hook will handle adding the extracted text message
+            toast({
+                title: "File Uploaded",
+                description: `${file.name} has been uploaded and text extracted.`,
+            });
+        } else {
+            // Fallback to AI analysis if text extraction fails
+            toast({
+                title: "File Uploaded",
+                description: `${file.name} has been uploaded successfully.`,
+            });
 
-        // Automatically analyze the file with AI
-        try {
-            const analysisResult = await fileAnalysisService.analyzeFile({ file });
-            
-            if (analysisResult.success && analysisResult.content) {
-                const analysisMessage = {
+            try {
+                const analysisResult = await fileAnalysisService.analyzeFile({ file });
+                
+                if (analysisResult.success && analysisResult.content) {
+                    const analysisMessage = {
+                        id: (Date.now() + 1).toString(),
+                        text: `I've analyzed your file "${file.name}". Here's what I found:\n\n${analysisResult.content}`,
+                        sender: 'bot' as const,
+                        name: 'AI',
+                        timestamp: Date.now() + 1
+                    };
+                    
+                    await addMessage(currentTab, analysisMessage);
+                } else {
+                    const errorMessage = {
+                        id: (Date.now() + 1).toString(),
+                        text: `I received your file "${file.name}" but encountered an issue analyzing it: ${analysisResult.error || 'Unknown error'}. You can still ask me questions about it!`,
+                        sender: 'bot' as const,
+                        name: 'AI',
+                        timestamp: Date.now() + 1
+                    };
+                    
+                    await addMessage(currentTab, errorMessage);
+                }
+            } catch (error) {
+                console.error('File analysis error:', error);
+                const fallbackMessage = {
                     id: (Date.now() + 1).toString(),
-                    text: `I've analyzed your file "${file.name}". Here's what I found:\n\n${analysisResult.content}`,
+                    text: `I've received your file "${file.name}". While I couldn't analyze it automatically, you can ask me specific questions about it and I'll do my best to help!`,
                     sender: 'bot' as const,
-                    name: 'AI',
+                    name: 'CourseConnect AI',
                     timestamp: Date.now() + 1
                 };
                 
-                await addMessage(currentTab, analysisMessage);
-            } else {
-                const errorMessage = {
-                    id: (Date.now() + 1).toString(),
-                    text: `I received your file "${file.name}" but encountered an issue analyzing it: ${analysisResult.error || 'Unknown error'}. You can still ask me questions about it!`,
-                    sender: 'bot' as const,
-                    name: 'AI',
-                    timestamp: Date.now() + 1
-                };
-                
-                await addMessage(currentTab, errorMessage);
+                await addMessage(currentTab, fallbackMessage);
             }
-        } catch (error) {
-            console.error('File analysis error:', error);
-            const fallbackMessage = {
-                id: (Date.now() + 1).toString(),
-                text: `I've received your file "${file.name}". While I couldn't analyze it automatically, you can ask me specific questions about it and I'll do my best to help!`,
-                sender: 'bot' as const,
-                name: 'CourseConnect AI',
-                timestamp: Date.now() + 1
-            };
-            
-            await addMessage(currentTab, fallbackMessage);
         }
     };
 
