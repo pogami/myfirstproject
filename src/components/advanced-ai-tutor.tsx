@@ -32,7 +32,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { HamburgerMenu } from '@/components/hamburger-menu';
-import { useToast } from '@/hooks/use-toast';
+import { useTextExtraction } from '@/hooks/use-text-extraction';
 import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
 import MathRender from '@/components/math-render';
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
@@ -1230,6 +1230,25 @@ What would you like to learn about today?`;
     }
   };
 
+  const { extractText, isExtracting } = useTextExtraction({
+    onExtractionComplete: async (result, fileName) => {
+      // Add extracted text as a message
+      const extractedTextMessage: AIMessage = {
+        id: (Date.now() + 2).toString(),
+        role: 'assistant',
+        content: `📄 **Text extracted from ${fileName}**\n\n${result.text}`,
+        type: 'text',
+        timestamp: new Date(),
+        subject: selectedTutor?.name || currentSubject,
+        difficulty: userLevel
+      };
+      setMessages(prev => [...prev, extractedTextMessage]);
+    },
+    onExtractionError: (error, fileName) => {
+      console.error('Text extraction failed:', error);
+    }
+  });
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1238,23 +1257,24 @@ What would you like to learn about today?`;
     const isImage = file.type.startsWith('image/');
     const isPDF = file.type === 'application/pdf';
     const isDocument = file.type.includes('document') || file.type.includes('text');
+    const isExcel = file.type.includes('spreadsheet') || file.type.includes('excel');
 
-    if (!isImage && !isPDF && !isDocument) {
+    if (!isImage && !isPDF && !isDocument && !isExcel) {
       toast({
         variant: "destructive",
         title: "Unsupported File Type",
-        description: "Please upload an image, PDF, or document file.",
+        description: "Please upload an image, PDF, document, or Excel file.",
       });
       return;
     }
 
     toast({
       title: "File Uploaded",
-      description: "Analyzing your file...",
+      description: "Processing your file...",
     });
 
     try {
-      // Convert file to base64 for display and analysis
+      // Convert file to base64 for display
       const base64 = await convertFileToBase64(file);
       
       // Create user message with actual file display
@@ -1273,13 +1293,23 @@ What would you like to learn about today?`;
       setIsProcessing(true);
       setIsTyping(true);
       
-      // Call real AI analysis API
-      const analysisResponse = await analyzeFileWithAI(file, base64, selectedTutor);
+      // Extract text from the file first
+      const extractionResult = await extractText(file);
       
+      if (extractionResult?.success) {
+        // Text extraction was successful - the hook will handle adding the extracted text message
+        toast({
+          title: "File Processed",
+          description: "Text extracted successfully from your file.",
+        });
+      } else {
+        // Fallback to AI analysis if text extraction fails
+        const analysisResponse = await analyzeFileWithAI(file, base64, selectedTutor);
+        
         const assistantMessage: AIMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-        content: analysisResponse,
+          content: analysisResponse,
           type: 'text',
           timestamp: new Date(),
           subject: selectedTutor?.name || currentSubject,
@@ -1289,16 +1319,17 @@ What would you like to learn about today?`;
         setMessages(prev => [...prev, assistantMessage]);
         
         toast({
-        title: "Analysis Complete",
-        description: "I've analyzed your file and provided detailed insights.",
-      });
+          title: "Analysis Complete",
+          description: "I've analyzed your file and provided detailed insights.",
+        });
+      }
       
     } catch (error) {
-      console.error('Error analyzing file:', error);
+      console.error('Error processing file:', error);
       toast({
         variant: "destructive",
-        title: "Analysis Failed",
-        description: "Could not analyze the file. Please try again.",
+        title: "Processing Failed",
+        description: "Could not process the file. Please try again.",
       });
     } finally {
       setIsProcessing(false);

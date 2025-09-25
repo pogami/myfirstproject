@@ -9,6 +9,7 @@ import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
 import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
+import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -383,6 +384,23 @@ export default function ChatPage() {
         }
     };
 
+    const { extractText, isExtracting } = useTextExtraction({
+        onExtractionComplete: async (result, fileName) => {
+            // Add extracted text as a message
+            const extractedTextMessage = {
+                id: generateMessageId(),
+                text: `📄 **Text extracted from ${fileName}**\n\n${result.text}`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                timestamp: Date.now()
+            };
+            await addMessage('general-chat', extractedTextMessage);
+        },
+        onExtractionError: (error, fileName) => {
+            console.error('Text extraction failed:', error);
+        }
+    });
+
     const handleFileUpload = async (file: File) => {
         // Show loading state
         setIsLoading(true);
@@ -406,21 +424,32 @@ export default function ChatPage() {
             // Add upload message
             await addMessage('general-chat', uploadMessage);
 
-            // Simulate AI processing of the file
-            const aiResponse = {
-                id: generateMessageId(),
-                text: `I've received your file "${file.name}". I can help you analyze documents, images, or other content. What would you like to know about this file?`,
-                sender: 'bot' as const,
-                name: 'CourseConnect AI',
-                timestamp: Date.now()
-            };
+            // Extract text from the file
+            const extractionResult = await extractText(file);
+            
+            if (extractionResult?.success) {
+                // Text extraction was successful - the hook will handle adding the extracted text message
+                toast({
+                    title: "File uploaded successfully",
+                    description: `${file.name} has been uploaded and text extracted.`,
+                });
+            } else {
+                // Fallback AI response if text extraction fails
+                const aiResponse = {
+                    id: generateMessageId(),
+                    text: `I've received your file "${file.name}". I can help you analyze documents, images, or other content. What would you like to know about this file?`,
+                    sender: 'bot' as const,
+                    name: 'CourseConnect AI',
+                    timestamp: Date.now()
+                };
 
-            await addMessage('general-chat', aiResponse);
+                await addMessage('general-chat', aiResponse);
 
-            toast({
-                title: "File uploaded successfully",
-                description: `${file.name} has been uploaded and is ready for analysis.`,
-            });
+                toast({
+                    title: "File uploaded successfully",
+                    description: `${file.name} has been uploaded and is ready for analysis.`,
+                });
+            }
 
         } catch (error) {
             console.error('File upload error:', error);
