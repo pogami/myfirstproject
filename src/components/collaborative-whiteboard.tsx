@@ -42,6 +42,10 @@ import {
   VolumeX
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase/client';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { rtdb } from '@/lib/firebase/client';
+import { ref, set, onValue, off } from 'firebase/database';
 
 interface DrawingTool {
   type: 'pen' | 'eraser' | 'rectangle' | 'circle' | 'text';
@@ -192,47 +196,110 @@ export function CollaborativeWhiteboard() {
     setChatMessages(sampleMessages);
   }, []);
 
-  const startNewSession = () => {
-    const session: WhiteboardSession = {
-      id: `session-${Date.now()}`,
-      name: newSession.name || `Whiteboard Session ${sessions.length + 1}`,
-      participants: [
-        {
-          id: 'current-user',
-          name: 'You',
-          avatar: '/api/placeholder/40/40',
-          isOnline: true,
-          isMuted: false,
-          isVideoOn: false,
-          color: '#8B5CF6'
-        }
-      ],
-      createdAt: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      isRecording: false,
-      isPublic: newSession.isPublic,
-      password: newSession.password || undefined
-    };
+  const startNewSession = async () => {
+    try {
+      const session: WhiteboardSession = {
+        id: `session-${Date.now()}`,
+        name: newSession.name || `Whiteboard Session ${sessions.length + 1}`,
+        participants: [
+          {
+            id: 'current-user',
+            name: 'You',
+            avatar: '/api/placeholder/40/40',
+            isOnline: true,
+            isMuted: false,
+            isVideoOn: false,
+            color: '#8B5CF6'
+          }
+        ],
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        isRecording: false,
+        isPublic: newSession.isPublic,
+        password: newSession.password || undefined
+      };
 
-    setSessions([session, ...sessions]);
-    setCurrentSession(session);
-    setParticipants(session.participants);
-    setNewSession({ name: '', isPublic: true, password: '' });
+      // Save session to Firebase
+      const sessionsRef = collection(db, 'whiteboardSessions');
+      const docRef = await addDoc(sessionsRef, {
+        ...session,
+        userId: 'current-user' // This would be the actual user ID
+      });
 
-    toast({
-      title: "Session Created!",
-      description: "Your new whiteboard session is ready.",
-    });
+      const sessionWithId = { ...session, id: docRef.id };
+
+      setSessions([sessionWithId, ...sessions]);
+      setCurrentSession(sessionWithId);
+      setParticipants(sessionWithId.participants);
+      setNewSession({ name: '', isPublic: true, password: '' });
+
+      // Set up real-time listeners
+      setupRealtimeListeners(sessionWithId.id);
+
+      toast({
+        title: "Session Created!",
+        description: "Your new whiteboard session is ready.",
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create session. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const joinSession = (session: WhiteboardSession) => {
     setCurrentSession(session);
     setParticipants(session.participants);
     
+    // Set up real-time listeners
+    setupRealtimeListeners(session.id);
+    
     toast({
       title: "Joined Session!",
       description: `You've joined ${session.name}`,
     });
+  };
+
+  const setupRealtimeListeners = (sessionId: string) => {
+    // Listen for whiteboard elements
+    const elementsRef = collection(db, 'whiteboardSessions', sessionId, 'elements');
+    const unsubscribeElements = onSnapshot(elementsRef, (snapshot) => {
+      const elements = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as WhiteboardElement[];
+      setWhiteboardElements(elements);
+    });
+
+    // Listen for chat messages
+    const messagesRef = collection(db, 'whiteboardSessions', sessionId, 'messages');
+    const unsubscribeMessages = onSnapshot(messagesRef, (snapshot) => {
+      const messages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ChatMessage[];
+      setChatMessages(messages);
+    });
+
+    // Listen for participant updates
+    const participantsRef = ref(rtdb, `whiteboardSessions/${sessionId}/participants`);
+    const unsubscribeParticipants = onValue(participantsRef, (snapshot) => {
+      const participantsData = snapshot.val();
+      if (participantsData) {
+        const participantsList = Object.values(participantsData) as Participant[];
+        setParticipants(participantsList);
+      }
+    });
+
+    // Cleanup function
+    return () => {
+      unsubscribeElements();
+      unsubscribeMessages();
+      off(participantsRef);
+    };
   };
 
   const toggleRecording = () => {
@@ -262,29 +329,59 @@ export function CollaborativeWhiteboard() {
     });
   };
 
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !currentSession) return;
 
-    const message: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      author: 'You',
-      message: newMessage,
-      timestamp: Date.now(),
-      type: 'text'
-    };
+    try {
+      const message: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        author: 'You',
+        message: newMessage,
+        timestamp: Date.now(),
+        type: 'text'
+      };
 
-    setChatMessages([...chatMessages, message]);
-    setNewMessage('');
+      // Save message to Firebase
+      const messagesRef = collection(db, 'whiteboardSessions', currentSession.id, 'messages');
+      await addDoc(messagesRef, {
+        ...message,
+        userId: 'current-user' // This would be the actual user ID
+      });
+
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const saveWhiteboard = () => {
+  const saveWhiteboard = async () => {
     if (!currentSession) return;
 
-    // Simulate saving
-    toast({
-      title: "Whiteboard Saved!",
-      description: "Your whiteboard has been saved successfully.",
-    });
+    try {
+      // Save whiteboard state to Firebase
+      const whiteboardRef = doc(db, 'whiteboardSessions', currentSession.id);
+      await updateDoc(whiteboardRef, {
+        whiteboardElements,
+        lastModified: new Date().toISOString()
+      });
+
+      toast({
+        title: "Whiteboard Saved!",
+        description: "Your whiteboard has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving whiteboard:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save whiteboard. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const exportWhiteboard = () => {
