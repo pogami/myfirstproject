@@ -198,7 +198,7 @@ export default function ChatInterface() {
                  addChat('General Chat', { 
                     sender: 'bot', 
                     name: 'AI', 
-                    text: 'Welcome to the General Chat! Feel free to ask any questions here.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.',
+                    text: 'Welcome to General Chat! 🎓\n\n**Quick Start:** Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\n**Subjects:** Math, Science, English, History, Computer Science & more.',
                     timestamp: Date.now()
                 });
             }
@@ -213,7 +213,7 @@ export default function ChatInterface() {
              addChat('General Chat', { 
                 sender: 'bot', 
                 name: 'CourseConnect AI', 
-                text: 'Welcome to the General Chat! Feel free to ask any questions here.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.',
+                text: 'Welcome to General Chat! 🎓\n\n**Quick Start:** Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\n**Subjects:** Math, Science, English, History, Computer Science & more.',
                 timestamp: Date.now()
             });
              setCurrentTab('general-chat');
@@ -1035,28 +1035,28 @@ export default function ChatInterface() {
                                                             }}
                                                         >
                                                             <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background cursor-pointer hover:ring-primary/50 transition-all duration-200">
-                                                                {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
-                                                                    <AvatarImage 
-                                                                        src={userProfiles[msg.userId || ''].photoURL} 
-                                                                        alt={userProfiles[msg.userId || ''].displayName || msg.name} 
+                                                            {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
+                                                                <AvatarImage 
+                                                                    src={userProfiles[msg.userId || ''].photoURL} 
+                                                                    alt={userProfiles[msg.userId || ''].displayName || msg.name} 
+                                                                />
+                                                            ) : null}
+                                                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                                                                {msg.sender === 'bot' && (
+                                                                    <img 
+                                                                        src="/courseconnect-logo-profile.png" 
+                                                                        alt="AI" 
+                                                                        className="size-6 object-contain"
                                                                     />
-                                                                ) : null}
-                                                                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                                                                    {msg.sender === 'bot' && (
-                                                                        <img 
-                                                                            src="/courseconnect-logo-profile.png" 
-                                                                            alt="AI" 
-                                                                            className="size-6 object-contain"
-                                                                        />
-                                                                    )}
-                                                                    {msg.sender === 'moderator' && <AlertTriangle className="size-6 text-destructive"/>}
-                                                                    {msg.sender === 'user' && (
-                                                                        userProfiles[msg.userId || '']?.displayName 
-                                                                            ? getInitials(userProfiles[msg.userId || ''].displayName)
-                                                                            : <User className="size-5 text-primary-foreground" />
-                                                                    )}
-                                                                </AvatarFallback>
-                                                            </Avatar>
+                                                                )}
+                                                                {msg.sender === 'moderator' && <AlertTriangle className="size-6 text-destructive"/>}
+                                                                {msg.sender === 'user' && (
+                                                                    userProfiles[msg.userId || '']?.displayName 
+                                                                        ? getInitials(userProfiles[msg.userId || ''].displayName)
+                                                                        : <User className="size-5 text-primary-foreground" />
+                                                                )}
+                                                            </AvatarFallback>
+                                                    </Avatar>
                                                         </ProfileHoverCard>
                                                     ) : (
                                                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
@@ -1120,7 +1120,7 @@ export default function ChatInterface() {
                                                                                 <p className="font-semibold text-xs sm:text-sm opacity-90 cursor-pointer hover:opacity-100 transition-opacity">{msg.name}</p>
                                                                             </ProfileHoverCard>
                                                                         ) : (
-                                                                            <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
+                                                                    <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
                                                                         );
                                                                     })()}
                                                                     <DigitalClock timestamp={msg.timestamp} />
@@ -1194,9 +1194,9 @@ export default function ChatInterface() {
                                                                     </div>
                                                                 </ProfileHoverCard>
                                                             ) : (
-                                                                <div className="text-xs text-muted-foreground mb-1">
-                                                                    {msg.name}
-                                                                </div>
+                                                            <div className="text-xs text-muted-foreground mb-1">
+                                                                {msg.name}
+                                                            </div>
                                                             );
                                                         })()}
                                                         
