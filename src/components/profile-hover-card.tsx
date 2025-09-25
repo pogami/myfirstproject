@@ -41,7 +41,10 @@ export function ProfileHoverCard({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    setIsVisible(false);
+    // Add a small delay before hiding to allow moving to the card
+    timeoutRef.current = setTimeout(() => {
+      setIsVisible(false);
+    }, 100);
   };
 
   const updatePosition = () => {
@@ -148,6 +151,12 @@ export function ProfileHoverCard({
             left: `${position.x}px`,
             top: `${position.y}px`,
           }}
+          onMouseEnter={() => {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+            }
+          }}
+          onMouseLeave={hideCard}
         >
           <ProfileCard 
             profile={profile} 
