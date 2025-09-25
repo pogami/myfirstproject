@@ -97,7 +97,6 @@ export function CollaborativeWhiteboard() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [whiteboardElements, setWhiteboardElements] = useState<WhiteboardElement[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
