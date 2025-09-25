@@ -57,7 +57,7 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                     padding: '16px',
                     border: '1px solid',
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    background: isDark ? 'rgba(31, 41, 55, 0.8)' : 'rgba(249, 250, 251, 0.8)'
+                    // Remove background override to preserve syntax highlighting colors
                   }}
                   {...props}
                 >
@@ -80,7 +80,7 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                     padding: '16px',
                     border: '1px solid',
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    background: isDark ? 'rgba(31, 41, 55, 0.8)' : 'rgba(249, 250, 251, 0.8)'
+                    // Remove background override to preserve syntax highlighting colors
                   }}
                   {...props}
                 >
