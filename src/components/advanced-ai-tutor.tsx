@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { RippleText } from '@/components/ripple-text';
+import { CourseConnectLogo } from '@/components/icons/courseconnect-logo';
 import { 
   Bot, 
   Mic, 
