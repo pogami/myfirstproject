@@ -670,6 +670,7 @@ export default function ChatInterface() {
         if (!inputValue.trim() || isSending || !currentTab) return;
 
         // Set sending state to true immediately to disable input
+        console.log('Setting isSending to true');
         setIsSending(true);
 
         // Check if user is muted
