@@ -669,6 +669,9 @@ export default function ChatInterface() {
         e.preventDefault();
         if (!inputValue.trim() || isSending || !currentTab) return;
 
+        // Set sending state to true immediately to disable input
+        setIsSending(true);
+
         // Check if user is muted
         if (isMuted) {
             const remainingTime = Math.ceil((muteEndTime - Date.now()) / 1000);
@@ -677,6 +680,7 @@ export default function ChatInterface() {
                 title: "🔇 You're muted",
                 description: `You're muted for ${remainingTime} more seconds. Please wait before sending messages.`,
             });
+            setIsSending(false);
             return;
         }
 
@@ -690,6 +694,7 @@ export default function ChatInterface() {
                 title: "Slow down!",
                 description: "Please wait a moment before sending another message.",
             });
+            setIsSending(false);
             return;
         }
 
@@ -700,6 +705,7 @@ export default function ChatInterface() {
             if (spamWarnings >= 2) {
                 // Mute user for 30 seconds after 3 spam warnings
                 muteUser(30000);
+                setIsSending(false);
                 return;
             } else {
                 toast({
@@ -707,6 +713,7 @@ export default function ChatInterface() {
                     title: "⚠️ Spam detected",
                     description: `Please don't repeat messages. Warning ${spamWarnings + 1}/3. You'll be muted if you continue.`,
                 });
+                setIsSending(false);
                 return;
             }
         }
