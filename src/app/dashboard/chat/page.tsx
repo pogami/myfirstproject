@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
-import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain } from "lucide-react";
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,11 +52,24 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [forceLoad, setForceLoad] = useState(false);
+    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const { toast } = useToast();
+
+    const copyToClipboard = async (text: string, messageId: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedMessageId(messageId);
+            setTimeout(() => {
+                setCopiedMessageId(null);
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    };
 
     // Auto-scroll to bottom function
     const scrollToBottom = () => {
@@ -587,18 +600,30 @@ export default function ChatPage() {
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         {message.sender === 'user' ? (
-                                                            <div className="text-right min-w-0">
+                                                            <div className="text-right min-w-0 group">
                                                                 <div className="flex items-center justify-end gap-2 mb-1">
                                                                     <MessageTimestamp timestamp={message.timestamp} />
                                                                     <div className="text-xs text-muted-foreground">
                                                                         {message.name}
                                                                     </div>
                                                                 </div>
-                                                                <div className="inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble">
+                                                                <div className="relative inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble">
                                                                     <ExpandableUserMessage 
                                                                         content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
                                                                         className="text-primary-foreground"
                                                                     />
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 bg-primary/20 hover:bg-primary/30 text-primary-foreground"
+                                                                        onClick={() => copyToClipboard(typeof message.text === 'string' ? message.text : JSON.stringify(message.text), message.id || `msg-${index}`)}
+                                                                    >
+                                                                        {copiedMessageId === (message.id || `msg-${index}`) ? (
+                                                                            <Check className="h-3 w-3 text-green-300" />
+                                                                        ) : (
+                                                                            <Copy className="h-3 w-3" />
+                                                                        )}
+                                                                    </Button>
                                                                 </div>
                                                             </div>
                                                         ) : (
