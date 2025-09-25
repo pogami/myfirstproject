@@ -14,6 +14,7 @@ interface SimpleChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  isSending?: boolean;
 }
 
 export function SimpleChatInput({
@@ -24,7 +25,8 @@ export function SimpleChatInput({
   onFileUpload,
   placeholder = "Ask anything...",
   disabled = false,
-  className = ""
+  className = "",
+  isSending = false
 }: SimpleChatInputProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [chatMode, setChatMode] = useState<'normal' | 'deepthink'>('normal');
@@ -94,7 +96,7 @@ export function SimpleChatInput({
                 ? "bg-gradient-to-r from-orange-400/20 to-purple-400/20 text-orange-600 border border-orange-400/30"
                 : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 border border-gray-300/50"
             )}
-            disabled={disabled}
+            disabled={disabled || isSending}
           >
             <Leaf className="h-3 w-3" />
             Normal
@@ -109,7 +111,7 @@ export function SimpleChatInput({
                 ? "bg-gradient-to-r from-orange-400/20 to-purple-400/20 text-orange-600 border border-orange-400/30"
                 : "bg-gray-100/50 hover:bg-gray-200/50 text-gray-600 border border-gray-300/50"
             )}
-            disabled={disabled}
+            disabled={disabled || isSending}
           >
             <Brain className="h-3 w-3" />
             DeepThink
@@ -140,8 +142,8 @@ export function SimpleChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={placeholder}
-            disabled={disabled}
+            placeholder={isSending ? "AI is responding..." : placeholder}
+            disabled={disabled || isSending}
             className="w-full h-8 bg-transparent text-gray-900 placeholder-gray-500 text-sm border-0 outline-none focus:outline-none"
           />
         </div>
@@ -149,7 +151,7 @@ export function SimpleChatInput({
         {/* Send button */}
         <Button
           onClick={handleSend}
-          disabled={disabled || !value.trim()}
+          disabled={disabled || isSending || !value.trim()}
           className="h-8 w-8 p-0 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-0 shadow-lg hover:shadow-purple-400/30 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           aria-label="Send message"
         >
