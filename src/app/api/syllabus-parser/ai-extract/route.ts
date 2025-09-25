@@ -11,23 +11,8 @@ export async function POST(request: NextRequest) {
     // Use Google AI API for intelligent parsing
     const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE;
     
-    // Debug: Log environment variables (remove in production)
-    console.log('Environment check:', {
-      hasGoogleKey: !!googleApiKey,
-      keyLength: googleApiKey?.length || 0,
-      usingGoogle: !!process.env.GOOGLE,
-      usingGoogleAI: !!process.env.GOOGLE_AI_API_KEY,
-      allEnvKeys: Object.keys(process.env).filter(key => key.includes('GOOGLE') || key.includes('OPENAI'))
-    });
-    
     if (!googleApiKey) {
-      return NextResponse.json({ 
-        error: 'Google AI API key not configured',
-        debug: {
-          hasKey: !!googleApiKey,
-          envKeys: Object.keys(process.env).filter(key => key.includes('GOOGLE') || key.includes('OPENAI'))
-        }
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Google AI API key not configured' }, { status: 500 });
     }
     
     const prompt = `You are an expert at parsing academic syllabi. Extract structured information from the following syllabus text and return it as valid JSON.
