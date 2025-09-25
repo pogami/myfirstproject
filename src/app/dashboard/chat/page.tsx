@@ -195,8 +195,7 @@ export default function ChatPage() {
                 { 
                     sender: 'bot', 
                     name: 'AI', 
-                    text: 'Welcome to General Chat! 🎓\n\nQuick Start: Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\nSubjects: Math, Science, English, History, Computer Science & more.', 
-                    timestamp: Date.now() 
+                    text: 'Welcome to General Chat! 🎓\n\nQuick Start: Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\nSubjects: Math, Science, English, History, Computer Science & more.'
                 }
             );
         }
