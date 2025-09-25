@@ -13,6 +13,7 @@ import OpenAI from 'openai';
 import { z } from 'zod';
 import { searchCurrentInformation, needsCurrentInformation, formatSearchResultsForAI } from './web-search-service';
 import { extractUrlsFromText, scrapeMultiplePages, formatScrapedContentForAI } from './web-scraping-service';
+import { shouldAutoSearch, performAutoSearch, enhancedWebBrowsing, shouldUsePuppeteer } from './enhanced-web-browsing-service';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -79,16 +80,41 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
     if (urls.length > 0) {
       console.log('Found URLs to scrape:', urls);
       try {
-        const { successful, failed } = await scrapeMultiplePages(urls);
+        // Use enhanced browsing for JavaScript-heavy sites
+        const enhancedResults = await Promise.all(
+          urls.map(async (url) => {
+            const usePuppeteer = shouldUsePuppeteer(url);
+            console.log(`Browsing ${url} with ${usePuppeteer ? 'Puppeteer' : 'regular fetch'}`);
+            
+            const result = await enhancedWebBrowsing(url, {
+              usePuppeteer,
+              takeScreenshot: false, // Don't take screenshots for now
+              autoSearchFallback: false
+            });
+            
+            return result.success ? {
+              url: result.url!,
+              title: result.title || 'Untitled',
+              content: result.content || '',
+              summary: result.content?.substring(0, 200) + '...' || '',
+              timestamp: new Date().toISOString(),
+              wordCount: result.content?.split(' ').length || 0
+            } : null;
+          })
+        );
+        
+        const successful = enhancedResults.filter(result => result !== null);
         if (successful.length > 0) {
           scrapedContent = formatScrapedContentForAI(successful);
-          console.log(`Successfully scraped ${successful.length} pages`);
+          console.log(`Successfully browsed ${successful.length} pages`);
         }
-        if (failed.length > 0) {
-          console.warn('Failed to scrape some URLs:', failed);
+        
+        const failed = urls.length - successful.length;
+        if (failed > 0) {
+          console.warn(`Failed to browse ${failed} pages`);
         }
       } catch (error) {
-        console.warn('Failed to scrape URLs:', error);
+        console.warn('Failed to browse URLs:', error);
       }
     }
     
@@ -163,36 +189,19 @@ CODE AND GRAPH GENERATION RULES:
 5. Always explain code and graphs in simple terms for students
 
 MATH RESPONSE RULES:
-1. You are a math tutor AI that explains solutions step by step in a clear, CONCISE way
-2. When answering math questions, follow these rules:
-   a. Restate the problem briefly
-   b. Organize solution in numbered steps (Step 1, Step 2, etc.)
-   c. Use LaTeX for math notation:
-      - Inline math: $ ... $
-      - Display equations: $$ ... $$
-      - Box final answers: \\boxed{ ... }
-      - CRITICAL: Use \\text{...} for ALL words and letters inside math
-      - Keep mathematical symbols (+, -, =, numbers) as they are
-      - Example: $\\text{Simple Interest} = 10000 \\times 0.07 \\times 10 = 7000$
-      - Example: $\\text{Total} = 10000 + 7000 = 17000$
-      - NEVER put words directly in math without \\text{}
-   d. Keep explanations SHORT and focused - don't over-explain
-   e. Show key steps only, not every detail
-   f. Always provide a final boxed answer
-3. Example format:
-   "Let's solve this step by step:
+1. For math questions, give ONLY the final answers - NO explanations, NO steps, NO work shown
+2. NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
+3. Use LaTeX ONLY for mathematical symbols, numbers, and equations:
+   - Inline math: $ ... $ (ONLY for math symbols and numbers)
+   - Display equations: $$ ... $$ (ONLY for math symbols and numbers)
+   - Box final answers: \\boxed{ ... } (ONLY for math symbols and numbers)
+4. CRITICAL: Write ALL words OUTSIDE of math delimiters
+5. Example format for optimization problems:
+   "Volume function: $V(x) = x(48-2x)^2$
    
-   Step 1: Restate the problem
-   We need to solve: $x^2 + 3x + 2 = 0$
+   Value that maximizes volume: $x = 8$
    
-   Step 2: Factor the equation
-   $x^2 + 3x + 2 = (x + 1)(x + 2) = 0$
-   
-   Step 3: Solve for x
-   $x + 1 = 0$ or $x + 2 = 0$
-   $x = -1$ or $x = -2$
-   
-   Answer: $\\boxed{x = -1 \\text{ or } x = -2}$"
+   Maximum volume: $\\boxed{8192}$ cm³"
 
 MATH RENDERING RULES:
 1. When students ask for math equations, use LaTeX formatting
@@ -256,8 +265,31 @@ Remember: This is part of an ongoing conversation. Reference previous discussion
     const data = await response.json();
     const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, but I couldn\'t generate a response.';
     
+    // Check if we should automatically search for more information
+    const autoSearchResult = shouldAutoSearch(input.question, answer);
+    let enhancedAnswer = answer;
+    
+    if (autoSearchResult.shouldSearch && autoSearchResult.searchQuery) {
+      console.log('🤖 AI seems uncertain, performing automatic search for:', autoSearchResult.searchQuery);
+      try {
+        const searchResults = await performAutoSearch(autoSearchResult.searchQuery);
+        if (searchResults && searchResults.trim().length > 0) {
+          // Only add search results if they contain actual useful information
+          if (!searchResults.includes('Real-Time Search Results') && 
+              !searchResults.includes('Search conducted in real-time')) {
+            enhancedAnswer = `${answer}\n\n🔍 Let me search for more current information about this...\n\n${searchResults}`;
+            console.log('✅ Auto search completed and added to response');
+          } else {
+            console.log('⚠️ Auto search returned generic results, not adding to response');
+          }
+        }
+      } catch (error) {
+        console.warn('❌ Auto search failed:', error);
+      }
+    }
+    
     return {
-      answer: answer.trim(),
+      answer: enhancedAnswer.trim(),
       provider: 'google'
     };
   } catch (error) {
@@ -301,16 +333,41 @@ async function tryOpenAI(input: StudyAssistanceInput): Promise<AIResponse> {
     if (urls.length > 0) {
       console.log('Found URLs to scrape:', urls);
       try {
-        const { successful, failed } = await scrapeMultiplePages(urls);
+        // Use enhanced browsing for JavaScript-heavy sites
+        const enhancedResults = await Promise.all(
+          urls.map(async (url) => {
+            const usePuppeteer = shouldUsePuppeteer(url);
+            console.log(`Browsing ${url} with ${usePuppeteer ? 'Puppeteer' : 'regular fetch'}`);
+            
+            const result = await enhancedWebBrowsing(url, {
+              usePuppeteer,
+              takeScreenshot: false, // Don't take screenshots for now
+              autoSearchFallback: false
+            });
+            
+            return result.success ? {
+              url: result.url!,
+              title: result.title || 'Untitled',
+              content: result.content || '',
+              summary: result.content?.substring(0, 200) + '...' || '',
+              timestamp: new Date().toISOString(),
+              wordCount: result.content?.split(' ').length || 0
+            } : null;
+          })
+        );
+        
+        const successful = enhancedResults.filter(result => result !== null);
         if (successful.length > 0) {
           scrapedContent = formatScrapedContentForAI(successful);
-          console.log(`Successfully scraped ${successful.length} pages`);
+          console.log(`Successfully browsed ${successful.length} pages`);
         }
-        if (failed.length > 0) {
-          console.warn('Failed to scrape some URLs:', failed);
+        
+        const failed = urls.length - successful.length;
+        if (failed > 0) {
+          console.warn(`Failed to browse ${failed} pages`);
         }
       } catch (error) {
-        console.warn('Failed to scrape URLs:', error);
+        console.warn('Failed to browse URLs:', error);
       }
     }
     
@@ -379,38 +436,23 @@ Response Guidelines:
 3. Be Encouraging: Use supportive language
 4. Be Complete: Provide a helpful answer without asking for more detail
 5. Be Continuous: Reference previous conversation when relevant
+6. CRITICAL FOR MATH: Give ONLY the final answers - NO explanations, NO steps, NO work shown
+7. NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
 
 MATH RESPONSE RULES:
-1. You are a math tutor AI that explains solutions step by step in a clear, CONCISE way
-2. When answering math questions, follow these rules:
-   a. Restate the problem briefly
-   b. Organize solution in numbered steps (Step 1, Step 2, etc.)
-   c. Use LaTeX for math notation:
-      - Inline math: $ ... $
-      - Display equations: $$ ... $$
-      - Box final answers: \\boxed{ ... }
-      - CRITICAL: Use \\text{...} for ALL words and letters inside math
-      - Keep mathematical symbols (+, -, =, numbers) as they are
-      - Example: $\\text{Simple Interest} = 10000 \\times 0.07 \\times 10 = 7000$
-      - Example: $\\text{Total} = 10000 + 7000 = 17000$
-      - NEVER put words directly in math without \\text{}
-   d. Keep explanations SHORT and focused - don't over-explain
-   e. Show key steps only, not every detail
-   f. Always provide a final boxed answer
-3. Example format:
-   "Let's solve this step by step:
+1. For math questions, give ONLY the final answers - NO explanations, NO steps, NO work shown
+2. NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
+3. Use LaTeX ONLY for mathematical symbols, numbers, and equations:
+   - Inline math: $ ... $ (ONLY for math symbols and numbers)
+   - Display equations: $$ ... $$ (ONLY for math symbols and numbers)
+   - Box final answers: \\boxed{ ... } (ONLY for math symbols and numbers)
+4. CRITICAL: Write ALL words OUTSIDE of math delimiters
+5. Example format for optimization problems:
+   "Volume function: $V(x) = x(48-2x)^2$
    
-   Step 1: Restate the problem
-   We need to solve: $x^2 + 3x + 2 = 0$
+   Value that maximizes volume: $x = 8$
    
-   Step 2: Factor the equation
-   $x^2 + 3x + 2 = (x + 1)(x + 2) = 0$
-   
-   Step 3: Solve for x
-   $x + 1 = 0$ or $x + 2 = 0$
-   $x = -1$ or $x = -2$
-   
-   Answer: $\\boxed{x = -1 \\text{ or } x = -2}$"
+   Maximum volume: $\\boxed{8192}$ cm³"
 
 Response Quality:
 - Keep answers short and to the point
@@ -426,8 +468,8 @@ For mathematical expressions, use LaTeX formatting:
 - Use proper LaTeX syntax for fractions, limits, integrals, etc.
 - Always box final answers: \\boxed{answer}
 - Keep explanations CONCISE - don't over-explain
-- Use \\text{...} for ALL words and letters inside math to avoid italics
-- Keep mathematical symbols (+, -, =, numbers) normal - don't wrap in \\text{}`
+- NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
+- Write words OUTSIDE math delimiters, symbols INSIDE math delimiters`
         },
         {
           role: 'user',
@@ -447,8 +489,31 @@ Remember: This is part of an ongoing conversation. Reference previous discussion
 
     const answer = response.choices[0]?.message?.content || 'I apologize, but I couldn\'t generate a response.';
     
+    // Check if we should automatically search for more information
+    const autoSearchResult = shouldAutoSearch(input.question, answer);
+    let enhancedAnswer = answer;
+    
+    if (autoSearchResult.shouldSearch && autoSearchResult.searchQuery) {
+      console.log('🤖 AI seems uncertain, performing automatic search for:', autoSearchResult.searchQuery);
+      try {
+        const searchResults = await performAutoSearch(autoSearchResult.searchQuery);
+        if (searchResults && searchResults.trim().length > 0) {
+          // Only add search results if they contain actual useful information
+          if (!searchResults.includes('Real-Time Search Results') && 
+              !searchResults.includes('Search conducted in real-time')) {
+            enhancedAnswer = `${answer}\n\n🔍 Let me search for more current information about this...\n\n${searchResults}`;
+            console.log('✅ Auto search completed and added to response');
+          } else {
+            console.log('⚠️ Auto search returned generic results, not adding to response');
+          }
+        }
+      } catch (error) {
+        console.warn('❌ Auto search failed:', error);
+      }
+    }
+    
     return {
-      answer,
+      answer: enhancedAnswer,
       provider: 'openai'
     };
   } catch (error) {
@@ -537,36 +602,19 @@ Provide a detailed, comprehensive explanation that includes:
 7. Related Topics: Suggest connected concepts to explore
 
 MATH RESPONSE RULES:
-1. You are a math tutor AI that explains solutions step by step in a clear, CONCISE way
-2. When answering math questions, follow these rules:
-   a. Restate the problem briefly
-   b. Organize solution in numbered steps (Step 1, Step 2, etc.)
-   c. Use LaTeX for math notation:
-      - Inline math: $ ... $
-      - Display equations: $$ ... $$
-      - Box final answers: \\boxed{ ... }
-      - CRITICAL: Use \\text{...} for ALL words and letters inside math
-      - Keep mathematical symbols (+, -, =, numbers) as they are
-      - Example: $\\text{Simple Interest} = 10000 \\times 0.07 \\times 10 = 7000$
-      - Example: $\\text{Total} = 10000 + 7000 = 17000$
-      - NEVER put words directly in math without \\text{}
-   d. Keep explanations SHORT and focused - don't over-explain
-   e. Show key steps only, not every detail
-   f. Always provide a final boxed answer
-3. Example format:
-   "Let's solve this step by step:
+1. For math questions, give ONLY the final answers - NO explanations, NO steps, NO work shown
+2. NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
+3. Use LaTeX ONLY for mathematical symbols, numbers, and equations:
+   - Inline math: $ ... $ (ONLY for math symbols and numbers)
+   - Display equations: $$ ... $$ (ONLY for math symbols and numbers)
+   - Box final answers: \\boxed{ ... } (ONLY for math symbols and numbers)
+4. CRITICAL: Write ALL words OUTSIDE of math delimiters
+5. Example format for optimization problems:
+   "Volume function: $V(x) = x(48-2x)^2$
    
-   Step 1: Restate the problem
-   We need to solve: $x^2 + 3x + 2 = 0$
+   Value that maximizes volume: $x = 8$
    
-   Step 2: Factor the equation
-   $x^2 + 3x + 2 = (x + 1)(x + 2) = 0$
-   
-   Step 3: Solve for x
-   $x + 1 = 0$ or $x + 2 = 0$
-   $x = -1$ or $x = -2$
-   
-   Answer: $\\boxed{x = -1 \\text{ or } x = -2}$"
+   Maximum volume: $\\boxed{8192}$ cm³"
 
 Make this explanation thorough, educational, and engaging. Use clear language, examples, and analogies to make complex topics accessible.
 
@@ -617,36 +665,19 @@ Provide a detailed, comprehensive explanation that includes:
 7. Related Topics: Suggest connected concepts to explore
 
 MATH RESPONSE RULES:
-1. You are a math tutor AI that explains solutions step by step in a clear, CONCISE way
-2. When answering math questions, follow these rules:
-   a. Restate the problem briefly
-   b. Organize solution in numbered steps (Step 1, Step 2, etc.)
-   c. Use LaTeX for math notation:
-      - Inline math: $ ... $
-      - Display equations: $$ ... $$
-      - Box final answers: \\boxed{ ... }
-      - CRITICAL: Use \\text{...} for ALL words and letters inside math
-      - Keep mathematical symbols (+, -, =, numbers) as they are
-      - Example: $\\text{Simple Interest} = 10000 \\times 0.07 \\times 10 = 7000$
-      - Example: $\\text{Total} = 10000 + 7000 = 17000$
-      - NEVER put words directly in math without \\text{}
-   d. Keep explanations SHORT and focused - don't over-explain
-   e. Show key steps only, not every detail
-   f. Always provide a final boxed answer
-3. Example format:
-   "Let's solve this step by step:
+1. For math questions, give ONLY the final answers - NO explanations, NO steps, NO work shown
+2. NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
+3. Use LaTeX ONLY for mathematical symbols, numbers, and equations:
+   - Inline math: $ ... $ (ONLY for math symbols and numbers)
+   - Display equations: $$ ... $$ (ONLY for math symbols and numbers)
+   - Box final answers: \\boxed{ ... } (ONLY for math symbols and numbers)
+4. CRITICAL: Write ALL words OUTSIDE of math delimiters
+5. Example format for optimization problems:
+   "Volume function: $V(x) = x(48-2x)^2$
    
-   Step 1: Restate the problem
-   We need to solve: $x^2 + 3x + 2 = 0$
+   Value that maximizes volume: $x = 8$
    
-   Step 2: Factor the equation
-   $x^2 + 3x + 2 = (x + 1)(x + 2) = 0$
-   
-   Step 3: Solve for x
-   $x + 1 = 0$ or $x + 2 = 0$
-   $x = -1$ or $x = -2$
-   
-   Answer: $\\boxed{x = -1 \\text{ or } x = -2}$"
+   Maximum volume: $\\boxed{8192}$ cm³"
 
 Make this explanation thorough, educational, and engaging. Use clear language, examples, and analogies to make complex topics accessible.
 
@@ -731,36 +762,19 @@ Provide a detailed, comprehensive explanation that includes:
 7. Related Topics: Suggest connected concepts to explore
 
 MATH RESPONSE RULES:
-1. You are a math tutor AI that explains solutions step by step in a clear, CONCISE way
-2. When answering math questions, follow these rules:
-   a. Restate the problem briefly
-   b. Organize solution in numbered steps (Step 1, Step 2, etc.)
-   c. Use LaTeX for math notation:
-      - Inline math: $ ... $
-      - Display equations: $$ ... $$
-      - Box final answers: \\boxed{ ... }
-      - CRITICAL: Use \\text{...} for ALL words and letters inside math
-      - Keep mathematical symbols (+, -, =, numbers) as they are
-      - Example: $\\text{Simple Interest} = 10000 \\times 0.07 \\times 10 = 7000$
-      - Example: $\\text{Total} = 10000 + 7000 = 17000$
-      - NEVER put words directly in math without \\text{}
-   d. Keep explanations SHORT and focused - don't over-explain
-   e. Show key steps only, not every detail
-   f. Always provide a final boxed answer
-3. Example format:
-   "Let's solve this step by step:
+1. For math questions, give ONLY the final answers - NO explanations, NO steps, NO work shown
+2. NEVER put words inside math expressions - keep ALL text OUTSIDE of $...$ delimiters
+3. Use LaTeX ONLY for mathematical symbols, numbers, and equations:
+   - Inline math: $ ... $ (ONLY for math symbols and numbers)
+   - Display equations: $$ ... $$ (ONLY for math symbols and numbers)
+   - Box final answers: \\boxed{ ... } (ONLY for math symbols and numbers)
+4. CRITICAL: Write ALL words OUTSIDE of math delimiters
+5. Example format for optimization problems:
+   "Volume function: $V(x) = x(48-2x)^2$
    
-   Step 1: Restate the problem
-   We need to solve: $x^2 + 3x + 2 = 0$
+   Value that maximizes volume: $x = 8$
    
-   Step 2: Factor the equation
-   $x^2 + 3x + 2 = (x + 1)(x + 2) = 0$
-   
-   Step 3: Solve for x
-   $x + 1 = 0$ or $x + 2 = 0$
-   $x = -1$ or $x = -2$
-   
-   Answer: $\\boxed{x = -1 \\text{ or } x = -2}$"
+   Maximum volume: $\\boxed{8192}$ cm³"
 
 Make this explanation thorough, educational, and engaging. Use clear language, examples, and analogies to make complex topics accessible. 
 
