@@ -15,6 +15,7 @@ interface FuturisticChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  isSending?: boolean;
 }
 
 export function FuturisticChatInput({
@@ -25,7 +26,8 @@ export function FuturisticChatInput({
   onFileUpload,
   placeholder,
   disabled = false,
-  className = ""
+  className = "",
+  isSending = false
 }: FuturisticChatInputProps) {
   const { theme } = useTheme();
   
@@ -127,7 +129,7 @@ export function FuturisticChatInput({
             isDark 
               ? "text-white/60" 
               : "text-gray-600",
-            disabled && "opacity-50 cursor-not-allowed"
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >
           <Upload className="h-4 w-4" />
@@ -141,11 +143,12 @@ export function FuturisticChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={displayPlaceholder}
-            disabled={disabled}
+            placeholder={isSending ? "AI is responding..." : displayPlaceholder}
+            disabled={disabled || isSending}
             className={cn(
               "w-full h-7 bg-transparent text-sm border-0 outline-none focus:outline-none placeholder:opacity-70 resize-none",
-              isDark ? "text-white placeholder-white/70" : "text-gray-900 placeholder-gray-500"
+              isDark ? "text-white placeholder-white/70" : "text-gray-900 placeholder-gray-500",
+              (disabled || isSending) && "opacity-50 cursor-not-allowed"
             )}
             style={{ fontSize: '16px' }} // Prevents zoom on iOS
           />
@@ -169,7 +172,7 @@ export function FuturisticChatInput({
               : isDark 
                 ? "text-white/60" 
                 : "text-gray-600",
-            disabled && "opacity-50 cursor-not-allowed"
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >
           {isVoiceActive ? (
@@ -187,7 +190,7 @@ export function FuturisticChatInput({
             isDark 
               ? "text-purple-400" 
               : "text-purple-600",
-            (disabled || !value.trim()) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending || !value.trim()) && "opacity-50 cursor-not-allowed"
           )}
         >
           <Send className="h-4 w-4" />

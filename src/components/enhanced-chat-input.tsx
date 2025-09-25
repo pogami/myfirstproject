@@ -16,6 +16,7 @@ interface EnhancedChatInputProps {
   className?: string;
   isPublicChat?: boolean;
   isClassChat?: boolean;
+  isSending?: boolean;
 }
 
 export function EnhancedChatInput({
@@ -28,7 +29,8 @@ export function EnhancedChatInput({
   disabled = false,
   className = "",
   isPublicChat = false,
-  isClassChat = false
+  isClassChat = false,
+  isSending = false
 }: EnhancedChatInputProps) {
   const { theme } = useTheme();
   const [isTyping, setIsTyping] = useState(false);
@@ -154,7 +156,7 @@ export function EnhancedChatInput({
             isDark 
               ? "text-white/70 hover:text-white/90" 
               : "text-gray-600 hover:text-gray-800",
-            disabled && "opacity-50 cursor-not-allowed"
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >
           <Upload className="h-4 w-4" />
@@ -168,11 +170,12 @@ export function EnhancedChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={getPlaceholder()}
-            disabled={disabled}
+            placeholder={isSending ? "AI is responding..." : getPlaceholder()}
+            disabled={disabled || isSending}
             className={cn(
               "w-full h-8 bg-transparent text-base border-0 outline-none focus:outline-none placeholder:opacity-60 resize-none",
-              isDark ? "text-white placeholder-white/60" : "text-gray-900 placeholder-gray-400"
+              isDark ? "text-white placeholder-white/60" : "text-gray-900 placeholder-gray-400",
+              (disabled || isSending) && "opacity-50 cursor-not-allowed"
             )}
             style={{ fontSize: '16px' }}
           />
@@ -197,7 +200,7 @@ export function EnhancedChatInput({
               : isDark 
                 ? "text-white/70 hover:text-white/90" 
                 : "text-gray-600 hover:text-gray-800",
-            disabled && "opacity-50 cursor-not-allowed"
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >
           {isVoiceActive ? (
@@ -216,7 +219,7 @@ export function EnhancedChatInput({
             isDark 
               ? "text-purple-400 hover:text-purple-300" 
               : "text-purple-600 hover:text-purple-500",
-            (disabled || !value.trim()) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending || !value.trim()) && "opacity-50 cursor-not-allowed"
           )}
         >
           <Send className="h-4 w-4" />

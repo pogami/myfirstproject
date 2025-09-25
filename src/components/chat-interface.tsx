@@ -1118,6 +1118,7 @@ export default function ChatInterface() {
                                                 : "Ask anything"
                                         }
                                         disabled={isSending || isMuted}
+                                        isSending={isSending}
                                         className="w-full"
                                     />
                                 </div>

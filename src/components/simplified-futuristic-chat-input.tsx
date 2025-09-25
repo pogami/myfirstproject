@@ -13,6 +13,7 @@ interface SimplifiedFuturisticChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  isSending?: boolean;
 }
 
 export function SimplifiedFuturisticChatInput({
@@ -23,7 +24,8 @@ export function SimplifiedFuturisticChatInput({
   onFileUpload,
   placeholder = "Ask anything...",
   disabled = false,
-  className = ""
+  className = "",
+  isSending = false
 }: SimplifiedFuturisticChatInputProps) {
   const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -112,8 +114,8 @@ export function SimplifiedFuturisticChatInput({
           value: value,
           onChange: handleInputChange,
           onKeyPress: handleKeyPress,
-          placeholder: placeholder,
-          disabled: disabled,
+          placeholder: isSending ? "AI is responding..." : placeholder,
+          disabled: disabled || isSending,
           className: "w-full h-9 bg-transparent text-white placeholder-white/70 text-sm border-0 outline-none focus:outline-none"
         }),
         // Enhanced cursor effect
@@ -134,7 +136,7 @@ export function SimplifiedFuturisticChatInput({
       // Send button
       React.createElement(Button, {
         onClick: handleSend,
-        disabled: disabled || !value.trim(),
+        disabled: disabled || isSending || !value.trim(),
         className: "relative z-10 h-9 w-9 p-0 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-xl hover:shadow-purple-500/30 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
       },
         React.createElement(Send, {

@@ -15,6 +15,7 @@ interface ThemeAwareChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  isSending?: boolean;
 }
 
 export function ThemeAwareChatInput({
@@ -25,7 +26,8 @@ export function ThemeAwareChatInput({
   onFileUpload,
   placeholder = "Ask anything...",
   disabled = false,
-  className = ""
+  className = "",
+  isSending = false
 }: ThemeAwareChatInputProps) {
   const { theme } = useTheme();
   const [isTyping, setIsTyping] = useState(false);
@@ -147,7 +149,7 @@ export function ThemeAwareChatInput({
           <button
             onClick={toggleChatMode}
             className={chatMode === 'normal' ? activeModeStyles : modeButtonStyles}
-            disabled={disabled}
+            disabled={disabled || isSending}
           >
             <Leaf className="h-3 w-3" />
             Normal
@@ -157,7 +159,7 @@ export function ThemeAwareChatInput({
           <button
             onClick={toggleChatMode}
             className={chatMode === 'deepthink' ? activeModeStyles : modeButtonStyles}
-            disabled={disabled}
+            disabled={disabled || isSending}
           >
             <Brain className="h-3 w-3" />
             DeepThink
@@ -168,7 +170,7 @@ export function ThemeAwareChatInput({
         {/* Voice button */}
         <Button
           onClick={toggleVoice}
-          disabled={disabled}
+          disabled={disabled || isSending}
           className={cn(modeButtonStyles, "h-auto w-auto")}
           aria-label="Voice input"
         >
@@ -188,8 +190,8 @@ export function ThemeAwareChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={placeholder}
-            disabled={disabled}
+            placeholder={isSending ? "AI is responding..." : placeholder}
+            disabled={disabled || isSending}
             className={inputStyles}
           />
           {/* Enhanced cursor effect */}
@@ -205,7 +207,7 @@ export function ThemeAwareChatInput({
         {/* Send button */}
         <Button
           onClick={handleSend}
-          disabled={disabled || !value.trim()}
+          disabled={disabled || isSending || !value.trim()}
           className={sendButtonStyles}
           aria-label="Send message"
         >
