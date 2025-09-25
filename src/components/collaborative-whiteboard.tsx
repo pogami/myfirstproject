@@ -100,6 +100,12 @@ export function CollaborativeWhiteboard() {
     size: 2
   });
   const [newMessage, setNewMessage] = useState('');
+  const [currentUser, setCurrentUser] = useState({
+    id: 'current-user',
+    name: 'You',
+    avatar: '/api/placeholder/40/40',
+    email: 'user@example.com'
+  });
   const [newSession, setNewSession] = useState({
     name: '',
     isPublic: true,
@@ -441,14 +447,14 @@ export function CollaborativeWhiteboard() {
       {
         id: '1',
         author: 'Alex Johnson',
-        message: 'Let\'s start with derivatives',
+        message: 'Welcome to the whiteboard session! Let\'s start collaborating.',
         timestamp: Date.now() - 300000,
         type: 'text'
       },
       {
         id: '2',
         author: 'Sarah Chen',
-        message: 'I\'ll draw the graph',
+        message: 'I\'ll draw the diagram we discussed',
         timestamp: Date.now() - 240000,
         type: 'text'
       },
@@ -458,6 +464,20 @@ export function CollaborativeWhiteboard() {
         message: 'Sarah joined the session',
         timestamp: Date.now() - 180000,
         type: 'system'
+      },
+      {
+        id: '4',
+        author: 'Alex Johnson',
+        message: 'Great! Can you add the labels to the diagram?',
+        timestamp: Date.now() - 120000,
+        type: 'text'
+      },
+      {
+        id: '5',
+        author: 'Sarah Chen',
+        message: 'Sure! Adding them now.',
+        timestamp: Date.now() - 60000,
+        type: 'text'
       }
     ];
     setChatMessages(sampleMessages);
@@ -617,20 +637,23 @@ export function CollaborativeWhiteboard() {
     try {
       const message: ChatMessage = {
         id: `msg-${Date.now()}`,
-        author: 'You',
+        author: currentUser.name,
         message: newMessage,
         timestamp: Date.now(),
         type: 'text'
       };
 
+      // Add message to local state immediately for better UX
+      setChatMessages(prev => [...prev, message]);
+      setNewMessage('');
+
       // Save message to Firebase
       const messagesRef = collection(db, 'whiteboardSessions', currentSession.id, 'messages');
       await addDoc(messagesRef, {
         ...message,
-        userId: 'current-user' // This would be the actual user ID
+        userId: currentUser.id
       });
 
-      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -710,6 +733,7 @@ export function CollaborativeWhiteboard() {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
+                      {/* Left side - Drawing tools */}
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1">
                           {['pen', 'eraser', 'rectangle', 'circle', 'text'].map((tool) => (
@@ -724,8 +748,8 @@ export function CollaborativeWhiteboard() {
                           ))}
                         </div>
                         
-                        {/* Undo/Redo buttons */}
-                        <div className="flex gap-1 ml-2">
+                        {/* Undo/Redo/Clear buttons */}
+                        <div className="flex gap-1 ml-4">
                           <Button
                             variant="outline"
                             size="sm"
@@ -750,8 +774,11 @@ export function CollaborativeWhiteboard() {
                             Clear
                           </Button>
                         </div>
-                        
-                        <div className="flex items-center gap-2 ml-4">
+                      </div>
+                      
+                      {/* Right side - Color, Size, and Recording */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
                           <Label className="text-sm">Color:</Label>
                           <input
                             type="color"
@@ -772,9 +799,7 @@ export function CollaborativeWhiteboard() {
                             className="w-20"
                           />
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
+                        
                         <Button
                           variant={isRecording ? 'destructive' : 'outline'}
                           size="sm"
@@ -855,9 +880,9 @@ export function CollaborativeWhiteboard() {
                         {participants.map((participant) => (
                           <div key={participant.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted">
                             <div className="relative">
-                              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                <span className="text-xs font-semibold">
-                                  {participant.name[0]}
+                              <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-semibold text-primary">
+                                  {participant.name[0].toUpperCase()}
                                 </span>
                               </div>
                               <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-background ${getParticipantStatusColor(participant)}`} />
@@ -886,13 +911,27 @@ export function CollaborativeWhiteboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <ScrollArea className="h-48">
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {chatMessages.map((message) => (
-                          <div key={message.id} className={`text-sm ${message.type === 'system' ? 'text-muted-foreground italic' : ''}`}>
+                          <div key={message.id} className={`flex items-start gap-2 ${message.type === 'system' ? 'justify-center' : ''}`}>
                             {message.type === 'text' && (
-                              <span className="font-medium text-primary">{message.author}: </span>
+                              <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-xs font-semibold">
+                                  {message.author === 'You' ? currentUser.name[0] : message.author[0]}
+                                </span>
+                              </div>
                             )}
-                            {message.message}
+                            <div className={`text-sm ${message.type === 'system' ? 'text-muted-foreground italic text-center' : ''}`}>
+                              {message.type === 'text' && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-primary">{message.author}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(message.timestamp).toLocaleTimeString()}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="mt-1">{message.message}</div>
+                            </div>
                           </div>
                         ))}
                       </div>
