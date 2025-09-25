@@ -623,7 +623,7 @@ export default function ChatPage() {
                                                                             ) : null;
                                                                         })()}
                                                                     </div>
-                                                                    <MessageTimestamp timestamp={message.timestamp} />
+                                                                    {message.timestamp && <MessageTimestamp timestamp={message.timestamp} />}
                                                                 </div>
                                                                 <BotResponse 
                                                                     content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
