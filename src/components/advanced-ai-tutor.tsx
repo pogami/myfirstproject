@@ -20,7 +20,6 @@ import {
   Image, 
   FileText, 
   Lightbulb, 
-  BookOpen,
   Calculator,
   Microscope,
   Globe,
@@ -38,8 +37,6 @@ import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual
 import MathRender from '@/components/math-render';
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
-import { AIStudyScheduleGenerator } from '@/components/ai-study-schedule-generator';
-import { SmartDocumentScanner } from '@/components/smart-document-scanner';
 
 interface AIMessage {
   id: string;
@@ -83,7 +80,7 @@ export function AdvancedAITutor({
   const [isTyping, setIsTyping] = useState(false);
   const [showInDepth, setShowInDepth] = useState(false);
   const [lastQuestion, setLastQuestion] = useState('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'schedule' | 'scanner'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -1371,42 +1368,7 @@ I'm here to help you understand whatever concepts are presented in this visual m
 
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b">
-        <Button
-          variant={activeTab === 'chat' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('chat')}
-          className="flex items-center gap-2"
-        >
-          <MessageSquare className="h-4 w-4" />
-          AI Chat
-        </Button>
-        <Button
-          variant={activeTab === 'schedule' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('schedule')}
-          className="flex items-center gap-2"
-        >
-          <BookOpen className="h-4 w-4" />
-          Study Schedule
-        </Button>
-        <Button
-          variant={activeTab === 'scanner' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('scanner')}
-          className="flex items-center gap-2"
-        >
-          <Camera className="h-4 w-4" />
-          Document Scanner
-        </Button>
-      </div>
-
-      {/* Render appropriate component based on active tab */}
-      {activeTab === 'schedule' && <AIStudyScheduleGenerator />}
-      {activeTab === 'scanner' && <SmartDocumentScanner />}
-
-      {/* AI Chat Tab Content */}
-      {activeTab === 'chat' && (
-        <>
-          {/* Subject Tutors */}
+      {/* Subject Tutors */}
           <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -1678,8 +1640,6 @@ I'm here to help you understand whatever concepts are presented in this visual m
           </div>
         </CardContent>
       </Card>
-        </>
-      )}
     </div>
   );
 }
