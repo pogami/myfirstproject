@@ -195,7 +195,7 @@ export default function ChatPage() {
                 { 
                     sender: 'bot', 
                     name: 'AI', 
-                    text: 'Welcome to General Chat! 🎓\n\nQuick Start: Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\nSubjects: Math, Science, English, History, Computer Science & more.'
+                    text: 'Hey there! 👋 Welcome to General Chat!\n\nI\'m CourseConnect AI, your study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat\'s on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What\'s the best way to study for exams?"',
                 }
             );
         }
