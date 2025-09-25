@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
+import { AIResponse } from '@/components/ai-response';
 import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { auth } from "@/lib/firebase/client";
