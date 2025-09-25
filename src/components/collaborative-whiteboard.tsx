@@ -17,10 +17,6 @@ import {
   Type, 
   Palette, 
   Users, 
-  Mic, 
-  MicOff, 
-  Video, 
-  VideoOff, 
   Share, 
   Download, 
   Upload, 
@@ -98,8 +94,6 @@ export function CollaborativeWhiteboard() {
   const [whiteboardElements, setWhiteboardElements] = useState<WhiteboardElement[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
   const [currentTool, setCurrentTool] = useState<DrawingTool>({
     type: 'pen',
     color: '#000000',
@@ -212,16 +206,31 @@ export function CollaborativeWhiteboard() {
     
     const currentPoint = getMousePos(e);
     
-    ctx.beginPath();
-    ctx.moveTo(lastPoint?.x || currentPoint.x, lastPoint?.y || currentPoint.y);
-    ctx.lineTo(currentPoint.x, currentPoint.y);
-    ctx.strokeStyle = currentTool.color;
-    ctx.lineWidth = currentTool.size;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-    
-    setLastPoint(currentPoint);
+    if (currentTool.type === 'pen') {
+      if (lastPoint) {
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(currentPoint.x, currentPoint.y);
+        ctx.strokeStyle = currentTool.color;
+        ctx.lineWidth = currentTool.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+      setLastPoint(currentPoint);
+    } else if (currentTool.type === 'eraser') {
+      if (lastPoint) {
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(currentPoint.x, currentPoint.y);
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = currentTool.size * 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+      setLastPoint(currentPoint);
+    }
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -237,7 +246,10 @@ export function CollaborativeWhiteboard() {
     saveCanvasState();
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e?: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDrawing && e && (currentTool.type === 'rectangle' || currentTool.type === 'circle')) {
+      drawShape(e);
+    }
     setIsDrawing(false);
     setLastPoint(null);
   };
@@ -598,23 +610,6 @@ export function CollaborativeWhiteboard() {
     });
   };
 
-  const toggleVoice = () => {
-    setIsVoiceEnabled(!isVoiceEnabled);
-    
-    toast({
-      title: isVoiceEnabled ? "Voice Disabled" : "Voice Enabled",
-      description: isVoiceEnabled ? "Your microphone is now off" : "Your microphone is now on",
-    });
-  };
-
-  const toggleVideo = () => {
-    setIsVideoEnabled(!isVideoEnabled);
-    
-    toast({
-      title: isVideoEnabled ? "Video Disabled" : "Video Enabled",
-      description: isVideoEnabled ? "Your camera is now off" : "Your camera is now on",
-    });
-  };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentSession) return;
@@ -699,10 +694,9 @@ export function CollaborativeWhiteboard() {
       </div>
 
       <Tabs defaultValue="whiteboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="whiteboard">Whiteboard</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
-          <TabsTrigger value="tools">Tools</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -785,23 +779,10 @@ export function CollaborativeWhiteboard() {
                           variant={isRecording ? 'destructive' : 'outline'}
                           size="sm"
                           onClick={toggleRecording}
+                          className="flex items-center gap-2"
                         >
                           {isRecording ? <StopIcon className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                          {isRecording ? 'Stop' : 'Record'}
-                        </Button>
-                        <Button
-                          variant={isVoiceEnabled ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={toggleVoice}
-                        >
-                          {isVoiceEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant={isVideoEnabled ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={toggleVideo}
-                        >
-                          {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                          {isRecording ? 'Stop Recording' : 'Start Recording'}
                         </Button>
                       </div>
                     </div>
@@ -818,9 +799,9 @@ export function CollaborativeWhiteboard() {
                         height={500}
                         className="w-full h-full cursor-crosshair"
                         onMouseDown={startDrawing}
-                        onMouseUp={stopDrawing}
+                        onMouseUp={(e) => stopDrawing(e)}
                         onMouseMove={draw}
-                        onMouseLeave={stopDrawing}
+                        onMouseLeave={() => stopDrawing()}
                       />
                       
                       {/* Grid overlay */}
@@ -1047,67 +1028,6 @@ export function CollaborativeWhiteboard() {
           </div>
         </TabsContent>
 
-        {/* Tools Tab */}
-        <TabsContent value="tools" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Drawing Tools
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Drawing Tool</Label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {['pen', 'eraser', 'rectangle', 'circle', 'text'].map((tool) => (
-                      <Button
-                        key={tool}
-                        variant={currentTool.type === tool ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setCurrentTool({ ...currentTool, type: tool as any })}
-                        className="flex flex-col items-center gap-1 h-16"
-                      >
-                        {getToolIcon(tool)}
-                        <span className="text-xs capitalize">{tool}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Color Palette</Label>
-                  <div className="grid grid-cols-6 gap-2">
-                    {['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'].map((color) => (
-                      <button
-                        key={color}
-                        className={`w-8 h-8 rounded border-2 ${
-                          currentTool.color === color ? 'border-primary' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setCurrentTool({ ...currentTool, color })}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Brush Size: {currentTool.size}px</Label>
-                <input
-                  type="range"
-                  min="1"
-                  max="20"
-                  value={currentTool.size}
-                  onChange={(e) => setCurrentTool({ ...currentTool, size: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-4">
           <Card>
@@ -1119,32 +1039,6 @@ export function CollaborativeWhiteboard() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Voice Chat</Label>
-                    <p className="text-sm text-muted-foreground">Enable microphone for voice communication</p>
-                  </div>
-                  <Button
-                    variant={isVoiceEnabled ? 'default' : 'outline'}
-                    onClick={toggleVoice}
-                  >
-                    {isVoiceEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                  </Button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Video Chat</Label>
-                    <p className="text-sm text-muted-foreground">Enable camera for video communication</p>
-                  </div>
-                  <Button
-                    variant={isVideoEnabled ? 'default' : 'outline'}
-                    onClick={toggleVideo}
-                  >
-                    {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-                  </Button>
-                </div>
-                
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Session Recording</Label>
