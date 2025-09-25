@@ -4,13 +4,6 @@
  * Handles extraction of text from various document formats
  */
 
-import * as pdfjsLib from 'pdfjs-dist';
-import * as mammoth from 'mammoth';
-import Tesseract from 'tesseract.js';
-
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-
 export interface DocumentText {
   text: string;
   format: 'pdf' | 'docx' | 'txt' | 'image';
@@ -28,9 +21,21 @@ export class DocumentProcessor {
    * Extract text from PDF document
    */
   static async extractFromPDF(file: File): Promise<DocumentText> {
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Configure PDF.js worker with local file
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+      const pdf = await pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        useSystemFonts: true,
+        disableFontFace: true,
+        disableRange: true,
+        disableStream: true
+      }).promise;
       
       let fullText = '';
       const pageCount = pdf.numPages;
@@ -61,6 +66,9 @@ export class DocumentProcessor {
    * Extract text from DOCX document
    */
   static async extractFromDOCX(file: File): Promise<DocumentText> {
+    // Dynamic import to avoid SSR issues
+    const mammoth = await import('mammoth');
+    
     try {
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
@@ -98,8 +106,11 @@ export class DocumentProcessor {
    * Extract text from image using OCR
    */
   static async extractFromImage(file: File): Promise<DocumentText> {
+    // Dynamic import to avoid SSR issues
+    const Tesseract = await import('tesseract.js');
+    
     try {
-      const { data: { text, confidence } } = await Tesseract.recognize(file, 'eng', {
+      const { data: { text, confidence } } = await Tesseract.default.recognize(file, 'eng', {
         logger: m => console.log(m)
       });
       

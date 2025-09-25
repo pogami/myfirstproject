@@ -190,13 +190,19 @@ async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
     console.log('Buffer size:', buffer.byteLength);
     
     // Dynamic import to avoid server-side issues
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
+    const pdfjsLib = await import('pdfjs-dist');
     
-    // Set up the worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    // Set up the worker - use the local worker file
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     
     // Load the PDF document
-    const loadingTask = pdfjsLib.getDocument({ data: buffer });
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: buffer,
+      useSystemFonts: true,
+      disableFontFace: true,
+      disableRange: true,
+      disableStream: true
+    });
     const pdf = await loadingTask.promise;
     
     console.log('PDF loaded, pages:', pdf.numPages);

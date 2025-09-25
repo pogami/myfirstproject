@@ -34,6 +34,7 @@ import {
 import { HamburgerMenu } from '@/components/hamburger-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useTextExtraction } from '@/hooks/use-text-extraction';
+import { useSmartDocumentAnalysis } from '@/hooks/use-smart-document-analysis';
 import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
 import MathRender from '@/components/math-render';
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
@@ -1250,6 +1251,25 @@ What would you like to learn about today?`;
     }
   });
 
+  const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
+    onAnalysisComplete: async (result, fileName) => {
+      // Add AI analysis as a message
+      const analysisMessage: AIMessage = {
+        id: (Date.now() + 3).toString(),
+        role: 'assistant',
+        content: `🤖 **AI Analysis of ${fileName}**\n\n${result.summary}`,
+        type: 'text',
+        timestamp: new Date(),
+        subject: selectedTutor?.name || currentSubject,
+        difficulty: userLevel
+      };
+      setMessages(prev => [...prev, analysisMessage]);
+    },
+    onAnalysisError: (error, fileName) => {
+      console.error('Document analysis failed:', error);
+    }
+  });
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1294,36 +1314,8 @@ What would you like to learn about today?`;
       setIsProcessing(true);
       setIsTyping(true);
       
-      // Extract text from the file first
-      const extractionResult = await extractText(file);
-      
-      if (extractionResult?.success) {
-        // Text extraction was successful - the hook will handle adding the extracted text message
-        toast({
-          title: "File Processed",
-          description: "Text extracted successfully from your file.",
-        });
-      } else {
-        // Fallback to AI analysis if text extraction fails
-        const analysisResponse = await analyzeFileWithAI(file, base64, selectedTutor);
-        
-        const assistantMessage: AIMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: analysisResponse,
-          type: 'text',
-          timestamp: new Date(),
-          subject: selectedTutor?.name || currentSubject,
-          difficulty: userLevel
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-        
-        toast({
-          title: "Analysis Complete",
-          description: "I've analyzed your file and provided detailed insights.",
-        });
-      }
+      // Use smart document analysis
+      await analyzeDocument(file);
       
     } catch (error) {
       console.error('Error processing file:', error);
@@ -1333,8 +1325,8 @@ What would you like to learn about today?`;
         description: "Could not process the file. Please try again.",
       });
     } finally {
-      setIsProcessing(false);
-      setIsTyping(false);
+        setIsProcessing(false);
+        setIsTyping(false);
     }
   };
 

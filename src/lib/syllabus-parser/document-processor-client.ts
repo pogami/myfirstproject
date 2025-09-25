@@ -24,12 +24,18 @@ export class DocumentProcessorClient {
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Configure PDF.js worker with CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    // Configure PDF.js worker with local file
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+      const pdf = await pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        useSystemFonts: true,
+        disableFontFace: true,
+        disableRange: true,
+        disableStream: true
+      }).promise;
       
       let fullText = '';
       const pageCount = pdf.numPages;

@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
+import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EnhancedFileDisplay } from "@/components/enhanced-file-display";
@@ -647,6 +648,23 @@ export default function ChatInterface() {
         }
     });
 
+    const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
+        onAnalysisComplete: async (result, fileName) => {
+            // Add AI analysis as a message
+            const analysisMessage = {
+                id: (Date.now() + 3).toString(),
+                text: `🤖 **AI Analysis of ${fileName}**\n\n${result.summary}`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                timestamp: Date.now() + 3
+            };
+            await addMessage(currentTab!, analysisMessage);
+        },
+        onAnalysisError: (error, fileName) => {
+            console.error('Document analysis failed:', error);
+        }
+    });
+
     const handleFileUpload = async (file: File) => {
         if (!currentTab) return;
 
@@ -702,59 +720,67 @@ export default function ChatInterface() {
         // Add file message to chat
         await addMessage(currentTab, fileMessage);
 
-        // Extract text from the file
-        const extractionResult = await extractText(file);
-        
-        if (extractionResult?.success) {
-            // Text extraction was successful - the hook will handle adding the extracted text message
-            toast({
-                title: "File Uploaded",
-                description: `${file.name} has been uploaded and text extracted.`,
-            });
-        } else {
-            // Fallback to AI analysis if text extraction fails
-            toast({
-                title: "File Uploaded",
-                description: `${file.name} has been uploaded successfully.`,
-            });
+        // Use smart document analysis
+        await analyzeDocument(file);
+    };
 
-            try {
-                const analysisResult = await fileAnalysisService.analyzeFile({ file });
-                
-                if (analysisResult.success && analysisResult.content) {
-                    const analysisMessage = {
-                        id: (Date.now() + 1).toString(),
-                        text: `I've analyzed your file "${file.name}". Here's what I found:\n\n${analysisResult.content}`,
-                        sender: 'bot' as const,
-                        name: 'AI',
-                        timestamp: Date.now() + 1
-                    };
-                    
-                    await addMessage(currentTab, analysisMessage);
-                } else {
-                    const errorMessage = {
-                        id: (Date.now() + 1).toString(),
-                        text: `I received your file "${file.name}" but encountered an issue analyzing it: ${analysisResult.error || 'Unknown error'}. You can still ask me questions about it!`,
-                        sender: 'bot' as const,
-                        name: 'AI',
-                        timestamp: Date.now() + 1
-                    };
-                    
-                    await addMessage(currentTab, errorMessage);
-                }
-            } catch (error) {
-                console.error('File analysis error:', error);
-                const fallbackMessage = {
-                    id: (Date.now() + 1).toString(),
-                    text: `I've received your file "${file.name}". While I couldn't analyze it automatically, you can ask me specific questions about it and I'll do my best to help!`,
-                    sender: 'bot' as const,
-                    name: 'CourseConnect AI',
-                    timestamp: Date.now() + 1
-                };
-                
-                await addMessage(currentTab, fallbackMessage);
-            }
+    const handleFileWithText = async (file: File, userPrompt: string) => {
+        if (!currentTab) return;
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            toast({
+                variant: "destructive",
+                title: "File Too Large",
+                description: "Please upload files smaller than 10MB.",
+            });
+            return;
         }
+
+        // Validate file type
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'text/plain',
+            'image/png',
+            'image/jpeg',
+            'image/jpg',
+            'image/gif',
+            'image/webp'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            toast({
+                variant: "destructive",
+                title: "Invalid File Type",
+                description: "Please upload PDF, Word documents, Excel files, text files, or images.",
+            });
+            return;
+        }
+
+        // Create combined message
+        const combinedMessage = {
+            id: Date.now().toString(),
+            text: `📎 **${file.name}** + "${userPrompt}"`,
+            sender: 'user' as const,
+            name: user?.displayName || 'Anonymous',
+            timestamp: Date.now(),
+            file: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: URL.createObjectURL(file)
+            }
+        };
+
+        // Add combined message to chat
+        await addMessage(currentTab, combinedMessage);
+
+        // Use smart document analysis with user prompt
+        await analyzeDocument(file, userPrompt);
     };
 
     const handleSendMessage = async (e: FormEvent) => {
@@ -1322,6 +1348,7 @@ export default function ChatInterface() {
                                             }
                                         }}
                                         onFileUpload={handleFileUpload}
+                                        onFileWithText={handleFileWithText}
                                         placeholder={
                                             isMuted 
                                                 ? `You're muted for ${Math.ceil((muteEndTime - Date.now()) / 1000)}s...`

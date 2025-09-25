@@ -12,6 +12,7 @@ interface FuturisticChatInputProps {
   onSend: () => void;
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFileUpload?: (file: File) => void;
+  onFileWithText?: (file: File, text: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -24,6 +25,7 @@ export function FuturisticChatInput({
   onSend,
   onKeyPress,
   onFileUpload,
+  onFileWithText,
   placeholder,
   disabled = false,
   className = "",
@@ -76,8 +78,14 @@ export function FuturisticChatInput({
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && onFileUpload) {
-      onFileUpload(file);
+    if (file) {
+      if (value.trim() && onFileWithText) {
+        // User has text + file - send both together
+        onFileWithText(file, value.trim());
+      } else if (onFileUpload) {
+        // Just file upload
+        onFileUpload(file);
+      }
     }
   };
 

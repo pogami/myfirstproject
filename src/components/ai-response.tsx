@@ -88,13 +88,13 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-background/80 hover:bg-background"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-background/50 text-muted-foreground"
                     onClick={() => copyToClipboard(codeText, blockId)}
                   >
                     {isCopied ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-green-500" />
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <img src="/copy-icon.svg" alt="Copy" className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
@@ -128,13 +128,13 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-background/80 hover:bg-background"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-background/50 text-muted-foreground"
                     onClick={() => copyToClipboard(codeText, blockId)}
                   >
                     {isCopied ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-green-500" />
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <img src="/copy-icon.svg" alt="Copy" className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
