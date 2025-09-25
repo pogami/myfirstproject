@@ -126,20 +126,38 @@ function detectFileType(fileType: string, fileName: string): FileType {
  */
 async function extractTextFromImage(file: File): Promise<TextExtractionResult> {
   try {
+    console.log('Starting image OCR for:', file.name);
+    console.log('Image type:', file.type, 'Size:', file.size);
+    
     // Convert file to buffer
     const buffer = await file.arrayBuffer();
+    console.log('Buffer size:', buffer.byteLength);
     
-    // Use Tesseract.js for OCR
+    // Use Tesseract.js for OCR with better configuration
     const { data: { text, confidence } } = await Tesseract.recognize(buffer, 'eng', {
       logger: m => {
         if (m.status === 'recognizing text') {
           console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
         }
-      }
+      },
+      // Add OCR configuration for better results
+      tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?;:()[]{}"\'@#$%^&*+-=<>/\\|`~_ \n\t'
     });
 
     const cleanedText = text.trim().replace(/\n\s*\n/g, '\n').trim();
     const wordCount = cleanedText.split(/\s+/).filter(word => word.length > 0).length;
+    
+    console.log('OCR completed. Text length:', cleanedText.length, 'Word count:', wordCount, 'Confidence:', confidence);
+
+    if (cleanedText.length === 0) {
+      return {
+        success: false,
+        text: '',
+        fileType: 'image',
+        error: 'No text could be extracted from this image. The image might be too blurry, have poor contrast, or contain no readable text.'
+      };
+    }
 
     return {
       success: true,
@@ -152,6 +170,7 @@ async function extractTextFromImage(file: File): Promise<TextExtractionResult> {
       }
     };
   } catch (error: any) {
+    console.error('OCR processing error:', error);
     return {
       success: false,
       text: '',
@@ -162,7 +181,7 @@ async function extractTextFromImage(file: File): Promise<TextExtractionResult> {
 }
 
 /**
- * Extract text from PDF files
+ * Extract text from PDF files using pdfjs-dist
  */
 async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
   try {
@@ -171,36 +190,55 @@ async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
     console.log('Buffer size:', buffer.byteLength);
     
     // Dynamic import to avoid server-side issues
-    const pdfParse = await import('pdf-parse');
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
     
-    // Try to extract text directly first
-    const pdfData = await pdfParse.default(buffer);
-    console.log('PDF parse result:', pdfData);
+    // Set up the worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
     
-    if (pdfData.text && pdfData.text.trim().length > 0) {
-      // PDF has selectable text
-      const wordCount = pdfData.text.split(/\s+/).filter(word => word.length > 0).length;
-      console.log('Extracted text length:', pdfData.text.length, 'Word count:', wordCount);
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({ data: buffer });
+    const pdf = await loadingTask.promise;
+    
+    console.log('PDF loaded, pages:', pdf.numPages);
+    
+    let fullText = '';
+    const pageCount = pdf.numPages;
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Combine text items
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      fullText += pageText + '\n';
+      console.log(`Page ${pageNum} text length:`, pageText.length);
+    }
+    
+    if (fullText.trim().length > 0) {
+      const wordCount = fullText.split(/\s+/).filter(word => word.length > 0).length;
+      console.log('Total extracted text length:', fullText.length, 'Word count:', wordCount);
       
       return {
         success: true,
-        text: pdfData.text.trim(),
+        text: fullText.trim(),
         fileType: 'pdf',
         metadata: {
-          pageCount: pdfData.numpages,
+          pageCount,
           wordCount,
           language: 'en'
         }
       };
     } else {
-      // PDF is scanned (images) - would need pdf2image + OCR
-      // For now, return a message asking user to describe the content
-      console.log('PDF appears to be scanned (no selectable text)');
+      console.log('No text content found in PDF');
       return {
         success: false,
         text: '',
         fileType: 'pdf',
-        error: 'This appears to be a scanned PDF. Please describe the content or share the text manually.'
+        error: 'No text content found in the PDF. This might be a scanned PDF.'
       };
     }
   } catch (error: any) {
