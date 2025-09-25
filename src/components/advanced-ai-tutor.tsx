@@ -27,7 +27,6 @@ import {
   Code,
   History,
   Music,
-  Palette,
   Zap,
   Brain,
   MessageSquare,
@@ -41,7 +40,6 @@ import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
 import { AIStudyScheduleGenerator } from '@/components/ai-study-schedule-generator';
 import { SmartDocumentScanner } from '@/components/smart-document-scanner';
-import { CollaborativeWhiteboard } from '@/components/collaborative-whiteboard';
 
 interface AIMessage {
   id: string;
@@ -85,7 +83,7 @@ export function AdvancedAITutor({
   const [isTyping, setIsTyping] = useState(false);
   const [showInDepth, setShowInDepth] = useState(false);
   const [lastQuestion, setLastQuestion] = useState('');
-  const [activeTab, setActiveTab] = useState<'chat' | 'schedule' | 'scanner' | 'whiteboard'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'schedule' | 'scanner'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -1399,20 +1397,11 @@ I'm here to help you understand whatever concepts are presented in this visual m
           <Camera className="h-4 w-4" />
           Document Scanner
         </Button>
-        <Button
-          variant={activeTab === 'whiteboard' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('whiteboard')}
-          className="flex items-center gap-2"
-        >
-          <Palette className="h-4 w-4" />
-          Whiteboard
-        </Button>
       </div>
 
       {/* Render appropriate component based on active tab */}
       {activeTab === 'schedule' && <AIStudyScheduleGenerator />}
       {activeTab === 'scanner' && <SmartDocumentScanner />}
-      {activeTab === 'whiteboard' && <CollaborativeWhiteboard />}
 
       {/* AI Chat Tab Content */}
       {activeTab === 'chat' && (
