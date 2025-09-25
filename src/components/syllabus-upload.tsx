@@ -561,42 +561,101 @@ export default function SyllabusUpload() {
                             </span>
                         </div>
                         {parsingResult && (
-                            <div className="mt-2 p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 rounded-lg border border-green-200/50 dark:border-green-800/50">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                    <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                            <div className="mt-4 p-4 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/30 dark:via-emerald-950/20 dark:to-teal-950/30 rounded-xl border border-green-200/60 dark:border-green-700/40 shadow-lg backdrop-blur-sm">
+                                {/* Header */}
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="relative">
+                                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                        <div className="absolute inset-0 w-3 h-3 bg-green-400 rounded-full animate-ping opacity-30"></div>
+                                    </div>
+                                    <span className="text-sm font-semibold text-green-800 dark:text-green-200">
                                         AI Analysis Complete
                                     </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-muted-foreground">Confidence:</span>
-                                        <span className={`font-medium ${
-                                            (parsingResult.confidence || 0) > 0.8 ? 'text-green-600' : 
-                                            (parsingResult.confidence || 0) > 0.6 ? 'text-yellow-600' : 'text-orange-600'
-                                        }`}>
-                                            {Math.round((parsingResult.confidence || 0) * 100)}%
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-muted-foreground">Status:</span>
-                                        <span className={`font-medium ${
-                                            parsingResult.success ? 'text-green-600' : 'text-orange-600'
+                                    <div className="ml-auto">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                            parsingResult.success ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
                                         }`}>
                                             {parsingResult.success ? 'Success' : 'Review Needed'}
                                         </span>
                                     </div>
                                 </div>
-                                {parsingResult.data && (
-                                    <div className="mt-2 text-xs text-muted-foreground">
-                                        <p>✅ Course: {parsingResult.data.courseInfo?.title || 'Detected'}</p>
-                                        <p>✅ Code: {parsingResult.data.courseInfo?.courseCode || 'Detected'}</p>
+                                
+                                {/* Confidence Score */}
+                                <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Confidence Score</span>
+                                        <span className={`text-sm font-bold ${
+                                            (parsingResult.confidence || 0) > 0.8 ? 'text-green-600 dark:text-green-400' : 
+                                            (parsingResult.confidence || 0) > 0.6 ? 'text-yellow-600 dark:text-yellow-400' : 'text-orange-600 dark:text-orange-400'
+                                        }`}>
+                                            {Math.round((parsingResult.confidence || 0) * 100)}%
+                                        </span>
                                     </div>
-                                )}
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div 
+                                            className={`h-2 rounded-full transition-all duration-500 ${
+                                                (parsingResult.confidence || 0) > 0.8 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 
+                                                (parsingResult.confidence || 0) > 0.6 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' : 'bg-gradient-to-r from-orange-500 to-red-500'
+                                            }`}
+                                            style={{ width: `${(parsingResult.confidence || 0) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                                
+                                {/* Extracted Information */}
+                                <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">Extracted Course Information</h4>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {parsingResult.data?.courseInfo?.title && (
+                                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-200/40 dark:border-green-700/30">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Course</div>
+                                                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{parsingResult.data.courseInfo.title}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {parsingResult.data?.courseInfo?.courseCode && (
+                                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-200/40 dark:border-green-700/30">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Code</div>
+                                                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{parsingResult.data.courseInfo.courseCode}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {parsingResult.data?.courseInfo?.instructor && (
+                                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-200/40 dark:border-green-700/30">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Instructor</div>
+                                                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{parsingResult.data.courseInfo.instructor}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {parsingResult.data?.courseInfo?.credits && (
+                                            <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-gray-800/40 rounded-lg border border-green-200/40 dark:border-green-700/30">
+                                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <div className="flex-1">
+                                                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Credits</div>
+                                                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{parsingResult.data.courseInfo.credits}</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {/* Errors */}
                                 {parsingResult.errors && parsingResult.errors.length > 0 && (
-                                    <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded text-xs">
-                                        <p className="text-orange-700 dark:text-orange-300">
-                                            ⚠️ {parsingResult.errors.length} minor issues detected
+                                    <div className="mt-4 p-3 bg-orange-50/80 dark:bg-orange-950/30 rounded-lg border border-orange-200/50 dark:border-orange-700/40">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                            <span className="text-xs font-semibold text-orange-800 dark:text-orange-200">
+                                                Minor Issues Detected
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-orange-700 dark:text-orange-300">
+                                            {parsingResult.errors.length} issue{parsingResult.errors.length > 1 ? 's' : ''} found - review recommended
                                         </p>
                                     </div>
                                 )}
