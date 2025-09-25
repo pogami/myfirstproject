@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Brain, BookOpen, Target, TrendingUp, Clock, Star, Users, MessageCircle } from 'lucide-react';
+import { CourseConnectLogo } from '@/components/icons/courseconnect-logo';
 import { AdvancedAIScholarService } from '@/services/advanced-ai-scholar-service';
 import { UserProfile, ClassTutorProfile } from '@/types/user-profile';
 import { cn } from '@/lib/utils';
@@ -131,7 +132,7 @@ export function PersonalizedAITutor({
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 border-2 border-primary/20">
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white font-bold text-lg">
-              <Brain className="h-6 w-6" />
+              <CourseConnectLogo className="h-6 w-6" />
             </AvatarFallback>
           </Avatar>
           <div>
