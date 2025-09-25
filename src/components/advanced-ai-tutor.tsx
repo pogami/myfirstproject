@@ -36,6 +36,8 @@ import {
 import { HamburgerMenu } from '@/components/hamburger-menu';
 import { useToast } from '@/hooks/use-toast';
 import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
+import MathRender from '@/components/math-render';
+import { isMathOrPhysicsContent } from '@/utils/math-detection';
 
 interface AIMessage {
   id: string;
@@ -1486,7 +1488,18 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 )}
                 {message.role === 'assistant' ? (
                   <div className="px-3 pb-3">
-                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    <div className="whitespace-pre-wrap text-sm">
+                      {isMathOrPhysicsContent(message.content) ? (
+                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-2">
+                          <div className="text-sm text-blue-800 dark:text-blue-200 mb-2 font-medium">
+                            📐 Math Solution:
+                          </div>
+                          <MathRender input={message.content} displayMode={true} />
+                        </div>
+                      ) : (
+                        message.content
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <MessageTimestamp timestamp={message.timestamp.getTime()} />
                       {message.subject && (
