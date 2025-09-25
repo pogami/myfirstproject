@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Star, Zap, Crown, Users, BookOpen, Brain, BarChart3, Calendar, Music, Camera, Mic } from 'lucide-react';
+import { Check, X, Star, Zap, Crown, Users, BookOpen, Brain, BarChart3, Calendar, Music, Camera, Mic, Target, TrendingUp, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 interface PricingPlan {
@@ -51,29 +51,30 @@ export function Pricing() {
       href: '/dashboard'
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: isAnnual ? '$9.99' : '$11.99',
-      period: isAnnual ? '/month' : '/month',
-      description: 'Advanced features for serious students',
-      icon: <Crown className="h-6 w-6" />,
-      color: 'bg-purple-500',
+      id: 'advanced-ai-scholar',
+      name: 'Advanced AI Scholar',
+      price: '$5',
+      period: '/month',
+      description: 'Personalized AI tutoring with persistent memory',
+      icon: <Brain className="h-6 w-6" />,
+      color: 'bg-gradient-to-r from-purple-500 to-blue-500',
       popular: true,
       features: [
-        'Unlimited AI tutor conversations',
-        'Advanced AI tutor with specialized subjects',
+        'Persistent memory across conversations',
+        'Learning preferences & study style adaptation',
+        'Class-specific AI tutors',
+        'Context continuity ("Last time we discussed...")',
+        'Personalized study plans based on history',
+        'Smart reminders & progress tracking',
+        'Mastery level tracking per topic',
+        'Struggling topics identification',
+        'Unlimited AI conversations',
         'Voice input & image analysis',
-        'Grade prediction system',
-        'Multi-modal AI processing',
-        'Google Calendar integration',
-        'Spotify focus music',
-        'Enhanced study groups',
-        'Advanced analytics & insights',
         'Priority support',
         'Early access to new features'
       ],
       limitations: [],
-      cta: 'Upgrade to Pro',
+      cta: 'Upgrade to Advanced AI Scholar',
       href: '/dashboard/advanced'
     },
     {
@@ -103,33 +104,33 @@ export function Pricing() {
   const advancedFeatures = [
     {
       icon: <Brain className="h-5 w-5" />,
-      title: 'Advanced AI Tutor',
-      description: 'Specialized tutors for Math, Science, Programming, and more'
+      title: 'Persistent Memory',
+      description: 'AI remembers your learning preferences and conversation history'
     },
     {
-      icon: <Mic className="h-5 w-5" />,
-      title: 'Voice Input',
-      description: 'Ask questions using your voice with speech recognition'
+      icon: <BookOpen className="h-5 w-5" />,
+      title: 'Class-Specific Tutors',
+      description: 'Personalized AI tutors tailored to each of your classes'
     },
     {
-      icon: <Camera className="h-5 w-5" />,
-      title: 'Image Analysis',
-      description: 'Upload diagrams, equations, and images for AI analysis'
+      icon: <Target className="h-5 w-5" />,
+      title: 'Learning Preferences',
+      description: 'Adapts to your study style, difficulty level, and goals'
     },
     {
-      icon: <BarChart3 className="h-5 w-5" />,
-      title: 'Grade Predictions',
-      description: 'AI-powered grade predictions with personalized recommendations'
+      icon: <TrendingUp className="h-5 w-5" />,
+      title: 'Progress Tracking',
+      description: 'Tracks mastery levels and identifies struggling topics'
     },
     {
-      icon: <Calendar className="h-5 w-5" />,
-      title: 'Calendar Integration',
-      description: 'Sync with Google Calendar for better time management'
+      icon: <Clock className="h-5 w-5" />,
+      title: 'Smart Reminders',
+      description: 'Contextual reminders based on your learning history'
     },
     {
-      icon: <Music className="h-5 w-5" />,
-      title: 'Focus Music',
-      description: 'Curated study playlists and ambient sounds for concentration'
+      icon: <Star className="h-5 w-5" />,
+      title: 'Personalized Plans',
+      description: 'Custom study plans based on your performance and goals'
     }
   ];
 
