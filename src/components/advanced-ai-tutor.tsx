@@ -1489,16 +1489,29 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 {message.role === 'assistant' ? (
                   <div className="px-3 pb-3">
                     <div className="whitespace-pre-wrap text-sm">
-                      {isMathOrPhysicsContent(message.content) ? (
-                        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-2">
-                          <div className="text-sm text-blue-800 dark:text-blue-200 mb-2 font-medium">
-                            📐 Math Solution:
-                          </div>
-                          <MathRender input={message.content} displayMode={true} />
-                        </div>
-                      ) : (
-                        message.content
-                      )}
+                      {(() => {
+                        // Check if this is a final answer/solution from AI
+                        const isFinalAnswer = message.content.toLowerCase().includes('answer:') || 
+                                            message.content.toLowerCase().includes('solution:') ||
+                                            message.content.toLowerCase().includes('final answer:') ||
+                                            message.content.toLowerCase().includes('therefore') ||
+                                            message.content.toLowerCase().includes('so the answer is') ||
+                                            message.content.toLowerCase().includes('the result is') ||
+                                            (isMathOrPhysicsContent(message.content) && 
+                                             (message.content.includes('=') || message.content.includes('equals')));
+                        
+                        if (isFinalAnswer && isMathOrPhysicsContent(message.content)) {
+                          return (
+                            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-2">
+                              <div className="text-sm text-blue-800 dark:text-blue-200 mb-2 font-medium">
+                                📐 Final Answer:
+                              </div>
+                              <MathRender input={message.content} displayMode={true} />
+                            </div>
+                          );
+                        }
+                        return message.content;
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <MessageTimestamp timestamp={message.timestamp.getTime()} />
