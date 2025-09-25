@@ -271,7 +271,7 @@ function generateFallbackAnalysis(params: {
 
 ---
 
-${tutorSpecialty !== 'General' ? `**Specialized ${tutorSpecialty} Support:**\nAs your ${tutorSpecialty} tutor specializing in ${tutorDescription}, I'm ready to provide expert analysis once you describe the content!` : '**General Support:**\nI'm ready to help with any subject once you describe what you see in the image!'}
+${tutorSpecialty !== 'General' ? `**Specialized ${tutorSpecialty} Support:**\nAs your ${tutorSpecialty} tutor specializing in ${tutorDescription}, I'm ready to provide expert analysis once you describe the content!` : '**General Support:**\nI\'m ready to help with any subject once you describe what you see in the image!'}
 
 **Ready to help!** Just describe what you see, and I'll provide comprehensive analysis and explanations.`;
 }
