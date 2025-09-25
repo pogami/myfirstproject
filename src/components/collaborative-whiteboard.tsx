@@ -286,6 +286,31 @@ export function CollaborativeWhiteboard() {
     ctx.stroke();
   };
 
+  const saveWhiteboard = async () => {
+    if (!currentSession) return;
+
+    try {
+      // Save whiteboard state to Firebase
+      const whiteboardRef = doc(db, 'whiteboardSessions', currentSession.id);
+      await updateDoc(whiteboardRef, {
+        whiteboardElements,
+        lastModified: new Date().toISOString()
+      });
+
+      toast({
+        title: "Whiteboard Saved!",
+        description: "Your whiteboard has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving whiteboard:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save whiteboard. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -553,31 +578,6 @@ export function CollaborativeWhiteboard() {
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const saveWhiteboard = async () => {
-    if (!currentSession) return;
-
-    try {
-      // Save whiteboard state to Firebase
-      const whiteboardRef = doc(db, 'whiteboardSessions', currentSession.id);
-      await updateDoc(whiteboardRef, {
-        whiteboardElements,
-        lastModified: new Date().toISOString()
-      });
-
-      toast({
-        title: "Whiteboard Saved!",
-        description: "Your whiteboard has been saved successfully.",
-      });
-    } catch (error) {
-      console.error('Error saving whiteboard:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save whiteboard. Please try again.",
         variant: "destructive"
       });
     }
