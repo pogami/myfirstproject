@@ -48,7 +48,13 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   style={isDark ? oneDark : oneLight}
                   language={language}
                   PreTag="div"
-                  className="rounded-md border"
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  customStyle={{
+                    margin: '8px 0',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    lineHeight: '1.5'
+                  }}
                   {...props}
                 >
                   {String(children).replace(/\n$/, '')}
@@ -61,7 +67,13 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   style={isDark ? oneDark : oneLight}
                   language="text"
                   PreTag="div"
-                  className="rounded-md border"
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  customStyle={{
+                    margin: '8px 0',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    lineHeight: '1.5'
+                  }}
                   {...props}
                 >
                   {String(children).replace(/\n$/, '')}
