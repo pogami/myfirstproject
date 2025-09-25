@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
@@ -22,6 +22,8 @@ import {
 import MathRender from './math-render';
 import BotResponse from './bot-response';
 import { TruncatedText } from './truncated-text';
+import { Copy, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AIResponseRendererProps {
   content: string;
@@ -38,6 +40,20 @@ interface ParsedResponse {
 }
 
 export function AIResponseRenderer({ content, className = "" }: AIResponseRendererProps) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setIsCopied(true);
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   // First try the new BotResponse component for simple math and graph detection
   const isSimpleMathOrGraph = (text: string): boolean => {
     // Check for simple math patterns (single $ or $$)
@@ -454,13 +470,27 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
   const parsedResponse = parseResponse(content);
 
   return (
-    <div className={className}>
+    <div className={`relative ${className}`}>
       {parsedResponse.type === 'text' && (
-        <TruncatedText 
-          text={parsedResponse.content}
-          maxLength={300}
-          className="ai-response"
-        />
+        <div className="relative">
+          <TruncatedText 
+            text={parsedResponse.content}
+            maxLength={300}
+            className="ai-response"
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background/80 hover:bg-background"
+            onClick={copyToClipboard}
+          >
+            {isCopied ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       )}
       
       {parsedResponse.type === 'code' && (
