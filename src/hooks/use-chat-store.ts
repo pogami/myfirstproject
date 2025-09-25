@@ -371,9 +371,14 @@ export const useChatStore = create<ChatState>()(
         const chat = get().chats[chatId];
         if (!chat) return;
 
-        // Keep only the welcome message
-        const welcomeMessage = chat.messages.find(m => m.text.includes('Welcome to') && (m.text.includes('Chat Guidelines') || m.text.includes('Quick Start')));
-        const resetMessages = welcomeMessage ? [welcomeMessage] : [];
+        // Clear all messages and add new welcome message
+        const newWelcomeMessage = {
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: 'Welcome to General Chat! 🎓\n\nQuick Start: Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\nSubjects: Math, Science, English, History, Computer Science & more.',
+          timestamp: Date.now()
+        };
+        const resetMessages = [newWelcomeMessage];
 
         // Update local state
         set((state) => ({
