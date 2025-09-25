@@ -132,7 +132,7 @@ export function ProfileHoverCard({
     <>
       <div
         ref={containerRef}
-        className={cn("inline-block relative border-2 border-red-500", className)}
+        className={cn("inline-block relative", className)}
         onMouseEnter={showCard}
         onMouseLeave={hideCard}
         style={{ zIndex: 1 }}
