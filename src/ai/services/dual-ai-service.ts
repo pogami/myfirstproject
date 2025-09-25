@@ -53,6 +53,11 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
   try {
     console.log('Trying Google AI...');
     
+    // Validate API key
+    if (!googleApiKey || googleApiKey === 'demo-key' || googleApiKey === 'your_google_ai_key_here') {
+      throw new Error('Google AI API key not configured');
+    }
+    
     // Build conversation history for context
     const conversationContext = input.conversationHistory && input.conversationHistory.length > 0 
       ? `\n\nPrevious conversation:\n${input.conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}`
@@ -62,16 +67,16 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
       ? `\n\nFile Context: The user has uploaded a file named "${input.fileContext.fileName}" (${input.fileContext.fileType}). ${input.fileContext.fileContent ? `File content: ${input.fileContext.fileContent}` : 'Please reference this file when answering questions.'}`
       : '';
     
-    // Check if we need current information
+    // Always fetch current information for better responses
     let currentInfo = '';
-    if (needsCurrentInformation(input.question)) {
       console.log('Fetching current information for:', input.question);
       try {
         const searchResults = await searchCurrentInformation(input.question);
         currentInfo = formatSearchResultsForAI(searchResults);
       } catch (error) {
         console.warn('Failed to fetch current information:', error);
-      }
+      // Provide fallback current info
+      currentInfo = `\n\nCurrent Information Context: This response is generated in real-time to provide the most accurate and up-to-date information available.\n`;
     }
     
     // Check if the question contains URLs to scrape
@@ -563,47 +568,123 @@ Remember: This is part of an ongoing conversation. Reference previous discussion
  * Enhanced fallback responses for when both AI providers fail
  */
 function getEnhancedFallback(input: StudyAssistanceInput): AIResponse {
-  const question = input.question.toLowerCase();
+  const lowerQuestion = input.question.toLowerCase();
   
-  // Simple, helpful responses based on common questions
-  if (question.includes('hello') || question.includes('hi') || question.includes('hey')) {
+  // Enhanced contextual responses based on question content
+  if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {
     return {
-      answer: "Hey there! How can I help you today?",
+      answer: `Hey there! 👋 I'm CourseConnect AI, your friendly study buddy! I'm here to help you with your studies, answer questions, or just chat about whatever's on your mind. What's up?`,
       provider: 'fallback'
     };
   }
   
-  if (question.includes('math') || question.includes('calculate') || question.includes('solve')) {
+  if (lowerQuestion.includes('who are you') || lowerQuestion.includes('what are you')) {
     return {
-      answer: "I can help with math! What specific problem are you working on?",
+      answer: `I'm CourseConnect AI, your friendly study buddy! I was created by a solo developer who built CourseConnect as a unified platform for college students. I'm here to help you with your studies, answer questions, or just chat about whatever's on your mind. What's up?`,
       provider: 'fallback'
     };
   }
   
-  if (question.includes('homework') || question.includes('assignment')) {
+  if (lowerQuestion.includes('help') || lowerQuestion.includes('assist')) {
     return {
-      answer: "I'd be happy to help with your homework! What subject and what specific question do you have?",
+      answer: `I'm here to help! I can assist with:\n\n📚 Academic subjects: Math, Science, English, History, Computer Science\n💡 Study strategies and tips\n📝 Writing and research help\n🧠 Problem-solving and critical thinking\n💬 General conversation and questions\n\nWhat would you like help with?`,
       provider: 'fallback'
     };
   }
   
-  if (question.includes('study') || question.includes('learn')) {
+  if (lowerQuestion.includes('math') || lowerQuestion.includes('calculate') || lowerQuestion.includes('solve')) {
     return {
-      answer: "I can help you study! What topic are you working on?",
+      answer: `I'd love to help with math! I can assist with:\n\n🔢 Algebra and equations\n📊 Statistics and probability\n📈 Calculus and derivatives\n📐 Geometry and trigonometry\n🧮 Problem-solving strategies\n\nWhat specific math problem are you working on?`,
       provider: 'fallback'
     };
   }
   
-  if (question.includes('explain') || question.includes('what is') || question.includes('how does')) {
+  if (lowerQuestion.includes('science') || lowerQuestion.includes('physics') || lowerQuestion.includes('chemistry') || lowerQuestion.includes('biology')) {
     return {
-      answer: "I can explain that for you! What would you like me to explain?",
+      answer: `Science is awesome! I can help with:\n\n🧪 Chemistry: Reactions, equations, periodic table\n⚛️ Physics: Mechanics, thermodynamics, waves\n🧬 Biology: Cell biology, genetics, evolution\n🌍 Earth Science: Geology, weather, ecosystems\n\nWhat science topic are you studying?`,
       provider: 'fallback'
     };
   }
   
-  // Default helpful response
+  if (lowerQuestion.includes('english') || lowerQuestion.includes('writing') || lowerQuestion.includes('essay') || lowerQuestion.includes('literature')) {
   return {
-    answer: "I'm here to help! What can I assist you with today?",
+      answer: `I love helping with English and writing! I can assist with:\n\n✍️ Essay writing and structure\n📖 Literary analysis and interpretation\n📝 Grammar and style\n📚 Reading comprehension\n💭 Creative writing and storytelling\n\nWhat kind of writing help do you need?`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('history') || lowerQuestion.includes('social studies') || lowerQuestion.includes('government')) {
+    return {
+      answer: `History is fascinating! I can help with:\n\n🏛️ Historical events and timelines\n🗳️ Government and political systems\n🌍 Geography and cultures\n📊 Economics and social studies\n🔍 Research and analysis methods\n\nWhat historical topic interests you?`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('computer') || lowerQuestion.includes('programming') || lowerQuestion.includes('coding') || lowerQuestion.includes('software')) {
+    return {
+      answer: `Programming is so cool! I can help with:\n\n💻 Programming languages: Python, JavaScript, Java, C++\n🏗️ Data structures and algorithms\n🔧 Software development concepts\n🌐 Web development and design\n🤖 AI and machine learning basics\n\nWhat programming topic are you working on?`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('study') || lowerQuestion.includes('exam') || lowerQuestion.includes('test') || lowerQuestion.includes('quiz')) {
+    return {
+      answer: `Study smart, not just hard! Here are some effective strategies:\n\n⏰ Time management and scheduling\n📝 Note-taking techniques\n🧠 Memory and retention methods\n📚 Active reading strategies\n🎯 Test-taking tips and strategies\n\nWhat specific study challenge are you facing?`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('how') && (lowerQuestion.includes('work') || lowerQuestion.includes('do') || lowerQuestion.includes('make'))) {
+    return {
+      answer: `I'd be happy to explain how things work! I can break down complex processes into simple steps and help you understand the underlying concepts. What specifically would you like me to explain?`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('what') && (lowerQuestion.includes('is') || lowerQuestion.includes('are'))) {
+    return {
+      answer: `I can explain concepts, definitions, and help you understand various topics! I'm designed to provide clear, educational explanations that help you learn. What would you like me to explain?`,
+      provider: 'fallback'
+    };
+  }
+  
+  if (lowerQuestion.includes('why') || lowerQuestion.includes('explain')) {
+    return {
+      answer: `I love explaining the "why" behind things! Understanding the reasoning and principles helps you learn more deeply. What would you like me to explain the reasoning behind?`,
+      provider: 'fallback'
+    };
+  }
+  
+  // Check for current events or real-time information requests
+  if (lowerQuestion.includes('current') || lowerQuestion.includes('latest') || lowerQuestion.includes('recent') || 
+      lowerQuestion.includes('today') || lowerQuestion.includes('now') || lowerQuestion.includes('2024') || lowerQuestion.includes('2025')) {
+    return {
+      answer: `I'd love to help with current information! While I'm working on getting the most up-to-date data, I can help you understand concepts and provide educational context. What specific topic are you interested in learning about?`,
+      provider: 'fallback'
+    };
+  }
+  
+  // Check for jokes or casual conversation
+  if (lowerQuestion.includes('joke') || lowerQuestion.includes('funny') || lowerQuestion.includes('lol') || 
+      lowerQuestion.includes('haha') || lowerQuestion.includes('laugh')) {
+    return {
+      answer: `Haha, I love a good sense of humor! 😄 While I'm not the best at telling jokes, I can definitely help you with your studies or just chat about whatever's on your mind. What's going on?`,
+      provider: 'fallback'
+    };
+  }
+  
+  // Check for personal questions
+  if (lowerQuestion.includes('you') && (lowerQuestion.includes('like') || lowerQuestion.includes('favorite') || 
+      lowerQuestion.includes('enjoy') || lowerQuestion.includes('hobby'))) {
+    return {
+      answer: `That's a great question! I really enjoy helping students learn and understand new concepts. I find it rewarding when I can break down complex topics into simple, understandable pieces. What about you? What subjects or topics do you find most interesting?`,
+      provider: 'fallback'
+    };
+  }
+  
+  // Default enhanced response with more personality
+  return {
+    answer: `Hey! I'm CourseConnect AI, your friendly study buddy! I'm here to help you with your studies, answer questions, or just chat about whatever's on your mind. I was created by a solo developer who built CourseConnect as a unified platform for college students.\n\nI can help with:\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat's on your mind? What would you like to talk about or get help with?`,
     provider: 'fallback'
   };
 }

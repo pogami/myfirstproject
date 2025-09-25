@@ -720,6 +720,7 @@ export default function ChatInterface() {
         };
 
         const messageToProcess = inputValue.trim();
+        console.log('Setting isSending to true for message:', messageToProcess);
         setIsSending(true);
         setInputValue(""); // Clear input immediately to prevent spam
         await addMessage(currentTab, userMessage);
@@ -807,12 +808,16 @@ export default function ChatInterface() {
             return newMessages.slice(-10);
         });
         
+        console.log('Setting isSending to false');
         setIsSending(false);
         setShowRealTimeSearch(false);
     };
 
     const hasChats = Object.keys(chats).length > 0;
     const currentChat = currentTab ? chats[currentTab] : null;
+    
+    // Debug logging
+    console.log('ChatInterface render - isSending:', isSending, 'currentTab:', currentTab, 'lastMessageSender:', currentChat?.messages?.at(-1)?.sender);
     
     if (isStoreLoading) {
         return (
@@ -1074,7 +1079,7 @@ export default function ChatInterface() {
                                             );
                                         })}
                                         {isSending && currentTab && chats[currentTab].messages.at(-1)?.sender !== 'bot' && (
-                                             <div className="flex items-start gap-3 w-full mb-4">
+                                             <div className="flex items-start gap-3 w-full mb-4 animate-in slide-in-from-bottom-2 duration-300">
                                                 <Avatar className="h-10 w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
                                                         <img 
@@ -1085,7 +1090,10 @@ export default function ChatInterface() {
                                                     </div>
                                                 </Avatar>
                                                 <div className="px-3 pb-3">
-                                                    <RippleText text="AI is thinking..." className="text-xs opacity-70" />
+                                                    <div className="text-xs text-muted-foreground mb-1">
+                                                        CourseConnect AI
+                                                    </div>
+                                                    <RippleText text="thinking..." className="text-sm font-medium text-primary" />
                                                 </div>
                                             </div>
                                         )}
