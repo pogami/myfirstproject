@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE;
 
 export async function POST(request: NextRequest) {
   try {
