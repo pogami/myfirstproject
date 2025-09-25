@@ -21,7 +21,7 @@ const openai = new OpenAI({
 });
 
 // Initialize Google AI
-const googleApiKey = process.env.GOOGLE_AI_API_KEY;
+const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE;
 
 // AI Provider Types
 export type AIProvider = 'google' | 'openai' | 'fallback';
