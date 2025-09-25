@@ -172,7 +172,7 @@ export function AdvancedAITutor({
     {
       id: 'creative',
       name: 'Creative AI Tutor',
-      icon: <Palette className="h-5 w-5" />,
+      icon: <Music className="h-5 w-5" />,
       color: 'bg-pink-500',
       description: 'Specialized in arts, music, and creative writing',
       specialties: ['Art History', 'Music Theory', 'Creative Writing', 'Design', 'Photography']
