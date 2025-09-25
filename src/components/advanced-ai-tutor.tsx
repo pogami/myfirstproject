@@ -176,16 +176,24 @@ export function AdvancedAITutor({
 
   useEffect(() => {
     // Initialize with welcome message
+    const getWelcomeMessage = () => {
+      if (selectedTutor) {
+        return `Hey there! 👋 Welcome to ${selectedTutor.name}!\n\nI'm your specialized ${selectedTutor.name} and I'm 100% focused on ${selectedTutor.description.toLowerCase()}.\n\nI can help you with:\n${selectedTutor.specialties.map(s => `• ${s}`).join('\n')}\n\nAsk me anything about ${selectedTutor.specialties[0]} or any other topic in my specialty!`;
+      } else {
+        return `Hey there! 👋 Welcome to Advanced AI Tutor!\n\nI'm CourseConnect AI, your personalized study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat's on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What's the best way to study for exams?"`;
+      }
+    };
+
     const welcomeMessage: AIMessage = {
       id: '1',
       role: 'assistant',
-      content: `Hey there! 👋 Welcome to Advanced AI Tutor!\n\nI'm CourseConnect AI, your personalized study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat's on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What's the best way to study for exams?"`,
+      content: getWelcomeMessage(),
       type: 'text',
       timestamp: new Date(),
-      subject: 'General'
+      subject: selectedTutor?.name || 'General'
     };
     setMessages([welcomeMessage]);
-  }, []);
+  }, [selectedTutor]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -210,10 +218,28 @@ export function AdvancedAITutor({
     setIsTyping(true);
 
     try {
-      // Use the actual AI service instead of hardcoded responses
+      // Use the actual AI service with strict specialization
+      let context: string;
+      let question = content;
+      
+      if (selectedTutor) {
+        // Strict specialization - tutor should ONLY answer questions in their field
+        context = `You are a highly specialized ${selectedTutor.name}. You are 100% focused on ${selectedTutor.description.toLowerCase()}.
+
+CRITICAL RULES:
+1. ONLY answer questions directly related to your specialty: ${selectedTutor.specialties.join(', ')}
+2. If asked about ANYTHING outside your field, politely redirect the user
+3. Be an expert in your field - provide deep, comprehensive answers
+4. Use your specialized knowledge to give detailed explanations
+5. If the question is unrelated, say: "I'm your ${selectedTutor.name} and I'm 100% focused on ${selectedTutor.description.toLowerCase()}. Your question doesn't seem related to my specialty. I can only help with: ${selectedTutor.specialties.map(s => `• ${s}`).join('\\n')}. To ask general questions, please deselect me as your tutor first."`;
+      } else {
+        // General AI tutor - can answer any question
+        context = 'You are CourseConnect AI, an advanced AI tutor. You can help with any academic subject and provide comprehensive explanations.';
+      }
+
       const input: StudyAssistanceInput = {
-        question: content,
-        context: selectedTutor ? `You are a specialized ${selectedTutor.name} tutor. ${selectedTutor.description}.` : 'You are CourseConnect AI, an advanced AI tutor.',
+        question: question,
+        context: context,
         conversationHistory: messages.slice(-10).map(msg => ({
           role: msg.role,
           content: msg.content
