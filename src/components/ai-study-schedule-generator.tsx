@@ -11,6 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, BookOpen, Target, TrendingUp, Bell, Download, Upload, Plus, Edit, Trash2, CheckCircle, AlertCircle, CalendarDays, Brain, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase/client';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore';
 
 interface StudySession {
   id: string;
@@ -87,166 +89,197 @@ export function AIStudyScheduleGenerator() {
     maxSessionLength: 120,
     studyDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
   });
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Sample data for demonstration
+  // Load data from Firebase on component mount
   useEffect(() => {
-    const sampleCourses: Course[] = [
-      {
-        id: '1',
-        name: 'Calculus I',
-        code: 'MATH 101',
-        credits: 4,
-        difficulty: 'hard',
-        workload: 8,
-        assignments: [
-          {
-            id: '1',
-            title: 'Derivatives Practice',
-            dueDate: '2024-01-15',
-            points: 100,
-            type: 'homework',
-            estimatedHours: 3,
-            completed: false
-          },
-          {
-            id: '2',
-            title: 'Integration Project',
-            dueDate: '2024-01-22',
-            points: 150,
-            type: 'project',
-            estimatedHours: 8,
-            completed: false
-          }
-        ],
-        exams: [
-          {
-            id: '1',
-            title: 'Midterm Exam',
-            date: '2024-02-01',
-            weight: 30,
-            topics: ['Limits', 'Derivatives', 'Applications'],
-            studyHours: 12
-          }
-        ]
-      },
-      {
-        id: '2',
-        name: 'Computer Science Fundamentals',
-        code: 'CS 101',
-        credits: 3,
-        difficulty: 'medium',
-        workload: 6,
-        assignments: [
-          {
-            id: '3',
-            title: 'Python Programming Lab',
-            dueDate: '2024-01-18',
-            points: 100,
-            type: 'lab',
-            estimatedHours: 4,
-            completed: false
-          }
-        ],
-        exams: []
-      }
-    ];
-    setCourses(sampleCourses);
+    loadCourses();
+    loadStudyPreferences();
+    loadCurrentSchedule();
   }, []);
 
+  const loadCourses = async () => {
+    try {
+      const coursesRef = collection(db, 'courses');
+      const snapshot = await getDocs(coursesRef);
+      const coursesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Course[];
+      setCourses(coursesData);
+    } catch (error) {
+      console.error('Error loading courses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load courses",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStudyPreferences = async () => {
+    try {
+      const prefsRef = doc(db, 'userPreferences', 'studyPreferences');
+      // This would load from user's preferences document
+      // For now, we'll use the default preferences
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+    }
+  };
+
+  const loadCurrentSchedule = async () => {
+    try {
+      const schedulesRef = collection(db, 'studySchedules');
+      const q = query(schedulesRef, orderBy('generatedAt', 'desc'));
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const latestSchedule = {
+          id: snapshot.docs[0].id,
+          ...snapshot.docs[0].data()
+        } as StudySchedule;
+        setCurrentSchedule(latestSchedule);
+      }
+    } catch (error) {
+      console.error('Error loading schedule:', error);
+    }
+  };
+
   const generateSchedule = async () => {
+    if (courses.length === 0) {
+      toast({
+        title: "No Courses",
+        description: "Please add courses before generating a schedule.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsGenerating(true);
     
-    // Simulate AI processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const generatedSessions: StudySession[] = [
-      {
-        id: '1',
-        course: 'Calculus I',
-        topic: 'Derivatives Practice',
-        duration: 90,
-        priority: 'high',
-        deadline: '2024-01-15',
-        completed: false,
-        scheduledTime: '2024-01-14T09:00:00',
-        location: 'Library Study Room',
-        notes: 'Focus on chain rule and product rule'
-      },
-      {
-        id: '2',
-        course: 'Calculus I',
-        topic: 'Integration Project',
-        duration: 120,
-        priority: 'high',
-        deadline: '2024-01-22',
-        completed: false,
-        scheduledTime: '2024-01-16T14:00:00',
-        location: 'Computer Lab',
-        notes: 'Work on integration techniques and applications'
-      },
-      {
-        id: '3',
-        course: 'Computer Science Fundamentals',
-        topic: 'Python Programming Lab',
-        duration: 60,
-        priority: 'medium',
-        deadline: '2024-01-18',
-        completed: false,
-        scheduledTime: '2024-01-17T19:00:00',
-        location: 'Home',
-        notes: 'Practice loops and functions'
+    try {
+      // Call AI service to generate intelligent schedule
+      const response = await fetch('/api/ai/generate-study-schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courses,
+          preferences: studyPreferences,
+          currentDate: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate schedule');
       }
-    ];
 
-    const schedule: StudySchedule = {
-      id: `schedule-${Date.now()}`,
-      name: 'Spring 2024 Study Schedule',
-      courses,
-      sessions: generatedSessions,
-      preferences: studyPreferences,
-      generatedAt: new Date().toISOString()
-    };
+      const { schedule } = await response.json();
+      
+      // Save schedule to Firebase
+      const schedulesRef = collection(db, 'studySchedules');
+      const docRef = await addDoc(schedulesRef, {
+        ...schedule,
+        generatedAt: new Date().toISOString(),
+        userId: 'current-user' // This would be the actual user ID
+      });
 
-    setCurrentSchedule(schedule);
-    setIsGenerating(false);
-    
-    toast({
-      title: "Schedule Generated!",
-      description: "Your personalized study schedule has been created.",
-    });
+      setCurrentSchedule({
+        ...schedule,
+        id: docRef.id
+      });
+      
+      toast({
+        title: "Schedule Generated!",
+        description: "Your personalized study schedule has been created.",
+      });
+    } catch (error) {
+      console.error('Error generating schedule:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate schedule. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const addCourse = () => {
+  const addCourse = async () => {
     if (!newCourse.name || !newCourse.code) return;
     
-    const course: Course = {
-      id: `course-${Date.now()}`,
-      ...newCourse,
-      assignments: [],
-      exams: []
-    };
-    
-    setCourses([...courses, course]);
-    setNewCourse({ name: '', code: '', credits: 3, difficulty: 'medium', workload: 6 });
-    
-    toast({
-      title: "Course Added",
-      description: `${course.name} has been added to your schedule.`,
-    });
+    try {
+      const coursesRef = collection(db, 'courses');
+      const docRef = await addDoc(coursesRef, {
+        ...newCourse,
+        assignments: [],
+        exams: [],
+        createdAt: new Date().toISOString(),
+        userId: 'current-user' // This would be the actual user ID
+      });
+      
+      const course: Course = {
+        id: docRef.id,
+        ...newCourse,
+        assignments: [],
+        exams: []
+      };
+      
+      setCourses([...courses, course]);
+      setNewCourse({ name: '', code: '', credits: 3, difficulty: 'medium', workload: 6 });
+      
+      toast({
+        title: "Course Added",
+        description: `${course.name} has been added to your schedule.`,
+      });
+    } catch (error) {
+      console.error('Error adding course:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add course. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const toggleSessionComplete = (sessionId: string) => {
+  const toggleSessionComplete = async (sessionId: string) => {
     if (!currentSchedule) return;
     
-    const updatedSessions = currentSchedule.sessions.map(session =>
-      session.id === sessionId ? { ...session, completed: !session.completed } : session
-    );
-    
-    setCurrentSchedule({
-      ...currentSchedule,
-      sessions: updatedSessions
-    });
+    try {
+      const updatedSessions = currentSchedule.sessions.map(session =>
+        session.id === sessionId ? { ...session, completed: !session.completed } : session
+      );
+      
+      const updatedSchedule = {
+        ...currentSchedule,
+        sessions: updatedSessions
+      };
+      
+      // Update in Firebase
+      const scheduleRef = doc(db, 'studySchedules', currentSchedule.id);
+      await updateDoc(scheduleRef, {
+        sessions: updatedSessions,
+        lastModified: new Date().toISOString()
+      });
+      
+      setCurrentSchedule(updatedSchedule);
+      
+      toast({
+        title: "Session Updated",
+        description: "Your progress has been saved.",
+      });
+    } catch (error) {
+      console.error('Error updating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update session. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getPriorityColor = (priority: string) => {

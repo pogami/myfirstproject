@@ -32,6 +32,10 @@ import {
   Filter
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase/client';
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { storage } from '@/lib/firebase/client';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface ScannedDocument {
   id: string;
@@ -147,36 +151,81 @@ export function SmartDocumentScanner() {
 
     setIsScanning(true);
     
-    // Simulate OCR processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const newDocument: ScannedDocument = {
-      id: `doc-${Date.now()}`,
-      title: newDocument.title || `Scanned Document ${scannedDocuments.length + 1}`,
-      course: newDocument.course || 'General',
-      topic: newDocument.topic || 'Notes',
-      type: newDocument.type,
-      originalImage: URL.createObjectURL(files[0]),
-      extractedText: 'This is simulated OCR text extraction. In a real implementation, this would contain the actual text extracted from the uploaded image using OCR technology.',
-      confidence: 0.92,
-      tags: ['scanned', 'ocr'],
-      createdAt: new Date().toISOString(),
-      processedAt: new Date().toISOString(),
-      aiAnalysis: {
-        summary: 'AI-generated summary of the scanned document content.',
-        keyPoints: ['Key point 1', 'Key point 2', 'Key point 3'],
-        questions: ['Question 1?', 'Question 2?', 'Question 3?'],
-        relatedTopics: ['Topic 1', 'Topic 2', 'Topic 3']
-      }
-    };
+    try {
+      const file = files[0];
+      
+      // Upload image to Firebase Storage
+      const storageRef = ref(storage, `scanned-documents/${Date.now()}-${file.name}`);
+      const uploadResult = await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(uploadResult.uploadTask.snapshot.ref);
+      
+      // Process with OCR API
+      const ocrResponse = await fetch('/api/ocr/process-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl,
+          language: 'en',
+          documentType: newDocument.type
+        })
+      });
 
-    setScannedDocuments([newDocument, ...scannedDocuments]);
-    setIsScanning(false);
-    
-    toast({
-      title: "Document Scanned!",
-      description: "Your document has been processed and is ready for review.",
-    });
+      if (!ocrResponse.ok) {
+        throw new Error('OCR processing failed');
+      }
+
+      const { extractedText, confidence, aiAnalysis } = await ocrResponse.json();
+      
+      // Save document to Firebase
+      const documentsRef = collection(db, 'scannedDocuments');
+      const docRef = await addDoc(documentsRef, {
+        title: newDocument.title || `Scanned Document ${scannedDocuments.length + 1}`,
+        course: newDocument.course || 'General',
+        topic: newDocument.topic || 'Notes',
+        type: newDocument.type,
+        originalImage: imageUrl,
+        extractedText,
+        confidence,
+        tags: ['scanned', 'ocr'],
+        createdAt: new Date().toISOString(),
+        processedAt: new Date().toISOString(),
+        aiAnalysis,
+        userId: 'current-user' // This would be the actual user ID
+      });
+
+      const newDocumentData: ScannedDocument = {
+        id: docRef.id,
+        title: newDocument.title || `Scanned Document ${scannedDocuments.length + 1}`,
+        course: newDocument.course || 'General',
+        topic: newDocument.topic || 'Notes',
+        type: newDocument.type,
+        originalImage: imageUrl,
+        extractedText,
+        confidence,
+        tags: ['scanned', 'ocr'],
+        createdAt: new Date().toISOString(),
+        processedAt: new Date().toISOString(),
+        aiAnalysis
+      };
+
+      setScannedDocuments([newDocumentData, ...scannedDocuments]);
+      
+      toast({
+        title: "Document Scanned!",
+        description: "Your document has been processed and is ready for review.",
+      });
+    } catch (error) {
+      console.error('Error processing document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process document. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   const startScanningSession = () => {
