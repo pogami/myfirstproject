@@ -210,6 +210,10 @@ export default function SyllabusUpload() {
                 }),
                 className: className,
                 classCode: classCode,
+                university: courseInfo.university || null,
+                instructor: courseInfo.instructor || null,
+                semester: courseInfo.semester || null,
+                year: courseInfo.year || null,
                 uploadedBy: user?.uid || 'guest',
                 uploadedAt: Date.now(),
                 isPublic: chatPreference.type === 'public-chat'
