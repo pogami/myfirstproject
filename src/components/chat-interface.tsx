@@ -993,6 +993,32 @@ export default function ChatInterface() {
                                                 {(() => {
                                                     const profile = getProfileForSender(msg.sender, msg.name);
                                                     console.log('Rendering profile card for:', { sender: msg.sender, name: msg.name, profile });
+                                                    
+                                                    // TEMPORARY TEST: Always render ProfileHoverCard for bot messages
+                                                    if (msg.sender === 'bot') {
+                                                        const testProfile = sampleProfiles['ai-tutor'];
+                                                        console.log('FORCING ProfileHoverCard for bot message with profile:', testProfile);
+                                                        return (
+                                                            <ProfileHoverCard 
+                                                                profile={testProfile}
+                                                                placement="top"
+                                                                delay={200}
+                                                                onAction={() => {
+                                                                    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                                                                    input?.focus();
+                                                                }}
+                                                            >
+                                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background cursor-pointer hover:ring-primary/50 transition-all duration-200">
+                                                                    <img 
+                                                                        src="/courseconnect-logo-profile.png" 
+                                                                        alt="AI" 
+                                                                        className="size-6 object-contain"
+                                                                    />
+                                                                </Avatar>
+                                                            </ProfileHoverCard>
+                                                        );
+                                                    }
+                                                    
                                                     return profile ? (
                                                         <ProfileHoverCard 
                                                             profile={profile}
