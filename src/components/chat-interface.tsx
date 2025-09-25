@@ -990,7 +990,7 @@ export default function ChatInterface() {
                                             
                                             return (
                                                 <div key={index} className={cn("flex items-start gap-2 sm:gap-3 w-full mb-3 sm:mb-4", msg.userId === user?.uid && 'justify-end')}>
-                                                {msg.userId !== user?.uid && (() => {
+                                                {(() => {
                                                     const profile = getProfileForSender(msg.sender, msg.name);
                                                     return profile ? (
                                                         <ProfileHoverCard 
@@ -1075,7 +1075,31 @@ export default function ChatInterface() {
                                                         {msg.sender !== 'bot' && (
                                                             <div className="flex items-center justify-between p-2 sm:p-3 pb-1 sm:pb-2">
                                                                 <div className="flex items-center gap-2">
-                                                                    <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
+                                                                    {(() => {
+                                                                        const profile = getProfileForSender(msg.sender, msg.name);
+                                                                        return profile ? (
+                                                                            <ProfileHoverCard 
+                                                                                profile={profile}
+                                                                                placement="top"
+                                                                                delay={200}
+                                                                                onAction={() => {
+                                                                                    if (profile.role === 'ai-tutor') {
+                                                                                        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                                                                                        input?.focus();
+                                                                                    } else {
+                                                                                        toast({
+                                                                                            title: `Connect with ${profile.name}`,
+                                                                                            description: `Starting a conversation with ${profile.name}...`,
+                                                                                        });
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <p className="font-semibold text-xs sm:text-sm opacity-90 cursor-pointer hover:opacity-100 transition-opacity">{msg.name}</p>
+                                                                            </ProfileHoverCard>
+                                                                        ) : (
+                                                                            <p className="font-semibold text-xs sm:text-sm opacity-90">{msg.name}</p>
+                                                                        );
+                                                                    })()}
                                                                     <DigitalClock timestamp={msg.timestamp} />
                                                                 </div>
                                                             <div className="flex items-center gap-1">
@@ -1130,11 +1154,28 @@ export default function ChatInterface() {
                                                         )}
                                                         
                                                         {/* AI Response Name */}
-                                                        {msg.sender === 'bot' && (
-                                                            <div className="text-xs text-muted-foreground mb-1">
-                                                                {msg.name}
-                                                            </div>
-                                                        )}
+                                                        {msg.sender === 'bot' && (() => {
+                                                            const profile = getProfileForSender(msg.sender, msg.name);
+                                                            return profile ? (
+                                                                <ProfileHoverCard 
+                                                                    profile={profile}
+                                                                    placement="top"
+                                                                    delay={200}
+                                                                    onAction={() => {
+                                                                        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                                                                        input?.focus();
+                                                                    }}
+                                                                >
+                                                                    <div className="text-xs text-muted-foreground mb-1 cursor-pointer hover:text-foreground transition-colors">
+                                                                        {msg.name}
+                                                                    </div>
+                                                                </ProfileHoverCard>
+                                                            ) : (
+                                                                <div className="text-xs text-muted-foreground mb-1">
+                                                                    {msg.name}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         
                                                         {/* Message Content */}
                                                         <div className={msg.sender === 'bot' ? '' : 'px-2 sm:px-3 pb-2 sm:pb-3'}>
