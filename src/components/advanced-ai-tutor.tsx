@@ -46,6 +46,8 @@ interface AIMessage {
   timestamp: Date;
   subject?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  fileName?: string;
+  fileType?: string;
 }
 
 interface SubjectTutor {
@@ -1228,35 +1230,56 @@ What would you like to learn about today?`;
     }
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    // Check file type
+    const isImage = file.type.startsWith('image/');
+    const isPDF = file.type === 'application/pdf';
+    const isDocument = file.type.includes('document') || file.type.includes('text');
+
+    if (!isImage && !isPDF && !isDocument) {
       toast({
-        title: "Image Uploaded",
-        description: "Analyzing your image...",
+        variant: "destructive",
+        title: "Unsupported File Type",
+        description: "Please upload an image, PDF, or document file.",
       });
+      return;
+    }
+
+    toast({
+      title: "File Uploaded",
+      description: "Analyzing your file...",
+    });
+
+    try {
+      // Convert file to base64 for display and analysis
+      const base64 = await convertFileToBase64(file);
       
-      // Create user message for the uploaded image
+      // Create user message with actual file display
       const userMessage: AIMessage = {
         id: Date.now().toString(),
         role: 'user',
-        content: `📷 Image: ${file.name}`,
-        type: 'image',
+        content: base64,
+        type: isImage ? 'image' : 'text',
         timestamp: new Date(),
-        subject: selectedTutor?.name || currentSubject
+        subject: selectedTutor?.name || currentSubject,
+        fileName: file.name,
+        fileType: file.type
       };
       
       setMessages(prev => [...prev, userMessage]);
       setIsProcessing(true);
       setIsTyping(true);
       
-      // Simulate AI image analysis
-      setTimeout(() => {
-        const aiResponse = generateImageAnalysis(file.name);
+      // Call real AI analysis API
+      const analysisResponse = await analyzeFileWithAI(file, base64, selectedTutor);
+      
         const assistantMessage: AIMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: aiResponse,
+        content: analysisResponse,
           type: 'text',
           timestamp: new Date(),
           subject: selectedTutor?.name || currentSubject,
@@ -1264,97 +1287,126 @@ What would you like to learn about today?`;
         };
         
         setMessages(prev => [...prev, assistantMessage]);
-        setIsProcessing(false);
-        setIsTyping(false);
         
         toast({
-          title: "Image Analysis Complete",
-          description: "I've analyzed your image and provided insights.",
-        });
-      }, 2000);
+        title: "Analysis Complete",
+        description: "I've analyzed your file and provided detailed insights.",
+      });
+      
+    } catch (error) {
+      console.error('Error analyzing file:', error);
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: "Could not analyze the file. Please try again.",
+      });
+    } finally {
+      setIsProcessing(false);
+      setIsTyping(false);
     }
   };
 
-  const generateImageAnalysis = (fileName: string): string => {
-    const fileType = fileName.toLowerCase();
-    
-    if (fileType.includes('diagram') || fileType.includes('chart')) {
-      return `I can see this is a diagram or chart. Based on the visual elements, I can help you understand:
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
-**Key Elements Detected:**
-• Data visualization components
-• Structural relationships
-• Process flow indicators
+  const analyzeFileWithAI = async (file: File, base64: string, tutor: SubjectTutor | null): Promise<string> => {
+    try {
+      // Call our AI analysis API
+      const response = await fetch('/api/ai/analyze-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileData: base64,
+          fileName: file.name,
+          fileType: file.type,
+          tutorSpecialty: tutor?.name || 'General',
+          tutorDescription: tutor?.description || 'General AI tutor'
+        })
+      });
 
-**Analysis:**
-This appears to be a structured diagram that shows relationships between different components. The visual layout suggests a systematic approach to presenting information.
+      if (!response.ok) {
+        throw new Error('Analysis API failed');
+      }
 
-**How I can help:**
-• Explain the relationships shown
-• Break down complex concepts into simpler parts
-• Provide additional context for better understanding
-• Suggest study strategies for this type of content
-
-Would you like me to explain any specific part of this diagram in more detail?`;
+      const { analysis } = await response.json();
+      return analysis;
+      
+    } catch (error) {
+      console.error('AI analysis error:', error);
+      // Fallback to basic analysis
+      return generateFallbackAnalysis(file.name, file.type, tutor);
     }
+  };
+
+  const generateFallbackAnalysis = (fileName: string, fileType: string, tutor: SubjectTutor | null): string => {
+    const isImage = fileType.startsWith('image/');
+    const isPDF = fileType === 'application/pdf';
     
-    if (fileType.includes('math') || fileType.includes('equation')) {
-      return `I can see this contains mathematical content. Let me help you understand:
-
-**Mathematical Elements Detected:**
-• Equations and formulas
-• Problem-solving steps
-• Graphical representations
-
-**Analysis:**
-This appears to be a mathematical problem or concept. The visual format helps illustrate the relationships between different mathematical elements.
-
-**How I can help:**
-• Explain the mathematical concepts step by step
-• Break down complex equations
-• Provide alternative solution methods
-• Connect this to broader mathematical principles
-
-What specific part of this math problem would you like me to explain?`;
-    }
-    
-    if (fileType.includes('science') || fileType.includes('biology') || fileType.includes('chemistry')) {
-      return `I can see this is a scientific diagram or image. Let me analyze it:
-
-**Scientific Elements Detected:**
-• Biological or chemical structures
-• Process diagrams
-• Laboratory equipment or procedures
-
-**Analysis:**
-This appears to be a scientific concept visualization. The image likely shows important relationships or processes in your field of study.
-
-**How I can help:**
-• Explain the scientific concepts shown
-• Break down complex processes
-• Connect this to real-world applications
-• Suggest study techniques for this material
-
-What scientific concept would you like me to explain in detail?`;
-    }
-    
-    return `I can see you've uploaded an image. Let me analyze it:
+    if (isImage) {
+      return `I can see you've uploaded an image: **${fileName}**
 
 **Image Analysis:**
 • File: ${fileName}
-• Content type: Educational material
-• Visual complexity: Moderate
+• Type: ${fileType}
+• Content: Visual content detected
 
 **What I can help with:**
 • Explain any concepts shown in the image
 • Break down complex visual information
 • Provide additional context and examples
-• Suggest study strategies for this type of content
+• Connect visual elements to learning objectives
 
-**Next Steps:**
-Please let me know what specific aspect of this image you'd like me to explain, or if you have any questions about the content shown.
+**Specialized Analysis:**
+${tutor ? `As your ${tutor.name}, I can provide expert analysis focused on ${tutor.description.toLowerCase()}.` : 'I can provide general analysis across multiple subjects.'}
 
-I'm here to help you understand whatever concepts are presented in this visual material!`;
+Please describe what you'd like me to focus on in this image, or ask specific questions about what you see!`;
+    }
+    
+    if (isPDF) {
+      return `I can see you've uploaded a PDF document: **${fileName}**
+
+**Document Analysis:**
+• File: ${fileName}
+• Type: PDF Document
+• Content: Text and visual content detected
+
+**What I can help with:**
+• Extract and explain key concepts
+• Summarize important information
+• Answer questions about the content
+• Connect concepts to your studies
+
+**Specialized Analysis:**
+${tutor ? `As your ${tutor.name}, I can provide expert analysis focused on ${tutor.description.toLowerCase()}.` : 'I can provide comprehensive analysis across multiple subjects.'}
+
+What specific aspects of this document would you like me to explain or analyze?`;
+    }
+    
+    return `I can see you've uploaded a document: **${fileName}**
+
+**Document Analysis:**
+• File: ${fileName}
+• Type: ${fileType}
+• Content: Text content detected
+
+**What I can help with:**
+• Extract key information
+• Explain complex concepts
+• Answer questions about the content
+• Provide additional context
+
+**Specialized Analysis:**
+${tutor ? `As your ${tutor.name}, I can provide expert analysis focused on ${tutor.description.toLowerCase()}.` : 'I can provide comprehensive analysis across multiple subjects.'}
+
+What would you like me to focus on in this document?`;
   };
 
   const getDifficultyColor = (difficulty?: string) => {
@@ -1369,7 +1421,7 @@ I'm here to help you understand whatever concepts are presented in this visual m
   return (
     <div className="space-y-6">
       {/* Subject Tutors */}
-          <Card>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5" />
@@ -1529,9 +1581,24 @@ I'm here to help you understand whatever concepts are presented in this visual m
                   </div>
                 ) : (
                   <div className="max-w-[80%]">
-                    <div className="p-3 rounded-lg bg-primary text-primary-foreground">
-                      <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                    </div>
+                    {message.type === 'image' && message.fileName ? (
+                      <div className="p-3 rounded-lg bg-primary text-primary-foreground">
+                        <div className="mb-2">
+                          <img 
+                            src={message.content} 
+                            alt={message.fileName}
+                            className="max-w-full max-h-64 rounded-lg object-contain"
+                          />
+                        </div>
+                        <div className="text-xs text-primary-foreground/80">
+                          📷 {message.fileName}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-lg bg-primary text-primary-foreground">
+                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 mt-1 justify-end">
                       <MessageTimestamp timestamp={message.timestamp.getTime()} />
                       {message.subject && (
@@ -1626,13 +1693,13 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 className="min-h-[44px] sm:min-h-[40px] text-xs sm:text-sm"
               >
                 <Camera className="h-4 w-4 mr-1 sm:mr-2" />
-                Image
+                Upload File
               </Button>
               
               <input
                 id="image-upload"
                 type="file"
-                accept="image/*"
+                accept="image/*,application/pdf,.doc,.docx,.txt"
                 onChange={handleImageUpload}
                 className="hidden"
               />
