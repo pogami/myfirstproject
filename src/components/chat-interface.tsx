@@ -30,6 +30,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { FuturisticChatInput } from "@/components/futuristic-chat-input";
 import { RealTimeSearchAnimation } from "@/components/real-time-search-animation";
 import { RippleText } from "@/components/ripple-text";
+import { ProfileHoverCard, ProfileData } from "@/components/profile-hover-card";
 import dynamic from 'next/dynamic';
 
 const DigitalClock = dynamic(() => import('@/components/digital-clock').then(mod => ({ default: mod.DigitalClock })), {
@@ -41,6 +42,42 @@ const DigitalClock = dynamic(() => import('@/components/digital-clock').then(mod
     </div>
   )
 });
+
+// Sample profile data for demonstration
+const sampleProfiles: Record<string, ProfileData> = {
+    'ai-tutor': {
+        id: 'ai-tutor',
+        name: 'CourseConnect AI',
+        role: 'ai-tutor',
+        bio: 'Your intelligent study companion powered by advanced AI. I can help with homework, explain concepts, and provide personalized learning assistance.',
+        capabilities: ['Homework Help', 'Concept Explanation', 'Study Planning', 'Test Prep'],
+        subjects: ['Mathematics', 'Science', 'English', 'History', 'Computer Science'],
+        rating: 4.9,
+        experience: 'Always Available'
+    },
+    'student-alex': {
+        id: 'student-alex',
+        name: 'Alex Johnson',
+        role: 'student',
+        school: 'Stanford University',
+        major: 'Computer Science',
+        year: 'Junior',
+        skills: ['React', 'Python', 'Machine Learning'],
+        rating: 4.8,
+        earnings: 2500
+    },
+    'instructor-sarah': {
+        id: 'instructor-sarah',
+        name: 'Dr. Sarah Chen',
+        role: 'instructor',
+        school: 'MIT',
+        subjects: ['Advanced Mathematics', 'Calculus', 'Linear Algebra'],
+        coursesCreated: 12,
+        rating: 4.9,
+        hourlyRate: 85,
+        earnings: 45000
+    }
+};
 
 export default function ChatInterface() {
     const { chats, addMessage, setCurrentTab, currentTab, addChat, isGuest, isStoreLoading, resetChat, exportChat, deleteChat } = useChatStore();
@@ -73,6 +110,33 @@ export default function ChatInterface() {
     const [visitedChats, setVisitedChats] = useState<Set<string>>(new Set());
     const [inDepthUsageCount, setInDepthUsageCount] = useState<number>(0);
     const [lastUsageResetDate, setLastUsageResetDate] = useState<string>(new Date().toDateString());
+    
+    // Function to get profile data for a message sender
+    const getProfileForSender = (sender: string, name?: string): ProfileData | null => {
+        if (sender === 'bot' || name === 'CourseConnect AI') {
+            return sampleProfiles['ai-tutor'];
+        }
+        
+        // For demo purposes, assign profiles based on name patterns
+        if (name?.includes('Alex')) {
+            return sampleProfiles['student-alex'];
+        }
+        if (name?.includes('Dr.') || name?.includes('Sarah')) {
+            return sampleProfiles['instructor-sarah'];
+        }
+        
+        // Default student profile for unknown users
+        return {
+            id: sender,
+            name: name || 'Student',
+            role: 'student',
+            school: 'University',
+            major: 'Undecided',
+            year: 'Freshman',
+            skills: ['Learning'],
+            rating: 4.5
+        };
+    };
     
     useEffect(() => {
         // Safely handle auth state
@@ -926,7 +990,52 @@ export default function ChatInterface() {
                                             
                                             return (
                                                 <div key={index} className={cn("flex items-start gap-2 sm:gap-3 w-full mb-3 sm:mb-4", msg.userId === user?.uid && 'justify-end')}>
-                                                {msg.userId !== user?.uid && (
+                                                {msg.userId !== user?.uid && (() => {
+                                                    const profile = getProfileForSender(msg.sender, msg.name);
+                                                    return profile ? (
+                                                        <ProfileHoverCard 
+                                                            profile={profile}
+                                                            placement="top"
+                                                            delay={200}
+                                                            onAction={() => {
+                                                                if (profile.role === 'ai-tutor') {
+                                                                    // Focus on input for AI tutor
+                                                                    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                                                                    input?.focus();
+                                                                } else {
+                                                                    // For students/instructors, could open a profile modal or start a DM
+                                                                    toast({
+                                                                        title: `Connect with ${profile.name}`,
+                                                                        description: `Starting a conversation with ${profile.name}...`,
+                                                                    });
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background cursor-pointer hover:ring-primary/50 transition-all duration-200">
+                                                                {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
+                                                                    <AvatarImage 
+                                                                        src={userProfiles[msg.userId || ''].photoURL} 
+                                                                        alt={userProfiles[msg.userId || ''].displayName || msg.name} 
+                                                                    />
+                                                                ) : null}
+                                                                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                                                                    {msg.sender === 'bot' && (
+                                                                        <img 
+                                                                            src="/courseconnect-logo-profile.png" 
+                                                                            alt="AI" 
+                                                                            className="size-6 object-contain"
+                                                                        />
+                                                                    )}
+                                                                    {msg.sender === 'moderator' && <AlertTriangle className="size-6 text-destructive"/>}
+                                                                    {msg.sender === 'user' && (
+                                                                        userProfiles[msg.userId || '']?.displayName 
+                                                                            ? getInitials(userProfiles[msg.userId || ''].displayName)
+                                                                            : <User className="size-5 text-primary-foreground" />
+                                                                    )}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                        </ProfileHoverCard>
+                                                    ) : (
                                                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                             {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
                                                                 <AvatarImage 
@@ -949,8 +1058,9 @@ export default function ChatInterface() {
                                                                         : <User className="size-5 text-primary-foreground" />
                                                                 )}
                                                             </AvatarFallback>
-                                                    </Avatar>
-                                                )}
+                                                        </Avatar>
+                                                    );
+                                                })()}
                                                     
                                                 <div className={cn(
                                                         "max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg",
