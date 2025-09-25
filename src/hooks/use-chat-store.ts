@@ -271,10 +271,7 @@ export const useChatStore = create<ChatState>()(
           text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
         };
         
-        // Set loading state
-        set({ isSendingMessage: true });
-        
-         // This is optimistic update for the UI
+        // Optimistic update for immediate UI response
         set((state) => {
           if (!state.chats[chatId]) return state;
           const messages = state.chats[chatId].messages;
@@ -290,27 +287,24 @@ export const useChatStore = create<ChatState>()(
           };
         });
 
-        // If user is logged in, try to persist to Firestore (but don't fail if offline)
+        // Persist to Firestore in background (non-blocking)
         if (!isGuest) {
+            // Don't await this - let it run in background
             const chatDocRef = doc(db as Firestore, 'chats', chatId);
-            try {
-              const chatDocSnap = await getDoc(chatDocRef);
+            getDoc(chatDocRef).then(chatDocSnap => {
               if (chatDocSnap.exists()) {
                 const currentMessages = chatDocSnap.data().messages || [];
                 const newMessages = replaceLast ? [...currentMessages.slice(0, -1), safeMessage] : [...currentMessages, safeMessage];
-                await updateDoc(chatDocRef, { messages: newMessages });
+                return updateDoc(chatDocRef, { messages: newMessages });
               }
-            } catch (e) {
+            }).catch(e => {
                 // Only log non-offline errors to reduce noise
                 if (e && typeof e === 'object' && 'code' in e && e.code !== 'unavailable') {
                     console.warn("Failed to save message to firestore:", e);
                 }
                 // Continue working in offline mode - the message is already in local state
-            }
+            });
         }
-        
-        // Clear loading state
-        set({ isSendingMessage: false });
       },
 
       addUserJoinMessage: async (chatId: string, userName: string, userId: string) => {

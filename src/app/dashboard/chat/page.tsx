@@ -249,19 +249,28 @@ export default function ChatPage() {
         // Clear input immediately to prevent spam
         setInputValue("");
 
+        // Set loading state immediately for instant thinking animation
+        if (shouldCallAIFinal) {
+            console.log('Setting isLoading to true for message:', messageText);
+            setIsLoading(true);
+        }
+
         // Add user message
         await addMessage('general-chat', userMessage);
 
         // Only get AI response if appropriate
         if (shouldCallAIFinal) {
             try {
-                // Get AI response via API call
+                // Get AI response via API call with enhanced error handling
                 let aiResponse;
                 try {
+                    console.log('Making API call to /api/chat...');
+                    
                     const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'User-Agent': 'CourseConnect-Client/1.0',
                         },
                         body: JSON.stringify({
                             question: messageText,
@@ -272,20 +281,45 @@ export default function ChatPage() {
                             })) || [],
                             shouldCallAI: shouldCallAIFinal,
                             isPublicChat
-                        })
+                        }),
+                        // Add timeout for better device compatibility
+                        signal: AbortSignal.timeout(35000) // 35 second timeout
                     });
 
+                    console.log('API response status:', response.status);
+
                     if (!response.ok) {
-                        throw new Error(`API call failed: ${response.status}`);
+                        const errorText = await response.text();
+                        console.error('API error response:', errorText);
+                        throw new Error(`API call failed: ${response.status} - ${errorText}`);
                     }
 
                     const data = await response.json();
+                    console.log('API response data:', { 
+                        success: data.success, 
+                        provider: data.provider, 
+                        answerLength: data.answer?.length || 0 
+                    });
+                    
                     aiResponse = data;
                 } catch (apiError) {
-                    console.warn("API call failed, using fallback:", apiError);
+                    console.warn("API call failed, using enhanced fallback:", apiError);
+                    
+                    // Enhanced fallback based on error type
+                    let fallbackMessage = "Hey! I'm CourseConnect AI, your friendly study buddy! I'm having a small technical hiccup right now, but I'm still here to help! I can assist with:\n\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat's on your mind? What would you like to talk about or get help with?";
+                    
+                    if (apiError instanceof Error) {
+                        if (apiError.name === 'TimeoutError' || apiError.message.includes('timeout')) {
+                            fallbackMessage = "Hey there! I'm taking a bit longer than usual to respond, but I'm still here to help! I can assist with:\n\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat would you like to talk about?";
+                        } else if (apiError.message.includes('network') || apiError.message.includes('fetch')) {
+                            fallbackMessage = "Hey! I'm having some network connectivity issues right now, but I'm still here to help! I can assist with:\n\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat's on your mind?";
+                        }
+                    }
+                    
                     aiResponse = {
-                        answer: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
-                        provider: 'fallback'
+                        answer: fallbackMessage,
+                        provider: 'fallback',
+                        success: true
                     };
                 }
                 
@@ -328,6 +362,9 @@ export default function ChatPage() {
                     timestamp: Date.now()
                 };
                 await addMessage('general-chat', errorMessage);
+            } finally {
+                console.log('Setting isLoading to false');
+                setIsLoading(false);
             }
         }
     };
@@ -448,6 +485,7 @@ export default function ChatPage() {
     console.log('ChatPage - isStoreLoading:', isStoreLoading, 'forceLoad:', forceLoad, 'chats:', Object.keys(chats), 'currentTab:', currentTab);
     console.log('ChatPage - classChats:', classChats);
     console.log('ChatPage - generalChat:', generalChat);
+    console.log('ChatPage - isLoading:', isLoading, 'lastMessageSender:', generalChat?.messages?.at(-1)?.sender);
 
     // Show loading state while chat store is initializing (but not if force loaded)
     if (isStoreLoading && !forceLoad) {
@@ -602,7 +640,24 @@ export default function ChatPage() {
                                             {/* Scroll target for auto-scroll */}
                                             <div ref={messagesEndRef} />
                                             
-                                            {/* AI Thinking Animation - Removed to prevent flicker */}
+                                            {/* AI Thinking Animation */}
+                                            {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (
+                                                <div className="flex items-start gap-3 w-full max-w-full animate-in slide-in-from-bottom-2 duration-300">
+                                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
+                                                            <CourseConnectLogo className="w-4 h-4" />
+                                                        </div>
+                                                    </Avatar>
+                                                    <div className="text-left min-w-0">
+                                                        <div className="text-xs text-muted-foreground mb-1">
+                                                            CourseConnect AI
+                                                        </div>
+                                                        <div className="text-sm font-medium">
+                                                            <RippleText text="thinking..." className="text-primary" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </ScrollArea>
                                     <div className="p-4 sm:p-6 flex-shrink-0 bg-background pb-safe">

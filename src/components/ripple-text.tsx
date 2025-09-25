@@ -16,14 +16,16 @@ export function RippleText({ text, className = "" }: RippleTextProps) {
           display: inline-block;
           background: linear-gradient(
             90deg,
-            #999 25%,
-            #000 50%,
-            #999 75%
+            #3b82f6 25%,
+            #1d4ed8 50%,
+            #3b82f6 75%
           );
           background-size: 200% auto;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          animation: ripple 2s linear infinite;
+          background-clip: text;
+          animation: ripple 1.5s linear infinite;
+          font-weight: 600;
         }
         @keyframes ripple {
           0% {
