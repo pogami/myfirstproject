@@ -28,6 +28,7 @@ import { MessageTimestamp } from "@/components/message-timestamp";
 import BotResponse from "@/components/bot-response";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { RippleText } from "@/components/ripple-text";
+import { useSidebar } from "@/hooks/use-sidebar";
 import { InDepthAnalysis } from "@/components/in-depth-analysis";
 import { JoinMessage } from "@/components/join-message";
 
@@ -561,7 +562,7 @@ export default function ChatPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden chat-container">
-                                    <ScrollArea className="h-[500px] px-4" ref={scrollAreaRef}>
+                                    <ScrollArea className="h-[calc(100vh-200px)] px-4" ref={scrollAreaRef}>
                                         <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
                                             {generalChat?.messages?.map((message, index) => {
                                                 // Handle system messages (join notifications)

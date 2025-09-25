@@ -48,7 +48,7 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   style={isDark ? oneDark : oneLight}
                   language={language}
                   PreTag="div"
-                  className="rounded-lg border border-gray-300/50 dark:border-gray-600/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm max-h-96 overflow-y-auto"
+                  className="rounded-lg border border-gray-300/50 dark:border-gray-600/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm w-full overflow-x-auto"
                   customStyle={{
                     margin: '8px 0',
                     borderRadius: '8px',
@@ -57,8 +57,10 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                     padding: '12px',
                     border: '1px solid',
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    maxHeight: '300px',
-                    overflow: 'auto'
+                    maxHeight: '400px',
+                    overflow: 'auto',
+                    width: '100%',
+                    maxWidth: '100%'
                   }}
                   {...props}
                 >
@@ -72,7 +74,7 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   style={isDark ? oneDark : oneLight}
                   language="text"
                   PreTag="div"
-                  className="rounded-lg border border-gray-300/50 dark:border-gray-600/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm max-h-96 overflow-y-auto"
+                  className="rounded-lg border border-gray-300/50 dark:border-gray-600/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm w-full overflow-x-auto"
                   customStyle={{
                     margin: '8px 0',
                     borderRadius: '8px',
@@ -81,8 +83,10 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                     padding: '12px',
                     border: '1px solid',
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                    maxHeight: '300px',
-                    overflow: 'auto'
+                    maxHeight: '400px',
+                    overflow: 'auto',
+                    width: '100%',
+                    maxWidth: '100%'
                   }}
                   {...props}
                 >
