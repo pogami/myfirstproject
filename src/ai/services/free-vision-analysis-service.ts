@@ -1,6 +1,6 @@
 'use server';
 
-import Tesseract from 'tesseract.js';
+import * as Tesseract from 'tesseract.js';
 
 export type FreeVisionProvider = 'tesseract-ocr' | 'file-analysis' | 'fallback';
 
