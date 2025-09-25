@@ -329,7 +329,7 @@ async function extractTextFromTextFile(file: File): Promise<TextExtractionResult
 /**
  * Format extracted text for display in chat
  */
-export function formatExtractedText(result: TextExtractionResult, fileName: string): string {
+export async function formatExtractedText(result: TextExtractionResult, fileName: string): Promise<string> {
   if (!result.success) {
     return `❌ **Text extraction failed for ${fileName}**\n\n**Error:** ${result.error}\n\n**What you can do:**\n• Describe the content manually\n• Ask specific questions about the file\n• Share the text content directly`;
   }
