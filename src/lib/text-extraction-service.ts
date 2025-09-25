@@ -34,26 +34,35 @@ export async function extractFileText(input: FileInput): Promise<TextExtractionR
   const { file, fileName, fileType } = input;
 
   try {
+    console.log('Starting text extraction for:', fileName, 'Type:', fileType);
+    
     // Determine file type
     const detectedType = detectFileType(fileType, fileName);
+    console.log('Detected file type:', detectedType);
     
     switch (detectedType) {
       case 'image':
+        console.log('Processing as image...');
         return await extractTextFromImage(file);
       
       case 'pdf':
+        console.log('Processing as PDF...');
         return await extractTextFromPDF(file);
       
       case 'word':
+        console.log('Processing as Word document...');
         return await extractTextFromWord(file);
       
       case 'excel':
+        console.log('Processing as Excel file...');
         return await extractTextFromExcel(file);
       
       case 'text':
+        console.log('Processing as text file...');
         return await extractTextFromTextFile(file);
       
       default:
+        console.log('Unsupported file type:', fileType);
         return {
           success: false,
           text: '',
@@ -202,12 +211,16 @@ async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
  */
 async function extractTextFromWord(file: File): Promise<TextExtractionResult> {
   try {
+    console.log('Starting Word document extraction for:', file.name);
     const buffer = await file.arrayBuffer();
+    console.log('Buffer size:', buffer.byteLength);
     
     const result = await mammoth.extractRawText({ buffer });
+    console.log('Mammoth result:', result);
     
     if (result.value && result.value.trim().length > 0) {
       const wordCount = result.value.split(/\s+/).filter(word => word.length > 0).length;
+      console.log('Extracted text length:', result.value.length, 'Word count:', wordCount);
       
       return {
         success: true,
@@ -219,6 +232,7 @@ async function extractTextFromWord(file: File): Promise<TextExtractionResult> {
         }
       };
     } else {
+      console.log('No text content found in Word document');
       return {
         success: false,
         text: '',
@@ -227,6 +241,7 @@ async function extractTextFromWord(file: File): Promise<TextExtractionResult> {
       };
     }
   } catch (error: any) {
+    console.error('Word document processing error:', error);
     return {
       success: false,
       text: '',
