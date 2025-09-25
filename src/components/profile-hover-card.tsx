@@ -30,6 +30,7 @@ export function ProfileHoverCard({
   const showCard = () => {
     console.log('ProfileHoverCard showCard called for:', profile.name);
     console.log('ProfileHoverCard container element:', containerRef.current);
+    console.log('ProfileHoverCard profile data:', profile);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
