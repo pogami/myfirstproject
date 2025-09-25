@@ -198,7 +198,7 @@ export default function ChatInterface() {
                  addChat('General Chat', { 
                     sender: 'bot', 
                     name: 'AI', 
-                    text: 'Welcome to General Chat! 🎓\n\n**Quick Start:** Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\n**Subjects:** Math, Science, English, History, Computer Science & more.',
+                    text: 'Welcome to General Chat! 🎓\n\nQuick Start: Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\nSubjects: Math, Science, English, History, Computer Science & more.',
                     timestamp: Date.now()
                 });
             }
@@ -213,7 +213,7 @@ export default function ChatInterface() {
              addChat('General Chat', { 
                 sender: 'bot', 
                 name: 'CourseConnect AI', 
-                text: 'Welcome to General Chat! 🎓\n\n**Quick Start:** Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\n**Subjects:** Math, Science, English, History, Computer Science & more.',
+                text: 'Welcome to General Chat! 🎓\n\nQuick Start: Ask questions about any topic, get AI homework help, or discuss academic concepts. Be specific and detailed for better assistance!\n\nSubjects: Math, Science, English, History, Computer Science & more.',
                 timestamp: Date.now()
             });
              setCurrentTab('general-chat');
