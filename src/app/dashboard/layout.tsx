@@ -337,25 +337,6 @@ export default function DashboardLayout({
                 </Link>
               
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Link 
-                  href="/dashboard/upload"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
-                    isActive("/dashboard/upload") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
-                  }`}
-                >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
-                    isActive("/dashboard/upload") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
-                  }`}>
-                    <Brain className="size-4 sm:size-5" />
-                  </div>
-                  <span className="font-medium text-sm sm:text-base">Enhanced Upload</span>
-                </Link>
-              </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
@@ -492,7 +473,7 @@ export default function DashboardLayout({
           <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="h-8 w-8" />
+                <SidebarTrigger className="h-8 w-8 hover:bg-transparent hover:text-current" />
                 <Link href="/dashboard" className="flex items-center gap-2">
                   <h1 className="text-lg font-bold text-primary tracking-tight">CourseConnect</h1>
                 </Link>

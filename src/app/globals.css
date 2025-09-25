@@ -49,6 +49,45 @@ body {
   word-break: break-word !important;
 }
 
+/* Safe area support for mobile browsers */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Ensure chat input is always visible */
+.chat-input-container {
+  position: relative;
+  z-index: 10;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.chat-input-container * {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.chat-input-container > div {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevent browser UI from covering input on mobile */
+@media (max-width: 768px) {
+  .chat-input-container {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  /* Additional spacing for browser UI */
+  .chat-input-container {
+    padding-bottom: 0.5rem;
+  }
+}
+
 /* Ensure proper text colors in chat messages */
 .chat-message p {
   color: hsl(var(--foreground)) !important;
@@ -429,37 +468,6 @@ body {
   color: #e6eef8 !important; /* light readable text */
 }
 
-/* Light mode: make input area fully white */
-.light .chat-input-container {
-  background: #ffffff !important;   /* whole bar background white */
-  border: 1px solid #e5e7eb !important; /* subtle border */
-}
-
-.light .chat-input-container input,
-.light .chat-input-container textarea {
-  background: #ffffff !important;   /* input background white */
-  color: #111827 !important;        /* dark readable text */
-}
-
-.light .chat-input-container input::placeholder,
-.light .chat-input-container textarea::placeholder {
-  color: #9ca3af !important;        /* medium gray placeholder */
-}
-
-/* Also target FuturisticChatInput container in light mode */
-.light .relative.flex.items-center.gap-2.p-2.rounded-lg.border {
-  background: #ffffff !important;
-  border: 1px solid #e5e7eb !important;
-}
-
-.light .relative.flex.items-center.gap-2.p-2.rounded-lg.border input {
-  background: #ffffff !important;
-  color: #111827 !important;
-}
-
-.light .relative.flex.items-center.gap-2.p-2.rounded-lg.border input::placeholder {
-  color: #9ca3af !important;
-}
 
 /* Fix grey gaps/borders in class chat */
 .light .chat-container {
@@ -943,34 +951,3 @@ body {
   font-weight: normal !important; /* Same font weight in both themes */
 }
 
-/* Dark mode: make typing bar black to match chat interface */
-.dark .chat-input-container {
-  background: #000000 !important;   /* black background to match chat */
-  border: 1px solid #374151 !important; /* subtle dark border */
-}
-
-.dark .chat-input-container input,
-.dark .chat-input-container textarea {
-  background: #000000 !important;   /* black input background */
-  color: #ffffff !important;        /* white readable text */
-}
-
-.dark .chat-input-container input::placeholder,
-.dark .chat-input-container textarea::placeholder {
-  color: #9ca3af !important;        /* medium gray placeholder */
-}
-
-/* Also target FuturisticChatInput container in dark mode */
-.dark .relative.flex.items-center.gap-2.p-2.rounded-lg.border {
-  background: #000000 !important;
-  border: 1px solid #374151 !important;
-}
-
-.dark .relative.flex.items-center.gap-2.p-2.rounded-lg.border input {
-  background: #000000 !important;
-  color: #ffffff !important;
-}
-
-.dark .relative.flex.items-center.gap-2.p-2.rounded-lg.border input::placeholder {
-  color: #9ca3af !important;
-}

@@ -310,7 +310,7 @@ function SkipConfirmationDialog({ isOpen, onConfirm, onCancel }: { isOpen: boole
           </Button>
           <Button 
             onClick={onConfirm}
-            className="flex-1 bg-orange-500 hover:bg-orange-600"
+            className="flex-1 bg-orange-500"
           >
             Yes, Skip Break
           </Button>
@@ -345,7 +345,7 @@ function EndBreakConfirmationDialog({ isOpen, onConfirm, onCancel }: { isOpen: b
           </Button>
           <Button 
             onClick={onConfirm}
-            className="flex-1 bg-orange-500 hover:bg-orange-600"
+            className="flex-1 bg-orange-500"
           >
             Yes, End Break
           </Button>

@@ -80,7 +80,7 @@ function calculateSimilarity(syllabus1: SyllabusData, syllabus2: SyllabusData): 
     factors++;
   }
 
-  return factors > 0 ? score / factors : 0;
+  return factors > 0 ? score : 0; // Return total score, not average
 }
 
 /**

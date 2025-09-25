@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText, X, Users, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentProcessorClient } from '@/lib/syllabus-parser/document-processor-client';
+import { AISyllabusParser } from '@/lib/syllabus-parser/ai-parser';
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -24,6 +25,7 @@ import {
     type SyllabusData,
     type ChatPreference 
 } from "@/lib/syllabus-matching-service";
+import { ParsingProgress, ParsingResult } from '@/types/syllabus-parsing';
 
 const encouragingMessages = [
     "Get ready! The AI is creating your new study space.",
@@ -37,7 +39,12 @@ const encouragingMessages = [
 export default function SyllabusUpload() {
     const [file, setFile] = useState<File | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [progress, setProgress] = useState(0);
+    const [parsingProgress, setParsingProgress] = useState<ParsingProgress>({
+        stage: 'uploading',
+        progress: 0,
+        message: 'Ready to upload'
+    });
+    const [parsingResult, setParsingResult] = useState<ParsingResult | null>(null);
     const [currentMessage, setCurrentMessage] = useState(encouragingMessages[0]);
     const [chatPreference, setChatPreference] = useState<ChatPreference>({
         type: 'public-chat',
@@ -57,18 +64,18 @@ export default function SyllabusUpload() {
         if (isAnalyzing) {
             const randomIndex = Math.floor(Math.random() * encouragingMessages.length);
             setCurrentMessage(encouragingMessages[randomIndex]);
-            setProgress(0);
+            setParsingProgress(prev => ({ ...prev, progress: 0 }));
             const interval = 50; // ms
             const totalTime = 5000; // 5 seconds for the full animation
             const increment = (interval / totalTime) * 100;
             
             timer = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 95) { // Stop just before 100 to wait for async operation
+                setParsingProgress(prev => {
+                    if (prev.progress >= 95) { // Stop just before 100 to wait for async operation
                         clearInterval(timer);
-                        return 95;
+                        return { ...prev, progress: 95 };
                     }
-                    return prev + increment;
+                    return { ...prev, progress: prev.progress + increment };
                 });
             }, interval);
         }
@@ -81,11 +88,13 @@ export default function SyllabusUpload() {
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
-            if (selectedFile.size > 10 * 1024 * 1024) { // 10MB limit
+            // Use the new validation system
+            const validation = DocumentProcessorClient.validateFile(selectedFile);
+            if (!validation.valid) {
                 toast({
                     variant: "destructive",
-                    title: "File too large",
-                    description: "Please select a file smaller than 10MB.",
+                    title: "Invalid file",
+                    description: validation.error || "Please select a valid file.",
                 });
                 return;
             }
@@ -97,37 +106,97 @@ export default function SyllabusUpload() {
         if (!file) return;
 
         setIsAnalyzing(true);
+        setParsingResult(null);
         
         try {
-            // Step 1: Extract text from document
-            const documentText = await DocumentProcessorClient.extractText(file);
-            const extractedText = documentText.text;
-            
-            // Step 2: Send to AI for parsing
-            const response = await fetch('/api/syllabus-parser/ai-extract', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    text: extractedText,
-                    filename: file.name,
-                    format: file.type.includes('pdf') ? 'pdf' : 
-                           file.type.includes('docx') ? 'docx' : 
-                           file.type.includes('image') ? 'image' : 'txt'
-                })
+            // Stage 1: Upload validation
+            setParsingProgress({
+                stage: 'uploading',
+                progress: 10,
+                message: 'Validating file...'
             });
 
-            if (!response.ok) {
-                throw new Error(`AI parsing failed: ${response.status}`);
+            const validation = DocumentProcessorClient.validateFile(file);
+            if (!validation.valid) {
+                throw new Error(validation.error || 'Invalid file');
             }
 
-            const parsedData = await response.json();
-            setProgress(100);
+            // Stage 2: Extract text from document
+            setParsingProgress({
+                stage: 'extracting',
+                progress: 30,
+                message: 'Extracting text from document...'
+            });
 
+            const documentText = await DocumentProcessorClient.extractText(file);
+            
+            // Stage 3: AI parsing
+            setParsingProgress({
+                stage: 'parsing',
+                progress: 60,
+                message: 'Analyzing content with AI...'
+            });
+
+            const result = await AISyllabusParser.parseSyllabus(
+                documentText.text,
+                file.name,
+                documentText.format
+            );
+
+            setParsingResult(result);
+
+            // Stage 4: Structuring
+            setParsingProgress({
+                stage: 'structuring',
+                progress: 80,
+                message: 'Structuring extracted data...'
+            });
+
+            // Stage 5: Validation
+            setParsingProgress({
+                stage: 'validating',
+                progress: 90,
+                message: 'Validating extracted information...'
+            });
+
+            // Stage 6: Complete
+            setParsingProgress({
+                stage: 'complete',
+                progress: 100,
+                message: 'Syllabus parsing complete!'
+            });
+
+            // Process the parsed result
+            if (result.success && result.data) {
+                await processParsedSyllabus(result.data);
+            } else {
+                // Handle parsing errors or low confidence
+                if (result.errors && result.errors.length > 0) {
+                    throw new Error(result.errors.join(', '));
+                } else {
+                    throw new Error('Failed to parse syllabus content');
+                }
+            }
+
+        } catch (error) {
+            console.error('Syllabus processing error:', error);
+            toast({
+                title: "Processing Failed",
+                description: error instanceof Error ? error.message : "Failed to process syllabus",
+                variant: "destructive"
+            });
+            
+            // Fallback: create a generic chat room even if parsing fails
+            await createFallbackChat();
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const processParsedSyllabus = async (parsedData: any) => {
             // Extract course information from parsed data
             const courseInfo = parsedData.courseInfo || {};
-            const className = courseInfo.title || file.name.replace(/\.[^/.]+$/, "");
+        const className = courseInfo.title || file?.name.replace(/\.[^/.]+$/, "") || "Unknown Course";
             const classCode = courseInfo.courseCode || "UNKNOWN";
 
             // Create syllabus data
@@ -163,11 +232,11 @@ export default function SyllabusUpload() {
                 );
 
                 toast({
-                    title: "Upload Complete",
-                    description: `Created AI chat: ${chatName}`,
+                title: "AI Chat Created! 🤖",
+                description: `Your personal ${chatName} AI assistant is ready to help with coursework!`,
                 });
 
-                router.push('/dashboard/chat');
+                router.push('/dashboard/chat?tab=private-general-chat');
                 return;
             }
 
@@ -193,7 +262,8 @@ export default function SyllabusUpload() {
                     text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
                     timestamp: Date.now() 
                 },
-                chatId
+                chatId,
+                'class'
             );
 
             // Create class group
@@ -202,21 +272,24 @@ export default function SyllabusUpload() {
             console.log('Created class chat:', { chatName, chatId, syllabusData });
 
             toast({
-                title: "Upload Complete",
-                description: `Created new class chat: ${chatName}`,
+            title: "Class Chat Created! 🎓",
+            description: `Created new study group: ${chatName}. Other students with the same syllabus will automatically join!`,
             });
 
-            router.push('/dashboard/chat');
-
-        } catch (aiError) {
-            console.error("AI Error:", aiError);
+            router.push('/dashboard/chat?tab=public-general-chat');
+    };
             
-            // Fallback: create a generic chat room even if AI fails
-            const chatName = `Course: ${file.name.replace(/\.[^/.]+$/, "")}`;
+    const createFallbackChat = async () => {
+        const chatName = `Course: ${file?.name.replace(/\.[^/.]+$/, "") || "Unknown"}`;
             
             await addChat(
                 chatName,
-                { sender: 'bot', name: 'CourseConnect AI', text: `Welcome to the chat for ${chatName}! Ask a question to get started.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.`, timestamp: Date.now() }
+            { 
+                sender: 'bot', 
+                name: 'CourseConnect AI', 
+                text: `Welcome to the chat for ${chatName}! Ask a question to get started.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.`, 
+                timestamp: Date.now() 
+            }
             );
 
             toast({
@@ -224,14 +297,7 @@ export default function SyllabusUpload() {
                 description: `Created chat room: ${chatName} (AI analysis unavailable)`,
             });
 
-            router.push('/dashboard/chat');
-        } finally {
-            // Check if the component is still mounted before setting state
-             if (fileInputRef.current) {
-                setIsAnalyzing(false);
-                setFile(null);
-             }
-        }
+            router.push('/dashboard/chat?tab=private-general-chat');
     };
 
     const handleJoinGroup = async (groupId: string, chatId: string) => {
@@ -256,11 +322,11 @@ export default function SyllabusUpload() {
             }
 
             toast({
-                title: "Joined Class Group",
-                description: `You've joined an existing class chat!`,
+                title: "Joined Study Group! 👥",
+                description: `You've been matched with classmates who uploaded the same syllabus!`,
             });
 
-            router.push('/dashboard/chat');
+            router.push('/dashboard/chat?tab=public-general-chat');
         } catch (error) {
             console.error('Error joining group:', error);
             toast({
@@ -303,11 +369,13 @@ export default function SyllabusUpload() {
         const files = e.dataTransfer.files;
         if (files && files.length > 0) {
             const droppedFile = files[0];
-            if (droppedFile.size > 10 * 1024 * 1024) { // 10MB limit
+            // Use the new validation system
+            const validation = DocumentProcessorClient.validateFile(droppedFile);
+            if (!validation.valid) {
                 toast({
                     variant: "destructive",
-                    title: "File too large",
-                    description: "Please select a file smaller than 10MB.",
+                    title: "Invalid file",
+                    description: validation.error || "Please select a valid file.",
                 });
                 return;
             }
@@ -318,8 +386,17 @@ export default function SyllabusUpload() {
     return (
         <Card className="transform transition-all hover:shadow-xl hover:-translate-y-1">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Upload /> Upload Syllabus</CardTitle>
-                <CardDescription>Upload syllabi to find your classes and connect with classmates.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                    <Upload /> 
+                    Upload Syllabus
+                    <div className="ml-auto flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-full">
+                        <Bot className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI-Powered</span>
+                    </div>
+                </CardTitle>
+                <CardDescription>
+                    Upload syllabi to find your classes and connect with classmates using advanced AI parsing.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <input
@@ -330,6 +407,37 @@ export default function SyllabusUpload() {
                     accept=".pdf,.doc,.docx,.txt"
                     disabled={isAnalyzing}
                 />
+                
+                {/* AI Features Highlight */}
+                {!file && !isAnalyzing && (
+                    <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                            <h3 className="text-sm font-medium text-purple-800 dark:text-purple-200">Smart Features</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Text extraction</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Course parsing</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Find classmates</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-muted-foreground">Create study groups</span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-purple-700 dark:text-purple-300 mt-2">
+                            📚 Upload the same syllabus as classmates to automatically join their study group!
+                        </p>
+                    </div>
+                )}
                 
                 {/* Chat Preferences */}
                 {!file && !isAnalyzing && (
@@ -421,10 +529,69 @@ export default function SyllabusUpload() {
                             <div className="h-24 w-24 sm:h-32 sm:w-32 bg-primary/10 rounded-full animate-ping"></div>
                         </div>
                         <AnalyzingIcon className="h-20 w-20 sm:h-24 sm:w-24 text-primary mb-3 sm:mb-4 relative" />
-                        <h3 className="text-lg sm:text-xl font-semibold">Analyzing your syllabus...</h3>
-                        <p className="text-muted-foreground text-sm sm:text-base">{currentMessage}</p>
-                        <Progress value={progress} className="w-full" />
-                        <p className="text-sm font-bold text-primary">{Math.round(progress)}%</p>
+                        <h3 className="text-lg sm:text-xl font-semibold">
+                            {parsingProgress.stage === 'uploading' && 'Validating file...'}
+                            {parsingProgress.stage === 'extracting' && 'Extracting text...'}
+                            {parsingProgress.stage === 'parsing' && 'AI Analysis...'}
+                            {parsingProgress.stage === 'structuring' && 'Structuring data...'}
+                            {parsingProgress.stage === 'validating' && 'Validating results...'}
+                            {parsingProgress.stage === 'complete' && 'Processing complete!'}
+                        </h3>
+                        <p className="text-muted-foreground text-sm sm:text-base">{parsingProgress.message}</p>
+                        <Progress value={parsingProgress.progress} className="w-full" />
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-primary">{Math.round(parsingProgress.progress)}%</p>
+                            <span className="text-xs text-muted-foreground">
+                                {parsingProgress.stage === 'uploading' && 'Stage 1/6'}
+                                {parsingProgress.stage === 'extracting' && 'Stage 2/6'}
+                                {parsingProgress.stage === 'parsing' && 'Stage 3/6'}
+                                {parsingProgress.stage === 'structuring' && 'Stage 4/6'}
+                                {parsingProgress.stage === 'validating' && 'Stage 5/6'}
+                                {parsingProgress.stage === 'complete' && 'Stage 6/6'}
+                            </span>
+                        </div>
+                        {parsingResult && (
+                            <div className="mt-2 p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 rounded-lg border border-green-200/50 dark:border-green-800/50">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                                        AI Analysis Complete
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-muted-foreground">Confidence:</span>
+                                        <span className={`font-medium ${
+                                            (parsingResult.confidence || 0) > 0.8 ? 'text-green-600' : 
+                                            (parsingResult.confidence || 0) > 0.6 ? 'text-yellow-600' : 'text-orange-600'
+                                        }`}>
+                                            {Math.round((parsingResult.confidence || 0) * 100)}%
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-muted-foreground">Status:</span>
+                                        <span className={`font-medium ${
+                                            parsingResult.success ? 'text-green-600' : 'text-orange-600'
+                                        }`}>
+                                            {parsingResult.success ? 'Success' : 'Review Needed'}
+                                        </span>
+                                    </div>
+                                </div>
+                                {parsingResult.data && (
+                                    <div className="mt-2 text-xs text-muted-foreground">
+                                        <p>✅ Course: {parsingResult.data.courseInfo?.title || 'Detected'}</p>
+                                        <p>✅ Code: {parsingResult.data.courseInfo?.courseCode || 'Detected'}</p>
+                                    </div>
+                                )}
+                                {parsingResult.errors && parsingResult.errors.length > 0 && (
+                                    <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded text-xs">
+                                        <p className="text-orange-700 dark:text-orange-300">
+                                            ⚠️ {parsingResult.errors.length} minor issues detected
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </CardContent>
@@ -436,10 +603,10 @@ export default function SyllabusUpload() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5" />
-                                Found Matching Class Groups
+                                Found Matching Study Groups! 🎯
                             </CardTitle>
                             <CardDescription>
-                                We found existing class chats that match your syllabus. Choose one to join or create a new group.
+                                Our AI found existing class chats that match your syllabus. Join classmates who uploaded the same course materials!
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
