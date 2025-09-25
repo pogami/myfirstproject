@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { HamburgerMenu } from '@/components/hamburger-menu';
 import { useToast } from '@/hooks/use-toast';
+import { DualAIService } from '@/ai/services/dual-ai-service';
 
 interface AIMessage {
   id: string;
@@ -209,10 +210,13 @@ export function AdvancedAITutor({
     setIsTyping(true);
 
     try {
-      // Simulate AI processing with shorter delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Use the actual AI service instead of hardcoded responses
+      const aiResponse = await DualAIService.generateResponse(content, {
+        context: selectedTutor ? `You are a specialized ${selectedTutor.name} tutor. ${selectedTutor.description}.` : 'You are CourseConnect AI, an advanced AI tutor.',
+        maxTokens: 1000,
+        temperature: 0.7
+      });
 
-      const aiResponse = generateAIResponse(content, selectedTutor);
       const assistantMessage: AIMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -1464,7 +1468,7 @@ I'm here to help you understand whatever concepts are presented in this visual m
                     <div className="flex items-center gap-2 mt-1">
                       <MessageTimestamp timestamp={message.timestamp.getTime()} />
                       {message.subject && (
-                        <span className="text-xs opacity-70">• {message.subject}</span>
+                        <span className="text-xs text-primary-foreground/70">• {message.subject}</span>
                       )}
                     </div>
                   </div>
