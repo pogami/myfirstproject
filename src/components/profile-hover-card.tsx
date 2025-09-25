@@ -29,10 +29,12 @@ export function ProfileHoverCard({
 
   const showCard = () => {
     console.log('ProfileHoverCard showCard called for:', profile.name);
+    console.log('ProfileHoverCard container element:', containerRef.current);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(() => {
+      console.log('ProfileHoverCard setting isVisible to true');
       setIsVisible(true);
     }, delay);
   };
@@ -130,10 +132,11 @@ export function ProfileHoverCard({
     <>
       <div
         ref={containerRef}
-        className={cn("inline-block relative", className)}
+        className={cn("inline-block relative border-2 border-red-500", className)}
         onMouseEnter={showCard}
         onMouseLeave={hideCard}
         style={{ zIndex: 1 }}
+        onMouseOver={() => console.log('Mouse over ProfileHoverCard container for:', profile.name)}
       >
         {children}
       </div>
