@@ -32,6 +32,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { HamburgerMenu } from '@/components/hamburger-menu';
+import { useToast } from '@/hooks/use-toast';
 import { useTextExtraction } from '@/hooks/use-text-extraction';
 import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
 import MathRender from '@/components/math-render';
