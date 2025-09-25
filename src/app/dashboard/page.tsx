@@ -14,7 +14,6 @@ import { useState, useEffect } from "react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
-import { FirebaseDebug } from "@/components/firebase-debug";
 import dynamic from "next/dynamic";
 
 // Lazy load heavy components
@@ -370,12 +369,6 @@ export default function DashboardPage() {
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
       
-      {/* Firebase Debug - Only show in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 z-40">
-          <FirebaseDebug />
-        </div>
-      )}
     </div>
   );
 }
