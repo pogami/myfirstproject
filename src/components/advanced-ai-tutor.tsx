@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { RippleText } from '@/components/ripple-text';
 import { CourseConnectLogo } from '@/components/icons/courseconnect-logo';
+import { MessageTimestamp } from '@/components/message-timestamp';
+import { DigitalClock } from '@/components/digital-clock';
 import { 
   Bot, 
   Mic, 
@@ -176,7 +178,7 @@ export function AdvancedAITutor({
     const welcomeMessage: AIMessage = {
       id: '1',
       role: 'assistant',
-      content: `Hello! I'm your advanced AI tutor. I can help you with multiple subjects and learning styles. Choose a specialized tutor below or ask me anything!`,
+      content: `Hey there! 👋 Welcome to Advanced AI Tutor!\n\nI'm CourseConnect AI, your personalized study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat's on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What's the best way to study for exams?"`,
       type: 'text',
       timestamp: new Date(),
       subject: 'General'
@@ -827,11 +829,7 @@ I provide direct, expert-level answers in my field. What specific question can I
 
     // General AI responses - only when no specialized tutor is selected
     if (input.includes('hello') || input.includes('hi')) {
-      return `Hello! I'm your advanced AI tutor. I can help you with multiple subjects and learning styles. 
-
-Choose a specialized tutor above for expert help in specific subjects, or ask me general questions!
-
-I provide direct answers and step-by-step explanations. What would you like to learn about?`;
+      return `Hey there! 👋 Welcome to Advanced AI Tutor!\n\nI'm CourseConnect AI, your personalized study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat's on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What's the best way to study for exams?"`;
     }
     
     if (input.includes('help')) {
@@ -1444,35 +1442,35 @@ I'm here to help you understand whatever concepts are presented in this visual m
                 className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {message.role === 'assistant' && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      <img 
-                        src="/final-logo.png" 
-                        alt="CourseConnect AI" 
-                        className="h-4 w-4 object-contain"
-                      />
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                      <CourseConnectLogo className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
                 )}
                 {message.role === 'assistant' ? (
                   <div className="px-3 pb-3">
                     <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                    <div className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                      {message.subject && ` • ${message.subject}`}
+                    <div className="flex items-center gap-2 mt-1">
+                      <MessageTimestamp timestamp={message.timestamp.getTime()} />
+                      {message.subject && (
+                        <span className="text-xs text-muted-foreground">• {message.subject}</span>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="max-w-[80%] p-3 rounded-lg bg-primary text-primary-foreground">
                     <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                    <div className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                      {message.subject && ` • ${message.subject}`}
+                    <div className="flex items-center gap-2 mt-1">
+                      <MessageTimestamp timestamp={message.timestamp.getTime()} />
+                      {message.subject && (
+                        <span className="text-xs opacity-70">• {message.subject}</span>
+                      )}
                     </div>
                   </div>
                 )}
                 {message.role === 'user' && (
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     {user?.photoURL ? (
                       <img 
                         src={user.photoURL} 
@@ -1480,8 +1478,8 @@ I'm here to help you understand whatever concepts are presented in this visual m
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                        {user?.displayName?.[0] || user?.email?.[0] || 'U'}
                       </AvatarFallback>
                     )}
                   </Avatar>
@@ -1490,13 +1488,13 @@ I'm here to help you understand whatever concepts are presented in this visual m
             ))}
             {isTyping && (
               <div className="flex gap-3 justify-start">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
                     <CourseConnectLogo className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="bg-background border p-3 rounded-lg">
-                  <RippleText text="Loading..." className="text-sm text-muted-foreground" />
+                <div className="px-3 pb-3">
+                  <RippleText text="thinking..." className="text-primary" />
                 </div>
               </div>
             )}
