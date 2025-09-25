@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { HamburgerMenu } from '@/components/hamburger-menu';
 import { useToast } from '@/hooks/use-toast';
-import { DualAIService } from '@/ai/services/dual-ai-service';
+import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
 
 interface AIMessage {
   id: string;
@@ -211,11 +211,17 @@ export function AdvancedAITutor({
 
     try {
       // Use the actual AI service instead of hardcoded responses
-      const aiResponse = await DualAIService.generateResponse(content, {
+      const input: StudyAssistanceInput = {
+        question: content,
         context: selectedTutor ? `You are a specialized ${selectedTutor.name} tutor. ${selectedTutor.description}.` : 'You are CourseConnect AI, an advanced AI tutor.',
-        maxTokens: 1000,
-        temperature: 0.7
-      });
+        conversationHistory: messages.slice(-10).map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      };
+
+      const result = await provideStudyAssistance(input);
+      const aiResponse = result.answer;
 
       const assistantMessage: AIMessage = {
         id: (Date.now() + 1).toString(),
