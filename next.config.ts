@@ -35,6 +35,27 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  // Webpack configuration for PDF.js and other dependencies
+  webpack: (config, { isServer }) => {
+    // Handle PDF.js dependencies
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'pdfjs-dist/build/pdf.worker.entry': 'pdfjs-dist/build/pdf.worker.min.js',
+    };
+
+    // Ensure proper handling of canvas and other Node.js modules
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+
+    return config;
+  },
 };
 
 export default nextConfig;

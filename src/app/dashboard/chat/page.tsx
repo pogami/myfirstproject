@@ -10,6 +10,7 @@ import { AIResponse } from '@/components/ai-response';
 import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
+import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -205,22 +206,14 @@ export default function ChatPage() {
 
     // Initialize general chat if it doesn't exist and set current tab
     useEffect(() => {
-        if (!chats['general-chat']) {
-            addChat(
-                'General Chat',
-                { 
-                    sender: 'bot', 
-                    name: 'AI', 
-                    text: 'Hey there! 👋 Welcome to General Chat!\n\nI\'m CourseConnect AI, your study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat\'s on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What\'s the best way to study for exams?"'
-                }
-            );
-        }
+        // Initialize general chats if they don't exist
+        initializeGeneralChats();
         
-        // Set current tab to general-chat if no tab is selected
-        if (!currentTab && chats['general-chat']) {
-            setCurrentTab('general-chat');
+        // Set current tab to private-general-chat if no tab is selected
+        if (!currentTab) {
+            setCurrentTab('private-general-chat');
         }
-    }, [chats, addChat, currentTab, setCurrentTab]);
+    }, [initializeGeneralChats, currentTab, setCurrentTab]);
 
     // Force load after 3 seconds to prevent infinite loading
     useEffect(() => {
@@ -243,7 +236,7 @@ export default function ChatPage() {
         if (!inputValue.trim()) return;
 
         const messageText = inputValue.trim();
-        const currentChat = chats['general-chat'];
+        const currentChat = chats[currentTab || 'private-general-chat'];
         const isPublicChat = currentChat?.chatType === 'public' || currentChat?.chatType === 'class';
         const isClassChat = currentChat?.chatType === 'class';
 
@@ -271,7 +264,7 @@ export default function ChatPage() {
         }
 
         // Add user message
-        await addMessage('general-chat', userMessage);
+        await addMessage(currentTab || 'private-general-chat', userMessage);
 
         // Only get AI response if appropriate
         if (shouldCallAIFinal) {
@@ -289,8 +282,8 @@ export default function ChatPage() {
                         },
                         body: JSON.stringify({
                             question: messageText,
-                            context: chats['general-chat']?.title || 'General Chat',
-                            conversationHistory: chats['general-chat']?.messages?.slice(-10).map(msg => ({
+                            context: currentChat?.title || 'General Chat',
+                            conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
                                 role: msg.sender === 'user' ? 'user' : 'assistant',
                                 content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
                             })) || [],
@@ -366,7 +359,7 @@ export default function ChatPage() {
                 };
 
                 // Add AI response
-                await addMessage('general-chat', aiMessage);
+                await addMessage(currentTab || 'private-general-chat', aiMessage);
             } catch (error) {
                 console.error('AI Error:', error);
                 const errorMessage = {
@@ -376,7 +369,7 @@ export default function ChatPage() {
                     name: 'CourseConnect AI',
                     timestamp: Date.now()
                 };
-                await addMessage('general-chat', errorMessage);
+                await addMessage(currentTab || 'private-general-chat', errorMessage);
             } finally {
                 console.log('Setting isLoading to false');
                 setIsLoading(false);
@@ -394,10 +387,27 @@ export default function ChatPage() {
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
             };
-            await addMessage('general-chat', extractedTextMessage);
+            await addMessage(currentTab || 'private-general-chat', extractedTextMessage);
         },
         onExtractionError: (error, fileName) => {
             console.error('Text extraction failed:', error);
+        }
+    });
+
+    const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
+        onAnalysisComplete: async (result, fileName) => {
+            // Add AI analysis as a message
+            const analysisMessage = {
+                id: generateMessageId(),
+                text: `🤖 **AI Analysis of ${fileName}**\n\n${result.summary}`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                timestamp: Date.now()
+            };
+            await addMessage(currentTab || 'private-general-chat', analysisMessage);
+        },
+        onAnalysisError: (error, fileName) => {
+            console.error('Document analysis failed:', error);
         }
     });
 
@@ -422,34 +432,10 @@ export default function ChatPage() {
             };
 
             // Add upload message
-            await addMessage('general-chat', uploadMessage);
+            await addMessage(currentTab || 'private-general-chat', uploadMessage);
 
-            // Extract text from the file
-            const extractionResult = await extractText(file);
-            
-            if (extractionResult?.success) {
-                // Text extraction was successful - the hook will handle adding the extracted text message
-                toast({
-                    title: "File uploaded successfully",
-                    description: `${file.name} has been uploaded and text extracted.`,
-                });
-            } else {
-                // Fallback AI response if text extraction fails
-                const aiResponse = {
-                    id: generateMessageId(),
-                    text: `I've received your file "${file.name}". I can help you analyze documents, images, or other content. What would you like to know about this file?`,
-                    sender: 'bot' as const,
-                    name: 'CourseConnect AI',
-                    timestamp: Date.now()
-                };
-
-                await addMessage('general-chat', aiResponse);
-
-                toast({
-                    title: "File uploaded successfully",
-                    description: `${file.name} has been uploaded and is ready for analysis.`,
-                });
-            }
+            // Use smart document analysis
+            await analyzeDocument(file);
 
         } catch (error) {
             console.error('File upload error:', error);
@@ -466,7 +452,7 @@ export default function ChatPage() {
     // Handler functions for menu actions
     const handleExportChat = () => {
         try {
-            exportChat('general-chat');
+            exportChat(currentTab || 'private-general-chat');
             toast({
                 title: "Chat Exported",
                 description: "Chat has been exported and downloaded.",
@@ -485,7 +471,7 @@ export default function ChatPage() {
         setShowResetDialog(false);
         
         try {
-            await resetChat('general-chat');
+            await resetChat(currentTab || 'private-general-chat');
             toast({
                 title: "Chat Reset",
                 description: "Chat has been reset to its initial state.",
@@ -504,7 +490,7 @@ export default function ChatPage() {
         setShowDeleteDialog(false);
         
         try {
-            await deleteChat('general-chat');
+            await deleteChat(currentTab || 'private-general-chat');
             toast({
                 title: "Chat Deleted",
                 description: "Chat has been permanently deleted.",
@@ -521,8 +507,8 @@ export default function ChatPage() {
     };
 
     // Get class chats (non-general chats)
-    const classChats = Object.entries(chats).filter(([id, chat]) => id !== 'general-chat');
-    const generalChat = chats['general-chat'];
+    const classChats = Object.entries(chats).filter(([id, chat]) => id !== 'private-general-chat' && id !== 'public-general-chat');
+    const generalChat = chats[currentTab || 'private-general-chat'];
 
     // Debug logging
     console.log('ChatPage - isStoreLoading:', isStoreLoading, 'forceLoad:', forceLoad, 'chats:', Object.keys(chats), 'currentTab:', currentTab);
@@ -644,19 +630,19 @@ export default function ChatPage() {
                                                                     <Button
                                                                         size="sm"
                                                                         variant="ghost"
-                                                                        className="absolute top-1 right-1 h-6 w-6 p-0 bg-primary/20 hover:bg-primary/30 text-primary-foreground"
+                                                                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-background/50 text-muted-foreground"
                                                                         onClick={() => copyToClipboard(typeof message.text === 'string' ? message.text : JSON.stringify(message.text), message.id || `msg-${index}`)}
                                                                     >
                                                                         {copiedMessageId === (message.id || `msg-${index}`) ? (
-                                                                            <Check className="h-3 w-3 text-green-300" />
+                                                                            <Check className="h-3 w-3 text-green-500" />
                                                                         ) : (
-                                                                            <Copy className="h-3 w-3" />
+                                                                            <img src="/copy-icon.svg" alt="Copy" className="h-3 w-3" />
                                                                         )}
                                                                     </Button>
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-left min-w-0">
+                                                            <div className="text-left min-w-0 group">
                                                                 <div className="flex items-center gap-2 mb-1">
                                                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                                                                         {message.name}
@@ -674,7 +660,7 @@ export default function ChatPage() {
                                                                             return shouldShowMathAnalysis ? (
                                                                                 <InDepthAnalysis 
                                                                                     question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                                    conversationHistory={chats['general-chat']?.messages || []}
+                                                                                    conversationHistory={generalChat?.messages || []}
                                                                                 />
                                                                             ) : null;
                                                                         })()}
