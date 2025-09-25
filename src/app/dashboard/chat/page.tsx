@@ -561,7 +561,7 @@ export default function ChatPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden chat-container">
-                                    <ScrollArea className="h-[calc(100vh-300px)] px-4" ref={scrollAreaRef}>
+                                    <ScrollArea className="h-[500px] px-4" ref={scrollAreaRef}>
                                         <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
                                             {generalChat?.messages?.map((message, index) => {
                                                 // Handle system messages (join notifications)
