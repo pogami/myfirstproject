@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeImageWithVision, VisionAnalysisInput } from '@/ai/services/vision-analysis-service';
+import { analyzeImageWithFreeVision, FreeVisionAnalysisInput } from '@/ai/services/free-vision-analysis-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
     const isDocument = fileType.includes('document') || fileType.includes('text');
 
     if (isImage) {
-      // Use vision analysis for images
-      const visionInput: VisionAnalysisInput = {
+      // Use free vision analysis for images
+      const visionInput: FreeVisionAnalysisInput = {
         imageData: fileData,
         fileName,
         fileType,
@@ -27,14 +27,16 @@ export async function POST(request: NextRequest) {
         tutorDescription: tutorDescription || 'General AI tutor'
       };
 
-      const result = await analyzeImageWithVision(visionInput);
+      const result = await analyzeImageWithFreeVision(visionInput);
       
       return NextResponse.json({
         analysis: result.analysis,
         fileName,
         fileType,
         tutorSpecialty,
-        provider: result.provider
+        provider: result.provider,
+        extractedText: result.extractedText,
+        confidence: result.confidence
       });
     } else {
       // For non-image files, provide a basic analysis
