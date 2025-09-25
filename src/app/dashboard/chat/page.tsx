@@ -109,15 +109,17 @@ export default function ChatPage() {
         
         // Default student profile for ALL users (including current user)
         console.log('Returning default student profile for:', name);
-        return {
+        const defaultProfile = {
             id: sender,
             name: name || 'Student',
-            role: 'student',
+            role: 'student' as const,
             school: 'University',
             major: 'Undecided',
             year: 'Freshman',
             skills: ['Learning', 'Studying', 'Academic Work']
         };
+        console.log('Default profile created:', defaultProfile);
+        return defaultProfile;
     };
 
     // Auto-scroll to bottom function
