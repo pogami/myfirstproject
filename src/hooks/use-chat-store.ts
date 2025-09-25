@@ -372,7 +372,7 @@ export const useChatStore = create<ChatState>()(
         if (!chat) return;
 
         // Keep only the welcome message
-        const welcomeMessage = chat.messages.find(m => m.text.includes('Welcome to') && m.text.includes('Chat Guidelines'));
+        const welcomeMessage = chat.messages.find(m => m.text.includes('Welcome to') && (m.text.includes('Chat Guidelines') || m.text.includes('Quick Start')));
         const resetMessages = welcomeMessage ? [welcomeMessage] : [];
 
         // Update local state
@@ -511,7 +511,7 @@ export const useChatStore = create<ChatState>()(
           const publicGeneralMessage = {
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to Public General Chat! 👥\n\n**Public Chat Features:**\n• Chat with other students\n• Share study resources\n• Collaborate on topics\n• Get AI help when needed\n\n**How to use:**\n• Chat normally with other users\n• Type @ai to call the AI assistant\n• Be helpful and respectful\n• Share knowledge and resources\n\nStart a conversation or ask for help!`,
+            text: `Welcome to Public General Chat! 👥\n\nQuick Start: Chat with other students, share study resources, or collaborate on topics. Type @ai to call the AI assistant.\n\nFeatures: Student collaboration, AI assistance, knowledge sharing & more.`,
             timestamp: Date.now()
           };
           
