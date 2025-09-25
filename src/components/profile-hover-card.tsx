@@ -63,11 +63,11 @@ export function ProfileHoverCard({
     switch (placement) {
       case 'top':
         x = containerRect.left + containerRect.width / 2 - cardRect.width / 2;
-        y = containerRect.top - cardRect.height - 12;
+        y = containerRect.top - cardRect.height - 5;
         break;
       case 'bottom':
         x = containerRect.left + containerRect.width / 2 - cardRect.width / 2;
-        y = containerRect.bottom + 12;
+        y = containerRect.bottom + 5;
         break;
       case 'left':
         x = containerRect.left - cardRect.width - 12;
@@ -146,7 +146,7 @@ export function ProfileHoverCard({
         <div
           ref={cardRef}
           className={cn(
-            "fixed z-[9999] transition-all duration-300 ease-out",
+            "fixed z-[9999] transition-none",
             isVisible 
               ? "opacity-100 scale-100 translate-y-0" 
               : "opacity-0 scale-95 translate-y-2"
@@ -165,7 +165,7 @@ export function ProfileHoverCard({
           <ProfileCard 
             profile={profile} 
             onAction={onAction}
-            className="animate-in fade-in-0 zoom-in-95 duration-300"
+            className=""
           />
         </div>
       )}

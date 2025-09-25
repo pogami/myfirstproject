@@ -644,6 +644,7 @@ export default function ChatPage() {
                                                         {(() => {
                                                             const profile = getProfileForSender(message.sender, message.sender === 'user' ? user?.displayName : 'CourseConnect AI');
                                                             console.log('Dashboard chat - Rendering profile card for:', { sender: message.sender, name: message.sender === 'user' ? user?.displayName : 'CourseConnect AI', profile });
+                                                            console.log('User object:', { displayName: user?.displayName, email: user?.email, photoURL: user?.photoURL });
                                                             
                                                             return profile ? (
                                                                 <ProfileHoverCard 
@@ -665,7 +666,7 @@ export default function ChatPage() {
                                                                     <Avatar className="w-8 h-8 flex-shrink-0">
                                                                         <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
                                                                         <AvatarFallback className="text-xs">
-                                                                            {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : (
+                                                                            {message.sender === 'user' ? (user?.displayName?.[0] || user?.email?.[0] || 'U') : (
                                                                                 <CourseConnectLogo className="w-4 h-4" />
                                                                             )}
                                                                         </AvatarFallback>
@@ -675,7 +676,7 @@ export default function ChatPage() {
                                                                 <Avatar className="w-8 h-8 flex-shrink-0">
                                                                     <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
                                                                     <AvatarFallback className="text-xs">
-                                                                        {message.sender === 'user' ? (user?.displayName?.[0] || 'U') : (
+                                                                        {message.sender === 'user' ? (user?.displayName?.[0] || user?.email?.[0] || 'U') : (
                                                                             <CourseConnectLogo className="w-4 h-4" />
                                                                         )}
                                                                     </AvatarFallback>
