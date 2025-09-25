@@ -90,7 +90,7 @@ export function useTextExtraction(options: UseTextExtractionOptions = {}): UseTe
   return {
     isExtracting,
     extractText,
-    formatExtractedText: (result: TextExtractionResult, fileName: string) => 
-      formatExtractedText(result, fileName)
+    formatExtractedText: async (result: TextExtractionResult, fileName: string) => 
+      await formatExtractedText(result, fileName)
   };
 }
