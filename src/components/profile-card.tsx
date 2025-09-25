@@ -257,10 +257,6 @@ export function ProfileCard({ profile, className, onAction }: ProfileCardProps) 
         </button>
       </div>
 
-      {/* Bookmark Icon */}
-      <div className="absolute bottom-4 left-4 w-6 h-6 border border-white/30 rounded-sm flex items-center justify-center">
-        <div className="w-3 h-3 border-l-2 border-r-2 border-t-2 border-white/50 rounded-t-sm" />
-      </div>
     </div>
   );
 }

@@ -11,27 +11,27 @@ const testProfiles: ProfileData[] = [
     id: 'ai-tutor',
     name: 'CourseConnect AI',
     role: 'ai-tutor',
-    bio: 'Your intelligent study companion powered by advanced AI. I can help with homework, explain concepts, and provide personalized learning assistance.',
-    capabilities: ['Homework Help', 'Concept Explanation', 'Study Planning', 'Test Prep'],
-    subjects: ['Mathematics', 'Science', 'English', 'History', 'Computer Science'],
-    experience: 'Always Available'
+    bio: 'Advanced AI tutor specializing in personalized learning. I can help with homework, explain complex concepts, create study plans, and provide exam preparation across all subjects.',
+    capabilities: ['Homework Assistance', 'Concept Explanation', 'Study Planning', 'Exam Prep', 'Research Help', 'Writing Support'],
+    subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English Literature', 'History', 'Computer Science', 'Economics'],
+    experience: '24/7 Available'
   },
   {
     id: 'student-alex',
     name: 'Alex Johnson',
     role: 'student',
-    school: 'Stanford University',
+    school: 'University of California, Berkeley',
     major: 'Computer Science',
     year: 'Junior',
-    skills: ['React', 'Python', 'Machine Learning', 'Data Structures', 'Algorithms', 'Web Development']
+    skills: ['Python Programming', 'Machine Learning', 'Data Analysis', 'Web Development', 'Database Design', 'Software Engineering']
   },
   {
     id: 'instructor-sarah',
     name: 'Dr. Sarah Chen',
     role: 'instructor',
-    school: 'MIT',
-    subjects: ['Advanced Mathematics', 'Calculus', 'Linear Algebra', 'Statistics', 'Discrete Math'],
-    coursesCreated: 12
+    school: 'Massachusetts Institute of Technology',
+    subjects: ['Calculus I & II', 'Linear Algebra', 'Statistics', 'Discrete Mathematics', 'Probability Theory'],
+    coursesCreated: 8
   }
 ];
 
