@@ -32,7 +32,7 @@ export function FuturisticChatInput({
   const { theme } = useTheme();
   
   // Debug logging
-  console.log('FuturisticChatInput rendering with theme:', theme);
+  console.log('FuturisticChatInput rendering with theme:', theme, 'isSending:', isSending, 'disabled:', disabled);
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -68,7 +68,8 @@ export function FuturisticChatInput({
   };
 
   const handleSend = () => {
-    if (value.trim()) {
+    console.log('FuturisticChatInput handleSend called, value:', value.trim(), 'disabled:', disabled, 'isSending:', isSending);
+    if (value.trim() && !disabled && !isSending) {
       onSend();
     }
   };
