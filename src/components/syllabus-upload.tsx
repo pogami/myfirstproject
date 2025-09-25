@@ -229,7 +229,7 @@ export default function SyllabusUpload() {
                     { 
                         sender: 'bot', 
                         name: 'CourseConnect AI', 
-                        text: `Welcome to your personal ${chatName} AI chat! 🤖\n\n**AI Chat Features:**\n• Ask questions about course topics\n• Get AI assistance with homework\n• Request study materials\n• Get explanations of concepts\n\n**Chat Guidelines:**\n• Ask specific, detailed questions\n• Request help with assignments\n• Get clarification on topics\n\nStart by asking a question about the course!`, 
+                        text: `Welcome to your personal ${chatName} AI chat! 🤖\n\nQuick Start: Ask questions about course topics, get AI homework help, or request study materials. Be specific and detailed for better assistance!\n\nSubjects: Course topics, assignments, concepts & more.`, 
                         timestamp: Date.now() 
                     },
                     chatId
@@ -264,7 +264,7 @@ export default function SyllabusUpload() {
                 { 
                     sender: 'bot', 
                     name: 'CourseConnect AI', 
-                    text: `Welcome to the ${chatName} class chat! 🎓\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
+                    text: `Welcome to the ${chatName} class chat! 🎓\n\nQuick Start: Ask questions about course topics, collaborate with classmates, or get AI homework help. Be specific and detailed for better assistance!\n\nSubjects: Course topics, assignments, concepts & more.`, 
                     timestamp: Date.now() 
                 },
                 chatId,
@@ -323,7 +323,7 @@ export default function SyllabusUpload() {
                     { 
                         sender: 'bot', 
                         name: 'CourseConnect AI', 
-                        text: `Welcome to the ${group.className} class chat! 🎓\n\nYou've joined an existing class group with ${group.members.length} members.\n\n**Class Chat Features:**\n• Ask questions about course topics\n• Collaborate with classmates\n• Get AI assistance with homework\n• Share study resources\n\n**Chat Guidelines:**\n• Be respectful and helpful\n• Ask specific, detailed questions\n• Share relevant course materials\n• Help your classmates when you can\n\nStart by asking a question about the course!`, 
+                        text: `Welcome to the ${group.className} class chat! 🎓\n\nYou've joined an existing class group with ${group.members.length} members.\n\nQuick Start: Ask questions about course topics, collaborate with classmates, or get AI homework help. Be specific and detailed for better assistance!\n\nSubjects: Course topics, assignments, concepts & more.`, 
                         timestamp: Date.now() 
                     },
                     chatId
