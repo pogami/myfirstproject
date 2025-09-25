@@ -32,15 +32,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/courseconnect-logo-profile.svg', type: 'image/svg+xml' },
+      { url: '/courseconnect-favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
     ],
     apple: [
-      { url: '/courseconnect-logo-profile.svg', sizes: '180x180', type: 'image/svg+xml' },
-      { url: '/courseconnect-logo-profile.svg', sizes: '152x152', type: 'image/svg+xml' },
-      { url: '/courseconnect-logo-profile.svg', sizes: '120x120', type: 'image/svg+xml' },
-      { url: '/courseconnect-logo-profile.svg', sizes: '76x76', type: 'image/svg+xml' }
+      { url: '/courseconnect-favicon.svg', sizes: '180x180', type: 'image/svg+xml' },
+      { url: '/courseconnect-favicon.svg', sizes: '152x152', type: 'image/svg+xml' },
+      { url: '/courseconnect-favicon.svg', sizes: '120x120', type: 'image/svg+xml' },
+      { url: '/courseconnect-favicon.svg', sizes: '76x76', type: 'image/svg+xml' }
     ],
-    shortcut: '/courseconnect-logo-profile.svg'
+    shortcut: '/favicon.ico'
   }
 };
 
