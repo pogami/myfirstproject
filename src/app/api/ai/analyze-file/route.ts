@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
+import { analyzeImageWithVision, VisionAnalysisInput } from '@/ai/services/vision-analysis-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,65 +17,56 @@ export async function POST(request: NextRequest) {
     const isPDF = fileType === 'application/pdf';
     const isDocument = fileType.includes('document') || fileType.includes('text');
 
-    let analysisPrompt = '';
-    
     if (isImage) {
-      analysisPrompt = `I need you to analyze this image file: "${fileName}"
+      // Use vision analysis for images
+      const visionInput: VisionAnalysisInput = {
+        imageData: fileData,
+        fileName,
+        fileType,
+        tutorSpecialty: tutorSpecialty || 'General',
+        tutorDescription: tutorDescription || 'General AI tutor'
+      };
 
-Please provide a comprehensive analysis of this image including:
-1. **Visual Description**: What do you see in the image? Describe the main elements, objects, text, diagrams, charts, etc.
-2. **Content Analysis**: If there's text, diagrams, or educational content, explain what it shows
-3. **Educational Value**: How can this image be used for learning? What concepts does it illustrate?
-4. **Key Information**: Extract any important facts, data, or concepts shown
-5. **Questions**: What questions could a student ask about this image?
-
-${tutorSpecialty !== 'General' ? `As a ${tutorSpecialty} specializing in ${tutorDescription}, focus your analysis on how this image relates to your field of expertise.` : 'Provide a general educational analysis.'}
-
-Be detailed and specific in your analysis. If you can see text, diagrams, or specific content, describe it accurately.`;
-    } else if (isPDF) {
-      analysisPrompt = `I need you to analyze this PDF document: "${fileName}"
-
-Please provide a comprehensive analysis of this document including:
-1. **Document Overview**: What type of document is this? (textbook, article, assignment, etc.)
-2. **Key Concepts**: What are the main topics and concepts covered?
-3. **Important Information**: Extract key facts, data, formulas, or important points
-4. **Structure**: How is the document organized? What sections does it have?
-5. **Educational Value**: How can this document be used for learning?
-6. **Questions**: What questions could a student ask about this content?
-
-${tutorSpecialty !== 'General' ? `As a ${tutorSpecialty} specializing in ${tutorDescription}, focus your analysis on how this document relates to your field of expertise.` : 'Provide a general educational analysis.'}
-
-Be thorough and educational in your analysis.`;
+      const result = await analyzeImageWithVision(visionInput);
+      
+      return NextResponse.json({
+        analysis: result.analysis,
+        fileName,
+        fileType,
+        tutorSpecialty,
+        provider: result.provider
+      });
     } else {
-      analysisPrompt = `I need you to analyze this document: "${fileName}" (Type: ${fileType})
+      // For non-image files, provide a basic analysis
+      const analysis = `I can see you've uploaded a document: **${fileName}**
 
-Please provide a comprehensive analysis of this document including:
-1. **Document Type**: What kind of document is this?
-2. **Content Summary**: What is the main content and purpose?
-3. **Key Information**: Extract important facts, concepts, or data
-4. **Educational Value**: How can this be used for learning?
-5. **Key Takeaways**: What are the most important points?
+**Document Analysis:**
+• File: ${fileName}
+• Type: ${fileType}
+• Content: Document content detected
 
-${tutorSpecialty !== 'General' ? `As a ${tutorSpecialty} specializing in ${tutorDescription}, focus your analysis on how this document relates to your field of expertise.` : 'Provide a general educational analysis.'}
+**What I can help with:**
+• Extract key information if you share the content
+• Explain concepts from the document
+• Answer questions about the topics covered
+• Provide additional context and examples
 
-Be detailed and educational in your analysis.`;
+**Specialized Analysis:**
+${tutorSpecialty !== 'General' ? `As your ${tutorSpecialty} specializing in ${tutorDescription}, I can provide expert analysis focused on your field of expertise.` : 'I can provide comprehensive analysis across multiple subjects.'}
+
+**Next Steps:**
+Please share the text content from this document, and I can provide detailed analysis and explanations. You can copy and paste the relevant sections you'd like me to analyze.
+
+What specific aspects of this document would you like me to explain?`;
+      
+      return NextResponse.json({
+        analysis,
+        fileName,
+        fileType,
+        tutorSpecialty,
+        provider: 'text-analysis'
+      });
     }
-
-    // Use the AI service to analyze the file
-    const input: StudyAssistanceInput = {
-      question: analysisPrompt,
-      context: `You are an expert AI tutor analyzing a file upload. The user has uploaded: ${fileName} (${fileType}). ${tutorSpecialty !== 'General' ? `You are specialized as a ${tutorSpecialty} with expertise in ${tutorDescription}.` : 'You are a general AI tutor.'} Provide detailed, educational analysis of the uploaded content.`,
-      conversationHistory: []
-    };
-
-    const result = await provideStudyAssistance(input);
-    
-    return NextResponse.json({
-      analysis: result.answer,
-      fileName,
-      fileType,
-      tutorSpecialty
-    });
 
   } catch (error) {
     console.error('Error analyzing file:', error);
