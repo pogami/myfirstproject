@@ -1,7 +1,6 @@
 'use server';
 
 import * as Tesseract from 'tesseract.js';
-import * as pdfParse from 'pdf-parse';
 import * as mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
@@ -167,14 +166,21 @@ async function extractTextFromImage(file: File): Promise<TextExtractionResult> {
  */
 async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
   try {
+    console.log('Starting PDF extraction for:', file.name);
     const buffer = await file.arrayBuffer();
+    console.log('Buffer size:', buffer.byteLength);
+    
+    // Dynamic import to avoid server-side issues
+    const pdfParse = await import('pdf-parse');
     
     // Try to extract text directly first
     const pdfData = await pdfParse.default(buffer);
+    console.log('PDF parse result:', pdfData);
     
     if (pdfData.text && pdfData.text.trim().length > 0) {
       // PDF has selectable text
       const wordCount = pdfData.text.split(/\s+/).filter(word => word.length > 0).length;
+      console.log('Extracted text length:', pdfData.text.length, 'Word count:', wordCount);
       
       return {
         success: true,
@@ -189,6 +195,7 @@ async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
     } else {
       // PDF is scanned (images) - would need pdf2image + OCR
       // For now, return a message asking user to describe the content
+      console.log('PDF appears to be scanned (no selectable text)');
       return {
         success: false,
         text: '',
@@ -197,6 +204,7 @@ async function extractTextFromPDF(file: File): Promise<TextExtractionResult> {
       };
     }
   } catch (error: any) {
+    console.error('PDF processing error:', error);
     return {
       success: false,
       text: '',
