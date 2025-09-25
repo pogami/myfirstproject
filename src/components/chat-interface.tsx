@@ -107,20 +107,26 @@ export default function ChatInterface() {
     
     // Function to get profile data for a message sender
     const getProfileForSender = (sender: string, name?: string): ProfileData | null => {
+        console.log('getProfileForSender called with:', { sender, name });
+        
         // Always return AI tutor profile for bot messages
         if (sender === 'bot' || name === 'CourseConnect AI' || name === 'AI') {
+            console.log('Returning AI tutor profile');
             return sampleProfiles['ai-tutor'];
         }
         
         // For demo purposes, assign profiles based on name patterns
         if (name?.includes('Alex')) {
+            console.log('Returning Alex student profile');
             return sampleProfiles['student-alex'];
         }
         if (name?.includes('Dr.') || name?.includes('Sarah')) {
+            console.log('Returning Sarah instructor profile');
             return sampleProfiles['instructor-sarah'];
         }
         
-        // Default student profile for unknown users
+        // Default student profile for ALL users (including current user)
+        console.log('Returning default student profile for:', name);
         return {
             id: sender,
             name: name || 'Student',

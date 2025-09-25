@@ -130,9 +130,10 @@ export function ProfileHoverCard({
     <>
       <div
         ref={containerRef}
-        className={cn("inline-block", className)}
+        className={cn("inline-block relative", className)}
         onMouseEnter={showCard}
         onMouseLeave={hideCard}
+        style={{ zIndex: 1 }}
       >
         {children}
       </div>
@@ -142,7 +143,7 @@ export function ProfileHoverCard({
         <div
           ref={cardRef}
           className={cn(
-            "fixed z-50 transition-all duration-300 ease-out",
+            "fixed z-[9999] transition-all duration-300 ease-out",
             isVisible 
               ? "opacity-100 scale-100 translate-y-0" 
               : "opacity-0 scale-95 translate-y-2"
