@@ -38,6 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { provideStudyAssistance, StudyAssistanceInput } from '@/ai/services/dual-ai-service';
 import MathRender from '@/components/math-render';
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
+import { AIResponse } from '@/components/ai-response';
 
 interface AIMessage {
   id: string;
@@ -1510,7 +1511,14 @@ I'm here to help you understand whatever concepts are presented in this visual m
                             </div>
                           );
                         }
-                        return message.content;
+                        
+                        // Use AIResponse for Programming AI Tutor (always highlight code)
+                        if (selectedTutor?.id === 'programming') {
+                          return <AIResponse content={message.content} alwaysHighlight={true} />;
+                        }
+                        
+                        // For other tutors, use AIResponse only if content has code blocks
+                        return <AIResponse content={message.content} alwaysHighlight={false} />;
                       })()}
                     </div>
                     <div className="flex items-center gap-2 mt-1">

@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import "katex/dist/katex.min.css";
 import { TruncatedText } from './truncated-text';
+import { AIResponse } from './ai-response';
 
 // Detect if content looks like data points (array of {x, y})
 function looksLikeGraph(content: string): boolean {
@@ -114,7 +115,15 @@ export default function BotResponse({ content, className = "" }: BotResponseProp
     );
   }
 
-  // Otherwise treat as text + math
+  // Check if content contains code blocks (triple backticks)
+  const hasCodeBlocks = content.includes('```');
+  
+  if (hasCodeBlocks) {
+    // Use AIResponse for code highlighting
+    return <AIResponse content={content} className={className} alwaysHighlight={false} />;
+  }
+
+  // Otherwise treat as text + math (original behavior)
   return (
     <div className={`leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response ${className}`}>
       {breakIntoParagraphs(content).map((paragraph, i) => (
