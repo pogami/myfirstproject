@@ -240,7 +240,8 @@ export default function SyllabusUpload() {
                 description: `Your personal ${chatName} AI assistant is ready to help with coursework!`,
                 });
 
-                router.push('/dashboard/chat?tab=private-general-chat');
+                // Redirect to the specific chat that was created
+                router.push(`/dashboard/chat?tab=${chatId}`);
                 return;
             }
 
@@ -280,11 +281,13 @@ export default function SyllabusUpload() {
             description: `Created new study group: ${chatName}. Other students with the same syllabus will automatically join!`,
             });
 
-            router.push('/dashboard/chat?tab=public-general-chat');
+            // Redirect to the specific chat that was created
+            router.push(`/dashboard/chat?tab=${chatId}`);
     };
             
     const createFallbackChat = async () => {
         const chatName = `Course: ${file?.name.replace(/\.[^/.]+$/, "") || "Unknown"}`;
+        const fallbackChatId = `fallback-${Date.now()}`;
             
             await addChat(
                 chatName,
@@ -293,7 +296,8 @@ export default function SyllabusUpload() {
                 name: 'CourseConnect AI', 
                 text: `Welcome to the chat for ${chatName}! Ask a question to get started.\n\n**Chat Guidelines:**\nAsk specific questions about your course topics. Be detailed with your questions for better assistance! CourseConnect AI can help with math, science, English, history, computer science, and more.`, 
                 timestamp: Date.now() 
-            }
+            },
+            fallbackChatId
             );
 
             toast({
@@ -301,7 +305,8 @@ export default function SyllabusUpload() {
                 description: `Created chat room: ${chatName} (AI analysis unavailable)`,
             });
 
-            router.push('/dashboard/chat?tab=private-general-chat');
+            // Redirect to the specific fallback chat that was created
+            router.push(`/dashboard/chat?tab=${fallbackChatId}`);
     };
 
     const handleJoinGroup = async (groupId: string, chatId: string) => {
@@ -330,7 +335,8 @@ export default function SyllabusUpload() {
                 description: `You've been matched with classmates who uploaded the same syllabus!`,
             });
 
-            router.push('/dashboard/chat?tab=public-general-chat');
+            // Redirect to the specific chat that was joined
+            router.push(`/dashboard/chat?tab=${chatId}`);
         } catch (error) {
             console.error('Error joining group:', error);
             toast({
