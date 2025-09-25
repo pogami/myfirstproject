@@ -340,8 +340,39 @@ export function CollaborativeWhiteboard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, saveWhiteboard]);
 
-  // Sample data for demonstration
-  useEffect(() => {
+  // Load sessions from Firebase or localStorage
+  const loadSessions = async () => {
+    try {
+      // Try to load from Firebase first
+      const sessionsRef = collection(db, 'whiteboardSessions');
+      const q = query(sessionsRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      
+      const firebaseSessions: WhiteboardSession[] = [];
+      querySnapshot.forEach((doc) => {
+        firebaseSessions.push({ id: doc.id, ...doc.data() } as WhiteboardSession);
+      });
+      
+      console.log('Loaded sessions from Firebase:', firebaseSessions.length);
+      setSessions(firebaseSessions);
+      
+    } catch (firebaseError) {
+      console.warn('Failed to load from Firebase, trying localStorage:', firebaseError);
+      
+      // Fallback to localStorage
+      try {
+        const localSessions = JSON.parse(localStorage.getItem('whiteboardSessions') || '[]');
+        console.log('Loaded sessions from localStorage:', localSessions.length);
+        setSessions(localSessions);
+      } catch (localError) {
+        console.error('Failed to load from localStorage:', localError);
+        // Use sample data as final fallback
+        loadSampleSessions();
+      }
+    }
+  };
+
+  const loadSampleSessions = () => {
     const sampleSessions: WhiteboardSession[] = [
       {
         id: '1',
@@ -418,10 +449,17 @@ export function CollaborativeWhiteboard() {
       }
     ];
     setChatMessages(sampleMessages);
+  };
+
+  // Load sessions on component mount
+  useEffect(() => {
+    loadSessions();
   }, []);
 
   const startNewSession = async () => {
     try {
+      console.log('Starting new session creation...');
+      
       const session: WhiteboardSession = {
         id: `session-${Date.now()}`,
         name: newSession.name || `Whiteboard Session ${sessions.length + 1}`,
@@ -443,22 +481,42 @@ export function CollaborativeWhiteboard() {
         password: newSession.password || undefined
       };
 
-      // Save session to Firebase
-      const sessionsRef = collection(db, 'whiteboardSessions');
-      const docRef = await addDoc(sessionsRef, {
-        ...session,
-        userId: 'current-user' // This would be the actual user ID
-      });
+      console.log('Session data prepared:', session);
 
-      const sessionWithId = { ...session, id: docRef.id };
+      // Try to save session to Firebase, but fallback to local storage if it fails
+      let sessionWithId = session;
+      
+      try {
+        // Save session to Firebase
+        const sessionsRef = collection(db, 'whiteboardSessions');
+        console.log('Firebase collection reference created');
+        
+        const docRef = await addDoc(sessionsRef, {
+          ...session,
+          userId: 'current-user' // This would be the actual user ID
+        });
+
+        console.log('Session saved to Firebase with ID:', docRef.id);
+        sessionWithId = { ...session, id: docRef.id };
+        
+        // Set up real-time listeners only if Firebase worked
+        setupRealtimeListeners(sessionWithId.id);
+        
+      } catch (firebaseError) {
+        console.warn('Firebase save failed, using local session:', firebaseError);
+        // Use local session without Firebase
+        sessionWithId = { ...session, id: session.id };
+        
+        // Store in localStorage as fallback
+        const localSessions = JSON.parse(localStorage.getItem('whiteboardSessions') || '[]');
+        localSessions.push(sessionWithId);
+        localStorage.setItem('whiteboardSessions', JSON.stringify(localSessions));
+      }
 
       setSessions([sessionWithId, ...sessions]);
       setCurrentSession(sessionWithId);
       setParticipants(sessionWithId.participants);
       setNewSession({ name: '', isPublic: true, password: '' });
-
-      // Set up real-time listeners
-      setupRealtimeListeners(sessionWithId.id);
 
       toast({
         title: "Session Created!",
@@ -466,9 +524,14 @@ export function CollaborativeWhiteboard() {
       });
     } catch (error) {
       console.error('Error creating session:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       toast({
         title: "Error",
-        description: "Failed to create session. Please try again.",
+        description: `Failed to create session: ${error.message}`,
         variant: "destructive"
       });
     }
