@@ -986,6 +986,7 @@ export default function ChatInterface() {
                                                 <div key={index} className={cn("flex items-start gap-2 sm:gap-3 w-full mb-3 sm:mb-4", msg.userId === user?.uid && 'justify-end')}>
                                                 {(() => {
                                                     const profile = getProfileForSender(msg.sender, msg.name);
+                                                    console.log('Rendering profile card for:', { sender: msg.sender, name: msg.name, profile });
                                                     return profile ? (
                                                         <ProfileHoverCard 
                                                             profile={profile}
