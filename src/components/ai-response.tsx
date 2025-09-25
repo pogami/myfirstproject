@@ -48,12 +48,16 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   style={isDark ? oneDark : oneLight}
                   language={language}
                   PreTag="div"
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  className="rounded-lg border border-gray-300/50 dark:border-gray-600/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm"
                   customStyle={{
-                    margin: '8px 0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    lineHeight: '1.5'
+                    margin: '12px 0',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    lineHeight: '1.6',
+                    padding: '16px',
+                    border: '1px solid',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                    background: isDark ? 'rgba(31, 41, 55, 0.8)' : 'rgba(249, 250, 251, 0.8)'
                   }}
                   {...props}
                 >
@@ -67,12 +71,16 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   style={isDark ? oneDark : oneLight}
                   language="text"
                   PreTag="div"
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
+                  className="rounded-lg border border-gray-300/50 dark:border-gray-600/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm"
                   customStyle={{
-                    margin: '8px 0',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    lineHeight: '1.5'
+                    margin: '12px 0',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    lineHeight: '1.6',
+                    padding: '16px',
+                    border: '1px solid',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                    background: isDark ? 'rgba(31, 41, 55, 0.8)' : 'rgba(249, 250, 251, 0.8)'
                   }}
                   {...props}
                 >
