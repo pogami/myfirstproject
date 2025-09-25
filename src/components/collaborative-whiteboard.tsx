@@ -114,7 +114,207 @@ export function CollaborativeWhiteboard() {
   });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastPoint, setLastPoint] = useState<{ x: number; y: number } | null>(null);
+  const [textInput, setTextInput] = useState('');
+  const [isTextMode, setIsTextMode] = useState(false);
+  const [textPosition, setTextPosition] = useState<{ x: number; y: number } | null>(null);
+  const [undoStack, setUndoStack] = useState<string[]>([]);
+  const [redoStack, setRedoStack] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Drawing functions
+  const getCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    return canvas.getContext('2d');
+  };
+
+  const saveCanvasState = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setUndoStack(prev => [...prev, canvas.toDataURL()]);
+    setRedoStack([]); // Clear redo stack when new action is performed
+  };
+
+  const undo = () => {
+    if (undoStack.length === 0) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const currentState = canvas.toDataURL();
+    setRedoStack(prev => [...prev, currentState]);
+    
+    const previousState = undoStack[undoStack.length - 1];
+    setUndoStack(prev => prev.slice(0, -1));
+    
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = previousState;
+  };
+
+  const redo = () => {
+    if (redoStack.length === 0) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const currentState = canvas.toDataURL();
+    setUndoStack(prev => [...prev, currentState]);
+    
+    const nextState = redoStack[redoStack.length - 1];
+    setRedoStack(prev => prev.slice(0, -1));
+    
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = nextState;
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    saveCanvasState();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    
+    const ctx = getCanvas();
+    if (!ctx) return;
+    
+    const currentPoint = getMousePos(e);
+    
+    ctx.beginPath();
+    ctx.moveTo(lastPoint?.x || currentPoint.x, lastPoint?.y || currentPoint.y);
+    ctx.lineTo(currentPoint.x, currentPoint.y);
+    ctx.strokeStyle = currentTool.color;
+    ctx.lineWidth = currentTool.size;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    
+    setLastPoint(currentPoint);
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (currentTool.type === 'text') {
+      const pos = getMousePos(e);
+      setTextPosition(pos);
+      setIsTextMode(true);
+      return;
+    }
+    
+    setIsDrawing(true);
+    setLastPoint(getMousePos(e));
+    saveCanvasState();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    setLastPoint(null);
+  };
+
+  const addText = () => {
+    if (!textInput.trim() || !textPosition) return;
+    
+    const ctx = getCanvas();
+    if (!ctx) return;
+    
+    saveCanvasState();
+    
+    ctx.font = `${currentTool.size * 4}px Arial`;
+    ctx.fillStyle = currentTool.color;
+    ctx.fillText(textInput, textPosition.x, textPosition.y);
+    
+    setTextInput('');
+    setIsTextMode(false);
+    setTextPosition(null);
+  };
+
+  const drawShape = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (currentTool.type !== 'rectangle' && currentTool.type !== 'circle') return;
+    
+    const ctx = getCanvas();
+    if (!ctx) return;
+    
+    const startPoint = lastPoint;
+    const endPoint = getMousePos(e);
+    
+    if (!startPoint) return;
+    
+    saveCanvasState();
+    
+    ctx.beginPath();
+    ctx.strokeStyle = currentTool.color;
+    ctx.lineWidth = currentTool.size;
+    
+    if (currentTool.type === 'rectangle') {
+      ctx.rect(startPoint.x, startPoint.y, endPoint.x - startPoint.x, endPoint.y - startPoint.y);
+    } else if (currentTool.type === 'circle') {
+      const radius = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+      ctx.arc(startPoint.x, startPoint.y, radius, 0, 2 * Math.PI);
+    }
+    
+    ctx.stroke();
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'z':
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+            break;
+          case 'y':
+            e.preventDefault();
+            redo();
+            break;
+          case 's':
+            e.preventDefault();
+            saveWhiteboard();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, saveWhiteboard]);
 
   // Sample data for demonstration
   useEffect(() => {
@@ -468,6 +668,33 @@ export function CollaborativeWhiteboard() {
                           ))}
                         </div>
                         
+                        {/* Undo/Redo buttons */}
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={undo}
+                            disabled={undoStack.length === 0}
+                          >
+                            ↶
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={redo}
+                            disabled={redoStack.length === 0}
+                          >
+                            ↷
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearCanvas}
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                        
                         <div className="flex items-center gap-2 ml-4">
                           <Label className="text-sm">Color:</Label>
                           <input
@@ -525,14 +752,13 @@ export function CollaborativeWhiteboard() {
                     <div className="relative h-[500px] bg-white border rounded-lg overflow-hidden">
                       <canvas
                         ref={canvasRef}
+                        width={800}
+                        height={500}
                         className="w-full h-full cursor-crosshair"
-                        onMouseDown={() => setIsDrawing(true)}
-                        onMouseUp={() => setIsDrawing(false)}
-                        onMouseMove={(e) => {
-                          if (isDrawing) {
-                            // Handle drawing logic here
-                          }
-                        }}
+                        onMouseDown={startDrawing}
+                        onMouseUp={stopDrawing}
+                        onMouseMove={draw}
+                        onMouseLeave={stopDrawing}
                       />
                       
                       {/* Grid overlay */}
@@ -547,14 +773,24 @@ export function CollaborativeWhiteboard() {
                         </svg>
                       </div>
                       
-                      {/* Placeholder content */}
-                      <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                        <div className="text-center">
-                          <Pen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Start drawing on the whiteboard</p>
-                          <p className="text-sm">Use the tools above to create your content</p>
+                      {/* Text input modal */}
+                      {isTextMode && textPosition && (
+                        <div 
+                          className="absolute bg-white border rounded shadow-lg p-2"
+                          style={{ left: textPosition.x, top: textPosition.y }}
+                        >
+                          <input
+                            type="text"
+                            value={textInput}
+                            onChange={(e) => setTextInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && addText()}
+                            onBlur={addText}
+                            autoFocus
+                            className="border-none outline-none text-sm"
+                            placeholder="Enter text..."
+                          />
                         </div>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
