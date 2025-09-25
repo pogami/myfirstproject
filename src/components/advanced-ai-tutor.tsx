@@ -1506,7 +1506,7 @@ I'm here to help you understand whatever concepts are presented in this visual m
                   </AvatarFallback>
                 </Avatar>
                 <div className="px-3 pb-3">
-                  <RippleText text="thinking..." className="text-primary" />
+                  <RippleText text="thinking..." className="text-primary text-sm" />
                 </div>
               </div>
             )}
