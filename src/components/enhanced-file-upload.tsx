@@ -261,7 +261,7 @@ export function EnhancedFileUpload({
                   variant="ghost"
                   size="sm"
                   onClick={() => removeFile(uploadedFile.id)}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                  className="hover:bg-transparent h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                 >
                   <X className="h-4 w-4" />
                 </Button>

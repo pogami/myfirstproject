@@ -1185,7 +1185,7 @@ export default function ChatInterface() {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         onClick={() => toggleMessageCollapse(index)}
-                                                                        className="h-6 w-6 p-0 hover:bg-black/10"
+                                                                        className="h-6 w-6 p-0 hover:bg-transparent"
                                                                     >
                                                                         {isCollapsed ? (
                                                                             <ChevronDown className="h-3 w-3" />
@@ -1218,7 +1218,7 @@ export default function ChatInterface() {
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     onClick={() => copyMessage(msg.text, index)}
-                                                                    className="h-6 w-6 p-0 hover:bg-black/10"
+                                                                    className="h-6 w-6 p-0 hover:bg-transparent"
                                                                 >
                                                                     {isCopied ? (
                                                                         <Check className="h-3 w-3 text-green-500" />

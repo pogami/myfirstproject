@@ -118,13 +118,13 @@ export default function AboutPage() {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
           </Link>
           <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-            <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+            <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] hover:bg-transparent" asChild>
               <Link href="/about">About</Link>
             </Button>
-            <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+            <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] hover:bg-transparent" asChild>
               <Link href="/pricing">Pricing</Link>
             </Button>
-            <Button variant="ghost" size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px]" asChild>
+            <Button variant="ghost" size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] hover:bg-transparent" asChild>
               <Link href="/login">Sign In</Link>
             </Button>
             <Button size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" asChild>
@@ -154,7 +154,7 @@ export default function AboutPage() {
           </h1>
             
             <p className="text-xl sm:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-8">
-              CourseConnect is an <span className="text-primary font-semibold">AI-powered platform</span> designed to help college students succeed academically through intelligent study tools, collaborative features, and personalized learning experiences.
+              CourseConnect is an <span className="text-primary font-semibold">AI-powered study platform</span> that helps college students succeed through smart tools, study groups, and personalized learning.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -186,9 +186,8 @@ export default function AboutPage() {
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Our Mission</h2>
                 <p className="text-xl text-muted-foreground leading-relaxed max-w-4xl mx-auto">
-                  Our mission is to provide college students with <span className="text-primary font-semibold">accessible, intelligent tools</span> that enhance learning, 
-                  foster collaboration, and accelerate academic success. We believe that with the right technology 
-                  and community support, <span className="text-primary font-semibold">every student can achieve their full potential</span>.
+                  We help college students succeed by providing <span className="text-primary font-semibold">AI-powered study tools</span> and 
+                  <span className="text-primary font-semibold"> collaborative features</span> that make learning easier and more effective.
                 </p>
               </div>
             </CardContent>
@@ -373,6 +372,47 @@ export default function AboutPage() {
           </div>
         </div>
 
+        {/* Company Information */}
+        <div className="mb-16 sm:mb-20">
+          <Card className="relative overflow-hidden bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-200/20 dark:border-blue-800/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+            <CardContent className="relative p-8 sm:p-12">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">About CourseConnect</h2>
+                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                  Founded in 2024, CourseConnect is dedicated to revolutionizing how students learn and collaborate.
+                </p>
+              </div>
+              
+              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl mb-4">
+                    <Users className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Founded</h3>
+                  <p className="text-muted-foreground">2024</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-violet-500 rounded-2xl mb-4">
+                    <Brain className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Headquarters</h3>
+                  <p className="text-muted-foreground">United States</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl mb-4">
+                    <Target className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Focus</h3>
+                  <p className="text-muted-foreground">Student Success</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Support Section */}
         <div className="mb-16 sm:mb-20">
           <Card className="relative overflow-hidden bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 border-green-200/20 dark:border-green-800/20">
@@ -383,16 +423,16 @@ export default function AboutPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-6">
                   <MessageSquare className="h-8 w-8 text-white" />
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Need Help?</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Get Support</h2>
                 <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-                  Our support team is here to help you succeed. Get in touch with any questions or concerns.
+                  Need help? Our team is here to support you.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                   <div className="flex items-center gap-3 text-green-800 dark:text-green-200 bg-green-50 dark:bg-green-950/20 px-6 py-4 rounded-xl">
                     <MessageSquare className="h-6 w-6 text-green-600" />
                     <div>
-                      <span className="font-semibold text-lg">Email Support:</span>
-                      <a href="mailto:courseconnect.noreply@gmail.com?subject=CourseConnect Support Request&body=Hello CourseConnect Team,%0D%0A%0D%0AI need help with:%0D%0A%0D%0A%0D%0AThank you!" className="text-green-600 dark:text-green-400 hover:underline ml-2 text-lg font-medium">
+                      <span className="font-semibold text-lg">Email:</span>
+                      <a href="mailto:courseconnect.noreply@gmail.com" className="text-green-600 dark:text-green-400 hover:underline ml-2 text-lg font-medium">
                         courseconnect.noreply@gmail.com
                       </a>
                     </div>
@@ -400,7 +440,7 @@ export default function AboutPage() {
                 </div>
                 <p className="text-sm text-green-600 dark:text-green-400 mt-6 flex items-center justify-center gap-2">
                   <Clock className="h-4 w-4" />
-                  We typically respond within 24 hours
+                  We respond within 24 hours
                 </p>
               </div>
             </CardContent>

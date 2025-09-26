@@ -630,7 +630,7 @@ export default function ChatPage() {
                                                                     <Button
                                                                         size="sm"
                                                                         variant="ghost"
-                                                                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-background/50 text-muted-foreground"
+                                                                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
                                                                         onClick={() => copyToClipboard(typeof message.text === 'string' ? message.text : JSON.stringify(message.text), message.id || `msg-${index}`)}
                                                                     >
                                                                         {copiedMessageId === (message.id || `msg-${index}`) ? (

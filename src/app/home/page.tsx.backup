@@ -382,7 +382,7 @@ export default function LandingPage() {
                 <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
             </Link>
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="lg" asChild>
+                <Button variant="ghost" size="lg" asChild className="hover:bg-transparent">
                     <Link href="/login">Sign In</Link>
                 </Button>
                 <Button size="lg" asChild>
@@ -812,7 +812,7 @@ export default function LandingPage() {
                 Sign Up With Email
               </AlertDialogAction>
               <AlertDialogCancel asChild className="w-full mt-0">
-                 <Button variant="ghost">Maybe Later</Button>
+                 <Button variant="ghost" className="hover:bg-transparent">Maybe Later</Button>
               </AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>

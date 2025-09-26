@@ -70,7 +70,7 @@ function AnnouncementBanner() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 hover:bg-primary/80"
+            className="h-8 w-8 hover:bg-transparent"
             onClick={() => setIsVisible(false)}
           >
             <X className="h-4 w-4" />
@@ -283,9 +283,9 @@ export default function DashboardLayout({
 
 
   return (
-      <SidebarProvider className="bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
-        <Sidebar className="sm:translate-x-0 bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950">
-          <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-4 sm:p-6 border-b border-border/50">
+      <SidebarProvider className="bg-gradient-to-b from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
+        <Sidebar className="sm:translate-x-0 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/10 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 light:border-r-blue-200/50 light:shadow-lg">
+          <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-4 sm:p-6 border-b border-border/50 light:border-blue-200/50 light:bg-gradient-to-r light:from-white light:to-blue-50/10">
              <Link href="/home" className="flex items-center gap-2 sm:gap-3 hover:scale-105 transition-all duration-300">
                 <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
                   <CourseConnectLogo className="size-5 sm:size-6 text-primary transition-all group-data-[collapsible=icon]:size-7" />
@@ -466,11 +466,11 @@ export default function DashboardLayout({
             {/* User profile moved to header */}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
+        <SidebarInset className="bg-gradient-to-b from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
           <AnnouncementBanner />
           
           {/* Header with Hamburger Menu - Always Visible */}
-          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
+          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent light:bg-white/80 light:backdrop-blur-xl light:border-blue-200/50 light:shadow-sm">
             <div className="flex h-16 items-center justify-between px-4">
               <div className="flex items-center gap-3">
                 <SidebarTrigger className="h-8 w-8 hover:bg-transparent hover:text-current" />

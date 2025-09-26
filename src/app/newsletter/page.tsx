@@ -227,7 +227,7 @@ export default function NewsletterPage() {
             <MobileButton 
               variant="ghost" 
               size="lg" 
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto hover:bg-transparent"
               fullWidthOnMobile={true}
               asChild
             >

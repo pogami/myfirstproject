@@ -188,7 +188,7 @@ export function AIBot({ className = "" }: AIBotProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowPopup(false)}
-                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                  className="hover:bg-transparent h-6 w-6 p-0"
                 >
                   <X className="w-4 h-4" />
                 </Button>

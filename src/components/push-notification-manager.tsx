@@ -128,7 +128,7 @@ export function PushNotificationManager() {
                 variant="ghost"
                 size="sm"
                 onClick={clearError}
-                className="h-auto p-1"
+                className="hover:bg-transparent h-auto p-1"
               >
                 ×
               </Button>

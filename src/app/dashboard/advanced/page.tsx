@@ -92,7 +92,7 @@ export default function AdvancedDashboard() {
   
   const [activeTab, setActiveTab] = useState('overview');
   const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
-  const { isDemoMode, trialActivated, trialDaysLeft, updateTrialDaysLeft } = useChatStore();
+  const { isDemoMode, setIsDemoMode, trialActivated, trialDaysLeft, updateTrialDaysLeft } = useChatStore();
   
   // Check if user has Scholar Features access (trial or subscription)
   useEffect(() => {

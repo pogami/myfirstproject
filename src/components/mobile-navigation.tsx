@@ -125,7 +125,7 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-10 w-10 p-0 touch-manipulation"
+            className="h-10 w-10 p-0 touch-manipulation hover:bg-transparent"
             aria-label="Open navigation menu"
           >
             <Menu className="h-5 w-5" />
@@ -141,7 +141,7 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-transparent"
                 onClick={closeSheet}
               >
                 <X className="h-4 w-4" />
@@ -203,7 +203,7 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
               </Button>
               <Button
                 variant="ghost"
-                className="w-full justify-start text-destructive hover:text-destructive"
+                className="w-full justify-start text-destructive hover:text-destructive hover:bg-transparent"
                 onClick={() => {
                   closeSheet();
                   handleLogout();

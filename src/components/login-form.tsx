@@ -19,7 +19,7 @@ import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { useChatStore, Chat } from "@/hooks/use-chat-store";
-import { StudentIdVerification } from "@/components/student-id-verification";
+import { SchoolEmailVerification } from "@/components/school-email-verification";
 
 
 interface LoginFormProps {
@@ -558,12 +558,20 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                 )}
               </p>
               
-              {/* Student Verification for Login */}
+              {/* School Email Verification for Login */}
               {!isSigningUp && (
                 <div className="space-y-3">
-                  <StudentIdVerification 
-                    onVerificationComplete={handleVerificationComplete}
-                    isSignup={false}
+                  <SchoolEmailVerification 
+                    onVerified={(email) => {
+                      setIsStudentVerified(true);
+                      toast({
+                        title: "School Email Verified!",
+                        description: `Your ${email} has been verified as a valid school email.`,
+                      });
+                    }}
+                    onCancel={() => {
+                      // Optional: handle cancel
+                    }}
                   />
                   {isStudentVerified && (
                     <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -571,7 +579,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                         <span className="text-white text-xs">✓</span>
                       </div>
                       <span className="text-sm text-green-700 dark:text-green-300 font-medium">
-                        Student status verified
+                        School email verified
                       </span>
                     </div>
                   )}
