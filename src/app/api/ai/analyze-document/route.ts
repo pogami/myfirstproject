@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dualAIService } from '@/ai/services/dual-ai-service';
+import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +56,10 @@ Please provide a comprehensive analysis of this document including:
     }
     
     // Get AI analysis
-    const aiResponse = await dualAIService.generateResponse(analysisPrompt);
+    const aiResponse = await provideStudyAssistanceWithFallback({
+      userInput: analysisPrompt,
+      context: 'document_analysis'
+    });
     
     return NextResponse.json({
       success: true,
