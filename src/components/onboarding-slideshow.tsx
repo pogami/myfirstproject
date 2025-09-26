@@ -164,7 +164,7 @@ export function OnboardingSlideshow({ isOpen, onClose, onComplete }: OnboardingS
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-4 right-4 h-8 w-8 p-0 hover:bg-muted/50"
+              className="absolute top-4 right-4 h-8 w-8 p-0 hover:bg-transparent"
               onClick={handleSkip}
             >
               <X className="h-4 w-4" />
@@ -263,7 +263,7 @@ export function OnboardingSlideshow({ isOpen, onClose, onComplete }: OnboardingS
                 variant="ghost"
                 size="sm"
                 onClick={handleSkip}
-                className="text-muted-foreground hover:text-foreground"
+                className="hover:bg-transparent text-muted-foreground hover:text-foreground"
               >
                 Skip Tour
               </Button>

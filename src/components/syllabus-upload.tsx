@@ -522,7 +522,7 @@ export default function SyllabusUpload() {
                                 <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-secondary-foreground flex-shrink-0" />
                                 <p className="text-xs sm:text-sm font-medium truncate text-secondary-foreground">{file.name}</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0" onClick={() => setFile(null)}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 hover:bg-transparent" onClick={() => setFile(null)}>
                                 <X className="h-3 w-3 sm:h-4 sm:w-4" />
                             </Button>
                         </div>

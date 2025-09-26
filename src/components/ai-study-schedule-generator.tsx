@@ -475,7 +475,7 @@ export function AIStudyScheduleGenerator() {
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleSessionComplete(session.id)}
-                            className="h-8 w-8 p-0"
+                            className="hover:bg-transparent h-8 w-8 p-0"
                           >
                             {session.completed ? (
                               <CheckCircle className="h-5 w-5 text-green-600" />

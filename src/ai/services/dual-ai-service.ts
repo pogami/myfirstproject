@@ -682,6 +682,15 @@ function getEnhancedFallback(input: StudyAssistanceInput): AIResponse {
     };
   }
   
+  // Check for complaints about generic responses
+  if (lowerQuestion.includes('generic') || lowerQuestion.includes('boring') || lowerQuestion.includes('stupid') || 
+      lowerQuestion.includes('wtf') || lowerQuestion.includes('sucks') || lowerQuestion.includes('terrible')) {
+    return {
+      answer: `I totally understand your frustration! 😅 The reason I'm giving generic responses is because my AI API keys aren't configured, so I'm running in basic fallback mode instead of using intelligent AI services.\n\nTo get smart, personalized responses, you need to add AI API keys to your .env.local file:\n\n🔑 Google AI (FREE): Get key from https://aistudio.google.com/app/apikey\n🔑 OpenAI (PAID): Get key from https://platform.openai.com/api-keys\n\nCheck AI_SETUP_GUIDE.md for step-by-step instructions! Once configured, I'll be much more helpful and intelligent.`,
+      provider: 'fallback'
+    };
+  }
+
   // Default enhanced response with more personality
   return {
     answer: `Hey! I'm CourseConnect AI, your friendly study buddy! I'm here to help you with your studies, answer questions, or just chat about whatever's on your mind. I was created by a solo developer who built CourseConnect as a unified platform for college students.\n\nI can help with:\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat's on your mind? What would you like to talk about or get help with?`,

@@ -135,7 +135,7 @@ export default function NotificationsPage() {
                   key={action.title}
                   variant="ghost"
                   onClick={() => handleQuickAction(action.action)}
-                  className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/20 hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-105 hover:shadow-md border border-transparent hover:border-primary/20 h-auto justify-start"
+                  className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/20 hover:from-primary/10 hover:to-primary/5 transition-all duration-300 hover:scale-105 hover:shadow-md border border-transparent hover:border-primary/20 h-auto justify-start hover:bg-transparent"
                 >
                   <div className={`p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 ${action.color}`}>
                     {action.icon}
@@ -178,7 +178,7 @@ export default function NotificationsPage() {
                     <h3 className="font-semibold text-base">{notification.title}</h3>
                     <p className="text-sm text-muted-foreground">{notification.description}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-transparent">
                     <ArrowRight className="size-4" />
                   </Button>
                 </div>

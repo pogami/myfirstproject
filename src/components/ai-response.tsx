@@ -88,7 +88,7 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-background/50 text-muted-foreground"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
                     onClick={() => copyToClipboard(codeText, blockId)}
                   >
                     {isCopied ? (
@@ -128,7 +128,7 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-background/50 text-muted-foreground"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
                     onClick={() => copyToClipboard(codeText, blockId)}
                   >
                     {isCopied ? (

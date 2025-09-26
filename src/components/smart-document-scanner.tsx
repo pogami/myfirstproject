@@ -642,7 +642,7 @@ export function SmartDocumentScanner() {
                   {selectedDocument.course} • {selectedDocument.topic}
                 </p>
               </div>
-              <Button variant="ghost" onClick={() => setSelectedDocument(null)}>
+              <Button variant="ghost" onClick={() => setSelectedDocument(null)} className="hover:bg-transparent">
                 ×
               </Button>
             </CardHeader>

@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Star, Zap, Crown, Users, BookOpen, Brain, BarChart3, Calendar, Music, Camera, Mic, ArrowRight } from 'lucide-react';
+import { Check, X, Star, Zap, Crown, Users, BookOpen, Brain, BarChart3, Calendar, Music, Camera, Mic, ArrowRight, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { CourseConnectLogo } from '@/components/icons/courseconnect-logo';
+import { StripePaymentButton } from '@/components/stripe-payment-button';
 
 interface PricingPlan {
   id: string;
@@ -21,6 +22,7 @@ interface PricingPlan {
   popular?: boolean;
   cta: string;
   href: string;
+  stripePriceId?: string;
 }
 
 export default function PricingPage() {
@@ -54,7 +56,7 @@ export default function PricingPage() {
     {
       id: 'pro',
       name: 'Scholar',
-      price: isAnnual ? '$9.99' : '$11.99',
+      price: isAnnual ? '$4.99' : '$4.99',
       period: isAnnual ? '/month' : '/month',
       description: 'Advanced features for serious students',
       icon: (
@@ -100,7 +102,8 @@ export default function PricingPage() {
       ],
       limitations: [],
       cta: 'Upgrade to Pro',
-      href: '/dashboard/advanced'
+      href: '/dashboard/advanced',
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_SCHOLAR_PRICE_ID || null // Will show contact message if not configured
     },
     {
       id: 'university',
@@ -168,10 +171,10 @@ export default function PricingPage() {
             <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
           </Link>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="lg" asChild>
+            <Button variant="ghost" size="lg" asChild className="hover:bg-transparent">
               <Link href="/home">Home</Link>
             </Button>
-            <Button variant="ghost" size="lg" asChild>
+            <Button variant="ghost" size="lg" asChild className="hover:bg-transparent">
               <Link href="/about">About</Link>
             </Button>
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
@@ -249,11 +252,29 @@ export default function PricingPage() {
                 </CardHeader>
                 
                 <CardContent className="space-y-6">
-                  <Button asChild className="w-full" size="lg">
-                    <Link href={plan.href}>
-                      {plan.cta}
-                    </Link>
-                  </Button>
+                  {plan.stripePriceId ? (
+                    <StripePaymentButton
+                      priceId={plan.stripePriceId}
+                      planName={plan.name}
+                      className="w-full"
+                    />
+                  ) : plan.id === 'pro' ? (
+                    <div className="text-center space-y-2">
+                      <Button disabled className="w-full" size="lg">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Payment Setup Required
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Stripe configuration needed. Contact support to enable payments.
+                      </p>
+                    </div>
+                  ) : (
+                    <Button asChild className="w-full" size="lg">
+                      <Link href={plan.href}>
+                        {plan.cta}
+                      </Link>
+                    </Button>
+                  )}
                   
                   <div className="space-y-3">
                     <h4 className="font-medium text-sm">What's included:</h4>

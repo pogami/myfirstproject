@@ -152,7 +152,7 @@ export function EnhancedChatInput({
           onClick={triggerFileInput}
           className={cn(
             "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-accent/20 transition-colors duration-200",
+            "hover:bg-transparent transition-colors duration-200",
             isDark 
               ? "text-white/70 hover:text-white/90" 
               : "text-gray-600 hover:text-gray-800",
@@ -192,7 +192,7 @@ export function EnhancedChatInput({
           onClick={toggleVoice}
           className={cn(
             "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-accent/20 transition-colors duration-200",
+            "hover:bg-transparent transition-colors duration-200",
             isVoiceActive
               ? isDark 
                 ? "text-red-400" 
@@ -215,7 +215,7 @@ export function EnhancedChatInput({
           onClick={handleSend}
           className={cn(
             "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-accent/20 transition-colors duration-200",
+            "hover:bg-transparent transition-colors duration-200",
             isDark 
               ? "text-purple-400 hover:text-purple-300" 
               : "text-purple-600 hover:text-purple-500",

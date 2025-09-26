@@ -17,10 +17,11 @@ import { Pricing } from "@/components/pricing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/site-footer";
 import { useState, useEffect } from "react";
-import { ChevronUp, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -33,21 +34,6 @@ const popularClasses = [
 
 export default function LandingPage() {
     const { toast } = useToast();
-    const [isScrolled, setIsScrolled] = useState(false);
-
-    useEffect(() => {
-        const handleScroll = () => {
-            const scrollTop = window.scrollY;
-            setIsScrolled(scrollTop > 50);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    const scrollToTop = () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
 
     return (
         <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
@@ -75,15 +61,28 @@ export default function LandingPage() {
                     }
                 `}
             </style>
-            <header className={cn(
-                "sticky top-0 z-50 w-full transition-all duration-300 backdrop-blur supports-[backdrop-filter]:backdrop-blur",
-                isScrolled 
-                    ? "bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border/20" 
-                    : "bg-background/80 supports-[backdrop-filter]:bg-background/40"
-            )}>
+            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent light:bg-white/90 light:backdrop-blur-xl light:border-gray-200/50 light:shadow-sm">
                 <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-4 sm:px-6 items-center justify-between">
-                    <Link href="/home" className="flex items-center gap-2 sm:gap-3">
-                        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary tracking-tight">CourseConnect</h1>
+                    <Link href="/home" className="flex items-center gap-2 sm:gap-3 group">
+                        {/* CourseConnect Logo */}
+                        <CourseConnectLogo className="h-6 w-6 sm:h-7 sm:w-7 group-hover:scale-110 transition-all duration-300" />
+                        
+                        {/* Enhanced CourseConnect text */}
+                        <div className="relative">
+                            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight relative">
+                                <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">
+                                    CourseConnect
+                                </span>
+                                {/* Subtle text shadow for depth */}
+                                <span className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent blur-sm opacity-30 -z-10">
+                                    CourseConnect
+                                </span>
+                            </h1>
+                            {/* Tagline - always visible */}
+                            <p className="text-xs sm:text-sm text-muted-foreground font-medium tracking-wide -mt-1">
+                                AI-Powered Learning
+                            </p>
+                        </div>
                     </Link>
                     
                     {/* Desktop Navigation */}
@@ -872,14 +871,6 @@ export default function LandingPage() {
 
             <Toaster />
 
-            {/* Floating Scroll-to-Top Arrow */}
-            <button
-                onClick={scrollToTop}
-                className="fixed bottom-6 right-6 z-50 h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group"
-                aria-label="Scroll to top"
-            >
-                <ChevronUp className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-            </button>
 
             
             {/* PWA Install Prompt */}

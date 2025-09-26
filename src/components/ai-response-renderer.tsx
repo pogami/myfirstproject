@@ -481,7 +481,7 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
           <Button
             size="sm"
             variant="ghost"
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background/80 hover:bg-background"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background/80 hover:bg-transparent"
             onClick={copyToClipboard}
           >
             {isCopied ? (

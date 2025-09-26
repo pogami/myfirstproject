@@ -157,7 +157,7 @@ export default function FlashcardGenerator() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={resetState} variant="ghost" className="w-full">Start Over</Button>
+                        <Button onClick={resetState} variant="ghost" className="w-full hover:bg-transparent">Start Over</Button>
                     </CardFooter>
                  </Card>
                  <style jsx>{`

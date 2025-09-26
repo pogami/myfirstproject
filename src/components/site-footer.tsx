@@ -32,6 +32,7 @@ import { SafeCompactThemeToggle } from "@/components/theme-toggle";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
+
 const quickLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <GraduationCap className="h-4 w-4" /> },
   { name: "Upload Syllabus", href: "/dashboard/upload", icon: <Upload className="h-4 w-4" /> },
@@ -220,7 +221,6 @@ export function SiteFooter() {
                 <span>for students worldwide</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs">Theme:</span>
                 <SafeCompactThemeToggle />
               </div>
             </div>

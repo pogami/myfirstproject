@@ -91,6 +91,9 @@ export function SafeCompactThemeToggle() {
         const root = document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(newTheme);
+        
+        // Dispatch custom event for other components
+        window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: newTheme } }));
       });
     } else {
       // Fallback for browsers that don't support View Transition API
@@ -101,6 +104,9 @@ export function SafeCompactThemeToggle() {
       const root = document.documentElement;
       root.classList.remove('light', 'dark');
       root.classList.add(newTheme);
+      
+      // Dispatch custom event for other components
+      window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme: newTheme } }));
     }
   };
 

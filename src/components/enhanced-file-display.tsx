@@ -89,7 +89,7 @@ export function EnhancedFileDisplay({
             variant="ghost"
             size="sm"
             onClick={handlePreview}
-            className="h-6 w-6 p-0"
+            className="h-6 w-6 p-0 hover:bg-transparent"
           >
             <Eye className="h-3 w-3" />
           </Button>
@@ -97,7 +97,7 @@ export function EnhancedFileDisplay({
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="h-6 w-6 p-0"
+            className="h-6 w-6 p-0 hover:bg-transparent"
           >
             <Download className="h-3 w-3" />
           </Button>
@@ -165,7 +165,7 @@ export function EnhancedFileDisplay({
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="h-7 text-xs"
+                    className="h-7 text-xs hover:bg-transparent"
                   >
                     {isExpanded ? (
                       <ChevronUp className="h-3 w-3" />
@@ -204,7 +204,7 @@ export function EnhancedFileDisplay({
               variant="ghost"
               size="sm"
               onClick={() => setShowFullPreview(false)}
-              className="absolute top-4 right-4 bg-black/50 text-white hover:bg-black/70"
+              className="absolute top-4 right-4 bg-black/50 text-white hover:bg-transparent"
             >
               <X className="h-4 w-4" />
             </Button>

@@ -134,7 +134,7 @@ export default function SettingsPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowEmail(!showEmail)}
-                    className="h-8 w-8 p-0"
+                    className="hover:bg-transparent h-8 w-8 p-0"
                   >
                     {showEmail ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </Button>

@@ -96,7 +96,7 @@ export function HowItWorksSlideshow({ onClose }: SlideshowProps) {
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0 hover:bg-gray-100"
+              className="h-8 w-8 p-0 hover:bg-transparent"
             >
               <X className="w-5 h-5" />
             </Button>
