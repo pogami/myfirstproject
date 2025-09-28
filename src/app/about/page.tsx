@@ -479,7 +479,7 @@ export default function AboutPage() {
                 year: "Sep 2025",
                 title: "The Solution",
                 description: "We leveraged AI technology and modern collaboration tools to create a platform that would transform how students learn and succeed.",
-                icon: null,
+                icon: Users,
                 side: "right"
               },
               {

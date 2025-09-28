@@ -514,7 +514,7 @@ export default function FeaturesPage() {
 
   const features = [
     {
-      icon: null,
+      icon: Users,
       title: 'AI-Powered Tutoring',
       description: 'Get instant help with homework, assignments, and exam prep from our advanced AI tutor.',
       benefits: [

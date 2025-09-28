@@ -148,7 +148,7 @@ export default function DemoPage() {
     {
       title: 'AI-Powered Tutoring',
       description: 'Get instant help with homework and exam prep',
-      icon: null,
+      icon: Users,
       content: (
         <div className="space-y-4">
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-6 rounded-lg">

@@ -22,7 +22,7 @@ const features = [
     color: 'from-blue-500 to-cyan-500'
   },
   {
-    icon: null,
+    icon: Users,
     title: 'AI-Powered Tutoring',
     description: 'Get instant help with homework, assignments, and exam prep. Our local AI processes your questions and provides detailed explanations.',
     color: 'from-purple-500 to-pink-500'
