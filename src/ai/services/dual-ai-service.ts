@@ -16,9 +16,9 @@ import { extractUrlsFromText, scrapeMultiplePages, formatScrapedContentForAI } f
 import { shouldAutoSearch, performAutoSearch, enhancedWebBrowsing, shouldUsePuppeteer } from './enhanced-web-browsing-service';
 
 // Initialize OpenAI client
-const openai = new OpenAI({
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
+}) : null;
 
 // Initialize Google AI
 const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE;
@@ -411,6 +411,10 @@ async function tryOpenAI(input: StudyAssistanceInput): Promise<AIResponse> {
       } catch (error) {
         console.warn('Failed to browse URLs:', error);
       }
+    }
+    
+    if (!openai) {
+      throw new Error('OpenAI API key not configured');
     }
     
     const response = await openai.chat.completions.create({
@@ -857,6 +861,10 @@ async function tryOpenAIInDepth(input: StudyAssistanceInput): Promise<AIResponse
       throw new Error('OpenAI API key not configured');
     }
 
+    if (!openai) {
+      throw new Error('OpenAI API key not configured');
+    }
+    
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
