@@ -9,9 +9,9 @@ import { Metadata } from 'next';
 
 // Base configuration
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.courseconnectai.com';
-const DEFAULT_IMAGE = `${BASE_URL}/final-logo.png?v=7`;
-const DEFAULT_IMAGE_WIDTH = 1200;
-const DEFAULT_IMAGE_HEIGHT = 630;
+const DEFAULT_IMAGE = 'https://opengraph.b-cdn.net/production/images/59741583-5e8a-4bd8-9ab3-9cd7836cac96.png?token=dNJBZX5ve_oxlGmmh65ECUGwOq6iDbdvmPT-tJ7gjrc&height=893&width=1027&expires=33295101317';
+const DEFAULT_IMAGE_WIDTH = 1027;
+const DEFAULT_IMAGE_HEIGHT = 893;
 
 // Types for different page types
 export interface CourseData {
@@ -97,6 +97,9 @@ export function generateOpenGraphMeta(data: PageData): Metadata {
       images: [fullImageUrl],
       creator: '@courseconnectai',
       site: '@courseconnectai',
+    },
+    other: {
+      'twitter:domain': 'courseconnectai.com',
     },
     alternates: {
       canonical: fullUrl,
