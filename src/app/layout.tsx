@@ -15,20 +15,23 @@ export const metadata: Metadata = {
     url: "https://www.courseconnectai.com",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
-        images: [
-          {
-            url: "https://www.courseconnectai.com/final-logo.png?v=7",
-            width: 1200,
-            height: 630,
-            alt: "CourseConnect Logo",
-          },
-        ],
+    siteName: "CourseConnect",
+    images: [
+      {
+        url: "https://www.courseconnectai.com/final-logo.png?v=7",
+        width: 1200,
+        height: 630,
+        alt: "CourseConnect Logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
     images: ["https://www.courseconnectai.com/final-logo.png?v=7"],
+    creator: "@courseconnectai",
+    site: "@courseconnectai",
   },
   icons: {
     icon: [
@@ -56,6 +59,25 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+        
+        {/* Open Graph Meta Tags - Server Side Rendered */}
+        <meta property="og:title" content="CourseConnect - AI College Platform" />
+        <meta property="og:description" content="Your unified platform for college success with AI-powered study tools" />
+        <meta property="og:url" content="https://www.courseconnectai.com" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="CourseConnect" />
+        <meta property="og:image" content="https://www.courseconnectai.com/final-logo.png?v=7" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="CourseConnect Logo" />
+        
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="CourseConnect - AI College Platform" />
+        <meta name="twitter:description" content="Your unified platform for college success with AI-powered study tools" />
+        <meta name="twitter:image" content="https://www.courseconnectai.com/final-logo.png?v=7" />
+        <meta name="twitter:creator" content="@courseconnectai" />
+        <meta name="twitter:site" content="@courseconnectai" />
         
         {/* Favicon and Icons */}
         <link rel="icon" href="/courseconnect-logo-profile.svg" type="image/svg+xml" />
