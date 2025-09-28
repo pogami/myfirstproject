@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/admin';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,11 +32,11 @@ export async function POST(request: NextRequest) {
       classId: classId || null,
       actionUrl: actionUrl || null,
       isRead: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    const docRef = await addDoc(collection(db, 'notifications'), notificationData);
+    const docRef = await db.collection('notifications').add(notificationData);
 
     // Send push notification if user has push notifications enabled
     try {
