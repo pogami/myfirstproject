@@ -1,102 +1,209 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Users, Zap, Send, Bot, User } from 'lucide-react';
+import { ArrowRight, Play, Users, Zap, Bot, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RippleText } from '@/components/ripple-text';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TypewriterText, StaticText } from '@/components/saas-typography';
 
 export function HeroSection() {
-  const [demoMessage, setDemoMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
+  const [chatMessages, setChatMessages] = useState([]);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [aiTypingMessage, setAiTypingMessage] = useState('');
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const [aiCharIndex, setAiCharIndex] = useState(0);
+
+  const demoMessages = [
     {
       id: 1,
+      sender: 'user',
+      message: 'Can you help me understand derivatives in calculus?',
+      timestamp: ''
+    },
+    {
+      id: 2,
       sender: 'bot',
-      message: 'Hi! I\'m CourseConnect AI. Ask me anything about calculus, homework, or study tips!',
-      timestamp: '2:30 PM'
+      message: 'Absolutely! Derivatives measure how a function changes. The derivative of f(x) = x² is f\'(x) = 2x. This means at any point x, the slope of the tangent line is 2x. Would you like me to explain the power rule or show more examples?',
+      timestamp: ''
+    },
+    {
+      id: 3,
+      sender: 'user',
+      message: 'What about the chain rule?',
+      timestamp: ''
+    },
+    {
+      id: 4,
+      sender: 'bot',
+      message: 'Great question! The chain rule is used for composite functions. If you have f(g(x)), the derivative is f\'(g(x)) × g\'(x). For example, if f(x) = (x² + 1)³, let u = x² + 1, so f\'(x) = 3u² × 2x = 3(x² + 1)² × 2x. Need help with a specific problem?',
+      timestamp: ''
     }
-  ]);
+  ];
 
-  const handleDemoSend = async () => {
-    if (demoMessage.trim()) {
-      const userMessage = {
-        id: chatMessages.length + 1,
-        sender: 'user',
-        message: demoMessage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+  // Start live demo after component mounts
+  useEffect(() => {
+    const startDemo = setTimeout(() => {
+      setIsTyping(true);
+    }, 2000);
+    return () => clearTimeout(startDemo);
+  }, []);
+
+  // Handle typing animation
+  useEffect(() => {
+    if (!isTyping || messageIndex >= demoMessages.length) return;
+
+    const currentMsg = demoMessages[messageIndex];
+    
+    if (charIndex < currentMsg.message.length) {
+      const timer = setTimeout(() => {
+        setCurrentMessage(currentMsg.message.substring(0, charIndex + 1));
+        setCharIndex(charIndex + 1);
+      }, currentMsg.sender === 'bot' ? 30 : 50);
+      return () => clearTimeout(timer);
+    } else {
+      // Message complete, add to chat
+      const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setChatMessages(prev => [...prev, {
+        ...currentMsg,
+        message: currentMessage,
+        timestamp: currentTime
+      }]);
       
-      setChatMessages([...chatMessages, userMessage]);
-      const currentMessage = demoMessage;
-      setDemoMessage('');
-      setIsLoading(true);
+      // Reset for next message
+      setCurrentMessage('');
+      setCharIndex(0);
+      setIsTyping(false);
       
-      // Check if user has sent 3+ messages
-      const userMessageCount = [...chatMessages, userMessage].filter(msg => msg.sender === 'user').length;
+      // Start next message after delay
+      const nextTimer = setTimeout(() => {
+        setMessageIndex(prev => prev + 1);
+        setIsTyping(true);
+      }, currentMsg.sender === 'bot' ? 2000 : 1000);
       
-      try {
-        // Use Ollama for demo with short, concise responses
-        const response = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'qwen2.5:1.5b',
-            prompt: `You are CourseConnect AI in a demo. Keep responses SHORT and CONCISE (1-2 sentences max). Be helpful but brief.
-
-Student asks: ${currentMessage}
-
-Give a brief, helpful response:`,
-            stream: false,
-            options: {
-              temperature: 0.7,
-              max_tokens: 100, // Very short for demo
-              num_ctx: 1024
-            }
-          })
-        });
-
-        if (response.ok) {
-          const aiResult = await response.json();
-          
-          // Add real AI response
-          setChatMessages(prev => [...prev, {
-            id: chatMessages.length + 2,
-            sender: 'bot',
-            message: aiResult.response,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }]);
-          
-          // Add signup prompt after 3+ user messages
-          if (userMessageCount >= 3) {
-            setTimeout(() => {
-              setChatMessages(prev => [...prev, {
-                id: chatMessages.length + 3,
-                sender: 'bot',
-                message: '🎉 You\'ve tried the demo! Ready for unlimited AI tutoring, study groups, and more? Sign up now to access the full CourseConnect experience!',
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              }]);
-            }, 2000);
-          }
-        } else {
-          throw new Error('Ollama not available');
-        }
-      } catch (error) {
-        console.error('AI chat error:', error);
-        
-        // Add fallback response
-        setChatMessages(prev => [...prev, {
-          id: chatMessages.length + 2,
-          sender: 'bot',
-          message: 'Hi! I\'m CourseConnect AI. I can help with calculus, homework, and study tips. What would you like to know?',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
-      } finally {
-        setIsLoading(false);
+      // If this was a user message, trigger AI response
+      if (currentMsg.sender === 'user') {
+        setTimeout(() => {
+          triggerAiResponse(currentMsg.message);
+        }, 1500); // Wait 1.5 seconds after user message completes
       }
+      
+      return () => clearTimeout(nextTimer);
+    }
+  }, [isTyping, messageIndex, charIndex]);
+
+  // Handle AI typing animation
+  useEffect(() => {
+    if (!isAiTyping || !aiTypingMessage) return;
+
+    if (aiCharIndex < aiTypingMessage.length) {
+      const timer = setTimeout(() => {
+        setAiCharIndex(aiCharIndex + 1);
+      }, 30); // AI types at 30ms per character
+      return () => clearTimeout(timer);
+    } else {
+      // AI message complete, add to chat
+      const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setChatMessages(prev => [...prev, {
+        id: chatMessages.length + 1,
+        sender: 'bot',
+        message: aiTypingMessage,
+        timestamp: currentTime
+      }]);
+      
+      // Reset AI typing state
+      setAiTypingMessage('');
+      setAiCharIndex(0);
+      setIsAiTyping(false);
+    }
+  }, [isAiTyping, aiTypingMessage, aiCharIndex, chatMessages.length]);
+
+  // Function to trigger AI response with typing animation
+  const triggerAiResponse = async (userMessage: string) => {
+    try {
+      // Use streaming AI service for real-time demo responses
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: userMessage,
+          context: 'Live Demo - CS-101 Study Group',
+          conversationHistory: chatMessages.slice(-5).map(msg => ({
+            role: msg.sender === 'bot' ? 'assistant' : 'user',
+            content: msg.message
+          })),
+          shouldCallAI: true,
+          isPublicChat: false
+        })
+      });
+
+      if (response.ok) {
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let aiResponse = '';
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.answer) {
+                    aiResponse = data.answer;
+                  }
+                } catch (e) {
+                  // Ignore parsing errors for incomplete chunks
+                }
+              }
+            }
+          }
+        }
+        
+        // Start AI typing animation with the actual AI response
+        if (aiResponse) {
+          setAiTypingMessage(aiResponse);
+          setIsAiTyping(true);
+          setAiCharIndex(0);
+        } else {
+          // Fallback if no response received
+          let fallbackMessage = '';
+          if (userMessage.toLowerCase().includes('derivative')) {
+            fallbackMessage = `Absolutely! Derivatives measure how a function changes. The derivative of f(x) = x² is f'(x) = 2x. This means at any point x, the slope of the tangent line is 2x. Would you like me to explain the power rule or show more examples?`;
+          } else {
+            fallbackMessage = `I understand you're asking about "${userMessage}". Let me help you with that! I'm CourseConnect AI, your study buddy. I can assist with calculus, homework, and study tips. What specific aspect would you like to explore?`;
+          }
+          setAiTypingMessage(fallbackMessage);
+          setIsAiTyping(true);
+          setAiCharIndex(0);
+        }
+      } else {
+        throw new Error('AI service not available');
+      }
+    } catch (error) {
+      console.error('AI chat error:', error);
+      
+      // Fallback response that addresses the user's question
+      let fallbackMessage = '';
+          if (userMessage.toLowerCase().includes('derivative')) {
+            fallbackMessage = `Absolutely! Derivatives measure how a function changes. The derivative of f(x) = x² is f'(x) = 2x. This means at any point x, the slope of the tangent line is 2x. Would you like me to explain the power rule or show more examples?`;
+          } else {
+            fallbackMessage = `Thanks for your question about "${userMessage}"! I'm CourseConnect AI, your study buddy. I can help with calculus, homework, and study tips. What would you like to know more about?`;
+          }
+      setAiTypingMessage(fallbackMessage);
+      setIsAiTyping(true);
+      setAiCharIndex(0);
     }
   };
 
@@ -115,15 +222,25 @@ Give a brief, helpful response:`,
             transition={{ duration: 0.6 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6"
           >
-            Connect with{' '}
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Classmates
-            </span>
+            <StaticText 
+              text="Connect with " 
+              className="text-gray-900 dark:text-white"
+            />
+            <TypewriterText 
+              text="Classmates" 
+              className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+              delay={500}
+            />
             <br />
-            Get{' '}
-            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AI Tutoring
-            </span>
+            <StaticText 
+              text="Get " 
+              className="text-gray-900 dark:text-white"
+            />
+            <TypewriterText 
+              text="AI Tutoring" 
+              className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+              delay={2000}
+            />
           </motion.h1>
 
           {/* Subheadline */}
@@ -211,10 +328,11 @@ Give a brief, helpful response:`,
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <Bot className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">CourseConnect AI Demo</h3>
-                    <p className="text-sm text-blue-100">Try our AI tutor right here!</p>
+                    <h3 className="font-semibold">Live Demo - Calculus Study Session</h3>
+                    <p className="text-sm text-blue-100">Student asking about derivatives and chain rule</p>
                   </div>
                 </div>
               </div>
@@ -255,48 +373,80 @@ Give a brief, helpful response:`,
                   </div>
                 ))}
                 
-                {/* AI Thinking Animation */}
-                {isLoading && chatMessages.at(-1)?.sender !== 'bot' && (
-                  <div className="flex items-start gap-3 w-full max-w-full animate-in slide-in-from-bottom-2 duration-300">
+                {/* Live Typing Animation */}
+                {isTyping && messageIndex < demoMessages.length && (
+                  <div className={`flex items-start gap-3 ${
+                    demoMessages[messageIndex]?.sender === 'user' ? 'justify-end' : 'justify-start'
+                  }`}>
+                    {demoMessages[messageIndex]?.sender === 'bot' && (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
+                      </Avatar>
+                    )}
+                    <div
+                      className={`max-w-xs p-3 rounded-lg ${
+                        demoMessages[messageIndex]?.sender === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      }`}
+                    >
+                      <p className="text-sm">
+                        {currentMessage}
+                        <motion.span
+                          className="inline-block w-0.5 h-4 bg-current ml-1"
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
+                        />
+                      </p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    {demoMessages[messageIndex]?.sender === 'user' && (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-500 to-green-600">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                      </Avatar>
+                    )}
+                  </div>
+                )}
+
+                {/* AI Typing Animation */}
+                {isAiTyping && aiTypingMessage && (
+                  <div className="flex items-start gap-3 justify-start">
                     <Avatar className="w-8 h-8 flex-shrink-0">
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
                         <Bot className="h-4 w-4 text-white" />
                       </div>
                     </Avatar>
-                    <div className="text-left min-w-0">
-                      <div className="text-xs text-muted-foreground mb-1">
-                        CourseConnect AI
-                      </div>
-                      <div className="text-sm font-medium">
-                        <RippleText text="thinking..." className="text-blue-600" />
-                      </div>
+                    <div className="max-w-xs p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                      <p className="text-sm">
+                        {aiTypingMessage.substring(0, aiCharIndex)}
+                        <motion.span
+                          className="inline-block w-0.5 h-4 bg-current ml-1"
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
+                        />
+                      </p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Chat Input */}
+              {/* Demo Status */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={demoMessage}
-                    onChange={(e) => setDemoMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleDemoSend()}
-                    placeholder="Ask about calculus, homework, or study tips..."
-                    className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isLoading}
-                  />
-                  <Button 
-                    onClick={handleDemoSend} 
-                    disabled={isLoading || !demoMessage.trim()}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                  This is a live demo - try asking about calculus, homework, or study tips!
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  {messageIndex >= demoMessages.length ? (
+                    "✅ Demo Complete: This is how CourseConnect AI helps students!"
+                  ) : (
+                    "🔴 LIVE: Watch the conversation happen in real-time above!"
+                  )}
                 </p>
               </div>
             </div>

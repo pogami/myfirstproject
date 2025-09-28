@@ -1,6 +1,4 @@
 
-'use client';
-
 import React from 'react';
 import { Navigation } from '@/components/landing/navigation';
 import { HeroSection } from '@/components/landing/hero-section';
