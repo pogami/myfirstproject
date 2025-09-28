@@ -1,380 +1,386 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { Navigation } from '@/components/landing/navigation';
+import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Check, X, Star, Zap, Crown, Users, BookOpen, Brain, BarChart3, Calendar, Music, Camera, Mic, ArrowRight, CreditCard } from 'lucide-react';
-import Link from 'next/link';
-import { CourseConnectLogo } from '@/components/icons/courseconnect-logo';
-import { StripePaymentButton } from '@/components/stripe-payment-button';
-
-interface PricingPlan {
-  id: string;
-  name: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  limitations: string[];
-  icon: React.ReactNode;
-  color: string;
-  popular?: boolean;
-  cta: string;
-  href: string;
-  stripePriceId?: string;
-}
+import { ArrowLeft, CheckCircle, Star, Zap, Crown, Info, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PricingPage() {
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [isYearly, setIsYearly] = useState(false);
+  const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
 
-  const plans: PricingPlan[] = [
+  const plans = [
     {
-      id: 'free',
       name: 'Free',
-      price: isAnnual ? '$0' : '$0',
+      price: '$0',
       period: 'forever',
-      description: 'Perfect for getting started with basic study tools',
-      icon: <BookOpen className="h-6 w-6" />,
-      color: 'bg-blue-500',
+      description: 'Perfect for getting started with CourseConnect',
       features: [
-        'Basic AI chat assistance',
-        'Syllabus upload & analysis',
-        'Study group creation',
-        'Basic flashcards',
-        'Mobile app access',
-        'Community support'
-      ],
-      limitations: [
-        'Limited AI responses per day',
-        'Basic study group features',
-        'No advanced analytics'
+        'Basic AI tutoring (5 questions/day)',
+        'Join study groups',
+        'Basic syllabus analysis',
+        'Community support',
+        'Mobile app access'
       ],
       cta: 'Get Started Free',
-      href: '/dashboard'
+      popular: false,
+      icon: Star
     },
     {
-      id: 'pro',
-      name: 'Scholar',
-      price: isAnnual ? '$4.99' : '$4.99',
-      period: isAnnual ? '/month' : '/month',
-      description: 'Advanced features for serious students',
-      icon: (
-        <div className="crown-gradient-container">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="crownOutlineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#9333ea" />
-                <stop offset="50%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#9333ea" />
-                <animateTransform
-                  attributeName="gradientTransform"
-                  type="rotate"
-                  values="0 12 12;360 12 12"
-                  dur="3s"
-                  repeatCount="indefinite"
-                />
-              </linearGradient>
-            </defs>
-            <path 
-              d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z" 
-              stroke="url(#crownOutlineGradient)"
-              strokeWidth="3"
-              fill="none"
-            />
-          </svg>
-        </div>
-      ),
-      color: 'bg-purple-500',
-      popular: true,
+      name: 'Student',
+      price: isYearly ? '$7.99' : '$9.99',
+      yearlyPrice: '$7.99',
+      monthlyPrice: '$9.99',
+      period: 'per month',
+      description: 'Everything you need for academic success',
       features: [
-        'Unlimited AI tutor conversations',
-        'Advanced AI tutor with specialized subjects',
-        'Voice input & image analysis',
-        'Grade prediction system',
-        'Multi-modal AI processing',
-        'Google Calendar integration',
-        'Spotify focus music',
-        'Enhanced study groups',
-        'Advanced analytics & insights',
+        'Unlimited AI tutoring',
+        'Create & join study groups',
+        'Advanced syllabus analysis',
+        'Study time tracking',
         'Priority support',
-        'Early access to new features'
+        'File sharing & collaboration',
+        'Custom study plans',
+        'Progress analytics'
       ],
-      limitations: [],
-      cta: 'Upgrade to Pro',
-      href: '/dashboard/advanced',
-      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_SCHOLAR_PRICE_ID || null // Will show contact message if not configured
+      cta: 'Start Free Trial',
+      popular: true,
+      icon: Zap
     },
     {
-      id: 'university',
-      name: 'University',
-      price: 'Contact Us',
-      period: '',
-      description: 'Custom solutions for educational institutions',
-      icon: <Users className="h-6 w-6" />,
-      color: 'bg-green-500',
+      name: 'Premium',
+      price: isYearly ? '$15.99' : '$19.99',
+      yearlyPrice: '$15.99',
+      monthlyPrice: '$19.99',
+      period: 'per month',
+      description: 'For serious students and study groups',
       features: [
-        'Everything in Pro',
-        'Custom branding',
-        'Admin dashboard',
-        'Bulk user management',
-        'Integration with LMS',
-        'Custom AI training',
+        'Everything in Student plan',
+        'Advanced AI features',
+        'Group management tools',
+        'Custom integrations',
+        'Advanced analytics',
+        'Priority feature access',
         'Dedicated support',
-        'SLA guarantees'
+        'API access'
       ],
-      limitations: [],
-      cta: 'Contact Sales',
-      href: '/contact'
-    }
-  ];
-
-  const advancedFeatures = [
-    {
-      icon: <Brain className="h-5 w-5" />,
-      title: 'Advanced AI Tutor',
-      description: 'Specialized tutors for Math, Science, Programming, and more'
-    },
-    {
-      icon: <Mic className="h-5 w-5" />,
-      title: 'Voice Input',
-      description: 'Ask questions using your voice with speech recognition'
-    },
-    {
-      icon: <Camera className="h-5 w-5" />,
-      title: 'Image Analysis',
-      description: 'Upload diagrams, equations, and images for AI analysis'
-    },
-    {
-      icon: <BarChart3 className="h-5 w-5" />,
-      title: 'Grade Predictions',
-      description: 'AI-powered grade predictions with personalized recommendations'
-    },
-    {
-      icon: <Calendar className="h-5 w-5" />,
-      title: 'Calendar Integration',
-      description: 'Sync with Google Calendar for better time management'
-    },
-    {
-      icon: <Music className="h-5 w-5" />,
-      title: 'Focus Music',
-      description: 'Curated study playlists and ambient sounds for concentration'
+      cta: 'Start Free Trial',
+      popular: false,
+      icon: Crown
     }
   ];
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <Navigation />
+      
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
-        <div className="container flex h-20 max-w-6xl mx-auto px-6 items-center justify-between">
-          <Link href="/home" className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="lg" asChild className="hover:bg-transparent">
-              <Link href="/home">Home</Link>
-            </Button>
-            <Button variant="ghost" size="lg" asChild className="hover:bg-transparent">
-              <Link href="/about">About</Link>
-            </Button>
-            <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105" asChild>
-              <Link href="/dashboard">Get Started <ArrowRight className="ml-2" /></Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="py-24 bg-transparent">
-        <div className="container mx-auto px-6">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold tracking-tight mb-6">
-              <span className="water-flow" style={{ display: 'inline-block' }}>
-                Choose Your Plan
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Start free and upgrade as you need more advanced features. All plans include our core study tools.
-            </p>
+      <div className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-8"
+            >
+              <Button
+                variant="ghost"
+                onClick={() => window.history.back()}
+                className="mb-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </motion.div>
             
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-8">
-              <span className={`text-sm ${!isAnnual ? 'font-medium' : 'text-muted-foreground'}`}>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6"
+            >
+              Simple, Transparent{' '}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Pricing
+              </span>
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
+            >
+              Choose the plan that fits your needs. All plans include our core features with no hidden fees.
+            </motion.p>
+
+            {/* Pricing Toggle */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex items-center justify-center gap-4 mb-8"
+            >
+              <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                 Monthly
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAnnual(!isAnnual)}
-                className="relative"
-              >
-                <div className={`w-6 h-6 rounded-full bg-primary transition-transform ${isAnnual ? 'translate-x-3' : '-translate-x-3'}`} />
-              </Button>
-              <span className={`text-sm ${isAnnual ? 'font-medium' : 'text-muted-foreground'}`}>
-                Annual
-              </span>
-              {isAnnual && (
-                <Badge variant="secondary" className="ml-2">
-                  Save 20%
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Pricing Cards */}
-          <div className="grid gap-8 md:grid-cols-3 mb-16">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.id} 
-                className={`relative transition-all duration-300 hover:shadow-xl ${
-                  plan.popular ? 'border-primary shadow-lg scale-105' : 'hover:scale-105'
+              <button
+                onClick={() => setIsYearly(!isYearly)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  isYearly ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                      <Star className="h-3 w-3 mr-1" />
-                      Most Popular
-                    </Badge>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isYearly ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                Yearly
+              </span>
+              {isYearly && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+                >
+                  Save 20%
+                </motion.span>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Cards */}
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          {plans.map((plan, index) => (
+            <motion.div
+              key={plan.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              whileHover={{ 
+                scale: 1.02,
+                transition: { duration: 0.2 }
+              }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border-2 transition-all duration-300 hover:shadow-2xl cursor-pointer ${
+                plan.popular 
+                  ? 'border-blue-500 scale-105' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+              } ${selectedPlan === plan.name ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+              onClick={() => setSelectedPlan(selectedPlan === plan.name ? null : plan.name)}
+            >
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              
+              <div className="text-center mb-8">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    plan.popular 
+                      ? 'bg-gradient-to-br from-blue-500 to-purple-600' 
+                      : 'bg-gray-100 dark:bg-gray-700'
+                  }`}>
+                    <plan.icon className={`h-6 w-6 ${
+                      plan.popular ? 'text-white' : 'text-gray-600 dark:text-gray-300'
+                    }`} />
                   </div>
-                )}
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {plan.name}
+                  </h3>
+                </div>
                 
-                <CardHeader className="text-center pb-4">
-                  <div className={`w-20 h-20 rounded-full ${plan.id === 'pro' ? 'bg-transparent' : plan.color} flex items-center justify-center ${plan.id === 'pro' ? '' : 'text-white'} mx-auto mb-4`}>
-                    {plan.icon}
-                  </div>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground ml-2">{plan.period}</span>
-                  </div>
-                  <p className="text-muted-foreground mt-2">{plan.description}</p>
-                </CardHeader>
+                <div className="mb-4">
+                  <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                    {plan.price}
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-300 ml-2">
+                    {plan.period}
+                  </span>
+                </div>
                 
-                <CardContent className="space-y-6">
-                  {plan.stripePriceId ? (
-                    <StripePaymentButton
-                      priceId={plan.stripePriceId}
-                      planName={plan.name}
-                      className="w-full"
-                    />
-                  ) : plan.id === 'pro' ? (
-                    <div className="text-center space-y-2">
-                      <Button disabled className="w-full" size="lg">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Payment Setup Required
-                      </Button>
-                      <p className="text-xs text-muted-foreground">
-                        Stripe configuration needed. Contact support to enable payments.
-                      </p>
-                    </div>
-                  ) : (
-                    <Button asChild className="w-full" size="lg">
-                      <Link href={plan.href}>
-                        {plan.cta}
-                      </Link>
-                    </Button>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {plan.description}
+                </p>
+              </div>
+              
+              <ul className="space-y-4 mb-8">
+                {plan.features.map((feature, featureIndex) => (
+                  <motion.li 
+                    key={featureIndex} 
+                    className="flex items-start gap-3 group"
+                    whileHover={{ x: 4 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    </motion.div>
+                    <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                      {feature}
+                    </span>
+                  </motion.li>
+                ))}
+              </ul>
+              
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  className={`w-full py-3 text-lg font-semibold rounded-lg transition-all duration-300 ${
+                    plan.popular
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                  onClick={() => window.location.href = '/auth'}
+                >
+                  {plan.cta}
+                </Button>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Selected Plan Summary */}
+      <AnimatePresence>
+        {selectedPlan && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+          >
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                    Selected: {selectedPlan} Plan
+                  </h3>
+                  <p className="text-blue-700 dark:text-blue-300">
+                    {plans.find(p => p.name === selectedPlan)?.description}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedPlan(null)}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FAQ Section */}
+      <div className="bg-gray-50 dark:bg-gray-800 py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Everything you need to know about our pricing and plans.
+            </p>
+          </motion.div>
+          
+          <div className="space-y-4">
+            {[
+              {
+                question: "Can I change plans anytime?",
+                answer: "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences."
+              },
+              {
+                question: "Is there a free trial?",
+                answer: "Yes! Both Student and Premium plans come with a 14-day free trial. No credit card required to start."
+              },
+              {
+                question: "What happens to my data if I cancel?",
+                answer: "Your data is always yours. You can export your study materials, chat history, and progress data before canceling."
+              },
+              {
+                question: "Do you offer student discounts?",
+                answer: "Yes! We offer 50% off for verified students with a valid .edu email address. Contact support for details."
+              }
+            ].map((faq, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ scale: 1.01 }}
+                className="bg-white dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden border border-gray-200 dark:border-gray-600"
+              >
+                <button
+                  onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
+                  className="w-full p-6 text-left flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white pr-4">
+                    {faq.question}
+                  </h3>
+                  <motion.div
+                    animate={{ rotate: expandedFAQ === index ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex-shrink-0"
+                  >
+                    <ChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  </motion.div>
+                </button>
+                
+                <AnimatePresence>
+                  {expandedFAQ === index && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 pt-0">
+                        <motion.p
+                          initial={{ y: -10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          transition={{ duration: 0.2, delay: 0.1 }}
+                          className="text-gray-600 dark:text-gray-300 leading-relaxed"
+                        >
+                          {faq.answer}
+                        </motion.p>
+                      </div>
+                    </motion.div>
                   )}
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-sm">What's included:</h4>
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  {plan.limitations.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm text-muted-foreground">Limitations:</h4>
-                      <ul className="space-y-2">
-                        {plan.limitations.map((limitation, index) => (
-                          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <X className="h-4 w-4 text-red-500 flex-shrink-0" />
-                            <span>{limitation}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                </AnimatePresence>
+              </motion.div>
             ))}
           </div>
-
-          {/* Advanced Features Section */}
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Pro Features</h2>
-            <p className="text-muted-foreground mb-8">
-              Unlock advanced AI-powered tools designed for serious students
-            </p>
-            
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {advancedFeatures.map((feature, index) => (
-                <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-4">
-                      {feature.icon}
-                    </div>
-                    <h4 className="font-semibold mb-2">{feature.title}</h4>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="text-center">
-            <h2 className="text-3xl font-bold mb-8">Frequently Asked Questions</h2>
-            <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
-              <Card>
-                <CardContent className="p-6">
-                  <h4 className="font-semibold mb-2">Can I upgrade or downgrade anytime?</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Yes! You can change your plan at any time. Changes take effect immediately.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h4 className="font-semibold mb-2">Is there a free trial for Pro?</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Yes! Try Pro features free for 14 days. No credit card required.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h4 className="font-semibold mb-2">What payment methods do you accept?</h4>
-                  <p className="text-sm text-muted-foreground">
-                    We accept all major credit cards, PayPal, and Apple Pay.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h4 className="font-semibold mb-2">Do you offer student discounts?</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Yes! Students get 50% off Pro plans with valid student ID.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
         </div>
-      </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="py-8 border-t bg-transparent">
-        <div className="container max-w-6xl mx-auto px-6 text-center text-muted-foreground">
-          © {new Date().getFullYear()} CourseConnect. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

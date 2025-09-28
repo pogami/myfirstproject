@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Mic, MicOff, Bot } from 'lucide-react';
+import { Send, Upload, Mic, MicOff, Bot, Brain, FileText, Loader2 } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { cn } from '@/lib/utils';
+// Removed Ollama import - now using API routes
 
 interface EnhancedChatInputProps {
   value: string;
@@ -11,6 +12,7 @@ interface EnhancedChatInputProps {
   onSend: (shouldCallAI?: boolean) => void;
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFileUpload?: (file: File) => void;
+  onFileProcessed?: (processedFile: any) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -25,6 +27,7 @@ export function EnhancedChatInput({
   onSend,
   onKeyPress,
   onFileUpload,
+  onFileProcessed,
   placeholder,
   disabled = false,
   className = "",
@@ -37,6 +40,8 @@ export function EnhancedChatInput({
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showAIMention, setShowAIMention] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const [processingFile, setProcessingFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -92,10 +97,96 @@ export function EnhancedChatInput({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && onFileUpload) {
-      onFileUpload(file);
+    if (!file) return;
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    // Check file type
+    const allowedTypes = [
+      'text/plain',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Unsupported file type. Please upload PDF, DOCX, TXT, or image files.');
+      return;
+    }
+
+    setIsProcessingFile(true);
+    setProcessingFile(file);
+
+    try {
+      // Extract text from file (simple text extraction for now)
+      const text = await file.text();
+      
+      // Process file with Ollama API
+      const response = await fetch('/api/ollama/process-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text,
+          fileName: file.name,
+          analysisType: 'summary'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.success) {
+          // Create processed file object
+          const processedFile = {
+            id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            extractedText: text,
+            summary: result.analysis.summary,
+            keyPoints: result.analysis.keyPoints,
+            contentType: 'text',
+            processingTime: Date.now(),
+            confidence: result.analysis.confidence
+          };
+
+          // Call the original onFileUpload if provided
+          if (onFileUpload) {
+            onFileUpload(file);
+          }
+          
+          // Call the new onFileProcessed callback
+          if (onFileProcessed) {
+            onFileProcessed(processedFile);
+          }
+        } else {
+          throw new Error(result.error || 'Failed to process file');
+        }
+      } else {
+        throw new Error('API request failed');
+      }
+    } catch (error) {
+      console.error('Error processing file:', error);
+      alert(`Error processing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessingFile(false);
+      setProcessingFile(null);
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -135,6 +226,17 @@ export function EnhancedChatInput({
         </div>
       )}
 
+      {/* File Processing Indicator */}
+      {isProcessingFile && processingFile && (
+        <div className={cn(
+          "absolute -top-8 left-2 px-2 py-1 rounded text-xs flex items-center gap-1 z-10",
+          isDark ? "bg-blue-900/80 text-blue-200" : "bg-blue-100 text-blue-700"
+        )}>
+          <Brain className="h-3 w-3" />
+          Processing {processingFile.name} with AI...
+        </div>
+      )}
+
       {/* Main Input Container */}
       <div className={cn(
         "chat-input-container relative flex items-center gap-2 p-3 rounded-full h-12 shadow-lg border border-border/20",
@@ -156,10 +258,14 @@ export function EnhancedChatInput({
             isDark 
               ? "text-white/70 hover:text-white/90" 
               : "text-gray-600 hover:text-gray-800",
-            (disabled || isSending) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
           )}
         >
-          <Upload className="h-4 w-4" />
+          {isProcessingFile ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
         </div>
 
         {/* Input Field */}
@@ -170,12 +276,16 @@ export function EnhancedChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={isSending ? "AI is responding..." : getPlaceholder()}
-            disabled={disabled || isSending}
+            placeholder={
+              isSending ? "AI is responding..." : 
+              isProcessingFile ? `Processing ${processingFile?.name}...` : 
+              getPlaceholder()
+            }
+            disabled={disabled || isSending || isProcessingFile}
             className={cn(
               "w-full h-8 bg-transparent text-base border-0 outline-none focus:outline-none placeholder:opacity-60 resize-none",
               isDark ? "text-white placeholder-white/60" : "text-gray-900 placeholder-gray-400",
-              (disabled || isSending) && "opacity-50 cursor-not-allowed"
+              (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
             )}
             style={{ fontSize: '16px' }}
           />
@@ -200,7 +310,7 @@ export function EnhancedChatInput({
               : isDark 
                 ? "text-white/70 hover:text-white/90" 
                 : "text-gray-600 hover:text-gray-800",
-            (disabled || isSending) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
           )}
         >
           {isVoiceActive ? (

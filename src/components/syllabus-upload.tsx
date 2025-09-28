@@ -4,10 +4,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, Users, Bot } from "lucide-react";
+import { Upload, FileText, X, Users, Bot, Brain, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentProcessorClient } from '@/lib/syllabus-parser/document-processor-client';
 import { AISyllabusParser } from '@/lib/syllabus-parser/ai-parser';
+// Removed Ollama import - now using API routes
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -52,6 +53,10 @@ export default function SyllabusUpload() {
     });
     const [matchingGroups, setMatchingGroups] = useState<any[]>([]);
     const [showGroupSelection, setShowGroupSelection] = useState(false);
+    const [ollamaResult, setOllamaResult] = useState<{
+        extractedData: any;
+        isOllamaAvailable: boolean;
+    } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
     const router = useRouter();
@@ -137,13 +142,56 @@ export default function SyllabusUpload() {
                 message: 'Analyzing content with AI...'
             });
 
-            const result = await AISyllabusParser.parseSyllabus(
-                documentText.text,
-                file.name,
-                documentText.format
-            );
+            // Try Ollama API first
+            try {
+                const response = await fetch('/api/ollama/process-syllabus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: documentText.text,
+                        userId: user?.uid || 'guest'
+                    })
+                });
 
-            setParsingResult(result);
+                if (response.ok) {
+                    const ollamaResult = await response.json();
+                    setOllamaResult(ollamaResult);
+                    
+                    // Convert Ollama result to ParsingResult format
+                    const result: ParsingResult = {
+                        success: true,
+                        confidence: ollamaResult.extractedData.confidence,
+                        data: {
+                            courseInfo: {
+                                title: ollamaResult.extractedData.courseTitle || 'Unknown Course',
+                                courseCode: ollamaResult.extractedData.courseCode || 'UNKNOWN',
+                                instructor: ollamaResult.extractedData.instructor || null,
+                                university: ollamaResult.extractedData.university || null,
+                                semester: ollamaResult.extractedData.semester || null,
+                                year: ollamaResult.extractedData.year || null,
+                                department: ollamaResult.extractedData.department || null
+                            }
+                        },
+                        errors: [],
+                        processingTime: Date.now() - Date.now()
+                    };
+                    setParsingResult(result);
+                } else {
+                    throw new Error('Ollama API failed');
+                }
+            } catch (ollamaError) {
+                console.warn('Ollama processing failed, falling back to AISyllabusParser:', ollamaError);
+                
+                // Fallback to original parser
+                const result = await AISyllabusParser.parseSyllabus(
+                    documentText.text,
+                    file.name,
+                    documentText.format
+                );
+                setParsingResult(result);
+            }
 
             // Stage 4: Structuring
             setParsingProgress({
@@ -400,8 +448,8 @@ export default function SyllabusUpload() {
                     <Upload /> 
                     Upload Syllabus
                     <div className="ml-auto flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-full">
-                        <Bot className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI-Powered</span>
+                        <Brain className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">AI Powered</span>
                     </div>
                 </CardTitle>
                 <CardDescription>
@@ -422,25 +470,25 @@ export default function SyllabusUpload() {
                 {!file && !isAnalyzing && (
                     <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
                         <div className="flex items-center gap-2 mb-3">
-                            <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                            <h3 className="text-sm font-medium text-purple-800 dark:text-purple-200">Smart Features</h3>
+                            <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                            <h3 className="text-sm font-medium text-purple-800 dark:text-purple-200">AI Features</h3>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-muted-foreground">Text extraction</span>
+                                <span className="text-muted-foreground">Local AI processing</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-muted-foreground">Course parsing</span>
+                                <span className="text-muted-foreground">Smart course parsing</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-muted-foreground">Find classmates</span>
+                                <span className="text-muted-foreground">Semantic matching</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className="text-muted-foreground">Create study groups</span>
+                                <span className="text-muted-foreground">Privacy-first</span>
                             </div>
                         </div>
                         <p className="text-xs text-purple-700 dark:text-purple-300 mt-2">
@@ -482,11 +530,7 @@ export default function SyllabusUpload() {
                                     }
                                 />
                                 <Label htmlFor="ai-only" className="flex items-center gap-2 cursor-pointer">
-                                    <img 
-                                        src="/final-logo.png" 
-                                        alt="CourseConnect AI" 
-                                        className="h-4 w-4 object-contain"
-                                    />
+                                    <Bot className="h-4 w-4 text-primary" />
                                     CourseConnect AI Personal Chat
                                 </Label>
                             </div>
@@ -573,6 +617,12 @@ export default function SyllabusUpload() {
                                         }`}>
                                             {parsingResult.success ? 'Success' : 'Review'}
                                         </span>
+                                        {ollamaResult?.isOllamaAvailable && (
+                                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                                <Brain className="h-3 w-3 inline mr-1" />
+                                                Ollama
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-4 text-xs">
                                         <span className="text-gray-600 dark:text-gray-400">

@@ -88,7 +88,27 @@ function calculateSimilarity(syllabus1: SyllabusData, syllabus2: SyllabusData): 
  */
 export async function findMatchingClassGroups(syllabusData: SyllabusData): Promise<ClassGroup[]> {
   try {
+    // First, try to find an exact match by chat ID
+    const deterministicChatId = generateClassChatId(syllabusData);
     const classGroupsRef = collection(db, 'classGroups');
+    
+    // Look for exact chat ID match first
+    const exactMatchQuery = query(
+      classGroupsRef,
+      where('chatId', '==', deterministicChatId),
+      where('isPublic', '==', true)
+    );
+    
+    const exactMatchSnapshot = await getDocs(exactMatchQuery);
+    if (!exactMatchSnapshot.empty) {
+      const exactMatch = exactMatchSnapshot.docs[0].data() as ClassGroup;
+      return [{
+        ...exactMatch,
+        id: exactMatchSnapshot.docs[0].id
+      }];
+    }
+    
+    // If no exact match, look for similar groups
     const q = query(
       classGroupsRef,
       where('isPublic', '==', true)
@@ -123,7 +143,7 @@ export async function findMatchingClassGroups(syllabusData: SyllabusData): Promi
 }
 
 /**
- * Create a new class group
+ * Create a new class group or join existing one
  */
 export async function createClassGroup(
   syllabusData: SyllabusData,
@@ -131,8 +151,29 @@ export async function createClassGroup(
   preferences: ChatPreference
 ): Promise<string> {
   try {
-    const groupId = `group-${syllabusData.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`;
+    // Use deterministic group ID based on course info
+    const classCode = syllabusData.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const university = syllabusData.university?.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown';
+    const semester = syllabusData.semester?.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown';
+    const year = syllabusData.year || 'unknown';
+    const groupId = `group-${classCode}-${university}-${semester}-${year}`;
     
+    // Check if group already exists
+    const existingGroupRef = doc(db, 'classGroups', groupId);
+    const existingGroupSnap = await getDoc(existingGroupRef);
+    
+    if (existingGroupSnap.exists()) {
+      // Group exists, add user to it
+      const existingGroup = existingGroupSnap.data() as ClassGroup;
+      if (!existingGroup.members.includes(syllabusData.uploadedBy)) {
+        await updateDoc(existingGroupRef, {
+          members: arrayUnion(syllabusData.uploadedBy)
+        });
+      }
+      return groupId;
+    }
+    
+    // Create new group
     const classGroup: ClassGroup = {
       id: groupId,
       className: syllabusData.className,
@@ -217,17 +258,27 @@ export async function getUserClassGroups(userId: string): Promise<ClassGroup[]> 
 }
 
 /**
- * Generate a unique chat ID for a class
+ * Generate a deterministic chat ID for a class (same syllabus = same chat)
  */
 export function generateClassChatId(syllabusData: SyllabusData): string {
-  const baseId = syllabusData.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-  return `class-${baseId}-${Date.now()}`;
+  // Create a deterministic ID based on class code, university, and semester/year
+  const classCode = syllabusData.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const university = syllabusData.university?.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown';
+  const semester = syllabusData.semester?.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown';
+  const year = syllabusData.year || 'unknown';
+  
+  // Create a deterministic ID that will be the same for identical course info
+  return `class-${classCode}-${university}-${semester}-${year}`;
 }
 
 /**
- * Generate a unique syllabus ID
+ * Generate a deterministic syllabus ID (same course info = same ID)
  */
 export function generateSyllabusId(syllabusData: Omit<SyllabusData, 'id'>): string {
-  const baseId = syllabusData.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-  return `syllabus-${baseId}-${Date.now()}`;
+  const classCode = syllabusData.classCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const university = syllabusData.university?.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown';
+  const semester = syllabusData.semester?.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'unknown';
+  const year = syllabusData.year || 'unknown';
+  
+  return `syllabus-${classCode}-${university}-${semester}-${year}`;
 }

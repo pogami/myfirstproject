@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, Brain, FileText } from "lucide-react";
+import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, FileText } from "lucide-react";
 import {
   SidebarProvider,
   Sidebar,
@@ -283,158 +283,157 @@ export default function DashboardLayout({
 
 
   return (
-      <SidebarProvider className="bg-gradient-to-b from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
-        <Sidebar className="sm:translate-x-0 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/10 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 light:border-r-blue-200/50 light:shadow-lg">
-          <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-4 sm:p-6 border-b border-border/50 light:border-blue-200/50 light:bg-gradient-to-r light:from-white light:to-blue-50/10">
-             <Link href="/home" className="flex items-center gap-2 sm:gap-3 hover:scale-105 transition-all duration-300">
-                <div className="p-1.5 sm:p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                  <CourseConnectLogo className="size-5 sm:size-6 text-primary transition-all group-data-[collapsible=icon]:size-7" />
+      <SidebarProvider className="bg-white dark:bg-gray-950 min-h-screen">
+        <Sidebar className="sm:translate-x-0 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 shadow-xl">
+          <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-6 border-b border-gray-100 dark:border-gray-800">
+             <Link href="/home" className="flex items-center gap-3 hover:opacity-80 transition-all duration-200">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                  <CourseConnectLogo className="size-6 text-white transition-all group-data-[collapsible=icon]:size-7" />
                 </div>
-                <span className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent transition-all group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
+                <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white transition-all group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
                   CourseConnect
                 </span>
              </Link>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarMenu className="space-y-1 sm:space-y-2 p-1 sm:p-2">
+            <SidebarMenu className="space-y-2 p-4">
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     pathname === "/dashboard" 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     pathname === "/dashboard" 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <Home className="size-4 sm:size-5" />
+                    <Home className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Dashboard</span>
+                  <span className="font-medium text-sm">Dashboard</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/upload"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive("/dashboard/upload") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     isActive("/dashboard/upload") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <FilePlus className="size-4 sm:size-5" />
+                    <FilePlus className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Upload Syllabus</span>
+                  <span className="font-medium text-sm">Upload Syllabus</span>
                 </Link>
-              
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/chat"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive("/dashboard/chat") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     isActive("/dashboard/chat") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <MessageSquare className="size-4 sm:size-5" />
+                    <MessageSquare className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Class Chats</span>
+                  <span className="font-medium text-sm">Class Chats</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/overview"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive("/dashboard/overview") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     isActive("/dashboard/overview") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <Users className="size-4 sm:size-5" />
+                    <Users className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Classes Overview</span>
+                  <span className="font-medium text-sm">Classes Overview</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/flashcards"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive("/dashboard/flashcards") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     isActive("/dashboard/flashcards") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <GraduationCap className="size-4 sm:size-5" />
+                    <GraduationCap className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Flashcards</span>
+                  <span className="font-medium text-sm">Flashcards</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/academic-tools"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive("/dashboard/academic-tools") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     isActive("/dashboard/academic-tools") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <FileText className="size-4 sm:size-5" />
+                    <FileText className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Citation & Plagiarism</span>
+                  <span className="font-medium text-sm">Citation & Plagiarism</span>
                 </Link>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard/notifications"
-                  className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive("/dashboard/notifications") 
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:shadow-md"
+                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                  <div className={`p-2 rounded-md transition-all duration-200 ${
                     isActive("/dashboard/notifications") 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted/50 group-hover:bg-primary/20"
+                      ? "bg-blue-100 dark:bg-blue-900/50" 
+                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                   }`}>
-                    <Bell className="size-4 sm:size-5" />
+                    <Bell className="size-4" />
                   </div>
-                  <span className="font-medium text-sm sm:text-base">Notifications</span>
+                  <span className="font-medium text-sm">Notifications</span>
                 </Link>
               </SidebarMenuItem>
               
@@ -443,20 +442,19 @@ export default function DashboardLayout({
                 <SidebarMenuItem>
                   <Link 
                     href="/dashboard/advanced"
-                    className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] group ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                       isActive("/dashboard/advanced") 
-                        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-purple-600/5 hover:shadow-md"
+                        ? "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800" 
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                     }`}
                   >
-                    <div className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
+                    <div className={`p-2 rounded-md transition-all duration-200 ${
                       isActive("/dashboard/advanced") 
-                        ? "bg-white/20" 
-                        : "bg-muted/50 group-hover:bg-purple-500/20"
+                        ? "bg-purple-100 dark:bg-purple-900/50" 
+                        : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
                     }`}>
-                      <Brain className="size-4 sm:size-5" />
                     </div>
-                    <span className="font-medium text-sm sm:text-base">Advanced AI</span>
+                    <span className="font-medium text-sm">Advanced AI</span>
                   </Link>
                 </SidebarMenuItem>
               )}
@@ -466,27 +464,27 @@ export default function DashboardLayout({
             {/* User profile moved to header */}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="bg-gradient-to-b from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen">
+        <SidebarInset className="bg-gray-50/50 dark:bg-gray-950 min-h-screen">
           <AnnouncementBanner />
           
           {/* Header with Hamburger Menu - Always Visible */}
-          <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent light:bg-white/80 light:backdrop-blur-xl light:border-blue-200/50 light:shadow-sm">
-            <div className="flex h-16 items-center justify-between px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="h-8 w-8 hover:bg-transparent hover:text-current" />
+          <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
+            <div className="flex h-16 items-center justify-between px-6">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="h-9 w-9 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" />
                 <Link href="/dashboard" className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-primary tracking-tight">CourseConnect</h1>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Dashboard</h1>
                 </Link>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <ClientThemeToggle />
                 <DashboardHeader user={user || guestUser} />
               </div>
             </div>
           </header>
           
-          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-transparent relative min-h-screen">
-            <div className="max-w-full mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
+          <main className="flex-1 p-6 bg-transparent relative min-h-screen">
+            <div className="max-w-7xl mx-auto space-y-6">
               {children}
             </div>
           </main>

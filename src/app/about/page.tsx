@@ -1,482 +1,734 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { ArrowRight, Users, BookOpen, MessageSquare, Upload, GraduationCap, Sparkles, Heart, Target, Zap, Brain, Mic, Camera, BarChart3, Calendar, Music, Star, CheckCircle, Rocket, Shield, Clock, TrendingUp } from "lucide-react";
-import { SiteFooter } from "@/components/site-footer";
-import { useState, useEffect } from "react";
-
-const features = [
-  {
-    icon: <Brain className="h-12 w-12 text-white drop-shadow-lg" />,
-    title: "AI-Powered Learning",
-    description: "Advanced artificial intelligence that adapts to your learning style and provides personalized assistance",
-    gradient: "from-blue-500 to-cyan-500",
-    bgGradient: "from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20"
-  },
-  {
-    icon: <Users className="h-12 w-12 text-white drop-shadow-lg" />,
-    title: "Study Groups",
-    description: "Connect with classmates and form study groups for collaborative learning",
-    gradient: "from-green-500 to-emerald-500",
-    bgGradient: "from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20"
-  },
-  {
-    icon: <BookOpen className="h-12 w-12 text-white drop-shadow-lg" />,
-    title: "Syllabus Analysis",
-    description: "Upload your course syllabus and get instant insights and study materials",
-    gradient: "from-purple-500 to-violet-500",
-    bgGradient: "from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20"
-  },
-  {
-    icon: <MessageSquare className="h-12 w-12 text-white drop-shadow-lg" />,
-    title: "24/7 Support",
-    description: "Get help whenever you need it with our comprehensive support system",
-    gradient: "from-pink-500 to-rose-500",
-    bgGradient: "from-pink-50 to-rose-50 dark:from-pink-950/20 dark:to-rose-950/20"
-  }
-];
-
-const values = [
-  {
-    icon: <Users className="h-8 w-8 text-blue-500" />,
-    title: "Student-First",
-    description: "Every feature is designed with students' needs in mind"
-  },
-  {
-    icon: <Brain className="h-8 w-8 text-purple-500" />,
-    title: "Innovation",
-    description: "Leveraging cutting-edge AI to enhance learning"
-  },
-  {
-    icon: <Heart className="h-8 w-8 text-red-500" />,
-    title: "Accessibility",
-    description: "Making quality education tools available to everyone"
-  },
-  {
-    icon: <Target className="h-8 w-8 text-green-500" />,
-    title: "Excellence",
-    description: "Committed to delivering the best possible experience"
-  }
-];
+import React, { useState, useEffect } from 'react';
+import { Navigation } from '@/components/landing/navigation';
+import { Footer } from '@/components/landing/footer';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Users, Target, Lightbulb, Heart, Award, Globe, Zap, TrendingUp, Clock, CheckCircle, Star, Play, Sparkles, Shield, MessageCircle } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 export default function AboutPage() {
-  const [animatedStats, setAnimatedStats] = useState({
-    students: 0,
-    universities: 0,
-    studyHours: 0,
-    successRate: 0
-  });
-
-  const targetStats = {
-    students: 10000,
-    universities: 50,
-    studyHours: 50000,
-    successRate: 94
-  };
+  const [activeValue, setActiveValue] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
   useEffect(() => {
-    const animateStats = () => {
-      const duration = 2000; // 2 seconds
-      const steps = 60;
-      const stepDuration = duration / steps;
-
-      let step = 0;
-      const timer = setInterval(() => {
-        step++;
-        const progress = step / steps;
-        
-        setAnimatedStats({
-          students: Math.floor(targetStats.students * progress),
-          universities: Math.floor(targetStats.universities * progress),
-          studyHours: Math.floor(targetStats.studyHours * progress),
-          successRate: Math.floor(targetStats.successRate * progress)
-        });
-
-        if (step >= steps) {
-          clearInterval(timer);
-          setAnimatedStats(targetStats);
-        }
-      }, stepDuration);
-
-      return () => clearInterval(timer);
-    };
-
-    // Start animation after a short delay
-    const timer = setTimeout(animateStats, 500);
-    return () => clearTimeout(timer);
+    setIsVisible(true);
   }, []);
 
-  return (
-    <div className="min-h-screen bg-transparent">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
-        <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
-          <Link href="/home" className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-            <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] hover:bg-transparent" asChild>
-              <Link href="/about">About</Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="hidden sm:flex h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] hover:bg-transparent" asChild>
-              <Link href="/pricing">Pricing</Link>
-            </Button>
-            <Button variant="ghost" size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] hover:bg-transparent" asChild>
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button size="sm" className="h-10 sm:h-11 text-sm sm:text-base min-h-[40px] sm:min-h-[44px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" asChild>
-              <Link href="/dashboard">Get Started <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" /></Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-16 sm:mb-20">
-          <div className="relative">
-            {/* Animated background elements */}
-            <div className="absolute inset-0 -z-10">
-              <div className="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse"></div>
-              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+  const renderValueDemo = (value: any) => {
+    switch (value.title) {
+      case 'Student-Centered':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 1, -1, 0],
+              scale: [1, 1.005, 1],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-500 ml-2">Student Dashboard</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Student Success Metrics</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Study Time</span>
+                    <span className="text-green-600">+25%</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Grade Improvement</span>
+                    <span className="text-green-600">+15%</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Peer Connections</span>
+                    <span className="text-green-600">+40%</span>
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-xs text-green-600">Students love our platform</span>
+                  </div>
+                </motion.div>
+              </div>
             </div>
-            
-            <Badge className="mb-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 px-4 py-2 text-sm font-medium animate-bounce">
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI-Powered Education Platform
-            </Badge>
-            
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 sm:mb-8">
-              About <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">CourseConnect</span>
-          </h1>
-            
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-8">
-              CourseConnect is an <span className="text-primary font-semibold">AI-powered study platform</span> that helps college students succeed through smart tools, study groups, and personalized learning.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 h-14 px-8 text-lg font-semibold" asChild>
-                <Link href="/dashboard">
-                  <Rocket className="mr-2 h-5 w-5" />
-                  Get Started Free
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="h-14 px-8 text-lg font-semibold border-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300" asChild>
-                <Link href="/contact">
-                  <MessageSquare className="mr-2 h-5 w-5" />
-                  Contact Us
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+          </motion.div>
+        );
 
-        {/* Mission Section */}
-        <div className="mb-16 sm:mb-20">
-          <Card className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-cyan-500/10 border-purple-200/20 dark:border-purple-800/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400/20 to-blue-400/20 rounded-full blur-2xl"></div>
-            <CardContent className="relative p-8 sm:p-12">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl mb-6">
-                  <Target className="h-8 w-8 text-white" />
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Our Mission</h2>
-                <p className="text-xl text-muted-foreground leading-relaxed max-w-4xl mx-auto">
-                  We help college students succeed by providing <span className="text-primary font-semibold">AI-powered study tools</span> and 
-                  <span className="text-primary font-semibold"> collaborative features</span> that make learning easier and more effective.
-                </p>
+      case 'Academic Excellence':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 1, -1, 0],
+              scale: [1, 1.005, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-500 ml-2">Achievement Tracker</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Values Section */}
-        <div className="mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Our Values</h2>
-          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {values.map((value, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex justify-center mb-4">
-                    {value.icon}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Academic Goals</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>GPA Improvement</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-green-600">On Track</span>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{value.title}</h3>
-                  <p className="text-sm text-muted-foreground">{value.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Features Section */}
-        <div className="mb-16 sm:mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Key Features</h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Discover the powerful tools that make CourseConnect the ultimate study companion
-            </p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature, index) => (
-              <Card key={index} className={`group relative overflow-hidden bg-gradient-to-br ${feature.bgGradient} border-0 hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <CardContent className="relative p-8 text-center">
-                  <div className={`inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r ${feature.gradient} rounded-2xl mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                    {feature.icon}
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Study Goals</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-green-600">Achieved</span>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-4 text-foreground">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats Section */}
-        <div className="mb-16 sm:mb-20">
-          <Card className="relative overflow-hidden bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-200/20 dark:border-blue-800/20">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
-            <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-br from-pink-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-            <CardContent className="relative p-8 sm:p-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Platform Highlights</h2>
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <Clock className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="text-4xl sm:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2">24/7</div>
-                  <div className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">AI Support</div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">Always available</div>
-                </div>
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <Shield className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="text-4xl sm:text-5xl font-bold text-green-600 dark:text-green-400 mb-2">100%</div>
-                  <div className="text-lg font-semibold text-green-800 dark:text-green-200 mb-1">Free to Start</div>
-                  <div className="text-sm text-green-600 dark:text-green-400">No credit card required</div>
-                </div>
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-violet-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <Brain className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="text-4xl sm:text-5xl font-bold text-purple-600 dark:text-purple-400 mb-2">AI-Powered</div>
-                  <div className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-1">Study Tools</div>
-                  <div className="text-sm text-purple-600 dark:text-purple-400">Personalized learning</div>
-                </div>
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="text-4xl sm:text-5xl font-bold text-pink-600 dark:text-pink-400 mb-2">Secure</div>
-                  <div className="text-lg font-semibold text-pink-800 dark:text-pink-200 mb-1">Privacy First</div>
-                  <div className="text-sm text-pink-600 dark:text-pink-400">Your data is safe</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Features Overview */}
-        <div className="mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">What Makes Us Different</h2>
-          <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Brain className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-xl">AI-Powered Learning</CardTitle>
-                <CardDescription>
-                  Advanced AI that adapts to your learning style and provides personalized assistance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Personalized study plans</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Smart homework help</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Adaptive flashcards</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-xl">Seamless Collaboration</CardTitle>
-                <CardDescription>
-                  Connect with classmates and form study groups effortlessly
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Auto-match with classmates</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Real-time study sessions</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Group project management</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <BarChart3 className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-xl">Progress Tracking</CardTitle>
-                <CardDescription>
-                  Comprehensive analytics to help you stay on track and improve
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Grade predictions</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Study time analytics</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Performance insights</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Company Information */}
-        <div className="mb-16 sm:mb-20">
-          <Card className="relative overflow-hidden bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-200/20 dark:border-blue-800/20">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
-            <CardContent className="relative p-8 sm:p-12">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">About CourseConnect</h2>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                  Founded in 2024, CourseConnect is dedicated to revolutionizing how students learn and collaborate.
-                </p>
-              </div>
-              
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl mb-4">
-                    <Users className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Founded</h3>
-                  <p className="text-muted-foreground">2024</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-violet-500 rounded-2xl mb-4">
-                    <Brain className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Headquarters</h3>
-                  <p className="text-muted-foreground">United States</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl mb-4">
-                    <Target className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Focus</h3>
-                  <p className="text-muted-foreground">Student Success</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Support Section */}
-        <div className="mb-16 sm:mb-20">
-          <Card className="relative overflow-hidden bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 border-green-200/20 dark:border-green-800/20">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-2xl"></div>
-            <CardContent className="relative p-8 sm:p-12">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-6">
-                  <MessageSquare className="h-8 w-8 text-white" />
-                </div>
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Get Support</h2>
-                <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-                  Need help? Our team is here to support you.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                  <div className="flex items-center gap-3 text-green-800 dark:text-green-200 bg-green-50 dark:bg-green-950/20 px-6 py-4 rounded-xl">
-                    <MessageSquare className="h-6 w-6 text-green-600" />
-                    <div>
-                      <span className="font-semibold text-lg">Email:</span>
-                      <a href="mailto:courseconnect.noreply@gmail.com" className="text-green-600 dark:text-green-400 hover:underline ml-2 text-lg font-medium">
-                        courseconnect.noreply@gmail.com
-                      </a>
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Exam Prep</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      <span className="text-yellow-600">In Progress</span>
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-green-600 dark:text-green-400 mt-6 flex items-center justify-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  We respond within 24 hours
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs text-blue-600">Excellence in every interaction</span>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 'Innovation':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 2, -2, 0],
+              scale: [1, 1.01, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-500 ml-2">Innovation Lab</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Latest Features</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span>AI-Powered Study Plans</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <span>Smart Notifications</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Advanced Analytics</span>
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-purple-600" />
+                    <span className="text-xs text-purple-600">Always innovating</span>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 'Community':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 1, -1, 0],
+              scale: [1, 1.005, 1],
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-500 ml-2">Community Hub</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Heart className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Active Members</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Study Groups</span>
+                    <span className="text-blue-600">1,247</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Peer Connections</span>
+                    <span className="text-blue-600">8,932</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Knowledge Shared</span>
+                    <span className="text-blue-600">15,678</span>
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="bg-pink-50 dark:bg-pink-900/20 rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-pink-600" />
+                    <span className="text-xs text-pink-600">Building connections daily</span>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      default:
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 2, -2, 0],
+              scale: [1, 1.01, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-4 bg-blue-200 dark:bg-blue-900 rounded w-2/3"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+              </div>
+            </div>
+          </motion.div>
+        );
+    }
+  };
+
+  const values = [
+    {
+      icon: Users,
+      title: 'Student-Centered',
+      description: 'Every feature is designed with students\' needs in mind, from AI tutoring to study group collaboration.'
+    },
+    {
+      icon: Target,
+      title: 'Academic Excellence',
+      description: 'We believe in empowering students to achieve their highest potential through innovative learning tools.'
+    },
+    {
+      icon: Lightbulb,
+      title: 'Innovation',
+      description: 'We continuously push the boundaries of educational technology to create better learning experiences.'
+    },
+    {
+      icon: Heart,
+      title: 'Community',
+      description: 'Building connections between students and fostering collaborative learning environments.'
+    }
+  ];
+
+  const stats = [
+    { number: '10,000+', label: 'Active Students' },
+    { number: '500+', label: 'Universities' },
+    { number: '95%', label: 'Satisfaction Rate' },
+    { number: '24/7', label: 'AI Support' }
+  ];
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <Navigation />
+      
+      {/* Header */}
+      <div className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          <motion.div
+            animate={{
+              x: [0, 100, 0],
+              y: [0, -100, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            className="absolute top-20 left-20 w-32 h-32 bg-blue-200/20 rounded-full blur-xl"
+          />
+          <motion.div
+            animate={{
+              x: [0, -150, 0],
+              y: [0, 100, 0],
+              rotate: [360, 180, 0],
+            }}
+            transition={{
+              duration: 25,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            className="absolute top-40 right-20 w-24 h-24 bg-purple-200/20 rounded-full blur-xl"
+          />
+          <motion.div
+            animate={{
+              x: [0, 80, 0],
+              y: [0, -80, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute bottom-20 left-1/3 w-16 h-16 bg-pink-200/20 rounded-full blur-lg"
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-8"
+            >
+              <Button
+                variant="ghost"
+                onClick={() => window.history.back()}
+                className="mb-4 hover:bg-white/50 backdrop-blur-sm"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </motion.div>
+            
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6"
+            >
+              About{' '}
+              <motion.span 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+                animate={{
+                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                style={{
+                  backgroundSize: "200% 200%"
+                }}
+              >
+                CourseConnect
+              </motion.span>
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
+            >
+              We're on a mission to revolutionize how students learn, collaborate, and succeed in their academic journey.
+            </motion.p>
+
+            {/* Interactive Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-wrap justify-center gap-8 mb-12"
+            >
+              {[
+                { number: "10,000+", label: "Students", icon: Users },
+                { number: "500+", label: "Universities", icon: Globe },
+                { number: "95%", label: "Success Rate", icon: Target },
+                { number: "24/7", label: "AI Support", icon: Clock }
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center gap-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl px-6 py-4 border border-gray-200/50 dark:border-gray-700/50"
+                >
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                    <stat.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.number}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">{stat.label}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Story Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-8">
+            Our Story
+          </h2>
+        </motion.div>
+
+        {/* Timeline */}
+        <div className="relative">
+          {/* Timeline Line */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+          
+          {/* Timeline Items */}
+          <div className="space-y-16">
+            {[
+              {
+                year: "Aug 2025",
+                title: "The Problem",
+                description: "Students were struggling to find study partners, get help with difficult concepts, and stay organized in their academic journey.",
+                icon: Lightbulb,
+                side: "left"
+              },
+              {
+                year: "Sep 2025",
+                title: "The Solution",
+                description: "We leveraged AI technology and modern collaboration tools to create a platform that would transform how students learn and succeed.",
+                icon: null,
+                side: "right"
+              },
+              {
+                year: "Oct 2025",
+                title: "The Growth",
+                description: "What started as a solo developer's passion project has grown into a comprehensive platform connecting thousands of students.",
+                icon: TrendingUp,
+                side: "left"
+              },
+              {
+                year: "Nov 2025",
+                title: "The Community",
+                description: "Today, CourseConnect is more than just a study platform—it's a community where students support each other and achieve their goals.",
+                icon: Heart,
+                side: "right"
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: item.side === 'left' ? -50 : 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                viewport={{ once: true }}
+                className={`flex items-center ${item.side === 'left' ? 'flex-row' : 'flex-row-reverse'}`}
+              >
+                <div className={`w-1/2 ${item.side === 'left' ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className={`flex items-center gap-3 ${item.side === 'left' ? 'justify-end' : 'justify-start'} mb-4`}>
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                        <item.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{item.year}</div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{item.title}</h3>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
+                  </motion.div>
+                </div>
+                
+                {/* Timeline Dot */}
+                <div className="relative z-10 w-4 h-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full border-4 border-white dark:border-gray-900"></div>
+                
+                <div className="w-1/2"></div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Values Section */}
+      <div className="bg-gray-50 dark:bg-gray-800 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Our Values
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              These core principles guide everything we do at CourseConnect.
+            </p>
+          </motion.div>
+          
+          {/* Value Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="flex flex-wrap justify-center gap-4 mb-16"
+          >
+            {values.map((value, index) => (
+              <motion.button
+                key={value.title}
+                onClick={() => setActiveValue(index)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                  activeValue === index
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                }`}
+              >
+                {React.createElement(value.icon, { className: "h-4 w-4 inline mr-2" })}
+                {value.title}
+              </motion.button>
+            ))}
+          </motion.div>
+
+          {/* Active Value Showcase */}
+          <motion.div
+            key={activeValue}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-16"
+          >
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-3xl p-8 md:p-12 border border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6"
+                  >
+                    {React.createElement(values[activeValue].icon, { className: "h-10 w-10 text-white" })}
+                  </motion.div>
+                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
+                    {values[activeValue].title}
+                  </h2>
+                  <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+                    {values[activeValue].description}
+                  </p>
+                </div>
+                <div className="relative">
+                  {renderValueDemo(values[activeValue])}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          
+          {/* All Values Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            {values.map((value, index) => (
+              <motion.div
+                key={value.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ 
+                  y: -10,
+                  scale: 1.02,
+                  transition: { duration: 0.2 }
+                }}
+                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 cursor-pointer group text-center"
+                onClick={() => setActiveValue(index)}
+              >
+                <motion.div
+                  whileHover={{ rotate: 360 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg transition-all duration-300"
+                >
+                  {React.createElement(value.icon, { className: "h-8 w-8 text-white" })}
+                </motion.div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                  {value.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
+                  {value.description}
                 </p>
-              </div>
-            </CardContent>
-          </Card>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
+      </div>
 
-        {/* CTA Section */}
-        <div className="text-center">
-          <Card className="relative overflow-hidden bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-cyan-500/10 border-purple-200/20 dark:border-purple-800/20">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5"></div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
-            <CardContent className="relative p-8 sm:p-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl mb-6">
-                <Rocket className="h-8 w-8 text-white" />
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Ready to Transform Your Learning?</h2>
-              <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-                Start your academic journey with CourseConnect today and experience the future of education
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 h-14 px-8 text-lg font-semibold" asChild>
-                  <Link href="/dashboard">
-                    <Rocket className="mr-2 h-5 w-5" />
-                    Get Started Free
-                  </Link>
-                </Button>
-                <Button variant="outline" size="lg" className="h-14 px-8 text-lg font-semibold border-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300" asChild>
-                  <Link href="/pricing">View Pricing</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Interactive Stats Section */}
+      <div className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              By the Numbers
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Our impact on student success speaks for itself.
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                whileHover={{ 
+                  scale: 1.05,
+                  transition: { duration: 0.2 }
+                }}
+                className="text-center bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                  viewport={{ once: true }}
+                  className="text-4xl md:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2"
+                >
+                  {stat.number}
+                </motion.div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  {stat.label}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </main>
+      </div>
 
-      <SiteFooter />
+      {/* Mission Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Our Mission
+            </h2>
+            <p className="text-xl text-blue-100 mb-8">
+              To democratize access to quality education by connecting students with AI-powered tutoring, 
+              study groups, and collaborative learning tools that help them succeed academically and beyond.
+            </p>
+            <Button
+              size="lg"
+              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+              onClick={() => window.location.href = '/auth'}
+            >
+              Join Our Mission
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 }

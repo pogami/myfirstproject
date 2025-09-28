@@ -55,11 +55,42 @@ Please provide a comprehensive analysis of this document including:
 - If it's academic content, highlight key concepts and their importance`;
     }
     
-    // Get AI analysis
-    const aiResponse = await provideStudyAssistanceWithFallback({
-      userInput: analysisPrompt,
-      context: 'document_analysis'
-    });
+    // Get AI analysis with Ollama fallback
+    let aiResponse: string;
+    
+    try {
+      // Try Ollama first for better performance
+      const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'qwen2.5:1.5b',
+          prompt: analysisPrompt,
+          stream: false,
+          options: {
+            temperature: 0.3,
+            max_tokens: 800
+          }
+        })
+      });
+      
+      if (ollamaResponse.ok) {
+        const ollamaResult = await ollamaResponse.json();
+        aiResponse = ollamaResult.response;
+      } else {
+        throw new Error('Ollama not available');
+      }
+    } catch (error) {
+      console.log('Ollama failed, using fallback AI service');
+      // Fallback to the original AI service
+      const fallbackResponse = await provideStudyAssistanceWithFallback({
+        userInput: analysisPrompt,
+        context: 'document_analysis'
+      });
+      aiResponse = fallbackResponse;
+    }
     
     return NextResponse.json({
       success: true,

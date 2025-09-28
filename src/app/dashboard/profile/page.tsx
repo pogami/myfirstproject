@@ -67,6 +67,27 @@ export default function ProfilePage() {
         }
     ]);
 
+    // Load notification settings from localStorage on mount
+    useEffect(() => {
+        const savedSettings = localStorage.getItem('notificationSettings');
+        if (savedSettings) {
+            try {
+                const parsed = JSON.parse(savedSettings);
+                // Restore icons for saved settings
+                const restoredSettings = parsed.map((setting: any) => {
+                    const defaultSetting = notificationSettings.find(s => s.id === setting.id);
+                    return {
+                        ...setting,
+                        icon: defaultSetting?.icon || <Bell className="size-5 text-gray-500" />
+                    };
+                });
+                setNotificationSettings(restoredSettings);
+            } catch (error) {
+                console.warn('Error parsing saved notification settings:', error);
+            }
+        }
+    }, []);
+
     // Function to sync pending data when online
     const syncPendingData = async () => {
         if (!user) return;
@@ -470,20 +491,67 @@ export default function ProfilePage() {
         }
     };
 
-    const toggleNotificationSetting = (id: string) => {
-        setNotificationSettings(prev => 
-            prev.map(setting => 
-                setting.id === id 
-                    ? { ...setting, enabled: !setting.enabled }
-                    : setting
-            )
-        );
-        
+    const toggleNotificationSetting = async (id: string) => {
         const setting = notificationSettings.find(s => s.id === id);
-        toast({
-            title: `${setting?.title} ${setting?.enabled ? 'Disabled' : 'Enabled'}`,
-            description: `You will ${setting?.enabled ? 'no longer' : 'now'} receive ${setting?.title.toLowerCase()}.`,
-        });
+        const newEnabled = !setting?.enabled;
+        
+        try {
+            // Update local state immediately for better UX
+            setNotificationSettings(prev => 
+                prev.map(setting => 
+                    setting.id === id 
+                        ? { ...setting, enabled: newEnabled }
+                        : setting
+                )
+            );
+
+            // Save to localStorage for persistence (without React components)
+            const updatedSettings = notificationSettings.map(s => 
+                s.id === id ? { ...s, enabled: newEnabled } : s
+            );
+            const settingsToSave = updatedSettings.map(({ icon, ...rest }) => rest);
+            localStorage.setItem('notificationSettings', JSON.stringify(settingsToSave));
+
+            // If user is authenticated, save to server
+            if (user) {
+                const response = await fetch('/api/notifications/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: user.uid,
+                        settings: settingsToSave
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save notification settings');
+                }
+            }
+
+            toast({
+                title: `${setting?.title} ${newEnabled ? 'Enabled' : 'Disabled'}`,
+                description: `You will ${newEnabled ? 'now' : 'no longer'} receive ${setting?.title.toLowerCase()}.`,
+            });
+        } catch (error) {
+            console.error('Error updating notification settings:', error);
+            
+            // Revert local state on error
+            setNotificationSettings(prev => 
+                prev.map(setting => 
+                    setting.id === id 
+                        ? { ...setting, enabled: !newEnabled }
+                        : setting
+                )
+            );
+
+            toast({
+                variant: "destructive",
+                title: "Update Failed",
+                description: "Could not update notification settings. Please try again.",
+            });
+        }
     };
 
     if (loading || isLoading) {
@@ -805,12 +873,12 @@ export default function ProfilePage() {
                             <div className="grid gap-3">
                                 <Button 
                                     className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0 font-medium"
-                                    asChild
+                                    onClick={() => {
+                                        window.location.href = '/pricing';
+                                    }}
                                 >
-                                    <Link href="/pricing">
-                                        <CreditCard className="mr-2 h-4 w-4" />
-                                        Upgrade to Scholar
-                                    </Link>
+                                    <CreditCard className="mr-2 h-4 w-4" />
+                                    Upgrade to Scholar
                                 </Button>
                                 
                                 <AlertDialog>
@@ -835,11 +903,35 @@ export default function ProfilePage() {
                                             <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
                                             <AlertDialogAction 
                                                 className="bg-red-600 hover:bg-red-700 text-white"
-                                                onClick={() => {
-                                                    toast({
-                                                        title: "Subscription Cancelled",
-                                                        description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
-                                                    });
+                                                onClick={async () => {
+                                                    try {
+                                                        // Call API to cancel subscription
+                                                        const response = await fetch('/api/stripe/cancel-subscription', {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                            },
+                                                            body: JSON.stringify({
+                                                                userId: user?.uid
+                                                            })
+                                                        });
+
+                                                        if (response.ok) {
+                                                            toast({
+                                                                title: "Subscription Cancelled",
+                                                                description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
+                                                            });
+                                                        } else {
+                                                            throw new Error('Failed to cancel subscription');
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('Error cancelling subscription:', error);
+                                                        toast({
+                                                            variant: "destructive",
+                                                            title: "Cancellation Failed",
+                                                            description: "Unable to cancel subscription. Please contact support.",
+                                                        });
+                                                    }
                                                 }}
                                             >
                                                 Cancel Subscription

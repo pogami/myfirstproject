@@ -16,7 +16,7 @@ const buttonVariants = cva(
           "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground light:border-gray-200 light:bg-white light:hover:bg-gray-50 light:hover:border-gray-300 light:shadow-sm light:hover:shadow-md",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 light:bg-gradient-to-r light:from-gray-100 light:to-gray-200 light:hover:from-gray-200 light:hover:to-gray-300 light:shadow-sm light:hover:shadow-md",
-        ghost: "hover:bg-accent hover:text-accent-foreground shadow-none light:hover:bg-gray-100 light:hover:text-gray-900",
+        ghost: "hover:bg-transparent hover:text-accent-foreground shadow-none light:hover:bg-transparent light:hover:text-gray-900",
         link: "text-primary underline-offset-4 hover:underline shadow-none light:text-blue-600 light:hover:text-blue-800",
         green: "bg-green-500 text-white hover:bg-green-600 light:bg-gradient-to-r light:from-green-500 light:to-green-600 light:hover:from-green-600 light:hover:to-green-700 light:shadow-lg light:hover:shadow-xl",
         amber: "bg-yellow-400 text-yellow-900 light:bg-gradient-to-r light:from-yellow-400 light:to-yellow-500 light:hover:from-yellow-500 light:hover:to-yellow-600 light:shadow-lg light:hover:shadow-xl",

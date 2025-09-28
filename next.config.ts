@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/home',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -29,32 +38,23 @@ const nextConfig: NextConfig = {
     position: 'bottom-right'
   },
   // Performance optimizations
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Webpack configuration for PDF.js and other dependencies
-  webpack: (config, { isServer }) => {
-    // Handle PDF.js dependencies
-    config.resolve.alias = {
-      ...config.resolve.alias,
+  // Turbopack configuration (replaces webpack config)
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  },
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+    resolveAlias: {
       'pdfjs-dist/build/pdf.worker.entry': 'pdfjs-dist/build/pdf.worker.min.js',
-    };
-
-    // Ensure proper handling of canvas and other Node.js modules
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        canvas: false,
-        fs: false,
-        path: false,
-        crypto: false,
-      };
-    }
-
-    return config;
+    },
   },
 };
 

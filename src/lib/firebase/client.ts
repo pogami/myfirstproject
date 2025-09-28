@@ -11,7 +11,7 @@ const firebaseConfig = {
   "appId": "1:150901346125:web:116c79e5f3521488e97104",
   "storageBucket": "courseconnect-61eme.firebasestorage.app",
   "apiKey": "AIzaSyDk-zhYbWHSWdk-cDzq5b_kwZ2L3wFsYgQ",
-  "authDomain": "www.courseconnectai.com",
+  "authDomain": "courseconnect-61eme.firebaseapp.com",
   "messagingSenderId": "150901346125",
   "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com"
 };
@@ -50,7 +50,7 @@ if (!getApps().length) {
 
 // Force disable offline persistence immediately - will be done after db is initialized
 
-// Initialize services - COMPLETELY DISABLE OFFLINE PERSISTENCE
+// Initialize services - FORCE ONLINE MODE ONLY
 let storage: any, db: any, auth: any, rtdb: any;
 
 try {
@@ -63,34 +63,51 @@ try {
     
     console.log("✅ Firebase services initialized successfully");
     
-    // IMMEDIATELY disable offline persistence
+    // FORCE ONLINE MODE IMMEDIATELY
     if (db) {
-      // Force disable offline persistence asynchronously
-      setTimeout(async () => {
+      // Force online mode synchronously
+      (async () => {
         try {
-          const { disableNetwork, enableNetwork } = await import('firebase/firestore');
-          console.log("🔧 Disabling Firestore offline persistence...");
+          const { enableNetwork, disableNetwork } = await import('firebase/firestore');
+          console.log("🔧 Forcing Firestore to online mode...");
           
-          await disableNetwork(db);
-          console.log("✅ Offline persistence disabled");
+          // First disable any offline persistence
+          try {
+            await disableNetwork(db);
+            console.log("✅ Offline persistence disabled");
+          } catch (e) {
+            console.log("⚠️ Could not disable network (may already be disabled)");
+          }
           
-          // Immediately re-enable network
+          // Force enable network
           await enableNetwork(db);
           console.log("✅ Firestore forced to online mode");
           
-          // Set up periodic network enforcement
-          setInterval(async () => {
+          // Set up aggressive online enforcement
+          const forceOnline = async () => {
             try {
               await enableNetwork(db);
             } catch (error) {
-              console.log("⚠️ Periodic network enable failed:", error);
+              console.log("⚠️ Force online failed:", error);
             }
-          }, 30000); // Every 30 seconds
+          };
+          
+          // Force online every 10 seconds
+          setInterval(forceOnline, 10000);
+          
+          // Force online on any network event
+          if (typeof window !== 'undefined') {
+            window.addEventListener('online', forceOnline);
+            window.addEventListener('focus', forceOnline);
+            window.addEventListener('visibilitychange', () => {
+              if (!document.hidden) forceOnline();
+            });
+          }
           
         } catch (error) {
-          console.log("❌ Error configuring Firestore:", error);
+          console.log("❌ Error forcing Firestore online:", error);
         }
-      }, 2000); // Wait 2 seconds after initialization to ensure db is ready
+      })();
     }
   } else {
     throw new Error('Firebase app not properly initialized');
@@ -164,7 +181,7 @@ export const checkFirebaseConnection = async () => {
   }
 };
 
-// Force Firebase to stay online
+// Force Firebase to stay online - AGGRESSIVE VERSION
 export const ensureFirebaseOnline = async () => {
   try {
     if (!db) {
@@ -172,30 +189,27 @@ export const ensureFirebaseOnline = async () => {
       return false;
     }
     
-    console.log("🔧 Ensuring Firebase stays online...");
+    console.log("🔧 AGGRESSIVELY ensuring Firebase stays online...");
     
     // Import Firestore functions
     const { enableNetwork, disableNetwork } = await import('firebase/firestore');
     
-    // First disable offline persistence
-    try {
-      await disableNetwork(db);
-      console.log("✅ Offline persistence disabled");
-    } catch (error) {
-      console.log("⚠️ Failed to disable offline persistence:", error);
+    // Force online mode multiple times
+    for (let i = 0; i < 3; i++) {
+      try {
+        await disableNetwork(db);
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+        await enableNetwork(db);
+        console.log(`✅ Network cycle ${i + 1} completed`);
+      } catch (error) {
+        console.log(`⚠️ Network cycle ${i + 1} failed:`, error);
+      }
     }
     
-    // Then enable network
-    try {
-      await enableNetwork(db);
-      console.log("✅ Network enabled - Firebase forced to online mode");
-      return true;
-    } catch (error) {
-      console.log("❌ Failed to enable network:", error);
-      return false;
-    }
+    console.log("✅ Firebase aggressively forced to online mode");
+    return true;
   } catch (error) {
-    console.log("❌ Error ensuring Firebase online:", error);
+    console.log("❌ Error aggressively ensuring Firebase online:", error);
     return false;
   }
 };

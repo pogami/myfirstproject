@@ -108,7 +108,7 @@ export default function PrivacyPage() {
           </p>
           <div className="mt-6">
             <Badge variant="outline" className="text-sm">
-              Last updated: January 16, 2024
+              Last updated: January 16, 2025
             </Badge>
           </div>
         </div>

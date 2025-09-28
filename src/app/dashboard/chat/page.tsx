@@ -396,10 +396,10 @@ export default function ChatPage() {
 
     const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
         onAnalysisComplete: async (result, fileName) => {
-            // Add AI analysis as a message
+            // Add AI analysis as a message with proper formatting
             const analysisMessage = {
                 id: generateMessageId(),
-                text: `🤖 **AI Analysis of ${fileName}**\n\n${result.summary}`,
+                text: `**📄 Document Analysis: ${fileName}**\n\n${result.summary || result.content || 'Analysis completed successfully.'}`,
                 sender: 'bot' as const,
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
@@ -408,6 +408,15 @@ export default function ChatPage() {
         },
         onAnalysisError: (error, fileName) => {
             console.error('Document analysis failed:', error);
+            // Add error message
+            const errorMessage = {
+                id: generateMessageId(),
+                text: `❌ **Analysis Failed for ${fileName}**\n\nSorry, I couldn't analyze this file. Please try uploading a different file or check if the file format is supported.`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                timestamp: Date.now()
+            };
+            addMessage(currentTab || 'private-general-chat', errorMessage);
         }
     });
 
@@ -416,10 +425,10 @@ export default function ChatPage() {
         setIsLoading(true);
 
         try {
-            // Create a message indicating file upload
+            // Create a message indicating file upload with file preview
             const uploadMessage = {
                 id: generateMessageId(),
-                text: `📎 Uploaded file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+                text: `📎 **File Uploaded: ${file.name}**\n\n**File Details:**\n• Size: ${(file.size / 1024 / 1024).toFixed(2)} MB\n• Type: ${file.type}\n• Status: Processing...`,
                 sender: 'user' as const,
                 name: user?.displayName || 'Anonymous',
                 timestamp: Date.now(),

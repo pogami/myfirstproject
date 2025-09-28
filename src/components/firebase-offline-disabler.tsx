@@ -23,14 +23,17 @@ export function FirebaseOfflineDisabler() {
         await enableNetwork(db);
         console.log("✅ Network enabled - Firebase forced to online mode");
         
-        // Set up periodic checks to ensure it stays online
+        // Set up AGGRESSIVE periodic checks to ensure it stays online
         const interval = setInterval(async () => {
           try {
+            await disableNetwork(db);
+            await new Promise(resolve => setTimeout(resolve, 50));
             await enableNetwork(db);
+            console.log("🔄 Aggressive online enforcement completed");
           } catch (error) {
-            console.log("Periodic network enable failed:", error);
+            console.log("⚠️ Aggressive online enforcement failed:", error);
           }
-        }, 30000); // Check every 30 seconds
+        }, 5000); // Check every 5 seconds - VERY AGGRESSIVE
         
         return () => clearInterval(interval);
       } catch (error) {
@@ -41,16 +44,32 @@ export function FirebaseOfflineDisabler() {
     // Run immediately
     disableOfflinePersistence();
     
-    // Also run when window comes online
+    // Also run when window comes online, focus, or visibility changes
     const handleOnline = () => {
-      console.log("🌐 Browser came online, ensuring Firebase is online");
+      console.log("🌐 Browser came online, aggressively ensuring Firebase is online");
       disableOfflinePersistence();
     };
     
+    const handleFocus = () => {
+      console.log("🎯 Window focused, ensuring Firebase is online");
+      disableOfflinePersistence();
+    };
+    
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log("👁️ Page visible, ensuring Firebase is online");
+        disableOfflinePersistence();
+      }
+    };
+    
     window.addEventListener('online', handleOnline);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

@@ -1,27 +1,27 @@
 
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { PageLoadingSpinner } from "@/components/ui/loading-spinner";
+import React from 'react';
+import { Navigation } from '@/components/landing/navigation';
+import { HeroSection } from '@/components/landing/hero-section';
+import { FeaturesSection } from '@/components/landing/features-section';
+import { PricingSection } from '@/components/landing/pricing-section';
+import { TestimonialsSection } from '@/components/landing/testimonials-section';
+import { CTASection } from '@/components/landing/cta-section';
+import { Footer } from '@/components/landing/footer';
 
-export default function RootPage() {
-  const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(true);
-
-  useEffect(() => {
-    // Add a small delay to ensure proper hydration
-    const timer = setTimeout(() => {
-      router.push('/home');
-      setIsRedirecting(false);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [router]);
-
-  if (!isRedirecting) {
-    return null;
-  }
-
-  return <PageLoadingSpinner />;
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <Navigation />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <PricingSection />
+        <TestimonialsSection />
+        <CTASection />
+      </main>
+      <Footer />
+    </div>
+  );
 }
