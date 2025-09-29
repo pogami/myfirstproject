@@ -12,13 +12,13 @@ export const metadata: Metadata = {
   description: "Your unified platform for college success with AI-powered study tools",
   openGraph: {
     type: "website",
-    url: "https://www.courseconnectai.com",
+    url: "https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
     siteName: "CourseConnect",
     images: [
       {
-        url: "https://www.courseconnectai.com/final-logo.png?v=7",
+        url: "https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7",
         width: 1200,
         height: 630,
         alt: "CourseConnect Logo",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CourseConnect - AI College Platform",
     description: "Your unified platform for college success with AI-powered study tools",
-    images: ["https://www.courseconnectai.com/final-logo.png?v=7"],
+    images: ["https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7"],
     creator: "@courseconnectai",
     site: "@courseconnectai",
   },
@@ -63,10 +63,10 @@ export default function RootLayout({
         {/* Open Graph Meta Tags - Server Side Rendered */}
         <meta property="og:title" content="CourseConnect - AI College Platform" />
         <meta property="og:description" content="Your unified platform for college success with AI-powered study tools" />
-        <meta property="og:url" content="https://www.courseconnectai.com" />
+        <meta property="og:url" content="https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="CourseConnect" />
-        <meta property="og:image" content="https://www.courseconnectai.com/final-logo.png?v=7" />
+        <meta property="og:image" content="https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content="CourseConnect Logo" />
@@ -75,7 +75,7 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="CourseConnect - AI College Platform" />
         <meta name="twitter:description" content="Your unified platform for college success with AI-powered study tools" />
-        <meta name="twitter:image" content="https://www.courseconnectai.com/final-logo.png?v=7" />
+        <meta name="twitter:image" content="https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7" />
         <meta name="twitter:creator" content="@courseconnectai" />
         <meta name="twitter:site" content="@courseconnectai" />
         
