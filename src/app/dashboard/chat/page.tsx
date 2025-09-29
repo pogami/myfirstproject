@@ -396,10 +396,44 @@ export default function ChatPage() {
 
     const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
         onAnalysisComplete: async (result, fileName) => {
+            // Store the extracted text for chat context
+            const currentChatId = currentTab || 'private-general-chat';
+            const storageKey = `document-content-${currentChatId}`;
+            const documentData = {
+                fileName,
+                extractedText: result.extractedText,
+                summary: result.summary,
+                fileType: result.fileType,
+                metadata: result.metadata,
+                timestamp: Date.now()
+            };
+            
+            console.log('💾 STORING DOCUMENT DATA:', {
+                fileName: documentData.fileName,
+                extractedTextLength: documentData.extractedText?.length || 0,
+                extractedTextPreview: documentData.extractedText?.substring(0, 300) || 'NO CONTENT',
+                summary: documentData.summary,
+                storageKey: storageKey,
+                chatId: currentChatId
+            });
+            
+            sessionStorage.setItem(storageKey, JSON.stringify(documentData));
+
+            // Verify storage worked
+            const verificationCheck = sessionStorage.getItem(storageKey);
+            if (verificationCheck) {
+                const verifiedData = JSON.parse(verificationCheck);
+                console.log('✅ VERIFICATION: Document stored successfully');
+                console.log('Verified extracted text length:', verifiedData.extractedText?.length || 0);
+                console.log('Verified filename:', verifiedData.fileName);
+            } else {
+                console.error('❌ VERIFICATION FAILED: Document not stored in sessionStorage');
+            }
+
             // Add AI analysis as a message with proper formatting
             const analysisMessage = {
                 id: generateMessageId(),
-                text: `**📄 Document Analysis: ${fileName}**\n\n${result.summary || result.content || 'Analysis completed successfully.'}`,
+                text: `**📄 Document Analysis: ${fileName}**\n\n${result.summary || result.content || 'Analysis completed successfully.'}\n\n*Document content loaded - ask me anything about it!*`,
                 sender: 'bot' as const,
                 name: 'CourseConnect AI',
                 timestamp: Date.now()

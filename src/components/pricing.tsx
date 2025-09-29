@@ -35,17 +35,15 @@ export function Pricing() {
       icon: <BookOpen className="h-6 w-6" />,
       color: 'bg-blue-500',
       features: [
-        'Basic AI chat assistance',
-        'Syllabus upload & analysis',
-        'Study group creation',
-        'Basic flashcards',
-        'Mobile app access',
-        'Community support'
+        'Upload unlimited syllabi',
+        'Join study groups',
+        'Unlimited AI chat',
+        'Community support',
+        'Mobile app access'
       ],
       limitations: [
-        'Limited AI responses per day',
-        'Basic study group features',
-        'No advanced analytics'
+        'No study analytics',
+        'Basic file processing'
       ],
       cta: 'Get Started Free',
       href: '/dashboard'

@@ -862,6 +862,35 @@ export default function ChatInterface() {
             
             const context = chats[currentTab!]?.title || 'General Chat';
             
+            // Check for stored document content and intelligently integrate it
+            let documentContext = '';
+            const currentChatId = currentTab || 'private-general-chat';
+            const storageKey = `document-content-${currentChatId}`;
+            const storedDocument = sessionStorage.getItem(storageKey);
+            
+            if (storedDocument) {
+                try {
+                    const docData = JSON.parse(storedDocument);
+                    // Smart truncation: Keep document name, summary, and first 10000 chars of content
+                    const truncatedContent = docData.extractedText && docData.extractedText.length > 10000 
+                        ? docData.extractedText.substring(0, 10000) + "... [Content truncated for context window]"
+                        : docData.extractedText;
+                    
+                    documentContext = `\n\nDOCUMENT CONTEXT - You have access to this document:\nDocument: ${docData.fileName}\nSummary: ${docData.summary}\nContent: ${truncatedContent}\n\nInstructions: You can reference this document content to answer questions about it. Use specific information from the document when relevant to the user's question. If you need to find specific information like professor name, look for it in the document content above.`;
+                    console.log('🔍 DOCUMENT DEBUG INFO:');
+                    console.log('Document name:', docData.fileName);
+                    console.log('Document summary:', docData.summary);
+                    console.log('Content length:', docData.extractedText?.length || 0);
+                    console.log('Content preview (first 200 chars):', docData.extractedText?.substring(0, 200) || 'No content');
+                    console.log('Full document context being sent:', documentContext.substring(0, 500) + '...');
+                } catch (e) {
+                    console.error('❌ Failed to parse stored document:', e);
+                    console.log('Raw stored document:', storedDocument);
+                }
+            } else {
+                console.log('❌ No stored document found for chat:', currentChatId);
+            }
+            
             // Build conversation history from recent messages
             const currentChat = chats[currentTab!];
             const recentMessages = currentChat?.messages.slice(-10) || []; // Last 10 messages for context
@@ -870,9 +899,17 @@ export default function ChatInterface() {
                 content: msg.text
             }));
             
+            const fullContext = documentContext ? `${context}\n\n${documentContext}` : context;
+            
+            console.log('🤖 AI SERVICE REQUEST DEBUG:');
+            console.log('Question:', messageToProcess);
+            console.log('Context length:', fullContext.length);
+            console.log('Document context exists:', !!documentContext);
+            console.log('Context preview:', fullContext.substring(0, 300) + '...');
+            
             const result = await provideStudyAssistanceWithFallback({
                 question: messageToProcess,
-                context: context,
+                context: fullContext,
                 conversationHistory: conversationHistory
             });
             

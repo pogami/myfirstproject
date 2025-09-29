@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 const navigation = [
   { name: 'Features', href: '/features' },
-  { name: 'Pricing', href: '/pricing' },
+  { name: 'Pricing', href: '#pricing' },
   { name: 'Testimonials', href: '#testimonials' },
   { name: 'About', href: '/about' },
 ];
@@ -44,8 +44,11 @@ export function Navigation() {
             <div className="flex items-center bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg border border-white/20 dark:border-gray-700/20 rounded-full px-12 py-6 gap-16 mt-4">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity duration-200">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                </div>
+                <img 
+                  src="/courseconnect-favicon.svg" 
+                  alt="CourseConnect Logo" 
+                  className="w-8 h-8"
+                />
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   CourseConnect AI
                 </span>
@@ -87,8 +90,11 @@ export function Navigation() {
             <>
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                </div>
+                <img 
+                  src="/courseconnect-favicon.svg" 
+                  alt="CourseConnect Logo" 
+                  className="w-8 h-8"
+                />
                 <span className="text-xl font-bold text-gray-900 dark:text-white">
                   CourseConnect AI
                 </span>
@@ -153,7 +159,7 @@ export function Navigation() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+            className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 safe-bottom"
           >
             <div className="px-4 py-4 space-y-4">
               {navigation.map((item) => (
@@ -169,13 +175,13 @@ export function Navigation() {
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                  className="w-full justify-start text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 h-12"
                   onClick={() => window.location.href = '/auth'}
                 >
                   Sign In
                 </Button>
                 <Button 
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white h-12"
                   onClick={() => window.location.href = '/dashboard'}
                 >
                   Get Started
@@ -186,6 +192,28 @@ export function Navigation() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mobile bottom action bar (always visible when menu closed) */}
+      {!isOpen && (
+        <div className="mobile-nav md:hidden safe-bottom">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              className="flex-1 h-12"
+              onClick={() => window.location.href = '/auth'}
+            >
+              Sign In
+            </Button>
+            <Button 
+              className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+              onClick={() => window.location.href = '/dashboard'}
+            >
+              Get Started
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </motion.nav>
   );
 }

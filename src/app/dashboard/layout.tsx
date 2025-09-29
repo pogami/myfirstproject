@@ -35,9 +35,6 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { OnboardingSlideshow } from "@/components/onboarding-slideshow";
-import { FirebaseOfflineDisabler } from "@/components/firebase-offline-disabler";
-import { FirebaseConnectionMonitor } from "@/components/firebase-connection-monitor";
-import { FirebaseConnectionManager } from "@/components/firebase-connection-manager";
 import { ClientThemeToggle } from "@/components/client-theme-toggle";
 
 function AnnouncementBanner() {
@@ -497,10 +494,6 @@ export default function DashboardLayout({
           onComplete={() => setShowOnboarding(false)}
         />
         
-        {/* Firebase Connection Management */}
-        <FirebaseOfflineDisabler />
-        <FirebaseConnectionMonitor />
-        <FirebaseConnectionManager />
       </SidebarProvider>
   );
 }

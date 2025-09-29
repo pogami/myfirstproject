@@ -19,6 +19,14 @@ a {
   min-width: 44px;
 }
 
+/* Respect iOS safe areas for notches/home indicator */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* Enhanced mobile button styles */
 button {
   touch-action: manipulation;
@@ -64,6 +72,20 @@ select {
     padding: 1rem;
   }
   
+  /* Enhanced mobile card styling */
+  .mobile-card {
+    margin: 0.5rem;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Improved mobile navigation touch targets */
+  .mobile-nav-item {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    touch-action: manipulation;
+  }
+  
   /* Optimize text sizes for mobile */
   h1 {
     font-size: 1.5rem;
@@ -89,6 +111,7 @@ select {
     background: white;
     border-top: 1px solid #e5e7eb;
     padding: 0.5rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
     z-index: 50;
   }
   
@@ -169,6 +192,17 @@ select {
   }
 }
 
+/* Orientation-specific tweaks */
+@media (orientation: landscape) and (max-width: 812px) {
+  .mobile-landscape-hide {
+    display: none !important;
+  }
+  .mobile-landscape-tight {
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+}
+
 /* Dark mode mobile optimizations */
 @media (prefers-color-scheme: dark) {
   .mobile-nav {
@@ -222,6 +256,30 @@ select {
   touch-action: manipulation;
 }
 
+/* Mobile app section enhancements */
+@media (max-width: 640px) {
+  .mobile-app-features {
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  
+  .mobile-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    min-height: 48px;
+  }
+  
+  .mobile-demo-card {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
 /* Better mobile focus states */
 @media (hover: none) and (pointer: coarse) {
   button:focus,
@@ -230,5 +288,11 @@ select {
   textarea:focus {
     outline: 2px solid #3b82f6;
     outline-offset: 2px;
+  }
+  
+  /* Enhanced mobile button focus */
+  .mobile-button:focus {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
   }
 }

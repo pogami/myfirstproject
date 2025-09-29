@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 import { Analytics } from '@vercel/analytics/next';
-import { FirebaseConnectionManager } from "@/components/firebase-connection-manager";
 import { ThemeProvider } from "@/contexts/theme-context";
 
 export const metadata: Metadata = {
@@ -34,17 +33,14 @@ export const metadata: Metadata = {
     site: "@courseconnectai",
   },
   icons: {
-    icon: [
-      { url: '/courseconnect-favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' },
-    ],
+    icon: '/courseconnect-favicon.svg',
+    shortcut: '/courseconnect-favicon.svg',
     apple: [
       { url: '/courseconnect-favicon.svg', sizes: '180x180', type: 'image/svg+xml' },
       { url: '/courseconnect-favicon.svg', sizes: '152x152', type: 'image/svg+xml' },
       { url: '/courseconnect-favicon.svg', sizes: '120x120', type: 'image/svg+xml' },
       { url: '/courseconnect-favicon.svg', sizes: '76x76', type: 'image/svg+xml' }
-    ],
-    shortcut: '/favicon.ico'
+    ]
   }
 };
 
@@ -80,12 +76,12 @@ export default function RootLayout({
         <meta name="twitter:site" content="@courseconnectai" />
         
         {/* Favicon and Icons */}
-        <link rel="icon" href="/courseconnect-logo-profile.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/courseconnect-logo-profile.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="180x180" />
-        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="152x152" />
-        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="120x120" />
-        <link rel="apple-touch-icon" href="/courseconnect-logo-profile.svg" sizes="76x76" />
+        <link rel="icon" href="/courseconnect-favicon.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/courseconnect-favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="120x120" />
+        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="76x76" />
         
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />
@@ -116,7 +112,6 @@ export default function RootLayout({
           <StudyBreakProvider>
             {children}
           </StudyBreakProvider>
-          <FirebaseConnectionManager />
           <Toaster />
           <Analytics />
         </ThemeProvider>

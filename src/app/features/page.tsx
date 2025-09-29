@@ -7,6 +7,7 @@ import { FeaturesSection } from '@/components/landing/features-section';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, Users, FileText, MessageCircle, Clock, Zap, Shield, Globe, Play, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { MotionHeadline } from '@/components/ui/motion-section';
 
 export default function FeaturesPage() {
   const [activeFeature, setActiveFeature] = useState(0);
@@ -670,12 +671,7 @@ export default function FeaturesPage() {
               </Button>
             </motion.div>
             
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6"
-            >
+            <MotionHeadline className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               Powerful Features for{' '}
               <motion.span 
                 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
@@ -693,7 +689,7 @@ export default function FeaturesPage() {
               >
                 Student Success
               </motion.span>
-            </motion.h1>
+            </MotionHeadline>
             
             <motion.p
               initial={{ opacity: 0, y: 20 }}

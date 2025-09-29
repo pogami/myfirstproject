@@ -25,6 +25,8 @@ import {
 import { SiteFooter } from "@/components/site-footer";
 import { getSiteLogsForDisplay, SiteLogManager } from "@/lib/site-logs";
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { MotionHeadline, MotionCard, MotionSection } from "@/components/ui/motion-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ChangelogPage() {
@@ -114,25 +116,37 @@ export default function ChangelogPage() {
 
       <main className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Hero Section */}
-        <div className="text-center mb-12 sm:mb-16">
-          <div className="flex justify-center mb-6">
+        <MotionSection className="text-center mb-12 sm:mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex justify-center mb-6"
+          >
             <div className="p-4 rounded-full bg-primary/10">
               <History className="h-12 w-12 text-primary" />
             </div>
-          </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
+          </motion.div>
+          <MotionHeadline className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
             Site Updates & <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Changelog</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-6">
-            User-focused updates, new features, and improvements to CourseConnect. 
-            Track our journey with user-facing updates, new features, and improvements. 
+          </MotionHeadline>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-6"
+          >
+            User-focused updates, new features, and improvements to CourseConnect.
             <span className="text-sm text-muted-foreground/70 block mt-2">
               Only showing changes that directly impact your experience.
             </span>
-          </p>
-          
-          {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="flex flex-wrap justify-center gap-4 mb-8"
+          >
             <Badge variant="outline" className="text-sm px-3 py-1">
               <Calendar className="h-3 w-3 mr-1" />
               {userFacingStats.totalLogs} User Updates
@@ -145,11 +159,12 @@ export default function ChangelogPage() {
               <Clock className="h-3 w-3 mr-1" />
               Updated Daily
             </Badge>
-          </div>
-        </div>
+          </motion.div>
+        </MotionSection>
 
         {/* Search and Filters */}
-        <Card className="mb-8">
+        <MotionCard delay={0.05}>
+        <Card className="mb-8 border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur">
           <CardContent className="p-6">
             <div className="flex flex-col gap-4">
               <div className="flex-1">
@@ -194,11 +209,13 @@ export default function ChangelogPage() {
             </div>
           </CardContent>
         </Card>
+        </MotionCard>
 
         {/* Changelog Entries */}
         <div className="space-y-6 mb-12">
           {filteredLogs.map((log, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02]">
+            <MotionCard key={index} delay={0.06 + index * 0.03}>
+            <Card className="hover:shadow-lg transition-all duration-200 hover:scale-[1.01] sm:hover:scale-[1.02] border border-gray-200/60 dark:border-gray-800/60 bg-white/70 dark:bg-gray-900/70 backdrop-blur">
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -244,14 +261,22 @@ export default function ChangelogPage() {
               <CardContent className="pt-0">
                 <ul className="space-y-2">
                   {log.changes.map((change, changeIndex) => (
-                    <li key={changeIndex} className="flex items-start gap-2 text-sm">
+                    <motion.li
+                      key={changeIndex}
+                      initial={{ opacity: 0, x: -6 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, amount: 0.6 }}
+                      transition={{ duration: 0.3, delay: changeIndex * 0.03 }}
+                      className="flex items-start gap-2 text-sm"
+                    >
                       <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
                       <span className="text-muted-foreground">{change}</span>
-                    </li>
+                    </motion.li>
                   ))}
                 </ul>
               </CardContent>
             </Card>
+            </MotionCard>
           ))}
         </div>
 

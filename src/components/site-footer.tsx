@@ -44,7 +44,9 @@ const quickLinks = [
 const companyLinks = [
   { name: "About Us", href: "/about" },
   { name: "Pricing", href: "/pricing" },
+  { name: "Features", href: "/features" },
   { name: "Contact", href: "/contact" },
+  { name: "Status", href: "/status" },
   { name: "Privacy Policy", href: "/privacy" },
   { name: "Terms of Service", href: "/terms" },
   { name: "Site Updates & Changelog", href: "/changelog", icon: <History className="h-4 w-4" /> }

@@ -6,7 +6,6 @@ import { ArrowRight, Play, Users, Zap, Bot, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RippleText } from '@/components/ripple-text';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GroupChatDemo } from '@/components/group-chat-demo';
 import { TypewriterText, StaticText } from '@/components/saas-typography';
 
 export function HeroSection() {
@@ -198,6 +197,11 @@ export function HeroSection() {
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
+      {/* Background Visual Layer (image fallback) */}
+      <div
+        className="absolute inset-0 pointer-events-none select-none opacity-20 dark:opacity-25 bg-center bg-cover"
+        style={{ backgroundImage: "url('/screenshots/desktop-dashboard.png')" }}
+      />
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
       
@@ -247,11 +251,11 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-12 mobile-stack"
           >
             <Button
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto mobile-button mobile-full-width"
               onClick={() => window.location.href = '/auth'}
             >
               Get Started Free
@@ -260,13 +264,15 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-4 text-lg font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
+              className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-4 text-lg font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 w-full sm:w-auto mobile-button mobile-full-width"
               onClick={() => document.getElementById('live-demo')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <Play className="mr-2 h-5 w-5" />
               Try Demo
             </Button>
           </motion.div>
+
+          {/* Logo strip removed */}
 
           {/* Stats */}
           <motion.div
@@ -302,6 +308,8 @@ export function HeroSection() {
           </motion.div>
         </div>
 
+        {/* Live demo teaser removed */}
+
         {/* Live Demo Section */}
         <motion.div
           id="live-demo"
@@ -315,11 +323,11 @@ export function HeroSection() {
               See CourseConnect AI in Action
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Watch how students get instant help with homework and collaborate in study groups
+              Watch how students get instant help with homework questions
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="relative max-w-4xl mx-auto">
             {/* Individual AI Chat Demo */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Chat Header */}
@@ -329,8 +337,8 @@ export function HeroSection() {
                     <Bot className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">AI Tutor Demo</h3>
-                    <p className="text-sm text-blue-100">Student asking about derivatives</p>
+                    <h3 className="font-semibold">Live Demo - Calculus Study Session</h3>
+                    <p className="text-sm text-blue-100">Student asking about derivatives and chain rule</p>
                   </div>
                 </div>
               </div>
@@ -362,11 +370,15 @@ export function HeroSection() {
                       <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>
                     </div>
                     {msg.sender === 'user' && (
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-500 to-green-600">
-                          <User className="h-4 w-4 text-white" />
-                        </div>
-                      </Avatar>
+                      <div className="flex flex-col items-center">
+                        <Avatar className="w-8 h-8 flex-shrink-0">
+                          <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80" alt="Jordan Kim" />
+                          <AvatarFallback className="bg-gradient-to-br from-green-500 to-green-600 text-white text-xs">
+                            JK
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="text-xs text-gray-500 mt-1">Jordan Kim</p>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -403,11 +415,15 @@ export function HeroSection() {
                       </p>
                     </div>
                     {demoMessages[messageIndex]?.sender === 'user' && (
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-500 to-green-600">
-                          <User className="h-4 w-4 text-white" />
-                        </div>
-                      </Avatar>
+                      <div className="flex flex-col items-center">
+                        <Avatar className="w-8 h-8 flex-shrink-0">
+                          <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80" alt="Jordan Kim" />
+                          <AvatarFallback className="bg-gradient-to-br from-green-500 to-green-600 text-white text-xs">
+                            JK
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="text-xs text-gray-500 mt-1">Jordan Kim</p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -441,16 +457,13 @@ export function HeroSection() {
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                   {messageIndex >= demoMessages.length ? (
-                    "✅ Individual AI tutoring complete!"
+                    "✅ Demo Complete: This is how CourseConnect AI helps students!"
                   ) : (
-                    "🔴 LIVE: Watch AI help with calculus!"
+                    "🔴 LIVE: Watch the conversation happen in real-time above!"
                   )}
                 </p>
               </div>
             </div>
-
-            {/* Group Chat Demo */}
-            <GroupChatDemo />
           </div>
         </motion.div>
       </div>

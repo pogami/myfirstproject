@@ -14,14 +14,13 @@ const plans = [
     icon: Users,
     color: 'from-gray-500 to-gray-600',
     features: [
-      'Upload 3 syllabi per month',
+      'Upload unlimited syllabi',
       'Join study groups',
-      'Basic AI chat (10 messages/day)',
+      'Unlimited AI chat',
       'Community support',
       'Mobile app access'
     ],
     limitations: [
-      'Limited AI responses',
       'No study analytics',
       'Basic file processing'
     ],
@@ -29,16 +28,15 @@ const plans = [
     popular: false
   },
   {
-    name: 'Pro',
-    price: '$9.99',
+    name: 'Scholar',
+    price: '$4.99',
     period: '/month',
     description: 'Most popular for students',
     icon: Zap,
     color: 'from-blue-500 to-purple-500',
     features: [
-      'Unlimited syllabus uploads',
+      'Advanced syllabus processing',
       'Advanced AI tutoring',
-      'Unlimited chat messages',
       'Priority support',
       'Study analytics & insights',
       'Advanced file processing',
@@ -46,7 +44,7 @@ const plans = [
       'Custom study plans'
     ],
     limitations: [],
-    cta: 'Start Pro Trial',
+    cta: 'Start Scholar Trial',
     popular: true
   },
   {
@@ -77,7 +75,7 @@ export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
 
   return (
-    <div className="py-20 bg-gray-50 dark:bg-gray-800">
+    <div id="pricing" className="py-20 bg-gray-50 dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -160,6 +158,7 @@ export function PricingSection() {
                 </div>
               )}
 
+
               {/* Plan Header */}
               <div className="text-center mb-8">
                 <div className={`w-16 h-16 bg-gradient-to-br ${plan.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
@@ -241,7 +240,7 @@ export function PricingSection() {
               },
               {
                 question: 'Is there a free trial?',
-                answer: 'Yes, Pro plan comes with a 14-day free trial. No credit card required.'
+                answer: 'Yes, Scholar plan comes with a 14-day free trial. No credit card required.'
               },
               {
                 question: 'What payment methods do you accept?',

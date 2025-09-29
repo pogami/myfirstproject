@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Shield, AlertTriangle, CheckCircle, ExternalLink, Copy, FileText, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Shield, AlertTriangle, CheckCircle, ExternalLink, Copy, FileText, Search, Bot, User, Brain, Target, Lightbulb, BarChart3 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface PlagiarismResult {
@@ -20,6 +21,17 @@ interface PlagiarismResult {
     snippet: string;
   }>;
   suggestions: string[];
+  aiDetection?: {
+    isLikelyAI: boolean;
+    confidence: number;
+    reasoning: string[];
+  };
+  detailedAnalysis?: {
+    writingStyle: string;
+    vocabularyComplexity: number;
+    coherenceScore: number;
+    patterns: string[];
+  };
 }
 
 export default function PlagiarismChecker() {
@@ -84,6 +96,54 @@ export default function PlagiarismChecker() {
     if (score >= 70) return 'text-red-600';
     if (score >= 40) return 'text-yellow-600';
     return 'text-green-600';
+  };
+
+  const generateEnhancedReport = (result: PlagiarismResult) => {
+    let report = `=== COMPREHENSIVE TEXT ANALYSIS REPORT ===\n\n`;
+    
+    // Plagiarism ANALYSIS
+    report += `PLAGIARISM ANALYSIS:\n`;
+    report += `Similarity Score: ${result.similarityScore}%\n`;
+    report += `Status: ${getStatusText(result.isPlagiarized, result.similarityScore)}\n\n`;
+    
+    // AI Detection
+    if (result.aiDetection) {
+      report += `AI DETECTION ANALYSIS:\n`;
+      report += `Detection Confidence: ${result.aiDetection.confidence}%\n`;
+      report += `Likely AI-Generated: ${result.aiDetection.isLikelyAI ? 'Yes' : 'No'}\n`;
+      if (result.aiDetection.reasoning.length > 0) {
+        report += `Evidence:\n${result.aiDetection.reasoning.map((r, i) => `  • ${r}`).join('\n')}\n`;
+      }
+      report += `\n`;
+    }
+    
+    // Writing Analysis
+    if (result.detailedAnalysis) {
+      report += `WRITING STYLE ANALYSIS:\n`;
+      report += `Style: ${result.detailedAnalysis.writingStyle}\n`;
+      report += `Vocabulary Complexity: ${result.detailedAnalysis.vocabularyComplexity}%\n`;
+      report += `Coherence Score: ${result.detailedAnalysis.coherenceScore}%\n`;
+      report += `Patterns:\n${result.detailedAnalysis.patterns.map((p, i) => `  • ${p}`).join('\n')}\n\n`;
+    }
+    
+    // Sources
+    if (result.matchedSources.length > 0) {
+      report += `MATCHED SOURCES:\n`;
+      result.matchedSources.forEach((source, i) => {
+        report += `${i + 1}. ${source.title} (${Math.round(source.similarity)}% similarity)\n`;
+        report += `   URL: ${source.url}\n`;
+        report += `   Snippet: ${source.snippet}\n\n`;
+      });
+    }
+    
+    // Recommendations
+    report += `RECOMMENDATIONS:\n`;
+    result.suggestions.forEach((suggestion, i) => {
+      report += `${i + 1}. ${suggestion}\n`;
+    });
+    
+    report += `\n=== End of Report ===`;
+    return report;
   };
 
   const getSimilarityBadgeColor = (score: number) => {
@@ -176,118 +236,353 @@ export default function PlagiarismChecker() {
         </CardContent>
       </Card>
 
-      {/* Results Section */}
+      {/* Enhanced Results Section */}
       {result && (
-        <Card>
+        <Card className="mt-6">
           <CardHeader>
+            <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               {getStatusIcon(result.isPlagiarized, result.similarityScore)}
-              Plagiarism Analysis Results
+                Analysis Results
             </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                Analysis Complete
+              </Badge>
+            </div>
             <CardDescription>
               {getStatusText(result.isPlagiarized, result.similarityScore)}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Overall Score */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Similarity Score</span>
+          <CardContent>
+            <Tabs value="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview" className="flex items-center gap-1">
+                  <BarChart3 className="h-3 w-3" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="sources" className="flex items-center gap-1">
+                  <Search className="h-3 w-3" />
+                  Sources
+                </TabsTrigger>
+                <TabsTrigger value="ai-analysis" className="flex items-center gap-1">
+                  <Bot className="h-3 w-3" />
+                  AI Analysis
+                </TabsTrigger>
+                <TabsTrigger value="suggestions" className="flex items-center gap-1">
+                  <Lightbulb className="h-3 w-3" />
+                  Tips
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-4 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Similarity Score */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Plagiarism Score
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                          <Progress value={result.similarityScore} className="h-2" />
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Similarity</span>
                 <Badge className={getSimilarityBadgeColor(result.similarityScore)}>
                   {result.similarityScore}%
                 </Badge>
               </div>
-              <Progress 
-                value={result.similarityScore} 
-                className="h-2"
-              />
-              <p className={`text-sm ${getSimilarityColor(result.similarityScore)}`}>
-                {result.similarityScore >= 70 
-                  ? 'High similarity detected - review required'
-                  : result.similarityScore >= 40
-                  ? 'Medium similarity - consider reviewing'
-                  : 'Low similarity - content appears original'
-                }
-              </p>
-            </div>
-
-            {/* Matched Sources */}
-            {result.matchedSources.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium">Matched Sources ({result.matchedSources.length})</h4>
-                <div className="space-y-3">
-                  {result.matchedSources.map((source, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h5 className="text-sm font-medium line-clamp-1">{source.title}</h5>
-                          <p className="text-xs text-gray-500 truncate">{source.url}</p>
                         </div>
-                        <Badge variant="outline" className="ml-2">
-                          {Math.round(source.similarity)}%
-                        </Badge>
+                    </CardContent>
+                  </Card>
+
+                  {/* AI Detection Score */}
+                  {result.aiDetection && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Bot className="h-4 w-4" />
+                          AI Detection
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+              <Progress 
+                            value={result.aiDetection.confidence} 
+                            className={`h-2 ${result.aiDetection.isLikelyAI ? 'text-red-500' : 'text-green-500'}`}
+                          />
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Confidence</span>
+                            <Badge variant={result.aiDetection.isLikelyAI ? "destructive" : "default"}>
+                              {result.aiDetection.confidence}%
+                            </Badge>
+                          </div>
+            </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Writing Analysis */}
+                  {result.detailedAnalysis && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Brain className="h-4 w-4" />
+                          Writing Style
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="text-xs text-muted-foreground">
+                            Style: {result.detailedAnalysis.writingStyle}
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Complexity</span>
+                            <Badge variant="outline">
+                              {result.detailedAnalysis.vocabularyComplexity}%
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Status Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Plagiarism Status */}
+                  <Card className={result.isPlagiarized ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2">
+                        {result.isPlagiarized ? (
+                          <>
+                            <AlertTriangle className="h-5 w-5 text-red-500" />
+                            <div>
+                              <div className="text-sm font-medium text-red-700">High Risk</div>
+                              <div className="text-xs text-red-600">Plagiarized Content</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                            <div>
+                              <div className="text-sm font-medium text-green-700">Low Risk</div>
+                              <div className="text-xs text-green-600">Original Content</div>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                    </CardContent>
+                  </Card>
+
+                  {/* AI Detection Status */}
+                  {result.aiDetection && (
+                    <Card className={result.aiDetection.isLikelyAI ? "border-orange-200 bg-orange-50" : "border-blue-200 bg-blue-50"}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2">
+                          {result.aiDetection.isLikelyAI ? (
+                            <>
+                              <Bot className="h-5 w-5 text-orange-500" />
+                              <div>
+                                <div className="text-sm font-medium text-orange-700">AI-Generated</div>
+                                <div className="text-xs text-orange-600">Likely AI Content</div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <User className="h-5 w-5 text-blue-500" />
+                              <div>
+                                <div className="text-sm font-medium text-blue-700">Human-Written</div>
+                                <div className="text-xs text-blue-600">Likely Original</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Sources Tab */}
+              <TabsContent value="sources" className="space-y-4 mt-6">
+                {result.matchedSources.length > 0 ? (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Search className="h-5 w-5" />
+                      Matching Sources ({result.matchedSources.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {result.matchedSources.map((source, index) => (
+                        <Card key={index} className="border-l-4 border-l-blue-500">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <a 
+                                href={source.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm font-medium text-primary hover:underline flex items-center gap-2"
+                              >
+                                {source.title}
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                              <Badge variant="secondary">
+                                {source.similarity}% match
+                              </Badge>
+                            </div>
+                            <div className="space-y-2">
+                              <Progress value={source.similarity} className="h-1" />
+                              <p className="text-xs text-muted-foreground bg-muted p-2 rounded">
                         {source.snippet}
                       </p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(source.url, '_blank')}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View Source
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(source.matchedText);
-                            toast({
-                              title: 'Copied',
-                              description: 'Matched text copied to clipboard'
-                            });
-                          }}
-                        >
-                          <Copy className="h-3 w-3 mr-1" />
-                          Copy Text
-                        </Button>
                       </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  ))}
                 </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Matching Sources Found</h3>
+                    <p className="text-muted-foreground">Your text appears to be original content.</p>
               </div>
             )}
+              </TabsContent>
 
-            {/* Suggestions */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Suggestions</h4>
+              {/* AI Analysis Tab */}
+              <TabsContent value="ai-analysis" className="space-y-4 mt-6">
+                {result.aiDetection || result.detailedAnalysis ? (
+                  <div className="space-y-4">
+                    {result.aiDetection && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Bot className="h-5 w-5" />
+                            AI Generation Analysis
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Detection Confidence</span>
+                            <Badge variant={result.aiDetection.isLikelyAI ? "destructive" : "default"}>
+                              {result.aiDetection.confidence}%
+                            </Badge>
+                          </div>
+                          <Progress value={result.aiDetection.confidence} className="h-2" />
+                          
+                          {result.aiDetection.reasoning.length > 0 && (
               <div className="space-y-2">
-                {result.suggestions.map((suggestion, index) => (
-                  <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
-                    <FileText className="h-4 w-4 mt-0.5 text-gray-500" />
-                    <p className="text-sm text-gray-700">{suggestion}</p>
+                              <h4 className="text-sm font-medium">Detection Reasoning:</h4>
+                              <ul className="space-y-1">
+                                {result.aiDetection.reasoning.map((reason, index) => (
+                                  <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <Target className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                    {reason}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {result.detailedAnalysis && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Brain className="h-5 w-5" />
+                            Writing Style Analysis
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Writing Style</div>
+                              <Badge variant="outline">{result.detailedAnalysis.writingStyle}</Badge>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Vocabulary Complexity</div>
+                              <div className="flex items-center gap-2">
+                                <Progress value={result.detailedAnalysis.vocabularyComplexity} className="flex-1 h-1" />
+                                <span className="text-xs">{result.detailedAnalysis.vocabularyComplexity}%</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Coherence Score</div>
+                              <div className="flex items-center gap-2">
+                                <Progress value={result.detailedAnalysis.coherenceScore} className="flex-1 h-1" />
+                                <span className="text-xs">{result.detailedAnalysis.coherenceScore}%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Writing Patterns:</h4>
+                            <div className="space-y-1">
+                              {result.detailedAnalysis.patterns.map((pattern, index) => (
+                                <div key={index} className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                  {pattern}
                   </div>
                 ))}
               </div>
             </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Analysis Not Available</h3>
+                    <p className="text-muted-foreground">Advanced analysis features require additional processing.</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Suggestions Tab */}
+              <TabsContent value="suggestions" className="space-y-4 mt-6">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5" />
+                    Recommendations & Tips
+                  </h3>
+                  <div className="space-y-3">
+                    {result.suggestions.map((suggestion, index) => (
+                      <Card key={index} className="border-l-4 border-l-yellow-500">
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-2">
+                            <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{suggestion}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-4 border-t">
+             <div className="flex gap-3 pt-6 mt-6 border-t">
               <Button
                 variant="outline"
                 onClick={() => {
-                  const report = `Plagiarism Check Report\n\nSimilarity Score: ${result.similarityScore}%\nStatus: ${getStatusText(result.isPlagiarized, result.similarityScore)}\n\nMatched Sources:\n${result.matchedSources.map((s, i) => `${i + 1}. ${s.title} (${Math.round(s.similarity)}%)\n   ${s.url}`).join('\n')}\n\nSuggestions:\n${result.suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
+                   const report = generateEnhancedReport(result);
                   navigator.clipboard.writeText(report);
                   toast({
-                    title: 'Copied',
-                    description: 'Report copied to clipboard'
+                     title: 'Report Copied',
+                     description: 'Complete analysis report copied to clipboard'
                   });
                 }}
+                 className="flex-1"
               >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Report
+                 <Copy className="mr-2 h-4 w-4" />
+                 Copy Full Report
               </Button>
               <Button
                 variant="outline"
@@ -295,8 +590,9 @@ export default function PlagiarismChecker() {
                   setText('');
                   setResult(null);
                 }}
+                 className="flex-1"
               >
-                Check Another Text
+                 Analyze New Text
               </Button>
             </div>
           </CardContent>

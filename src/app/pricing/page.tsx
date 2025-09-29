@@ -6,6 +6,7 @@ import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, Star, Zap, Crown, Info, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MotionHeadline } from '@/components/ui/motion-section';
 
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(false);
@@ -20,11 +21,13 @@ export default function PricingPage() {
       period: 'forever',
       description: 'Perfect for getting started with CourseConnect',
       features: [
-        'Basic AI tutoring (5 questions/day)',
+        'Upload unlimited syllabi',
         'Join study groups',
-        'Basic syllabus analysis',
+        'Unlimited AI chat',
         'Community support',
-        'Mobile app access'
+        'Mobile app access',
+        'No study analytics',
+        'Basic file processing'
       ],
       cta: 'Get Started Free',
       popular: false,
@@ -98,17 +101,12 @@ export default function PricingPage() {
               </Button>
             </motion.div>
             
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6"
-            >
+            <MotionHeadline className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               Simple, Transparent{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Pricing
               </span>
-            </motion.h1>
+            </MotionHeadline>
             
             <motion.p
               initial={{ opacity: 0, y: 20 }}

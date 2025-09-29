@@ -8,6 +8,7 @@
 import { searchCurrentInformation } from './web-search-service';
 import { scrapeWebPage, extractUrlsFromText } from './web-scraping-service';
 import { provideStudyAssistanceWithFallback } from './dual-ai-service';
+import * as crypto from 'crypto-js';
 
 export interface CitationData {
   title: string;
@@ -38,6 +39,17 @@ export interface PlagiarismResult {
     snippet: string;
   }>;
   suggestions: string[];
+  aiDetection?: {
+    isLikelyAI: boolean;
+    confidence: number;
+    reasoning: string[];
+  };
+  detailedAnalysis?: {
+    writingStyle: string;
+    vocabularyComplexity: number;
+    coherenceScore: number;
+    patterns: string[];
+  };
 }
 
 export interface CitationRequest {
@@ -336,7 +348,7 @@ function generateFallbackCitation(data: CitationData, sourceType: string): strin
 }
 
 /**
- * Check text for plagiarism by searching for similar content
+ * Check text for plagiarism by searching for similar content and AI detection
  */
 export async function checkPlagiarism(text: string, minLength: number = 50): Promise<PlagiarismResult> {
   try {
@@ -349,6 +361,44 @@ export async function checkPlagiarism(text: string, minLength: number = 50): Pro
       };
     }
 
+    // Run plagiarism and AI detection in parallel
+    const [plagiarismResult, aiDetectionResult, detailedAnalysis] = await Promise.all([
+      checkForPlagiarism(text, minLength),
+      detectAIContent(text),
+      analyzeWritingStyle(text)
+    ]);
+
+    // Combine results
+    const suggestions = generateComprehensiveSuggestions(
+      plagiarismResult.isPlagiarized, 
+      plagiarismResult.similarityScore, 
+      plagiarismResult.matchedSources.length,
+      aiDetectionResult?.isLikelyAI || false,
+      aiDetectionResult?.confidence || 0
+    );
+
+    return {
+      ...plagiarismResult,
+      suggestions,
+      aiDetection: aiDetectionResult,
+      detailedAnalysis
+    };
+
+  } catch (error) {
+    console.error('Plagiarism check error:', error);
+    return {
+      isPlagiarized: false,
+      similarityScore: 0,
+      matchedSources: [],
+      suggestions: ['Unable to complete plagiarism check due to technical error.']
+    };
+  }
+}
+
+/**
+ * Check for plagiarism using web search
+ */
+async function checkForPlagiarism(text: string, minLength: number): Promise<Omit<PlagiarismResult, 'aiDetection' | 'detailedAnalysis'>> {
     // Extract key phrases for searching
     const keyPhrases = extractKeyPhrases(text);
     
@@ -386,24 +436,199 @@ export async function checkPlagiarism(text: string, minLength: number = 50): Pro
     const averageSimilarity = matchCount > 0 ? totalSimilarity / matchCount : 0;
     const isPlagiarized = averageSimilarity > 50 || matchedSources.length > 2;
 
-    // Generate suggestions
-    const suggestions = generatePlagiarismSuggestions(isPlagiarized, averageSimilarity, matchedSources.length);
-
     return {
       isPlagiarized,
       similarityScore: Math.round(averageSimilarity),
       matchedSources: matchedSources.slice(0, 10), // Limit to top 10 matches
-      suggestions
+    suggestions: [] // Will be filled by main function
+  };
+}
+
+/**
+ * Detect AI-generated content
+ */
+async function detectAIContent(text: string): Promise<PlagiarismResult['aiDetection']> {
+  try {
+    // AI detection prompts and patterns
+    const aiDetectionPrompt = `Analyze this text for AI generation patterns. Rate on scale 0-100%. 
+    Look for: repetitive structures, overly formal tone, lack of personal voice, 
+    perfect grammar without natural errors, thematic coherence without deviation.
+    
+    Text: "${text.substring(0, 1000)}"
+    
+    Respond with: CONFIDENCE_SCORE: [0-100], REASONING: [brief explanation]`;
+
+    const response = await provideStudyAssistanceWithFallback({
+      userInput: aiDetectionPrompt,
+      context: 'ai-detection'
+    });
+
+    // Parse AI response
+    const confidenceMatch = response.match(/CONFIDENCE_SCORE:\s*(\d+)/i);
+    const reasoningMatch = response.match(/REASONING:\s*(.+)/i);
+    
+    const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) : 0;
+    const reasoning = reasoningMatch ? reasoningMatch[1] : 'Unable to determine';
+
+    // Additional pattern analysis
+    const patterns = analyzeAIPatterns(text);
+    const aiScore = patterns.reduce((acc, pattern) => acc + pattern.score, 0) / patterns.length;
+
+    const finalConfidence = Math.max(confidence, aiScore);
+    const isLikelyAI = finalConfidence > 60;
+
+    return {
+      isLikelyAI,
+      confidence: finalConfidence,
+      reasoning: [reasoning, ...patterns.filter(p => p.score > 40).map(p => p.description)]
     };
 
   } catch (error) {
-    console.error('Plagiarism check error:', error);
+    console.error('AI detection error:', error);
+    // Fallback to pattern analysis
+    const patterns = analyzeAIPatterns(text);
+    const avgScore = patterns.reduce((acc, pattern) => acc + pattern.score, 0) / patterns.length;
+    
     return {
-      isPlagiarized: false,
-      similarityScore: 0,
-      matchedSources: [],
-      suggestions: ['Unable to complete plagiarism check due to technical error.']
+      isLikelyAI: avgScore > 60,
+      confidence: avgScore,
+      reasoning: ['AI detection via pattern analysis']
     };
+  }
+}
+
+/**
+ * Analyze patterns that might indicate AI generation
+ */
+function analyzeAIPatterns(text: string): Array<{score: number, description: string}> {
+  const patterns = [];
+  const words = text.toLowerCase().split(/\s+/);
+  const sentences = text.split(/[.!?]+/);
+
+  // Check for repetitive sentence starters
+  const starters = sentences.slice(0, 10).map(s => s.trim().split(' ')[0].toLowerCase());
+  const commonStarters = ['furthermore', 'moreover', 'additionally', 'consequently', 'therefore'];
+  const repetitiveStarters = commonStarters.filter(start => 
+    starters.filter(s => s.includes(start)).length > 1
+  );
+  
+  if (repetitiveStarters.length > 2) {
+    patterns.push({
+      score: 25,
+      description: `Repetitive sentence starters: ${repetitiveStarters.join(', ')}`
+    });
+  }
+
+  // Check for overly formal tone
+  const formalWords = ['utilize', 'commence', 'facilitate', 'subsequent', 'aforementioned', 'whereby', 'thus', 'hence'];
+  const formalCount = words.filter(word => formalWords.includes(word)).length;
+  
+  if (formalCount > words.length * 0.05) {
+    patterns.push({
+      score: 30,
+      description: `Overly formal vocabulary (${formalCount} instances)`
+    });
+  }
+
+  // Check sentence length variance (AI tends to have consistent lengths)
+  const sentenceLengths = sentences.map(s => s.split(/\s+/).length);
+  const lengthVariance = calculateVariance(sentenceLengths);
+  
+  if (lengthVariance < 10) {
+    patterns.push({
+      score: 20,
+      description: 'Unusually consistent sentence lengths'
+    });
+  }
+
+  // Check for transitional phrases
+  const transitions = ['however', 'moreover', 'furthermore', 'nevertheless', 'consequently'];
+  const transitionCount = words.filter(word => transitions.includes(word)).length;
+  
+  if (transitionCount > words.length * 0.03) {
+    patterns.push({
+      score: 15,
+      description: `Excessive transitional phrases (${transitionCount} instances)`
+    });
+  }
+
+  // Check for hedging language (AI often uses hedging)
+  const hedgingPhrases = ['it is important to note', 'it should be noted', 'it is worth mentioning', 'generally speaking'];
+  const hedgingCount = hedgingPhrases.filter(phrase => text.toLowerCase().includes(phrase)).length;
+  
+  if (hedgingCount > 1) {
+    patterns.push({
+      score: 25,
+      description: `Excessive hedging language (${hedgingCount} instances)`
+    });
+  }
+
+  return patterns;
+}
+
+/**
+ * Calculate variance in array of numbers
+ */
+function calculateVariance(numbers: number[]): number {
+  const mean = numbers.reduce((sum, num) => sum + num, 0) / numbers.length;
+  return numbers.reduce((sum, num) => sum + Math.pow(num - mean, 2), 0) / numbers.length;
+}
+
+/**
+ * Analyze writing style and coherence
+ */
+async function analyzeWritingStyle(text: string): Promise<PlagiarismResult['detailedAnalysis']> {
+  const words = text.toLowerCase().split(/\s+/);
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  
+  // Vocabulary complexity analysis
+  const uniqueWords = new Set(words);
+  const vocabularyComplexity = (uniqueWords.size / words.length) * 100;
+  
+  // Sentence structure analysis
+  const avgSentenceLength = words.length / sentences.length;
+  const writingStyle = avgSentenceLength > 20 ? 'Complex' : avgSentenceLength > 15 ? 'Moderate' : 'Simple';
+  
+  // Coherence analysis (check for topic consistency)
+  const coherenceScore = await calculateCoherence(text);
+  
+  // Pattern detection
+  const patterns = [
+    vocabularyComplexity > 60 ? 'High vocabulary diversity' : 'Moderate vocabulary',
+    avgSentenceLength > 15 ? 'Complex sentence structure' : 'Simple sentence structure',
+    coherenceScore > 70 ? 'Coherent flow' : 'Some coherence issues'
+  ];
+
+  return {
+    writingStyle,
+    vocabularyComplexity: Math.round(vocabularyComplexity),
+    coherenceScore: Math.round(coherenceScore),
+    patterns
+  };
+}
+
+/**
+ * Calculate text coherence score
+ */
+async function calculateCoherence(text: string): Promise<number> {
+  try {
+    // Use AI to analyze coherence
+    const coherencePrompt = `Rate the coherence and flow of this text from 0-100. 
+    Consider: logical progression, topic consistency, sentence transitions, 
+    and overall readability.
+    
+    Text: "${text.substring(0, 800)}"`;
+    
+    const response = await provideStudyAssistanceWithFallback({
+      userInput: coherencePrompt,
+      context: 'coherence-analysis'
+    });
+    
+    const scoreMatch = response.match(/(\d+)/);
+    return scoreMatch ? parseInt(scoreMatch[1]) : 75; // Default moderate score
+    
+  } catch (error) {
+    return 75; // Default moderate score if analysis<｜tool▁sep｜> fails
   }
 }
 
@@ -452,11 +677,18 @@ function calculateTextSimilarity(text1: string, text2: string): number {
 }
 
 /**
- * Generate plagiarism suggestions
+ * Generate comprehensive suggestions for plagiarism and AI detection
  */
-function generatePlagiarismSuggestions(isPlagiarized: boolean, similarity: number, matchCount: number): string[] {
+function generateComprehensiveSuggestions(
+  isPlagiarized: boolean, 
+  similarity: number, 
+  matchCount: number,
+  isLikelyAI: boolean,
+  aiConfidence: number
+): string[] {
   const suggestions = [];
 
+  // Plagiarism suggestions
   if (isPlagiarized) {
     suggestions.push('⚠️ High similarity detected. Consider rewriting these sections.');
     suggestions.push('📝 Use proper citations for any borrowed ideas or quotes.');
@@ -470,6 +702,17 @@ function generatePlagiarismSuggestions(isPlagiarized: boolean, similarity: numbe
 
   if (matchCount > 0) {
     suggestions.push(`🔍 Found ${matchCount} potential source(s) with similar content.`);
+  }
+
+  // AI detection suggestions
+  if (isLikelyAI && aiConfidence > 60) {
+    suggestions.push('🤖 AI-generated content detected with high confidence.');
+    suggestions.push('🧠 Consider adding personal insights and human perspective.');
+    suggestions.push('✍️ Rewrite in your own voice to make it more authentically human.');
+    suggestions.push('💡 Include personal experiences or examples to distinguish from AI patterns.');
+  } else if (aiConfidence > 40) {
+    suggestions.push('🤖 Some AI generation markers detected.');
+    suggestions.push('✍️ Consider making the writing more conversational and personal.');
   }
 
   suggestions.push('💡 Always use proper MLA citations for any sources you reference.');

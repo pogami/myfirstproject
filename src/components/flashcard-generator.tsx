@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, Loader2, Bot, GraduationCap, Sparkles, BookUser, PencilLine, BrainCircuit } from "lucide-react";
+import { Upload, FileText, X, Loader2, Bot, GraduationCap, Sparkles, BookUser, PencilLine, BrainCircuit, Save, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateFlashcards } from "@/ai/flows/generate-flashcards";
 import { Flashcard } from "@/ai/schemas/flashcard-schemas";
@@ -14,15 +14,22 @@ import { useChatStore, Chat } from "@/hooks/use-chat-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase/client";
+import { addDoc, collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "@/lib/firebase/client";
 
 export default function FlashcardGenerator() {
     const { chats } = useChatStore();
     const router = useRouter();
+    const [user] = useAuthState(auth);
     const [topic, setTopic] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
     const [currentCard, setCurrentCard] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [studyStats, setStudyStats] = useState({ correct: 0, total: 0 });
     const { toast } = useToast();
     
     const classChats = Object.entries(chats).filter(([key]) => key !== 'general-chat');
@@ -100,12 +107,64 @@ export default function FlashcardGenerator() {
         }
     };
 
+    const saveFlashcardsToFirebase = async (flashcards: Flashcard[], title: string) => {
+        if (!user || flashcards.length === 0) return;
+
+        setIsSaving(true);
+        try {
+            const flashcardSetData = {
+                title,
+                topic: topic || 'General',
+                flashcards: flashcards.map(f => ({
+                    front: f.question,
+                    back: f.answer
+                })),
+                userId: user.uid,
+                createdAt: new Date().toISOString(),
+                studyStats: {
+                    totalStudies: 0,
+                    correctAnswers: 0,
+                    lastStudied: null
+                }
+            };
+
+            await addDoc(collection(db, 'flashcardSets'), flashcardSetData);
+            
+            toast({
+                title: "Flashcards Saved!",
+                description: "Your flashcard set has been saved to your collection.",
+            });
+
+            // Notify parent component of flashcard save event
+            window.dispatchEvent(new CustomEvent('flashcard-event', {
+                detail: { type: 'flashcards_saved', data: { count: flashcards.length } }
+            }));
+
+        } catch (error) {
+            console.error('Error saving flashcards:', error);
+            toast({
+                variant: "destructive",
+                title: "Save Failed",
+                description: "Could not save flashcards. Please try again.",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const trackStudySession = (wasCorrect: boolean) => {
+        setStudyStats(prev => ({
+            correct: prev.correct + (wasCorrect ? 1 : 0),
+            total: prev.total + 1
+        }));
+    };
 
     const resetState = () => {
         setTopic("");
         setFlashcards([]);
         setCurrentCard(0);
         setIsFlipped(false);
+        setStudyStats({ correct: 0, total: 0 });
     }
     
     if (isGenerating) {
@@ -157,7 +216,61 @@ export default function FlashcardGenerator() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={resetState} variant="ghost" className="w-full hover:bg-transparent">Start Over</Button>
+                        <div className="flex w-full gap-4">
+                            <Button variant="outline" onClick={resetState} className="flex-1">
+                                <X className="mr-2 h-4 w-4" />
+                                Reset
+                            </Button>
+                            <Button 
+                                onClick={() => saveFlashcardsToFirebase(flashcards, `Flashcards: ${topic || 'Generated Set'}`)}
+                                disabled={isSaving || !user}
+                                className="flex-1"
+                                variant="secondary"
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Save Set
+                                    </>
+                                )}
+                            </Button>
+                            <Button 
+                                onClick={() => {
+                                    const isCorrect = isFlipped; // Simple correct/incorrect tracking
+                                    trackStudySession(isCorrect);
+                                    toast({
+                                        title: isCorrect ? "Correct! 📚" : "Keep trying! 💪",
+                                        description: isCorrect ? "Great job!" : "Click to see the answer and try again."
+                                    });
+                                }}
+                                className="flex-1"
+                                variant={studyStats.total > 0 ? "default" : "outline"}
+                            >
+                                <TrendingUp className="mr-2 h-4 w-4" />
+                                Track ({studyStats.correct}/{studyStats.total})
+                            </Button>
+                        </div>
+                        {studyStats.total > 0 && (
+                            <div className="w-full mt-4 p-3 bg-muted rounded-lg">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span>Study Progress:</span>
+                                    <span className="font-medium">
+                                        {Math.round((studyStats.correct / studyStats.total) * 100)}% accuracy
+                                    </span>
+                                </div>
+                                <div className="w-full bg-background rounded-full h-2 mt-2">
+                                    <div 
+                                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${(studyStats.correct / studyStats.total) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )}
                     </CardFooter>
                  </Card>
                  <style jsx>{`
@@ -171,16 +284,27 @@ export default function FlashcardGenerator() {
     }
 
     return (
-        <Card className="transform transition-all hover:shadow-xl hover:-translate-y-1">
+        <Card className="group transform transition-all hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><GraduationCap /> Flashcard Generator</CardTitle>
-                <CardDescription>Generate study flashcards from your class chats or by topic.</CardDescription>
+                <CardTitle className="flex items-center gap-2 group-hover:text-primary transition-colors">
+                    <div className="p-1 rounded bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <GraduationCap className="size-5 text-primary" />
+                    </div>
+                    Flashcard Generator
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                    Generate study flashcards from your class chats or by topic.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                  <Tabs defaultValue="classes" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="classes"><BookUser className="mr-2"/> From Your Classes</TabsTrigger>
-                        <TabsTrigger value="topic"><PencilLine className="mr-2"/> By Topic</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                        <TabsTrigger value="classes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            <BookUser className="mr-2"/> From Your Classes
+                        </TabsTrigger>
+                        <TabsTrigger value="topic" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            <PencilLine className="mr-2"/> By Topic
+                        </TabsTrigger>
                     </TabsList>
                     <TabsContent value="classes" className="mt-4">
                         <div className="space-y-4">
@@ -188,13 +312,19 @@ export default function FlashcardGenerator() {
                             {classChats.length > 0 ? (
                                 <>
                                 {classChats.map(([id, chat]) => (
-                                    <Button key={id} variant="outline" className="w-full justify-start h-auto py-3" onClick={() => handleGenerateFromClass(chat)}>
-                                        <BookUser className="mr-4 text-primary" />
-                                        <span className="text-left">
-                                            <span className="font-bold">{chat.name}</span>
-                                            <br />
-                                            <span className="text-xs text-muted-foreground">{chat.messages.length} messages in chat</span>
-                                        </span>
+                                    <Button 
+                                    key={id} 
+                                    variant="outline" 
+                                    className="w-full justify-start h-auto py-4 hover:bg-primary/10 hover:border-primary/30 group transition-all duration-300" 
+                                    onClick={() => handleGenerateFromClass(chat)}
+                                >
+                                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors mr-4">
+                                            <BookUser className="size-5 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="font-semibold group-hover:text-primary transition-colors">{chat.name}</div>
+                                            <div className="text-sm text-muted-foreground">{chat.messages.length} messages in chat</div>
+                                        </div>
                                     </Button>
                                 ))}
                                 <div className="pt-2">

@@ -22,6 +22,7 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
+import { MobileAppSection } from "@/components/landing/mobile-app-section";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -91,7 +92,7 @@ export default function LandingPage() {
                             <Link href="/about">About</Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
-                            <Link href="/pricing">Pricing</Link>
+                            <Link href="#pricing">Pricing</Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
                             <Link href="/login">Sign In</Link>
@@ -315,38 +316,76 @@ export default function LandingPage() {
                                 </CardContent>
                             </Card>
 
-                            {/* Mobile App */}
-                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-orange-50/50 dark:from-gray-900 dark:to-orange-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
+                            {/* Enhanced Mobile App */}
+                            <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-orange-50/50 dark:from-gray-900 dark:to-orange-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02] mobile-card">
                                 <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <CardHeader className="relative z-10">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                                        <Smartphone className="h-8 w-8 text-white" />
+                                <CardHeader className="relative z-10 mobile-spacing">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg touch-manipulation">
+                                            <Smartphone className="h-8 w-8 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+                                                Study Anywhere
+                                            </h3>
+                                            <p className="text-sm sm:text-base text-orange-600 dark:text-orange-400 font-medium">
+                                                Mobile-First Learning
+                                            </p>
+                                        </div>
                                     </div>
-                                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Study Anywhere</CardTitle>
-                                    <CardDescription className="text-base leading-relaxed">
-                                        Access all features on mobile. Study on the go with our responsive web app and mobile-optimized interface.
-                                    </CardDescription>
+                                    <p className="text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-300 mb-4">
+                                        Take CourseConnect with you everywhere. Our mobile-optimized interface provides seamless access to all features on any device.
+                                    </p>
                                 </CardHeader>
-                                <CardContent className="relative z-10">
-                                    <div className="space-y-4">
+                                <CardContent className="relative z-10 mobile-spacing">
+                                    <div className="space-y-3 mb-6">
                                         <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                             </div>
-                                            <span className="font-medium">Mobile flashcards</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">Optimized AI chat interface</span>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                             </div>
-                                            <span className="font-medium">Offline study mode</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">Touch-friendly flashcards</span>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                                             </div>
-                                            <span className="font-medium">Push notifications</span>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">Push notifications & reminders</span>
                                         </div>
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <div className="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <span className="font-medium text-gray-700 dark:text-gray-300">Responsive study groups</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Mobile Demo Preview */}
+                                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 mb-4">
+                                        <div className="text-center">
+                                            <div className="inline-block bg-white dark:bg-gray-900 rounded-xl p-2 shadow-sm">
+                                                <div className="w-24 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                                    <Smartphone className="h-6 w-6 text-white" />
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium">
+                                                Mobile Interface
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Mobile CTA */}
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <Link href="/auth" className="flex-1">
+                                            <MobileButton className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation mobile-full-width" mobileSize="md">
+                                                Try Mobile App
+                                            </MobileButton>
+                                        </Link>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -862,6 +901,11 @@ export default function LandingPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Dedicated Mobile Section */}
+                <div className="py-12 sm:py-16 lg:py-20">
+                    <MobileAppSection />
                 </div>
             </main>
             

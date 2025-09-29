@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const googleApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE;
+import { OllamaModelManager } from '@/lib/ollama-model-manager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,20 +16,8 @@ export async function POST(request: NextRequest) {
       ? `\n\nPrevious conversation:\n${conversationHistory.map((msg: any) => `${msg.sender}: ${msg.text}`).join('\n')}`
       : '';
 
-    // Use Google AI only (no OpenAI fallback needed)
-    if (!googleApiKey) {
-      return NextResponse.json({ error: 'Google AI API key not configured' }, { status: 500 });
-    }
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `You are CourseConnect AI providing detailed step-by-step mathematical analysis.
+    // Prompt for detailed analysis
+    const prompt = `You are CourseConnect AI providing detailed step-by-step analysis. Be thorough, clear, and helpful.
 
 CRITICAL FORMATTING RULES:
 1. NEVER use markdown formatting like **bold** or *italic* or # headers
@@ -42,10 +29,10 @@ CRITICAL FORMATTING RULES:
 7. NEVER use \\text{} commands - keep ALL words OUTSIDE math delimiters
 8. Only put mathematical symbols, numbers, and equations INSIDE $...$ delimiters
 
-DETAILED MATH ANALYSIS RULES:
+DETAILED ANALYSIS RULES:
 1. Provide COMPLETE step-by-step solutions with detailed explanations
 2. Show every calculation and reasoning step
-3. Explain the mathematical concepts and methods used
+3. Explain the concepts and methods used
 4. Use LaTeX for all math notation:
    - Inline math: $ ... $ (ONLY for math symbols and numbers)
    - Display equations: $$ ... $$ (ONLY for math symbols and numbers)
@@ -54,54 +41,84 @@ DETAILED MATH ANALYSIS RULES:
 6. CRITICAL: Use proper spacing between words - never concatenate words together
 7. CRITICAL: Each step should be clearly separated and readable
 8. CRITICAL: Never use \\text{} commands - keep all text outside math delimiters
-6. Example format:
-   "DETAILED SOLUTION:
-   
-   Step 1: Identify the problem type
-   This is a quadratic equation that can be solved by factoring.
-   
-   Step 2: Write the equation
-   $x^2 + 3x + 2 = 0$
-   
-   Step 3: Factor the quadratic
-   We need two numbers that multiply to 2 and add to 3.
-   These numbers are 1 and 2.
-   $x^2 + 3x + 2 = (x + 1)(x + 2) = 0$
-   
-   Step 4: Apply zero product property
-   If $(x + 1)(x + 2) = 0$, then either $x + 1 = 0$ or $x + 2 = 0$
-   
-   Step 5: Solve each equation
-   $x + 1 = 0$ → $x = -1$
-   $x + 2 = 0$ → $x = -2$
-   
-   Step 6: Verify solutions
-   For $x = -1$: $(-1)^2 + 3(-1) + 2 = 1 - 3 + 2 = 0$ ✓
-   For $x = -2$: $(-2)^2 + 3(-2) + 2 = 4 - 6 + 2 = 0$ ✓
-   
-   Answer: $\\boxed{x = -1 \\text{ or } x = -2}$"
 
-Question: ${question}${conversationContext}`
-          }]
-        }]
+Example format:
+"DETAILED SOLUTION:
+
+Step 1: Identify the problem type
+This is a basic arithmetic addition problem.
+
+Step 2: Write the expression
+$1 + 2 = ?$
+
+Step 3: Perform the addition
+Add the first number (1) to the second number (2):
+$1+ 2 = 3$
+
+Step 4: Verify the answer
+$1 + 2 = 3$ ✓
+
+Answer: $\\boxed{3}$"
+
+Question: ${question}${conversationContext}`;
+
+    // Use Ollama for analysis
+    const selectedModel = OllamaModelManager.getBestGeneralModel();
+    if (!selectedModel) {
+      return NextResponse.json({ 
+        analysis: "I apologize, but detailed analysis is not available right now.",
+        provider: 'fallback'
+      });
+    }
+
+    console.log(`Using Ollama model for analysis: ${selectedModel}`);
+
+    // Add timeout to prevent slow responses
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Ollama timeout')), 20000); // 20 second timeout for in-depth analysis
+    });
+
+    const ollamaPromise = fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_tokens: 1500, // Longer responses for detailed analysis
+          num_ctx: 4096,
+          top_p: 0.9,
+          top_k: 20,
+          num_batch: 1,
+          num_thread: 4
+        }
       })
     });
 
-    if (!response.ok) {
-      throw new Error(`Google AI API failed: ${response.status} ${response.statusText}`);
+    const ollamaResponse = await Promise.race([ollamaPromise, timeoutPromise]) as Response;
+
+    if (ollamaResponse.ok) {
+      const ollamaResult = await ollamaResponse.json();
+      const analysis = ollamaResult.response || 'I apologize, but I couldn\'t generate a detailed analysis.';
+      
+      return NextResponse.json({ 
+        analysis: analysis.trim(),
+        provider: selectedModel
+      });
+    } else {
+      throw new Error('Ollama analysis failed');
     }
-
-    const data = await response.json();
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'I apologize, but I couldn\'t generate a detailed analysis.';
-
-    return NextResponse.json({ 
-      analysis: answer.trim(),
-      provider: 'google'
-    });
 
   } catch (error) {
     console.error('In-depth analysis error:', error);
     console.error('Error details:', error.message);
-    return NextResponse.json({ error: 'Failed to generate analysis', details: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      analysis: "I apologize, but I'm having trouble generating detailed analysis right now. Please try again or ask a simpler version of your question.",
+      provider: 'fallback'
+    });
   }
 }

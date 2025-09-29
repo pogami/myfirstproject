@@ -1,29 +1,34 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { GraduationCap, Brain, Target, Zap, Sparkles, BookOpen, ArrowRight, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GraduationCap, Brain, Target, Zap, Sparkles, BookOpen, ArrowRight, TrendingUp, Clock, CheckCircle, RefreshCw, Plus, Eye } from "lucide-react";
 import FlashcardGenerator from "@/components/flashcard-generator";
 import { useState, useEffect } from "react";
+import { db } from "@/lib/firebase/client";
+import { collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, where } from "firebase/firestore";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "@/lib/firebase/client";
+import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
-const features = [
-  {
-    icon: <Brain className="size-5 text-purple-500" />,
-    title: "AI-Generated Cards",
-    description: "Smart flashcards created from your syllabus content"
-  },
-  {
-    icon: <Target className="size-5 text-blue-500" />,
-    title: "Spaced Repetition",
-    description: "Optimized learning schedule for better retention"
-  },
-  {
-    icon: <Zap className="size-5 text-yellow-500" />,
-    title: "Quick Review",
-    description: "Study anywhere, anytime with mobile-friendly interface"
-  }
-];
+interface FlashcardSet {
+  id: string;
+  title: string;
+  topic: string;
+  flashcards: Array<{
+    front: string;
+    back: string;
+  }>;
+  createdAt: string;
+  userId: string;
+  studyStats: {
+    totalStudies: number;
+    correctAnswers: number;
+    lastStudied?: string;
+  };
+}
 
 const studyTips = [
   "Review flashcards daily for best results",
@@ -33,251 +38,350 @@ const studyTips = [
 ];
 
 export default function FlashcardsPage() {
-  const [progress, setProgress] = useState({
-    cardsStudied: 0,
-    accuracyRate: 0,
-    studyStreak: 0,
-    totalCards: 0,
-    correctAnswers: 0,
-    studyTime: 0
-  });
+  const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user] = useAuthState(auth);
+  const { toast } = useToast();
 
-  const [isStudying, setIsStudying] = useState(false);
-  const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
-
-  // Simulate real-time progress updates
+  // Real-time data loading
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (isStudying && studyStartTime) {
-        const elapsed = Math.floor((Date.now() - studyStartTime.getTime()) / 1000);
-        setProgress(prev => ({
-          ...prev,
-          studyTime: elapsed
-        }));
-      }
-    }, 1000);
+    if (!user) return;
 
-    return () => clearInterval(interval);
-  }, [isStudying, studyStartTime]);
+    const q = query(
+      collection(db, 'flashcardSets'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
 
-  // Listen for flashcard events
-  useEffect(() => {
-    const handleFlashcardEvent = (event: CustomEvent) => {
-      const { type, data } = event.detail;
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const sets = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as FlashcardSet[];
       
-      switch (type) {
-        case 'card_studied':
-          setProgress(prev => ({
-            ...prev,
-            cardsStudied: prev.cardsStudied + 1,
-            totalCards: prev.totalCards + 1
-          }));
-          break;
-        case 'correct_answer':
-          setProgress(prev => ({
-            ...prev,
-            correctAnswers: prev.correctAnswers + 1,
-            accuracyRate: Math.round(((prev.correctAnswers + 1) / (prev.cardsStudied + 1)) * 100)
-          }));
-          break;
-        case 'study_started':
-          setIsStudying(true);
-          setStudyStartTime(new Date());
-          break;
-        case 'study_ended':
-          setIsStudying(false);
-          setStudyStartTime(null);
-          break;
-      }
-    };
+      setFlashcardSets(sets);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading flashcard sets:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load your flashcards"
+      });
+      setLoading(false);
+    });
 
-    window.addEventListener('flashcard-event', handleFlashcardEvent as EventListener);
-    return () => window.removeEventListener('flashcard-event', handleFlashcardEvent as EventListener);
-  }, []);
+    return () => unsubscribe();
+  }, [user, toast]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const totalCards = flashcardSets.reduce((sum, set) => sum + set.flashcards.length, 0);
+  const totalStudies = flashcardSets.reduce((sum, set) => sum + set.studyStats.totalStudies, 0);
+  const totalCorrect = flashcardSets.reduce((sum, set) => sum + set.studyStats.correctAnswers, 0);
+  const accuracyRate = totalStudies > 0 ? Math.round((totalCorrect / totalStudies) * 100) : 0;
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading your flashcards...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 border border-primary/20">
-          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+    <div className="container mx-auto p-6 max-w-7xl">
+      {/* Enhanced Header */}
+      <div className="mb-12">
+        <div className="flex items-center gap-4 mb-6">
           <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <GraduationCap className="size-6 text-primary" />
-              </div>
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                AI-Powered Learning
-              </Badge>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur opacity-75 animate-pulse"></div>
+            <div className="relative p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+              <GraduationCap className="size-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Smart Flashcards
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent animate-gradient">
+              Flashcards
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              Transform your study materials into interactive flashcards. AI-generated questions 
-              help you master concepts faster with spaced repetition learning.
+            <p className="text-xl text-muted-foreground">
+              AI-powered flashcards from your course discussions
             </p>
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          {features.map((feature, index) => (
-            <Card key={feature.title} className="border-0 bg-gradient-to-br from-card/50 to-card/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <CardContent className="p-6 text-center">
-                <div className="flex justify-center mb-3">
-                  <div className="p-2 rounded-lg bg-muted/50">
-                    {feature.icon}
+        {/* Enhanced Real-time Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="group border-0 bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-950/30 dark:to-blue-900/30 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Sets</p>
+                    <motion.p 
+                      key={flashcardSets.length}
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      className="text-3xl font-bold text-blue-600 dark:text-blue-400"
+                    >
+                      {flashcardSets.length}
+                    </motion.p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
+                    <BookOpen className="size-6 text-blue-500" />
                   </div>
                 </div>
-                <h3 className="font-semibold mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
               </CardContent>
             </Card>
-          ))}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="group border-0 bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-950/30 dark:to-green-900/30 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 cursor-pointer hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Total Cards</p>
+                    <motion.p 
+                      key={totalCards}
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      className="text-3xl font-bold text-green-600 dark:text-green-400"
+                    >
+                      {totalCards}
+                    </motion.p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-green-500/20 group-hover:bg-green-500/30 transition-colors">
+                    <GraduationCap className="size-6 text-green-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="group border-0 bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-950/30 dark:to-purple-900/30 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 cursor-pointer hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Study Sessions</p>
+                    <motion.p 
+                      key={totalStudies}
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      className="text-3xl font-bold text-purple-600 dark:text-purple-400"
+                    >
+                      {totalStudies}
+                    </motion.p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
+                    <Target className="size-6 text-purple-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="group border-0 bg-gradient-to-br from-orange-500/10 to-orange-600/10 dark:from-orange-950/30 dark:to-orange-900/30 hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 cursor-pointer hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Accuracy</p>
+                    <motion.p 
+                      key={accuracyRate}
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      className="text-3xl font-bold text-orange-600 dark:text-orange-400"
+                    >
+                      {accuracyRate}%
+                    </motion.p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
+                    <CheckCircle className="size-6 text-orange-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
         </div>
 
         {/* Main Content */}
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Flashcard Generator */}
-          <div className="lg:col-span-2">
-            <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-              <CardHeader className="text-center pb-6">
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                    <Sparkles className="size-8 text-primary" />
+        {/* Enhanced Flashcard Generator */}
+        <motion.div 
+          className="lg:col-span-2"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="group border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-1 backdrop-blur-sm">
+            <CardHeader className="text-center pb-8 relative">
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl blur-lg animate-pulse group-hover:animate-none"></div>
+                  <div className="relative p-4 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30 group-hover:border-primary/50 transition-all">
+                    <Sparkles className="size-10 text-primary group-hover:animate-spin" />
                   </div>
                 </div>
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              </div>
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
                   Generate Flashcards
                 </CardTitle>
-                <CardDescription className="text-lg">
+              <CardDescription className="text-lg text-muted-foreground mt-3">
                   Create personalized flashcards from your syllabus content
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-8">
+            <CardContent className="p-8 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm">
                 <FlashcardGenerator />
               </CardContent>
             </Card>
-          </div>
+        </motion.div>
 
-          {/* Study Tips & Stats */}
-          <div className="space-y-6">
+        {/* Enhanced Sidebar */}
+        <motion.div 
+          className="space-y-6"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 }}
+        >
             {/* Study Tips */}
-            <Card className="border-0 bg-gradient-to-br from-card/50 to-card/30">
+          <Card className="group border-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 dark:from-green-950/30 dark:to-emerald-950/30 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 hover:scale-105">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="size-5 text-primary" />
+              <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400 group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors">
+                <div className="p-1 rounded bg-green-500/20">
+                  <Target className="size-5" />
+                </div>
                   Study Tips
                 </CardTitle>
-                <CardDescription>
-                  Maximize your learning potential
-                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+            <CardContent className="space-y-4">
                   {studyTips.map((tip, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <p className="text-sm text-muted-foreground">{tip}</p>
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 + 0.7 }}
+                  className="hover:bg-green-500/5 p-3 rounded-lg flex items-start gap-3 transition-colors cursor-default"
+                >
+                  <div className="p-1 rounded-full bg-green-500/20 mt-0.5 group-hover:bg-green-500/30 transition-colors">
+                    <CheckCircle className="size-3 text-green-600 dark:text-green-400" />
                     </div>
+                  <p className="text-sm text-green-700 dark:text-green-300 font-medium">{tip}</p>
+                </motion.div>
                   ))}
-                </div>
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <Card className="border-0 bg-gradient-to-br from-card/50 to-card/30">
+          {/* Enhanced Recent Flashcard Sets */}
+          <Card className="group border-0 bg-gradient-to-br from-purple-500/10 to-violet-500/10 dark:from-purple-950/30 dark:to-violet-950/30 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 hover:scale-105">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="size-5 text-primary" />
-                  Your Progress
-                  {isStudying && (
-                    <Badge variant="default" className="ml-2 bg-green-500 text-white animate-pulse">
-                      <Clock className="size-3 mr-1" />
-                      Studying
-                    </Badge>
-                  )}
+              <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">
+                <div className="p-1 rounded bg-purple-500/20">
+                  <BookOpen className="size-5" />
+                </div>
+                Recent Sets
                 </CardTitle>
-                <CardDescription>
-                  Track your learning journey in real-time
+              <CardDescription className="text-muted-foreground">
+                Your latest flashcard collections
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Cards Studied</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{progress.cardsStudied}</span>
-                      {progress.cardsStudied > 0 && (
-                        <CheckCircle className="size-4 text-green-500" />
-                      )}
+              {flashcardSets.length === 0 ? (
+                <div className="text-center py-8">
+                  <Brain className="size-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">No flashcards yet</p>
+                  <p className="text-sm text-muted-foreground">Generate your first set below!</p>
+                    </div>
+              ) : (
+                <div className="space-y-3">
+                  {flashcardSets.slice(0, 3).map((set) => (
+                    <motion.div
+                      key={set.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center justify-between p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-purple-200/50 dark:border-purple-800/50"
+                    >
+                      <div className="flex-1">
+                        <h4 className="font-medium text-purple-900 dark:text-purple-100">
+                          {set.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {set.flashcards.length} cards • {set.topic}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {set.studyStats?.totalStudies || 0} studies
+                          </Badge>
+                          {set.studyStats?.correctAnswers && set.studyStats?.totalStudies ? (
+                            <Badge 
+                              variant={set.studyStats.correctAnswers / set.studyStats.totalStudies > 0.7 ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {Math.round((set.studyStats.correctAnswers / set.studyStats.totalStudies) * 100)}% accurate
+                            </Badge>
+                          ) : null}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Accuracy Rate</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{progress.accuracyRate}%</span>
-                      {progress.accuracyRate >= 80 && (
-                        <TrendingUp className="size-4 text-green-500" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Study Time</span>
-                    <span className="font-semibold">{formatTime(progress.studyTime)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Study Streak</span>
-                    <span className="font-semibold">{progress.studyStreak} days</span>
-                  </div>
+                      <Button size="sm" variant="ghost" className="ml-2">
+                        <Eye className="size-4" />
+                      </Button>
+                    </motion.div>
+                  ))}
                   
-                  {/* Progress Bar */}
-                  {progress.cardsStudied > 0 && (
-                    <div className="pt-4 border-t border-border/50">
-                      <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="text-muted-foreground">Overall Progress</span>
-                        <span className="font-medium">{Math.round((progress.correctAnswers / Math.max(progress.cardsStudied, 1)) * 100)}%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min((progress.correctAnswers / Math.max(progress.cardsStudied, 1)) * 100, 100)}%` }}
-                        />
-                      </div>
+                  {flashcardSets.length > 3 && (
+                    <div className="text-center pt-3">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Plus className="size-4 mr-2" />
+                        View All ({flashcardSets.length - 3} more)
+                      </Button>
                     </div>
                   )}
                 </div>
+              )}
               </CardContent>
             </Card>
-
-            {/* Call to Action */}
-            <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-              <CardContent className="p-6 text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 rounded-xl bg-primary/10">
-                    <GraduationCap className="size-8 text-primary" />
-                  </div>
-                </div>
-                <h3 className="font-bold mb-2">Ready to Study?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Generate your first set of flashcards and start learning smarter.
-                </p>
-                <Badge variant="outline" className="text-xs">
-                  <ArrowRight className="size-3 mr-1" />
-                  Scroll up to get started
-                </Badge>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        </motion.div>
       </div>
+
+      {/* Custom animations */}
+      <style jsx>{`
+        @keyframes gradient {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        
+        .animate-gradient {
+          background-size: 200% 200%;
+          animation: gradient 3s ease infinite;
+        }
+      `}</style>
     </div>
   );
 }

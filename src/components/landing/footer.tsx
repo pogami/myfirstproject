@@ -6,28 +6,20 @@ import { Button } from '@/components/ui/button';
 
 const footerLinks = {
   product: [
-    { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'API', href: '#' },
-    { name: 'Integrations', href: '#' },
+    { name: 'Features', href: '/features' },
+    { name: 'Pricing', href: '/pricing' },
   ],
   company: [
-    { name: 'About', href: '#about' },
-    { name: 'Blog', href: '#' },
-    { name: 'Careers', href: '#' },
-    { name: 'Contact', href: '#' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+    { name: 'Status', href: '/status' },
   ],
   resources: [
-    { name: 'Documentation', href: '#' },
-    { name: 'Help Center', href: '#' },
-    { name: 'Community', href: '#' },
-    { name: 'Status', href: '#' },
+    { name: 'Changelog', href: '/changelog' },
   ],
   legal: [
-    { name: 'Privacy Policy', href: '#' },
-    { name: 'Terms of Service', href: '#' },
-    { name: 'Cookie Policy', href: '#' },
-    { name: 'GDPR', href: '#' },
+    { name: 'Privacy Policy', href: '/privacy' },
+    { name: 'Terms of Service', href: '/terms' },
   ],
 };
 
@@ -47,7 +39,12 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src="/courseconnect-favicon.svg" 
+                  alt="CourseConnect Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="text-xl font-bold">CourseConnect AI</span>
             </div>

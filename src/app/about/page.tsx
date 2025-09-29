@@ -6,6 +6,7 @@ import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Target, Lightbulb, Heart, Award, Globe, Zap, TrendingUp, Clock, CheckCircle, Star, Play, Sparkles, Shield, MessageCircle } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { MotionSection, MotionHeadline, MotionCard } from '@/components/ui/motion-section';
 
 export default function AboutPage() {
   const [activeValue, setActiveValue] = useState(0);
@@ -377,12 +378,7 @@ export default function AboutPage() {
               </Button>
             </motion.div>
             
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6"
-            >
+            <MotionHeadline className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               About{' '}
               <motion.span 
                 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
@@ -400,7 +396,7 @@ export default function AboutPage() {
               >
                 CourseConnect
               </motion.span>
-            </motion.h1>
+            </MotionHeadline>
             
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -470,29 +466,29 @@ export default function AboutPage() {
             {[
               {
                 year: "Aug 2025",
-                title: "The Problem",
-                description: "Students were struggling to find study partners, get help with difficult concepts, and stay organized in their academic journey.",
+                title: "The Beginning",
+                description: "Started this project as a solo developer, inspired by students' struggles to find study partners, get help with difficult concepts, and stay organized in their academic journey.",
                 icon: Lightbulb,
                 side: "left"
               },
               {
                 year: "Sep 2025",
-                title: "The Solution",
-                description: "We leveraged AI technology and modern collaboration tools to create a platform that would transform how students learn and succeed.",
+                title: "Current State",
+                description: "Built the core platform leveraging AI technology and modern collaboration tools. Currently developing features to transform how students learn and succeed.",
                 icon: Users,
                 side: "right"
               },
               {
                 year: "Oct 2025",
-                title: "The Growth",
-                description: "What started as a solo developer's passion project has grown into a comprehensive platform connecting thousands of students.",
+                title: "Future Growth",
+                description: "Plans to expand the platform's capabilities, onboard more universities, and build a comprehensive ecosystem connecting students nationwide.",
                 icon: TrendingUp,
                 side: "left"
               },
               {
                 year: "Nov 2025",
-                title: "The Community",
-                description: "Today, CourseConnect is more than just a study platform—it's a community where students support each other and achieve their goals.",
+                title: "Future Vision",
+                description: "Envision CourseConnect becoming more than just a study platform—a community where students support each other and achieve their academic goals together.",
                 icon: Heart,
                 side: "right"
               }
@@ -531,6 +527,24 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
+        
+        {/* Future Milestones Section - Add new entries here as milestones are achieved */}
+        {/* 
+        To add new milestones:
+        1. Add new objects to the timeline array above
+        2. Follow the same format: { year: "DATE", title: "TITLE", description: "DESCRIPTION", icon: IconComponent, side: "left" or "right" }
+        3. Import any new icons needed at the top
+        4. Update the timeline to reflect new achievements
+        
+        Example future entry:
+        {
+          year: "Dec 2025",
+          title: "Platform Launch",
+          description: "Official launch with universities and student onboarding programs.",
+          icon: Rocket,
+          side: "left"
+        }
+        */}
       </div>
 
       {/* Interactive Values Section */}
