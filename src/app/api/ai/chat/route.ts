@@ -65,7 +65,7 @@ Please provide a helpful, educational response:`;
       const lowerMessage = message.toLowerCase();
       
       if (lowerMessage.includes('derivative') || lowerMessage.includes('differentiate')) {
-        aiResponse = "Great question about derivatives! A derivative tells us the rate of change of a function at any point. For example, if f(x) = x², then f'(x) = 2x. This means the slope of the tangent line at any point x is 2x. Would you like me to explain a specific derivative rule or work through an example?";
+        aiResponse = "Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f'(x) = 2x. This means at x=3, the slope is 6.";
       } else if (lowerMessage.includes('integral') || lowerMessage.includes('integrate')) {
         aiResponse = "Integrals are the reverse of derivatives! They help us find the area under a curve or the original function from its derivative. The fundamental theorem of calculus connects derivatives and integrals beautifully. Are you working on definite or indefinite integrals? I can help with either!";
       } else if (lowerMessage.includes('limit')) {

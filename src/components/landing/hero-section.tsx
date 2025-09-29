@@ -6,6 +6,7 @@ import { ArrowRight, Play, Users, Zap, Bot, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RippleText } from '@/components/ripple-text';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GroupChatDemo } from '@/components/group-chat-demo';
 import { TypewriterText, StaticText } from '@/components/saas-typography';
 
 export function HeroSection() {
@@ -28,19 +29,7 @@ export function HeroSection() {
     {
       id: 2,
       sender: 'bot',
-      message: 'Absolutely! Derivatives measure how a function changes. The derivative of f(x) = x² is f\'(x) = 2x. This means at any point x, the slope of the tangent line is 2x. Would you like me to explain the power rule or show more examples?',
-      timestamp: ''
-    },
-    {
-      id: 3,
-      sender: 'user',
-      message: 'What about the chain rule?',
-      timestamp: ''
-    },
-    {
-      id: 4,
-      sender: 'bot',
-      message: 'Great question! The chain rule is used for composite functions. If you have f(g(x)), the derivative is f\'(g(x)) × g\'(x). For example, if f(x) = (x² + 1)³, let u = x² + 1, so f\'(x) = 3u² × 2x = 3(x² + 1)² × 2x. Need help with a specific problem?',
+      message: 'Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f\'(x) = 2x. This means at x=3, the slope is 6.',
       timestamp: ''
     }
   ];
@@ -180,7 +169,7 @@ export function HeroSection() {
           // Fallback if no response received
           let fallbackMessage = '';
           if (userMessage.toLowerCase().includes('derivative')) {
-            fallbackMessage = `Absolutely! Derivatives measure how a function changes. The derivative of f(x) = x² is f'(x) = 2x. This means at any point x, the slope of the tangent line is 2x. Would you like me to explain the power rule or show more examples?`;
+            fallbackMessage = `Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f'(x) = 2x. This means at x=3, the slope is 6.`;
           } else {
             fallbackMessage = `I understand you're asking about "${userMessage}". Let me help you with that! I'm CourseConnect AI, your study buddy. I can assist with calculus, homework, and study tips. What specific aspect would you like to explore?`;
           }
@@ -197,7 +186,7 @@ export function HeroSection() {
       // Fallback response that addresses the user's question
       let fallbackMessage = '';
           if (userMessage.toLowerCase().includes('derivative')) {
-            fallbackMessage = `Absolutely! Derivatives measure how a function changes. The derivative of f(x) = x² is f'(x) = 2x. This means at any point x, the slope of the tangent line is 2x. Would you like me to explain the power rule or show more examples?`;
+            fallbackMessage = `Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f'(x) = 2x. This means at x=3, the slope is 6.`;
           } else {
             fallbackMessage = `Thanks for your question about "${userMessage}"! I'm CourseConnect AI, your study buddy. I can help with calculus, homework, and study tips. What would you like to know more about?`;
           }
@@ -313,7 +302,7 @@ export function HeroSection() {
           </motion.div>
         </div>
 
-        {/* Live Demo Chat Interface */}
+        {/* Live Demo Section */}
         <motion.div
           id="live-demo"
           initial={{ opacity: 0, y: 40 }}
@@ -321,8 +310,17 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="mt-16 relative"
         >
-          <div className="relative max-w-4xl mx-auto">
-            {/* Live Chat Interface */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              See CourseConnect AI in Action
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Watch how students get instant help with homework and collaborate in study groups
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* Individual AI Chat Demo */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Chat Header */}
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
@@ -331,8 +329,8 @@ export function HeroSection() {
                     <Bot className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Live Demo - Calculus Study Session</h3>
-                    <p className="text-sm text-blue-100">Student asking about derivatives and chain rule</p>
+                    <h3 className="font-semibold">AI Tutor Demo</h3>
+                    <p className="text-sm text-blue-100">Student asking about derivatives</p>
                   </div>
                 </div>
               </div>
@@ -443,13 +441,16 @@ export function HeroSection() {
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                   {messageIndex >= demoMessages.length ? (
-                    "✅ Demo Complete: This is how CourseConnect AI helps students!"
+                    "✅ Individual AI tutoring complete!"
                   ) : (
-                    "🔴 LIVE: Watch the conversation happen in real-time above!"
+                    "🔴 LIVE: Watch AI help with calculus!"
                   )}
                 </p>
               </div>
             </div>
+
+            {/* Group Chat Demo */}
+            <GroupChatDemo />
           </div>
         </motion.div>
       </div>
