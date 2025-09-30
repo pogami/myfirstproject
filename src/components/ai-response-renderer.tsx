@@ -28,6 +28,11 @@ import { Button } from '@/components/ui/button';
 interface AIResponseRendererProps {
   content: string;
   className?: string;
+  sources?: {
+    title: string;
+    url: string;
+    snippet: string;
+  }[];
 }
 
 interface ParsedResponse {
@@ -39,7 +44,7 @@ interface ParsedResponse {
   mathExpressions?: string[];
 }
 
-export function AIResponseRenderer({ content, className = "" }: AIResponseRendererProps) {
+export function AIResponseRenderer({ content, className = "", sources }: AIResponseRendererProps) {
   const [isCopied, setIsCopied] = useState(false);
 
   const copyToClipboard = async () => {
@@ -72,7 +77,7 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
 
   // If it's simple math or graph, use the new BotResponse component
   if (isSimpleMathOrGraph(content)) {
-    return <BotResponse content={content} className={className} />;
+    return <BotResponse content={content} className={className} sources={sources} />;
   }
 
   const parseResponse = (text: string): ParsedResponse => {
@@ -387,8 +392,23 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
   };
 
   const renderCode = (code: string, language: string) => {
+    const blockId = `code-${Math.random().toString(36).substr(2, 9)}`;
+    const isCopied = copiedStates[blockId];
+
+    const copyToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+        setCopiedStates(prev => ({ ...prev, [blockId]: true }));
+        setTimeout(() => {
+          setCopiedStates(prev => ({ ...prev, [blockId]: false }));
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    };
+
     return (
-      <div className="my-4">
+      <div className="my-4 relative group">
         <SyntaxHighlighter
           language={language}
           style={oneDark}
@@ -401,6 +421,19 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
         >
           {code}
         </SyntaxHighlighter>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="absolute top-2 right-2 h-8 w-8 p-0 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          onClick={copyToClipboard}
+          title="Copy code"
+        >
+          {isCopied ? (
+            <Check className="h-4 w-4 text-green-600" />
+          ) : (
+            <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          )}
+        </Button>
       </div>
     );
   };
@@ -481,7 +514,7 @@ export function AIResponseRenderer({ content, className = "" }: AIResponseRender
           <Button
             size="sm"
             variant="ghost"
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background/80 hover:bg-transparent"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background hover:bg-muted border border-border rounded-md shadow-sm"
             onClick={copyToClipboard}
           >
             {isCopied ? (

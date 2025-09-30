@@ -11,6 +11,9 @@ import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOp
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
+import { useSocket } from "@/hooks/use-socket";
+import { TypingIndicator } from "@/components/typing-indicator";
+import { OnlineUsersIndicator } from "@/components/online-users-indicator";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,7 +24,6 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { MobileInput } from "@/components/ui/mobile-input";
 import { ExpandableUserMessage } from "@/components/expandable-user-message";
@@ -33,6 +35,7 @@ import { RippleText } from "@/components/ripple-text";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { InDepthAnalysis } from "@/components/in-depth-analysis";
 import { JoinMessage } from "@/components/join-message";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -48,11 +51,20 @@ export default function ChatPage() {
         exportChat, 
         resetChat, 
         deleteChat, 
-        initializeGeneralChats 
+        initializeGeneralChats,
+        subscribeToChat,
+        onlineUsers,
+        typingUsers,
+        setOnlineUsers,
+        setTypingUsers,
+        setSocketConnected
     } = useChatStore();
     const [inputValue, setInputValue] = useState("");
+    // Simulated identity for public chat testing
+    const [simulatedName, setSimulatedName] = useState<string>("Alice");
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
+    
     const [forceLoad, setForceLoad] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -79,6 +91,70 @@ export default function ChatPage() {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     };
+
+    // Determine if current chat should have real-time features
+    // For this page, we're always showing public general chat, so enable real-time
+    const shouldHaveRealtime = true;
+
+    // Socket.IO connection for real-time features (only for public and class chats)
+    const socket = useSocket({
+        room: 'public-general-chat',
+        userId: user?.uid || `guest-${simulatedName}-${Date.now()}`,
+        username: user?.displayName || simulatedName,
+        avatar: user?.photoURL,
+        onMessageReceived: (message) => {
+            // Add message to local state for instant display
+            addMessage('public-general-chat', message);
+        },
+        onAIResponse: (message, aiResponse) => {
+            // Handle AI responses in real-time
+            const aiMessage = {
+                id: `ai-${Date.now()}`,
+                sender: 'bot' as const,
+                name: 'CourseConnect AI',
+                text: aiResponse,
+                timestamp: Date.now()
+            };
+            addMessage('public-general-chat', aiMessage);
+        },
+        onUserJoined: (user) => {
+            console.log('User joined:', user);
+        },
+        onUserLeft: (user) => {
+            console.log('User left:', user);
+        },
+        onOnlineUsers: (users) => {
+            setOnlineUsers(users);
+        },
+        onTypingStart: (user) => {
+            setTypingUsers([...typingUsers.filter(u => u.userId !== user.userId), user]);
+        },
+        onTypingStop: (userId) => {
+            setTypingUsers(typingUsers.filter(u => u.userId !== userId));
+        },
+        onPresenceUpdate: (userId, status) => {
+            console.log('Presence updated:', userId, status);
+        },
+        onAIThinkingStart: (user) => {
+            console.log('AI thinking started by:', user);
+            setIsLoading(true);
+        },
+        onAIThinkingStop: () => {
+            console.log('AI thinking stopped');
+            setIsLoading(false);
+        }
+    });
+
+    // Global realtime subscription for public-general-chat (always active)
+    useEffect(() => {
+        console.log('ChatPage: Setting up GLOBAL subscription for public-general-chat');
+        const unsubscribe = subscribeToChat('public-general-chat');
+        console.log('ChatPage: GLOBAL subscription setup complete, unsubscribe function:', unsubscribe);
+        return () => {
+            console.log('ChatPage: Cleaning up GLOBAL subscription');
+            try { unsubscribe?.(); } catch {}
+        };
+    }, [subscribeToChat]);
 
     // Auto-scroll when page loads or messages change (but not when switching tabs)
     useEffect(() => {
@@ -179,8 +255,8 @@ export default function ChatPage() {
         }
     }, []);
 
-    // Get current chat
-    const currentChat = currentTab ? chats[currentTab] : null;
+    // Get current chat (moved up to avoid redeclaration)
+    const generalChat = chats['public-general-chat'];
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -202,7 +278,7 @@ export default function ChatPage() {
         // Small delay to ensure message is rendered
         const timeoutId = setTimeout(scrollToBottom, 100);
         return () => clearTimeout(timeoutId);
-    }, [currentChat?.messages, isLoading]);
+    }, [generalChat?.messages, isLoading]);
 
     // Initialize general chat if it doesn't exist and set current tab
     useEffect(() => {
@@ -232,39 +308,59 @@ export default function ChatPage() {
         return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     };
 
+    // Helper function to highlight @ai mentions in messages
+    const highlightAIMentions = (text: string) => {
+        return text.replace(/(?<!\w)@ai(?!\w)/gi, (match) => 
+            `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">${match}</span>`
+        );
+    };
+
     const handleSendMessage = async (shouldCallAI: boolean = true) => {
         if (!inputValue.trim()) return;
 
         const messageText = inputValue.trim();
-        const currentChat = chats[currentTab || 'private-general-chat'];
-        const isPublicChat = currentChat?.chatType === 'public' || currentChat?.chatType === 'class';
-        const isClassChat = currentChat?.chatType === 'class';
+        const isPublicChat = true; // This page is always public chat
+        const isClassChat = false;
 
-        // Determine if this message mentions AI
-        const hasAIMention = messageText.includes('@ai') || messageText.includes('@AI');
+        // Enhanced AI mention detection: standalone @ai token with punctuation support
+        const hasAIMention = /(?<!\w)@ai(?!\w)/i.test(messageText);
         
         // For public chats, only call AI if explicitly mentioned
         const shouldCallAIFinal = isPublicChat ? hasAIMention : shouldCallAI;
+        
+        console.log('@ai detection debug:', {
+            messageText,
+            hasAIMention,
+            isPublicChat,
+            shouldCallAI,
+            shouldCallAIFinal
+        });
 
         const userMessage = {
             id: generateMessageId(),
             text: messageText,
             sender: 'user' as const,
-            name: user?.displayName || 'Anonymous',
+            name: isPublicChat ? (user?.displayName || simulatedName || 'Anonymous') : (user?.displayName || 'Anonymous'),
+            userId: user?.uid || 'guest',
             timestamp: Date.now()
         };
 
         // Clear input immediately to prevent spam
         setInputValue("");
 
-        // Set loading state immediately for instant thinking animation
+        // Add user message first
+        await addMessage('public-general-chat', userMessage);
+
+        // Send message via Socket.IO for real-time delivery
+        socket.sendMessage(userMessage);
+
+        // Set loading state for built-in animation (no placeholder message)
         if (shouldCallAIFinal) {
             console.log('Setting isLoading to true for message:', messageText);
             setIsLoading(true);
+            // Broadcast AI thinking to other users
+            socket.startAIThinking();
         }
-
-        // Add user message
-        await addMessage(currentTab || 'private-general-chat', userMessage);
 
         // Only get AI response if appropriate
         if (shouldCallAIFinal) {
@@ -282,13 +378,14 @@ export default function ChatPage() {
                         },
                         body: JSON.stringify({
                             question: messageText,
-                            context: currentChat?.title || 'General Chat',
-                            conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
+                            context: 'Public General Chat',
+                            conversationHistory: generalChat?.messages?.slice(-10).map(msg => ({
                                 role: msg.sender === 'user' ? 'user' : 'assistant',
                                 content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
                             })) || [],
                             shouldCallAI: shouldCallAIFinal,
-                            isPublicChat
+                            isPublicChat,
+                            hasAIMention
                         }),
                         // Add timeout for better device compatibility
                         signal: AbortSignal.timeout(35000) // 35 second timeout
@@ -306,7 +403,8 @@ export default function ChatPage() {
                     console.log('API response data:', { 
                         success: data.success, 
                         provider: data.provider, 
-                        answerLength: data.answer?.length || 0 
+                        answerLength: data.answer?.length || 0,
+                        sourcesCount: data.sources?.length || 0
                     });
                     
                     aiResponse = data;
@@ -355,11 +453,15 @@ export default function ChatPage() {
                     text: responseText || 'I apologize, but I couldn\'t generate a response.',
                     sender: 'bot' as const,
                     name: 'CourseConnect AI',
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    sources: aiResponse?.sources
                 };
 
-                // Add AI response
-                await addMessage(currentTab || 'private-general-chat', aiMessage);
+                // Add AI response (no replacement so user message stays)
+                await addMessage('public-general-chat', aiMessage);
+
+                // Send AI response via Socket.IO for real-time delivery
+                socket.sendAIResponse(userMessage, responseText || 'I apologize, but I couldn\'t generate a response.');
             } catch (error) {
                 console.error('AI Error:', error);
                 const errorMessage = {
@@ -369,10 +471,13 @@ export default function ChatPage() {
                     name: 'CourseConnect AI',
                     timestamp: Date.now()
                 };
-                await addMessage(currentTab || 'private-general-chat', errorMessage);
+                // Add error message
+                await addMessage('public-general-chat', errorMessage);
             } finally {
                 console.log('Setting isLoading to false');
                 setIsLoading(false);
+                // Stop AI thinking broadcast
+                socket.stopAIThinking();
             }
         }
     };
@@ -387,7 +492,7 @@ export default function ChatPage() {
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
             };
-            await addMessage(currentTab || 'private-general-chat', extractedTextMessage);
+            await addMessage('public-general-chat', extractedTextMessage);
         },
         onExtractionError: (error, fileName) => {
             console.error('Text extraction failed:', error);
@@ -397,7 +502,7 @@ export default function ChatPage() {
     const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
         onAnalysisComplete: async (result, fileName) => {
             // Store the extracted text for chat context
-            const currentChatId = currentTab || 'private-general-chat';
+            const currentChatId = 'public-general-chat';
             const storageKey = `document-content-${currentChatId}`;
             const documentData = {
                 fileName,
@@ -438,7 +543,7 @@ export default function ChatPage() {
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
             };
-            await addMessage(currentTab || 'private-general-chat', analysisMessage);
+            await addMessage('public-general-chat', analysisMessage);
         },
         onAnalysisError: (error, fileName) => {
             console.error('Document analysis failed:', error);
@@ -450,7 +555,7 @@ export default function ChatPage() {
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
             };
-            addMessage(currentTab || 'private-general-chat', errorMessage);
+            addMessage('public-general-chat', errorMessage);
         }
     });
 
@@ -475,7 +580,7 @@ export default function ChatPage() {
             };
 
             // Add upload message
-            await addMessage(currentTab || 'private-general-chat', uploadMessage);
+            await addMessage('public-general-chat', uploadMessage);
 
             // Use smart document analysis
             await analyzeDocument(file);
@@ -495,7 +600,7 @@ export default function ChatPage() {
     // Handler functions for menu actions
     const handleExportChat = () => {
         try {
-            exportChat(currentTab || 'private-general-chat');
+            exportChat('public-general-chat');
             toast({
                 title: "Chat Exported",
                 description: "Chat has been exported and downloaded.",
@@ -514,7 +619,7 @@ export default function ChatPage() {
         setShowResetDialog(false);
         
         try {
-            await resetChat(currentTab || 'private-general-chat');
+            await resetChat('public-general-chat');
             toast({
                 title: "Chat Reset",
                 description: "Chat has been reset to its initial state.",
@@ -528,12 +633,13 @@ export default function ChatPage() {
         }
     };
 
+
     const handleDeleteChat = async () => {
         // Close dialog immediately
         setShowDeleteDialog(false);
         
         try {
-            await deleteChat(currentTab || 'private-general-chat');
+            await deleteChat('public-general-chat');
             toast({
                 title: "Chat Deleted",
                 description: "Chat has been permanently deleted.",
@@ -551,7 +657,6 @@ export default function ChatPage() {
 
     // Get class chats (non-general chats)
     const classChats = Object.entries(chats).filter(([id, chat]) => id !== 'private-general-chat' && id !== 'public-general-chat');
-    const generalChat = chats[currentTab || 'private-general-chat'];
 
     // Debug logging
     console.log('ChatPage - isStoreLoading:', isStoreLoading, 'forceLoad:', forceLoad, 'chats:', Object.keys(chats), 'currentTab:', currentTab);
@@ -583,13 +688,6 @@ export default function ChatPage() {
     return (
         <>
         <div className="min-h-screen bg-transparent flex flex-col">
-            {/* Mobile Header */}
-            <div className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/20">
-                <div className="flex items-center justify-between px-4 py-3">
-                    <h1 className="text-lg font-bold text-primary">Class Chat</h1>
-                    <MobileNavigation user={user} />
-                </div>
-            </div>
 
             <div className="container mx-auto p-6 max-w-7xl flex-1 flex flex-col">
                 <div className="mb-6">
@@ -607,11 +705,36 @@ export default function ChatPage() {
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
-                                        General Chat
+                                        Public General Chat
                                         <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
-                                            All Users
+                                            {generalChat?.messages?.filter(m => m.sender === 'user').length || 0} Users
                                         </Badge>
+                                        {/* Online Users Indicator */}
+                                        <div className="mr-2">
+                                                <OnlineUsersIndicator 
+                                                    onlineUsers={onlineUsers}
+                                                    currentUserId={user?.uid || `guest-${simulatedName}-${Date.now()}`}
+                                                    showCount={true}
+                                                    maxVisible={3}
+                                                />
+                                        </div>
+                                        {/* Identity Switcher (Public Chat Only) */}
+                                        <div className="hidden sm:flex items-center gap-2 ml-2">
+                                            <span className="text-xs text-muted-foreground">Send as</span>
+                                            <Select value={simulatedName} onValueChange={setSimulatedName}>
+                                                <SelectTrigger className="h-8 w-[120px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {user?.displayName && (
+                                                        <SelectItem value={user.displayName}>{user.displayName}</SelectItem>
+                                                    )}
+                                                    <SelectItem value="Alice">Alice</SelectItem>
+                                                    <SelectItem value="Bob">Bob</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="outline" size="sm" className="h-8 w-8 p-0 hover:bg-transparent hover:text-current">
@@ -652,7 +775,7 @@ export default function ChatPage() {
                                                         <Avatar className="w-8 h-8 flex-shrink-0">
                                                             <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
                                                             <AvatarFallback className="text-xs">
-                                                                {message.sender === 'user' ? (user?.displayName?.[0] || user?.email?.[0] || 'U') : (
+                                                                {message.sender === 'user' ? (message.name?.[0] || user?.displayName?.[0] || user?.email?.[0] || 'U') : (
                                                                     <CourseConnectLogo className="w-4 h-4" />
                                                                 )}
                                                             </AvatarFallback>
@@ -679,7 +802,7 @@ export default function ChatPage() {
                                                                         {copiedMessageId === (message.id || `msg-${index}`) ? (
                                                                             <Check className="h-3 w-3 text-green-500" />
                                                                         ) : (
-                                                                            <img src="/copy-icon.svg" alt="Copy" className="h-3 w-3" />
+                                                                            <Copy className="h-3 w-3" />
                                                                         )}
                                                                     </Button>
                                                                 </div>
@@ -696,14 +819,14 @@ export default function ChatPage() {
                                                                                 previousMessage.sender === 'user' && 
                                                                                 isMathOrPhysicsContent(typeof previousMessage.text === 'string' ? previousMessage.text : JSON.stringify(previousMessage.text));
                                                                             
-                                                                            // Only show math analysis if bot responded to a math question AND response contains math
-                                                                            const shouldShowMathAnalysis = userAskedMathQuestion && 
-                                                                                isMathOrPhysicsContent(typeof message.text === 'string' ? message.text : JSON.stringify(message.text));
+                                                                            // Show math analysis if user asked a math question (regardless of bot response content)
+                                                                            const shouldShowMathAnalysis = userAskedMathQuestion;
                                                                             
                                                                             return shouldShowMathAnalysis ? (
                                                                                 <InDepthAnalysis 
-                                                                                    question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                                    question={typeof previousMessage.text === 'string' ? previousMessage.text : JSON.stringify(previousMessage.text)}
                                                                                     conversationHistory={generalChat?.messages || []}
+                                                                                    userName={previousMessage.name}
                                                                                 />
                                                                             ) : null;
                                                                         })()}
@@ -712,7 +835,8 @@ export default function ChatPage() {
                                                                 </div>
                                                                 <BotResponse 
                                                                     content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
-                                                                    className="text-sm ai-response leading-relaxed max-w-full overflow-hidden"                                                                         
+                                                                    className="text-sm ai-response leading-relaxed max-w-full overflow-hidden"
+                                                                    sources={message.sources}
                                                                 />
                                                             </div>
                                                         )}
@@ -720,6 +844,12 @@ export default function ChatPage() {
                                                             </div>
                                             );
                                             })}
+                                            
+                                            {/* Typing Indicator */}
+                                            <TypingIndicator 
+                                                typingUsers={typingUsers}
+                                                currentUserId={user?.uid || `guest-${simulatedName}-${Date.now()}`}
+                                            />
                                             
                                             {/* Scroll target for auto-scroll */}
                                             <div ref={messagesEndRef} />
@@ -750,11 +880,13 @@ export default function ChatPage() {
                                             onChange={(e) => setInputValue(e.target.value)}
                                             onSend={handleSendMessage}
                                             onFileUpload={handleFileUpload}
-                                        placeholder="Ask AI anything or chat with classmates"
+                                            placeholder="Ask AI anything or chat with classmates"
                                             disabled={false}
                                             className="w-full"
-                                            isPublicChat={false}
+                                            isPublicChat={true}
                                             isClassChat={false}
+                                            onTypingStart={socket.startTyping}
+                                            onTypingStop={socket.stopTyping}
                                         />
                                     </div>
                                 </CardContent>

@@ -252,7 +252,7 @@ body {
 
 .light .ai-response {
   color: black !important; /* Black text for AI responses in light mode */
-  background-color: white !important; /* White background for AI responses */
+  background: transparent !important; /* Transparent background for AI responses */
   padding: 8px 12px !important;
   border-radius: 8px !important;
   font-size: 0.875rem !important; /* Consistent font size */

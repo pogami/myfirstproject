@@ -291,3 +291,4 @@ export async function addRealtimeChangelogEntry(
 export async function getRealtimeChangelogEntries(): Promise<RealtimeChangelogEntry[]> {
   return RealtimeChangelogManager.getUserFacingEntries();
 }
+

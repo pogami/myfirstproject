@@ -88,13 +88,14 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                     onClick={() => copyToClipboard(codeText, blockId)}
+                    title="Copy code"
                   >
                     {isCopied ? (
                       <Check className="h-4 w-4 text-green-500" />
                     ) : (
-                      <img src="/copy-icon.svg" alt="Copy" className="h-4 w-4" />
+                      <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     )}
                   </Button>
                 </div>
@@ -128,13 +129,14 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
+                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                     onClick={() => copyToClipboard(codeText, blockId)}
+                    title="Copy code"
                   >
                     {isCopied ? (
                       <Check className="h-4 w-4 text-green-500" />
                     ) : (
-                      <img src="/copy-icon.svg" alt="Copy" className="h-4 w-4" />
+                      <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                     )}
                   </Button>
                 </div>

@@ -19,6 +19,8 @@ interface EnhancedChatInputProps {
   isPublicChat?: boolean;
   isClassChat?: boolean;
   isSending?: boolean;
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 }
 
 export function EnhancedChatInput({
@@ -33,7 +35,9 @@ export function EnhancedChatInput({
   className = "",
   isPublicChat = false,
   isClassChat = false,
-  isSending = false
+  isSending = false,
+  onTypingStart,
+  onTypingStop
 }: EnhancedChatInputProps) {
   const { theme } = useTheme();
   const [isTyping, setIsTyping] = useState(false);
@@ -76,7 +80,15 @@ export function EnhancedChatInput({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e);
-    setIsTyping(e.target.value.length > 0);
+    
+    // Handle typing indicators
+    if (e.target.value.length > 0 && !isTyping) {
+      setIsTyping(true);
+      onTypingStart?.();
+    } else if (e.target.value.length === 0 && isTyping) {
+      setIsTyping(false);
+      onTypingStop?.();
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -94,6 +106,7 @@ export function EnhancedChatInput({
       // Check if AI should be called
       const shouldCallAI = !isPublicChat || value.includes('@ai') || value.includes('@AI');
       onSend(shouldCallAI);
+      onTypingStop?.();
     }
   };
 
@@ -218,11 +231,19 @@ export function EnhancedChatInput({
       {/* AI Mention Indicator */}
       {showAIMention && isPublicChat && (
         <div className={cn(
-          "absolute -top-8 left-2 px-2 py-1 rounded text-xs flex items-center gap-1 z-10",
-          isDark ? "bg-purple-900/80 text-purple-200" : "bg-purple-100 text-purple-700"
+          "absolute -top-10 left-2 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 z-10 shadow-lg border backdrop-blur-sm animate-in slide-in-from-bottom-2 duration-200",
+          isDark 
+            ? "bg-gradient-to-r from-purple-900/90 to-blue-900/90 text-purple-100 border-purple-700/50" 
+            : "bg-gradient-to-r from-purple-50 to-blue-50 text-purple-800 border-purple-200/50"
         )}>
-          <Bot className="h-3 w-3" />
-          AI will respond
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <Bot className="h-4 w-4" />
+            <span>AI will respond</span>
+          </div>
+          <div className="text-xs opacity-75">
+            Press Enter to send
+          </div>
         </div>
       )}
 

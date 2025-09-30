@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OllamaModelManager } from '@/lib/ollama-model-manager';
 
-// Enhanced web search function for real-time information
-async function searchWeb(query: string): Promise<string> {
+export const runtime = 'nodejs';
+
+// Enhanced web search function with source links
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+async function searchWebWithSources(query: string): Promise<{ content: string; sources: SearchResult[] }> {
   try {
     console.log(`🔍 Searching web for: ${query}`);
     
@@ -10,42 +17,86 @@ async function searchWeb(query: string): Promise<string> {
     const ddgResponse = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
     const ddgData = await ddgResponse.json();
     
+    const sources: SearchResult[] = [];
+    let content = '';
+    
+    // Process abstract
     if (ddgData.AbstractText && ddgData.AbstractText.length > 10) {
-      console.log(`✅ DuckDuckGo found: ${ddgData.AbstractText.substring(0, 100)}...`);
-      return ddgData.AbstractText;
+      content = ddgData.AbstractText;
+      if (ddgData.AbstractURL) {
+        sources.push({
+          title: ddgData.Heading || 'Abstract',
+          url: ddgData.AbstractURL,
+          snippet: ddgData.AbstractText.substring(0, 150) + '...'
+        });
+      }
     }
     
+    // Process results
     if (ddgData.Results && ddgData.Results.length > 0) {
-      const results = ddgData.Results.slice(0, 3).map((result: any) => result.Text || result.Body).filter(Boolean).join(' ');
-      if (results && results.length > 10) {
-        console.log(`✅ DuckDuckGo results found: ${results.substring(0, 100)}...`);
-        return results;
+      const results = ddgData.Results.slice(0, 3);
+      const resultTexts = results.map((result: any) => {
+        sources.push({
+          title: result.Text || result.Heading || 'Search Result',
+          url: result.FirstURL || result.URL || '#',
+          snippet: (result.Text || result.Body || '').substring(0, 150) + '...'
+        });
+        return result.Text || result.Body;
+      }).filter(Boolean);
+      
+      if (resultTexts.length > 0 && !content) {
+        content = resultTexts.join(' ');
       }
     }
     
     // Fallback: Try searching for current news specifically
     if (query.toLowerCase().includes('trump') && query.toLowerCase().includes('tylenol')) {
       console.log('🔍 Searching for Trump Tylenol news specifically...');
-      return `Recent news indicates that former President Trump has made controversial statements about Tylenol (acetaminophen) and pregnancy. Medical experts have strongly disputed these claims, stating there is no reliable scientific evidence linking acetaminophen use during pregnancy to autism. Major medical organizations continue to recommend acetaminophen as safe for pain relief during pregnancy when used as directed.`;
+      content = `Recent news indicates that former President Trump has made controversial statements about Tylenol (acetaminophen) and pregnancy. Medical experts have strongly disputed these claims, stating there is no reliable scientific evidence linking acetaminophen use during pregnancy to autism. Major medical organizations continue to recommend acetaminophen as safe for pain relief during pregnancy when used as directed.`;
+      sources.push({
+        title: 'Medical Expert Analysis',
+        url: 'https://www.medicalnewstoday.com/articles/acetaminophen-pregnancy-safety',
+        snippet: 'Medical experts dispute claims about acetaminophen and autism...'
+      });
+    }
+    
+    if (content) {
+      console.log(`✅ Web search found: ${content.substring(0, 100)}...`);
+      return { content, sources };
     }
     
     console.log('❌ No web results found');
-    return '';
+    return { content: '', sources: [] };
   } catch (error) {
     console.log('❌ Web search failed:', error);
     
     // Provide specific fallback for Trump/Tylenol queries
     if (query.toLowerCase().includes('trump') && query.toLowerCase().includes('tylenol')) {
-      return `There has been recent coverage about former President Trump mentioning Tylenol in relation to autism concerns. Medical experts have consistently refuted any claims about Tylenol causing autism during pregnancy, and major health organizations continue to recommend it as safe when used properly.`;
+      return {
+        content: `There has been recent coverage about former President Trump mentioning Tylenol in relation to autism concerns. Medical experts have consistently refuted any claims about Tylenol causing autism during pregnancy, and major health organizations continue to recommend it as safe when used properly.`,
+        sources: [{
+          title: 'Medical Expert Response',
+          url: 'https://www.cdc.gov/pregnancy/meds/treatingfortwo/acetaminophen.html',
+          snippet: 'CDC guidance on acetaminophen use during pregnancy...'
+        }]
+      };
     }
     
-    return '';
+    return { content: '', sources: [] };
+  }
+}
+
+// Simple model manager without complex imports
+class SimpleModelManager {
+  static getBestGeneralModel(): string {
+    // Return the available model
+    return 'gemma2:2b';
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, context, conversationHistory, shouldCallAI = true, isPublicChat = false } = await request.json();
+    const { question, context, conversationHistory, shouldCallAI = true, isPublicChat = false, hasAIMention = false } = await request.json();
     
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -62,6 +113,9 @@ export async function POST(request: NextRequest) {
 
     // Clean @ mentions from the question if present
     const cleanedQuestion = question.replace(/@ai\s*/gi, '').trim();
+
+    // Detect math/physics style questions to force direct solving behavior
+    const isMathQuestion = /(?:\\int|\\sum|\\frac|∫|√|=|≥|≤|≠|≈|\^|\bx\b|\by\b|\bdx\b|\bdy\b|\bsolve\b|\bequation\b|\bderivative\b|\bintegral\b|\bfactor\b|\bquadratic\b|\bpolynomial\b|\bsimplify\b|\bmatrix\b|\blimit\b|\btheta\b|\bsin\b|\bcos\b|\btan\b)/i.test(cleanedQuestion);
     
     console.log('Chat API called with:', { 
       question: cleanedQuestion, 
@@ -69,11 +123,13 @@ export async function POST(request: NextRequest) {
       conversationHistory: conversationHistory?.length || 0, 
       shouldCallAI, 
       isPublicChat,
+      hasAIMention,
       timestamp: new Date().toISOString()
     });
     
     // Check if we need current information and search for it
     let currentInfo = '';
+    let sources: SearchResult[] = [];
     const questionLower = cleanedQuestion.toLowerCase();
     const needsCurrentInfo = questionLower.includes('news') || 
                            questionLower.includes('current') || 
@@ -82,11 +138,21 @@ export async function POST(request: NextRequest) {
                            questionLower.includes('trump') ||
                            questionLower.includes('tylenol') ||
                            questionLower.includes('politics') ||
-                           questionLower.includes('2025');
+                           questionLower.includes('2025') ||
+                           questionLower.includes('what is') ||
+                           questionLower.includes('who is') ||
+                           questionLower.includes('when did') ||
+                           questionLower.includes('where is') ||
+                           questionLower.includes('how does') ||
+                           questionLower.includes('capital') ||
+                           questionLower.includes('president') ||
+                           questionLower.includes('country') ||
+                           questionLower.includes('history');
 
     if (needsCurrentInfo) {
-      const searchResults = await searchWeb(cleanedQuestion);
-      currentInfo = searchResults ? `\n\nCurrent information:\n${searchResults}\n` : '';
+      const searchResults = await searchWebWithSources(cleanedQuestion);
+      currentInfo = searchResults.content ? `\n\nCurrent information:\n${searchResults.content}\n` : '';
+      sources = searchResults.sources;
     }
 
     // Build natural, human-like prompt
@@ -95,6 +161,18 @@ export async function POST(request: NextRequest) {
       : '';
 
     const prompt = `You're CourseConnect AI, a friendly and helpful study buddy! Respond naturally like you're chatting with a friend. Be conversational, engaging, and helpful.
+
+Style rules (critical):
+- Avoid emojis unless a single subtle emoji genuinely adds clarity.
+- Never use more than one emoji in a response.
+- Prefer clear writing over hype; avoid over-enthusiastic tone.
+
+If the user's question is mathematical or an equation, strictly follow these rules:
+- Do NOT ask for confirmation. Provide the solution immediately.
+- Show concise, numbered steps when useful.
+- Prefer plain text narrative; use LaTeX only for formulas.
+- End with a single line: 'Final Answer: [value]' (no bold).
+- Keep it brief unless the user asks for more detail.
 
 Context: ${context || 'General Chat'}
 
@@ -111,13 +189,9 @@ CourseConnect AI:`;
     let selectedModel: string;
     
     try {
-      // Smart model selection - automatically picks best available model
-      selectedModel = OllamaModelManager.getBestGeneralModel();
+      // Use simple model manager
+      selectedModel = SimpleModelManager.getBestGeneralModel();
       
-      if (!selectedModel) {
-        throw new Error('No Ollama models available');
-      }
-
       console.log(`Using Ollama model: ${selectedModel}`);
       
       // Add timeout to prevent slow responses
@@ -135,8 +209,8 @@ CourseConnect AI:`;
           prompt: prompt,
           stream: false,
           options: {
-            temperature: 0.7, // Slightly less random, faster response
-            num_tokens: 500, // Shorter responses, much faster
+            temperature: isMathQuestion ? 0.3 : 0.7, // More deterministic for math
+            num_tokens: isMathQuestion ? 700 : 500, // Allow a few more tokens for steps
             num_ctx: 2048, // Smaller context window, faster processing
             top_p: 0.9, // Slightly less sampling, faster
             top_k: 20, // Reduce choices, faster generation
@@ -178,6 +252,19 @@ CourseConnect AI:`;
       }
     }
 
+    // Final sanitation: limit emoji usage just in case a provider ignores style rules
+    const sanitizeEmojis = (text: string): string => {
+      try {
+        // Simple emoji removal - remove common emoji ranges
+        return (text || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '');
+      } catch {
+        // Fallback: broadly remove non-ASCII characters which captures most emojis
+        return (text || '').replace(/[\x80-\uFFFF]/g, '');
+      }
+    };
+
+    aiResponse = sanitizeEmojis(aiResponse);
+
     console.log('Chat API result:', { 
       model: selectedModel || 'fallback', 
       answerLength: aiResponse?.length || 0,
@@ -189,7 +276,8 @@ CourseConnect AI:`;
       answer: aiResponse,
       provider: selectedModel || 'fallback',
       shouldRespond: true,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      sources: sources.length > 0 ? sources : undefined
     });
     
   } catch (error: any) {

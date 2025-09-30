@@ -3,9 +3,10 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/client';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { useSocket } from './use-socket';
 
 export type Message = {
     id?: string;
@@ -21,6 +22,11 @@ export type Message = {
         type: string;
         url: string;
     };
+    sources?: {
+        title: string;
+        url: string;
+        snippet: string;
+    }[];
 };
 
 export type Chat = {
@@ -43,8 +49,16 @@ interface ChatState {
   isSendingMessage: boolean; // Loading state for message sending
   isDemoMode: boolean; // Demo mode for Advanced AI features
   trialActivated: boolean; // Whether user has activated their trial
+  // Real-time features
+  onlineUsers: Array<{ userId: string; username: string; avatar?: string; joinedAt: number }>;
+  typingUsers: Array<{ userId: string; username: string; timestamp: number }>;
+  isSocketConnected: boolean;
   trialStartDate: number | null; // When the trial started (timestamp)
   trialDaysLeft: number; // Days remaining in trial
+  // Real-time methods
+  setOnlineUsers: (users: Array<{ userId: string; username: string; avatar?: string; joinedAt: number }>) => void;
+  setTypingUsers: (users: Array<{ userId: string; username: string; timestamp: number }>) => void;
+  setSocketConnected: (connected: boolean) => void;
   addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class') => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   addUserJoinMessage: (chatId: string, userName: string, userId: string) => Promise<void>;
@@ -59,6 +73,7 @@ interface ChatState {
   exportChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   initializeGeneralChats: () => void;
+  subscribeToChat: (chatId: string) => () => void; // Realtime listener
 }
 
 const getChatId = (chatName: string) => chatName.toLowerCase().replace(/[\\s:]/g, '-');
@@ -77,6 +92,10 @@ export const useChatStore = create<ChatState>()(
       trialActivated: false, // Trial not activated by default
       trialStartDate: null, // No trial start date initially
       trialDaysLeft: 14, // Full 14 days available
+      // Real-time features
+      onlineUsers: [],
+      typingUsers: [],
+      isSocketConnected: false,
 
       initializeAuthListener: () => {
         // Check if auth is properly initialized
@@ -184,8 +203,11 @@ export const useChatStore = create<ChatState>()(
           return;
         }
 
-        if (isGuest) {
-            // For guest users, just add to local state
+        // For public chats, allow guest users to persist to Firestore for real-time sync
+        const isPublicChat = chatType === 'public' || chatId.includes('public') || chatId === 'public-general-chat';
+        
+        if (isGuest && !isPublicChat) {
+            // For guest users with private chats, just add to local state
             set((state) => ({
                 chats: {
                     ...state.chats,
@@ -202,19 +224,24 @@ export const useChatStore = create<ChatState>()(
             return;
         }
 
-        // Check if auth is properly initialized before accessing currentUser
-        if (!auth || typeof auth !== 'object' || typeof auth.currentUser === 'undefined') {
-          console.warn("Auth object not properly initialized, skipping Firestore operations");
-          return;
-        }
-        
-        const user = (auth as Auth)?.currentUser;
-        if (!user) {
-          console.log('No authenticated user, skipping Firestore operations');
-          return;
-        }
+        // For public chats, allow guest users to persist to Firestore
+        if (isPublicChat) {
+            console.log('Creating public chat, persisting to Firestore for real-time sync');
+        } else {
+            // Check if auth is properly initialized before accessing currentUser
+            if (!auth || typeof auth !== 'object' || typeof auth.currentUser === 'undefined') {
+              console.warn("Auth object not properly initialized, skipping Firestore operations");
+              return;
+            }
+            
+            const user = (auth as Auth)?.currentUser;
+            if (!user) {
+              console.log('No authenticated user, skipping Firestore operations');
+              return;
+            }
 
-        console.log('User authenticated, persisting chat to Firestore:', user.uid);
+            console.log('User authenticated, persisting chat to Firestore:', user.uid);
+        }
 
         // Optimistically update local state first
         set((state) => {
@@ -249,10 +276,16 @@ export const useChatStore = create<ChatState>()(
                 await setDoc(chatDocRef, newChat);
             }
             
-            const userDocRef = doc(db as Firestore, 'users', user.uid);
-            await updateDoc(userDocRef, {
-                chats: arrayUnion(chatId)
-            });
+            // Only update user document if user is authenticated
+            if (!isPublicChat) {
+                const user = (auth as Auth)?.currentUser;
+                if (user) {
+                    const userDocRef = doc(db as Firestore, 'users', user.uid);
+                    await updateDoc(userDocRef, {
+                        chats: arrayUnion(chatId)
+                    });
+                }
+            }
         } catch (error) {
             // Only log non-offline errors to reduce noise
             if (error && typeof error === 'object' && 'code' in error && error.code !== 'unavailable') {
@@ -288,22 +321,39 @@ export const useChatStore = create<ChatState>()(
         });
 
         // Persist to Firestore in background (non-blocking)
-        if (!isGuest) {
+        // For public chats, allow guest users to persist messages for real-time sync
+        const isPublicChat = chatId.includes('public') || chatId === 'public-general-chat';
+        console.log('addMessage - isGuest:', isGuest, 'isPublicChat:', isPublicChat, 'chatId:', chatId);
+        
+        if (!isGuest || isPublicChat) {
+            console.log('Persisting message to Firestore for chat:', chatId);
             // Don't await this - let it run in background
             const chatDocRef = doc(db as Firestore, 'chats', chatId);
             getDoc(chatDocRef).then(chatDocSnap => {
               if (chatDocSnap.exists()) {
                 const currentMessages = chatDocSnap.data().messages || [];
                 const newMessages = replaceLast ? [...currentMessages.slice(0, -1), safeMessage] : [...currentMessages, safeMessage];
+                console.log('Updating Firestore with new messages:', newMessages.length);
                 return updateDoc(chatDocRef, { messages: newMessages });
+              } else {
+                console.log('Chat document does not exist, creating it');
+                return setDoc(chatDocRef, {
+                  id: chatId,
+                  title: chatId === 'public-general-chat' ? 'Public General Chat' : chatId,
+                  messages: [safeMessage],
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                  chatType: isPublicChat ? 'public' : 'private',
+                });
               }
+            }).then(() => {
+              console.log('Successfully updated Firestore for chat:', chatId);
             }).catch(e => {
-                // Only log non-offline errors to reduce noise
-                if (e && typeof e === 'object' && 'code' in e && e.code !== 'unavailable') {
-                    console.warn("Failed to save message to firestore:", e);
-                }
+                console.error("Failed to save message to firestore:", e);
                 // Continue working in offline mode - the message is already in local state
             });
+        } else {
+            console.log('Skipping Firestore persistence for guest user in private chat');
         }
       },
 
@@ -510,7 +560,7 @@ export const useChatStore = create<ChatState>()(
           }));
         }
 
-        // Create Public General Chat
+        // Create Public General Chat (always create in Firestore for global access)
         if (!chats['public-general-chat']) {
           const publicGeneralMessage = {
             sender: 'bot' as const,
@@ -519,6 +569,7 @@ export const useChatStore = create<ChatState>()(
             timestamp: Date.now()
           };
           
+          // Add to local state
           set((state) => ({
             chats: {
               ...state.chats,
@@ -533,7 +584,124 @@ export const useChatStore = create<ChatState>()(
               }
             }
           }));
+
+          // Also create in Firestore for global access
+          try {
+            const chatDocRef = doc(db as Firestore, 'chats', 'public-general-chat');
+            setDoc(chatDocRef, {
+              id: 'public-general-chat',
+              title: 'Public General Chat',
+              messages: [publicGeneralMessage],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              chatType: 'public',
+              members: []
+            }).then(() => {
+              console.log('Public General Chat created in Firestore for global access');
+            }).catch(e => {
+              console.warn('Failed to create public chat in Firestore:', e);
+            });
+          } catch (e) {
+            console.warn('Failed to create public chat in Firestore:', e);
+          }
         }
+      },
+
+      /**
+       * Subscribe to a chat document in Firestore and keep local state in sync
+       */
+      subscribeToChat: (chatId: string) => {
+        console.log('Setting up subscription for chat:', chatId);
+        try {
+          const chatDocRef = doc(db as Firestore, 'chats', chatId);
+          let lastLocalUpdate = 0;
+
+          // Ensure the document exists with sane defaults
+          getDoc(chatDocRef).then(async (snap) => {
+            if (!snap.exists()) {
+              await setDoc(chatDocRef, {
+                id: chatId,
+                title: chatId === 'public-general-chat' ? 'Public General Chat' : chatId,
+                messages: [],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                chatType: chatId === 'public-general-chat' ? 'public' : 'private',
+              });
+            }
+          }).catch(() => {/* no-op */});
+
+          const unsubscribe = onSnapshot(chatDocRef, (snapshot) => {
+            console.log('Firestore snapshot received for chat:', chatId, snapshot.data());
+            const data = snapshot.data() as Partial<Chat> | undefined;
+            if (!data) return;
+
+            // Don't overwrite if we just made a local update (within last 2 seconds)
+            // But allow updates for public chats to ensure real-time sync
+            const now = Date.now();
+            const isPublicChat = chatId.includes('public') || chatId === 'public-general-chat';
+            if (!isPublicChat && now - lastLocalUpdate < 2000) {
+              console.log('Skipping Firestore update due to recent local change');
+              return;
+            }
+
+            console.log('Processing Firestore update for chat:', chatId, 'isPublicChat:', isPublicChat);
+
+            // Normalize messages to strings for safety
+            const safeMessages = (data.messages || []).map((m: any) => ({
+              ...m,
+              text: typeof m?.text === 'string' ? m.text : JSON.stringify(m?.text ?? '')
+            }));
+
+            // Merge into local state without blowing away other chats
+            set((state) => ({
+              chats: {
+                ...state.chats,
+                [chatId]: {
+                  id: chatId,
+                  title: data.title || state.chats[chatId]?.title || chatId,
+                  messages: safeMessages,
+                  createdAt: data.createdAt || state.chats[chatId]?.createdAt || Date.now(),
+                  updatedAt: Date.now(),
+                  chatType: (data as any).chatType || state.chats[chatId]?.chatType,
+                  members: state.chats[chatId]?.members,
+                }
+              }
+            }));
+          }, (error) => {
+            console.warn('subscribeToChat onSnapshot error:', error);
+          });
+
+          // Track local updates to prevent overwrites (only for private chats)
+          const originalAddMessage = get().addMessage;
+          set((state) => ({
+            ...state,
+            addMessage: async (chatId: string, message: Message, replaceLast = false) => {
+              const isPublicChat = chatId.includes('public') || chatId === 'public-general-chat';
+              if (!isPublicChat) {
+                lastLocalUpdate = Date.now();
+              }
+              return originalAddMessage(chatId, message, replaceLast);
+            }
+          }));
+
+          return unsubscribe;
+        } catch (e) {
+          console.warn('Failed to subscribe to chat:', chatId, e);
+          return () => {};
+        }
+      },
+
+      // Real-time methods
+      setOnlineUsers: (users) => {
+        set({ onlineUsers: users });
+      },
+
+      setTypingUsers: (users) => {
+        set({ typingUsers: users });
+      },
+
+      setSocketConnected: (connected) => {
+        set({ isSocketConnected: connected });
       },
     }),
     {

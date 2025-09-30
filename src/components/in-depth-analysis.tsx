@@ -13,6 +13,7 @@ interface InDepthAnalysisProps {
     sender: 'user' | 'bot' | 'moderator';
     text: string;
   }>;
+  userName?: string; // Display name for narrative replacement
 }
 
 // Render math expressions properly
@@ -24,14 +25,20 @@ function renderMathLine(line: string, i: number) {
     const expr = line.replace(/\$/g, "");
     return <InlineMath key={i} math={expr} />;
   } else {
-    return <p key={i} className="text-sm break-words max-w-full overflow-hidden">{line}</p>;
+    return (
+      <p key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans">
+        {line}
+      </p>
+    );
   }
 }
 
-export function InDepthAnalysis({ question, conversationHistory }: InDepthAnalysisProps) {
+export function InDepthAnalysis({ question, conversationHistory, userName }: InDepthAnalysisProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [analysis, setAnalysis] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Note: render exactly as returned; no heuristic spacing to avoid mangling content
 
   const handleOpenAnalysis = async () => {
     setIsOpen(true);
@@ -94,8 +101,31 @@ export function InDepthAnalysis({ question, conversationHistory }: InDepthAnalys
                 <span className="ml-2 text-muted-foreground">Generating detailed analysis...</span>
               </div>
             ) : (
-              <div className="prose prose-sm max-w-none">
-                {analysis.split('\n').map((line, i) => renderMathLine(line, i))}
+              <div className="max-w-none space-y-4 whitespace-pre-wrap">
+                {(() => {
+                  const name = (userName && userName.trim().length > 0) ? userName.trim() : 'User';
+                  // 1) Strip markdown bold **...**  2) Replace "The user" with the actual name
+                  const sanitized = analysis
+                    .replace(/\*\*(.*?)\*\*/g, '$1')
+                    .replace(/\b[Tt]he user\b/g, name);
+
+                  return sanitized.split('\n').map((raw, i) => {
+                    const line = raw.trim();
+                    const finalAnsMatch = line.match(/^Final\s*Answer\s*:?\s*(.+)$/i);
+                    if (finalAnsMatch) {
+                      const ans = finalAnsMatch[1].trim();
+                      return (
+                        <div key={`final-${i}`} className="text-sm not-italic leading-7">
+                          <span className="mr-2">Final Answer:</span>
+                          <span className="inline-flex items-center border border-blue-300 dark:border-blue-700 rounded px-2 py-0.5 font-semibold bg-blue-50/50 dark:bg-blue-900/20">
+                            {ans}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return <div key={i}>{renderMathLine(line, i)}</div>;
+                  });
+                })()}
               </div>
             )}
           </div>

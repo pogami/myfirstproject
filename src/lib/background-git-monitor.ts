@@ -150,3 +150,4 @@ export function stopBackgroundGitMonitoring(): void {
 export function getGitMonitoringStatus(): { isRunning: boolean; lastChecked: string } {
   return backgroundGitMonitor.getStatus();
 }
+

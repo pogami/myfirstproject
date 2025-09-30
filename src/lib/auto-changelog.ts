@@ -266,3 +266,4 @@ export async function logChanges(
 ): Promise<string[]> {
   return AutoChangelogDetector.autoLogBatch(changes, version, author);
 }
+
