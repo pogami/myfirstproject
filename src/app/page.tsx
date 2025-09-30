@@ -12,6 +12,7 @@ import { IntegrationsStrip } from '@/components/landing/integrations-strip';
 import { TestimonialsSection } from '@/components/landing/testimonials-section';
 import { CTASection } from '@/components/landing/cta-section';
 import { Footer } from '@/components/landing/footer';
+import { AISupportWidget } from '@/components/ai-support-widget';
 
 export default function HomePage() {
   return (
@@ -29,6 +30,7 @@ export default function HomePage() {
         <CTASection />
       </main>
       <Footer />
+      <AISupportWidget />
     </div>
   );
 }

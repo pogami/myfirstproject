@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/client';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 
@@ -15,6 +15,11 @@ export type Message = {
     timestamp: number;
     userId?: string;
     isJoinMessage?: boolean;
+    sources?: Array<{
+        title: string;
+        url: string;
+        snippet: string;
+    }>;
     file?: {
         name: string;
         size: number;
@@ -48,6 +53,8 @@ interface ChatState {
   addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class') => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   addUserJoinMessage: (chatId: string, userName: string, userId: string) => Promise<void>;
+  joinPublicGeneralChat: () => Promise<void>;
+  subscribeToChat: (chatId: string) => Promise<void>;
   setCurrentTab: (tabId: string | undefined) => void;
   setShowUpgrade: (show: boolean) => void;
   setIsDemoMode: (isDemo: boolean) => void;
@@ -77,6 +84,8 @@ export const useChatStore = create<ChatState>()(
       trialActivated: false, // Trial not activated by default
       trialStartDate: null, // No trial start date initially
       trialDaysLeft: 14, // Full 14 days available
+      // Track active Firestore subscriptions to avoid duplicates
+      _chatSubscriptions: {} as Record<string, () => void>,
 
       initializeAuthListener: () => {
         // Check if auth is properly initialized
@@ -253,6 +262,9 @@ export const useChatStore = create<ChatState>()(
             await updateDoc(userDocRef, {
                 chats: arrayUnion(chatId)
             });
+
+            // Start realtime subscription
+            await get().subscribeToChat(chatId);
         } catch (error) {
             // Only log non-offline errors to reduce noise
             if (error && typeof error === 'object' && 'code' in error && error.code !== 'unavailable') {
@@ -264,6 +276,20 @@ export const useChatStore = create<ChatState>()(
 
       addMessage: async (chatId, message, replaceLast = false) => {
         const { isGuest } = get();
+        // Ensure chat exists locally
+        set((state) => {
+          if (!state.chats[chatId]) {
+            state.chats[chatId] = {
+              id: chatId,
+              title: chatId === 'public-general-chat' ? 'Public General Chat' : chatId,
+              messages: [],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              chatType: chatId === 'public-general-chat' ? 'public' : 'private'
+            } as Chat;
+          }
+          return state;
+        });
         
         // Ensure message text is always a string
         const safeMessage = {
@@ -296,6 +322,16 @@ export const useChatStore = create<ChatState>()(
                 const currentMessages = chatDocSnap.data().messages || [];
                 const newMessages = replaceLast ? [...currentMessages.slice(0, -1), safeMessage] : [...currentMessages, safeMessage];
                 return updateDoc(chatDocRef, { messages: newMessages });
+              } else {
+                // Create the chat doc if missing (especially for public-general-chat)
+                const newChat: Omit<Chat, 'id'> = {
+                  title: chatId === 'public-general-chat' ? 'Public General Chat' : chatId,
+                  messages: [safeMessage],
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                  chatType: chatId === 'public-general-chat' ? 'public' : 'private'
+                };
+                return setDoc(chatDocRef, newChat);
               }
             }).catch(e => {
                 // Only log non-offline errors to reduce noise
@@ -319,6 +355,104 @@ export const useChatStore = create<ChatState>()(
 
         const { addMessage } = get();
         await addMessage(chatId, joinMessage);
+      },
+
+      // Ensure public-general-chat exists and subscribe to it
+      joinPublicGeneralChat: async () => {
+        const chatId = 'public-general-chat';
+        const chatTitle = 'Public General Chat';
+        const { isGuest } = get();
+
+        // Optimistically create locally if missing
+        set((state) => {
+          if (state.chats[chatId]) return state;
+          return {
+            chats: {
+              ...state.chats,
+              [chatId]: {
+                id: chatId,
+                title: chatTitle,
+                messages: [{
+                  sender: 'bot',
+                  name: 'CourseConnect AI',
+                  text: 'Welcome to the Public General Chat! Type @ai to ask the AI in this room.',
+                  timestamp: Date.now()
+                }],
+                chatType: 'public',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                members: []
+              }
+            },
+            currentTab: chatId
+          };
+        });
+
+        // Firestore: ensure doc exists and subscribe
+        try {
+          const chatDocRef = doc(db as Firestore, 'chats', chatId);
+          const chatDocSnap = await getDoc(chatDocRef);
+          if (!chatDocSnap.exists()) {
+            await setDoc(chatDocRef, {
+              title: chatTitle,
+              messages: [{
+                sender: 'bot',
+                name: 'CourseConnect AI',
+                text: 'Welcome to the Public General Chat! Type @ai to ask the AI in this room.',
+                timestamp: Date.now()
+              }],
+              chatType: 'public',
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              members: []
+            } as Omit<Chat, 'id'>);
+          }
+
+          // Subscribe to realtime updates
+          await get().subscribeToChat(chatId);
+          set({ currentTab: chatId });
+        } catch (e) {
+          console.warn('joinPublicGeneralChat failed (offline mode ok):', e);
+        }
+      },
+
+      // Subscribe to a chat document for realtime updates
+      subscribeToChat: async (chatId: string) => {
+        try {
+          const anyState = get() as any;
+          if (!anyState._chatSubscriptions) anyState._chatSubscriptions = {};
+          if (anyState._chatSubscriptions[chatId]) {
+            return; // Already subscribed
+          }
+
+          const chatDocRef = doc(db as Firestore, 'chats', chatId);
+          const unsubscribe = onSnapshot(chatDocRef, (snap) => {
+            if (snap.exists()) {
+              const data = snap.data() as Omit<Chat, 'id'>;
+              // Ensure messages text are strings for safety
+              const safeMessages = (data.messages || []).map((m: any) => ({
+                ...m,
+                text: typeof m.text === 'string' ? m.text : JSON.stringify(m.text)
+              }));
+              set((state) => ({
+                chats: {
+                  ...state.chats,
+                  [chatId]: {
+                    id: chatId,
+                    ...data,
+                    messages: safeMessages
+                  }
+                }
+              }));
+            }
+          }, (error) => {
+            console.warn('onSnapshot error for chat', chatId, error);
+          });
+
+          anyState._chatSubscriptions[chatId] = unsubscribe;
+        } catch (e) {
+          console.warn('subscribeToChat failed (offline mode ok):', e);
+        }
       },
       setCurrentTab: (tabId) => {
         console.log('setCurrentTab called with:', tabId);

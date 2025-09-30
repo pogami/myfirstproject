@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { RippleText } from '@/components/ripple-text';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TypewriterText, StaticText } from '@/components/saas-typography';
+import { GradientStar } from '@/components/icons/gradient-star';
 
 export function HeroSection() {
   const [chatMessages, setChatMessages] = useState([]);
@@ -28,7 +29,7 @@ export function HeroSection() {
     {
       id: 2,
       sender: 'bot',
-      message: 'Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f\'(x) = 2x. This means at x=3, the slope is 6.',
+      message: 'Absolutely! A derivative measures how fast a function changes at any given point. Think of it like checking your speedometer - it shows your speed at that exact moment.\n\nFor example, if f(x) = x², then f\'(x) = 2x. So at x = 3, the slope is 6.\n\nWould you like me to show you how to solve a derivative step-by-step?',
       timestamp: ''
     }
   ];
@@ -112,87 +113,12 @@ export function HeroSection() {
 
   // Function to trigger AI response with typing animation
   const triggerAiResponse = async (userMessage: string) => {
-    try {
-      // Use streaming AI service for real-time demo responses
-      const response = await fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: userMessage,
-          context: 'Live Demo - CS-101 Study Group',
-          conversationHistory: chatMessages.slice(-5).map(msg => ({
-            role: msg.sender === 'bot' ? 'assistant' : 'user',
-            content: msg.message
-          })),
-          shouldCallAI: true,
-          isPublicChat: false
-        })
-      });
-
-      if (response.ok) {
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let aiResponse = '';
-
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.answer) {
-                    aiResponse = data.answer;
-                  }
-                } catch (e) {
-                  // Ignore parsing errors for incomplete chunks
-                }
-              }
-            }
-          }
-        }
-        
-        // Start AI typing animation with the actual AI response
-        if (aiResponse) {
-          setAiTypingMessage(aiResponse);
-          setIsAiTyping(true);
-          setAiCharIndex(0);
-        } else {
-          // Fallback if no response received
-          let fallbackMessage = '';
-          if (userMessage.toLowerCase().includes('derivative')) {
-            fallbackMessage = `Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f'(x) = 2x. This means at x=3, the slope is 6.`;
-          } else {
-            fallbackMessage = `I understand you're asking about "${userMessage}". Let me help you with that! I'm CourseConnect AI, your study buddy. I can assist with calculus, homework, and study tips. What specific aspect would you like to explore?`;
-          }
-          setAiTypingMessage(fallbackMessage);
-          setIsAiTyping(true);
-          setAiCharIndex(0);
-        }
-      } else {
-        throw new Error('AI service not available');
-      }
-    } catch (error) {
-      console.error('AI chat error:', error);
-      
-      // Fallback response that addresses the user's question
-      let fallbackMessage = '';
-          if (userMessage.toLowerCase().includes('derivative')) {
-            fallbackMessage = `Sure! A derivative tells you how fast a function is changing at any point. Think of it as the slope of the curve. For example, if f(x) = x², then f'(x) = 2x. This means at x=3, the slope is 6.`;
-          } else {
-            fallbackMessage = `Thanks for your question about "${userMessage}"! I'm CourseConnect AI, your study buddy. I can help with calculus, homework, and study tips. What would you like to know more about?`;
-          }
-      setAiTypingMessage(fallbackMessage);
-      setIsAiTyping(true);
-      setAiCharIndex(0);
-    }
+    // Use static demo response for consistent demo experience
+    const demoResponse = demoMessages.find(msg => msg.sender === 'bot')?.message || 'A derivative measures how fast a function changes.';
+    
+    setAiTypingMessage(demoResponse);
+    setIsAiTyping(true);
+    setAiCharIndex(0);
   };
 
   return (
@@ -334,7 +260,7 @@ export function HeroSection() {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <Bot className="h-4 w-4" />
+                    <GradientStar className="h-4 w-4" />
                   </div>
                   <div>
                     <h3 className="font-semibold">Live Demo - Calculus Study Session</h3>
@@ -354,8 +280,8 @@ export function HeroSection() {
                   >
                     {msg.sender === 'bot' && (
                       <Avatar className="w-8 h-8 flex-shrink-0">
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-                          <Bot className="h-4 w-4 text-white" />
+                        <div className="flex h-full w-full items-center justify-center bg-transparent">
+                          <GradientStar className="h-4 w-4" />
                         </div>
                       </Avatar>
                     )}
@@ -390,8 +316,8 @@ export function HeroSection() {
                   }`}>
                     {demoMessages[messageIndex]?.sender === 'bot' && (
                       <Avatar className="w-8 h-8 flex-shrink-0">
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-                          <Bot className="h-4 w-4 text-white" />
+                        <div className="flex h-full w-full items-center justify-center bg-transparent">
+                          <GradientStar className="h-4 w-4" />
                         </div>
                       </Avatar>
                     )}
@@ -432,8 +358,8 @@ export function HeroSection() {
                 {isAiTyping && aiTypingMessage && (
                   <div className="flex items-start gap-3 justify-start">
                     <Avatar className="w-8 h-8 flex-shrink-0">
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
-                        <Bot className="h-4 w-4 text-white" />
+                      <div className="flex h-full w-full items-center justify-center bg-transparent">
+                        <GradientStar className="h-4 w-4" />
                       </div>
                     </Avatar>
                     <div className="max-w-xs p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
@@ -455,13 +381,16 @@ export function HeroSection() {
 
               {/* Demo Status */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-center flex items-center justify-center">
                   {messageIndex >= demoMessages.length ? (
                     "✅ Demo Complete: This is how CourseConnect AI helps students!"
                   ) : (
-                    "🔴 LIVE: Watch the conversation happen in real-time above!"
+                    <span className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                      LIVE: Watch the conversation happen in real-time above!
+                    </span>
                   )}
-                </p>
+                </div>
               </div>
             </div>
           </div>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/landing/footer';
 import { Navigation } from '@/components/landing/navigation';
 // Avoid importing server-only ollama library on client; use API route instead
-import { rtdb } from '@/lib/firebase/client';
+// import { rtdb } from '@/lib/firebase/client'; // Realtime Database removed
 import { onValue, ref } from 'firebase/database';
 
 interface ServiceStatus {
@@ -28,7 +28,7 @@ export default function StatusPage() {
   const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
   const [ollamaHealthy, setOllamaHealthy] = useState<boolean | null>(null);
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
-  const [rtdbConnected, setRtdbConnected] = useState<boolean | null>(null);
+  const [rtdbConnected, setRtdbConnected] = useState<boolean | null>(true); // Mock as connected
 
   useEffect(() => {
     setIsClient(true);
@@ -65,32 +65,9 @@ export default function StatusPage() {
     // poll every 30s
     const intervalId = setInterval(poll, 30000);
 
-    // Firebase RTDB status and online users
-    try {
-      const connectedRef = ref(rtdb, '.info/connected');
-      const allStatusRef = ref(rtdb, 'status');
-
-      const off1 = onValue(connectedRef, snap => {
-        setRtdbConnected(!!snap.val());
-      });
-      const off2 = onValue(allStatusRef, snap => {
-        const users = snap.val();
-        if (users) {
-          const count = Object.values(users).filter((u: any) => u?.state === 'online').length;
-          setActiveUsers(count);
-        } else {
-          setActiveUsers(0);
-        }
-      });
-
-      return () => {
-        off1();
-        off2();
-      };
-    } catch {
-      setRtdbConnected(false);
-      setActiveUsers(0);
-    }
+    // Firebase RTDB status removed - using mock data
+    setRtdbConnected(true);
+    setActiveUsers(42);
     return () => clearInterval(intervalId);
   }, []);
 

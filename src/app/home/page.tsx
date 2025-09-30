@@ -24,6 +24,8 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { MobileAppSection } from "@/components/landing/mobile-app-section-lite";
 import { LiveActivityWidget } from "@/components/live-activity-widget";
+import { GradientStar } from "@/components/icons/gradient-star";
+import { AISupportWidget } from "@/components/ai-support-widget";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -38,7 +40,7 @@ export default function LandingPage() {
     const { toast } = useToast();
 
   return (
-        <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
+        <div className="flex min-h-screen flex-col bg-transparent relative">
             <style>
                 {`
                     :root {
@@ -93,7 +95,7 @@ export default function LandingPage() {
                             <Link href="/about">About</Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
-                            <Link href="#pricing">Pricing</Link>
+                            <Link href="/pricing">Pricing</Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
                             <Link href="/login">Sign In</Link>
@@ -422,7 +424,11 @@ export default function LandingPage() {
                         <TabsContent value="demo" className="space-y-8">
                             <div className="w-full">
                                 <div className="text-center mb-8">
-                                    <h2 className="text-3xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Try CourseConnect Demo</h2>
+                                    <div className="flex items-center justify-center gap-3 mb-4">
+                                        <GradientStar size={32} className="animate-pulse" />
+                                        <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Try CourseConnect Demo</h2>
+                                        <GradientStar size={32} className="animate-pulse" style={{ animationDelay: '0.5s' }} />
+                                    </div>
                                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                                         Experience how CourseConnect works with our interactive demo. Join a sample class chat and see AI assistance in action!
                                     </p>
@@ -432,6 +438,7 @@ export default function LandingPage() {
                                 <Card className="max-w-4xl mx-auto">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
+                                            <GradientStar size={20} className="animate-pulse" />
                                             <MessageSquare className="h-5 w-5 text-primary" />
                                             CS-101 Study Group - Live Demo
                                         </CardTitle>
@@ -455,28 +462,16 @@ export default function LandingPage() {
                                             </div>
 
                                             <div className="flex gap-3">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className="bg-green-500 text-white">AI</AvatarFallback>
-                                                </Avatar>
+                                                <div className="h-8 w-8 flex items-center justify-center">
+                                                    <GradientStar size={24} className="animate-pulse" />
+                                                </div>
                                                 <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 max-w-[80%]">
                                                     <div className="font-semibold text-sm mb-1 flex items-center gap-1">
-                                                        <Bot className="h-3 w-3" />
+                                                        <GradientStar size={12} className="animate-pulse" />
                                                         CourseConnect AI
                                                     </div>
                                                     <div className="text-sm">
-                                                        I'd be happy to help with recursion! Here's a simple explanation:
-                                                        <br/><br/>
-                                                        <strong>Recursion</strong> is when a function calls itself. It has two parts:
-                                                        <br/>• <strong>Base case</strong>: The stopping condition
-                                                        <br/>• <strong>Recursive case</strong>: The function calls itself
-                                                        <br/><br/>
-                                                        Example: <code>factorial(n) = n × factorial(n-1)</code>
-                                                        <br/><br/>
-                                                        <strong>Mathematical Example:</strong>
-                                                        <br/>3² = 3 × 3 = 9
-                                                        <br/>5 ÷ 2 = 2.5
-                                                        <br/><br/>
-                                                        Would you like me to walk through a specific example?
+                                                        A derivative is the rate of change of a function. Think speed - how fast something changes.
                                                     </div>
                                                     <div className="text-xs text-muted-foreground mt-1">Just now</div>
                                                 </div>
@@ -913,7 +908,26 @@ export default function LandingPage() {
                 <div className="py-12 sm:py-16 lg:py-20">
                     <MobileAppSection />
                 </div>
+
             </main>
+            
+            {/* Pricing Section */}
+            <section id="pricing" className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12 sm:mb-16">
+                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
+                            Simple, Transparent{' '}
+                            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                Pricing
+                            </span>
+                        </h2>
+                        <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+                            Choose the plan that works best for you. Start free and upgrade as you need more features.
+                        </p>
+                    </div>
+                    <Pricing />
+                </div>
+            </section>
             
             {/* Comprehensive Footer with Links and Logs */}
             <SiteFooter />
@@ -925,6 +939,9 @@ export default function LandingPage() {
             
             {/* PWA Install Prompt */}
             <PWAInstallPrompt />
+            
+            {/* AI Support Chat Widget */}
+            <AISupportWidget />
     </div>
     );
 }

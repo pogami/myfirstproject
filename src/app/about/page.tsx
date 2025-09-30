@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Target, Lightbulb, Heart, Award, Globe, Zap, TrendingUp, Clock, CheckCircle, Star, Play, Sparkles, Shield, MessageCircle } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { MotionSection, MotionHeadline, MotionCard } from '@/components/ui/motion-section';
+import { AISupportWidget } from '@/components/ai-support-widget';
 
 export default function AboutPage() {
   const [activeValue, setActiveValue] = useState(0);
@@ -305,8 +306,8 @@ export default function AboutPage() {
   ];
 
   const stats = [
-    { number: '2,500+', label: 'Active Students' },
-    { number: '150+', label: 'Universities' },
+    { number: '500+', label: 'Active Students' },
+    { number: '25+', label: 'Universities' },
     { number: '87%', label: 'Satisfaction Rate' },
     { number: '24/7', label: 'AI Support' }
   ];
@@ -415,8 +416,8 @@ export default function AboutPage() {
               className="flex flex-wrap justify-center gap-8 mb-12"
             >
               {[
-                { number: "2,500+", label: "Students", icon: Users },
-                { number: "150+", label: "Universities", icon: Globe },
+                { number: "500+", label: "Students", icon: Users },
+                { number: "25+", label: "Universities", icon: Globe },
                 { number: "87%", label: "Success Rate", icon: Target },
                 { number: "24/7", label: "AI Support", icon: Clock }
               ].map((stat, index) => (
@@ -743,6 +744,7 @@ export default function AboutPage() {
       </div>
 
       <Footer />
+      <AISupportWidget />
     </div>
   );
 }

@@ -3,7 +3,8 @@ import { initializeApp, getApps } from "firebase/app";
 import { getStorage } from "firebase/storage";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
+// Realtime Database is not being used, commenting out to prevent warnings
+// import { getDatabase } from "firebase/database";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -12,8 +13,8 @@ const firebaseConfig = {
   "storageBucket": "courseconnect-61eme.firebasestorage.app",
   "apiKey": "AIzaSyDk-zhYbWHSWdk-cDzq5b_kwZ2L3wFsYgQ",
   "authDomain": "courseconnect-61eme.firebaseapp.com",
-  "messagingSenderId": "150901346125",
-  "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com"
+  "messagingSenderId": "150901346125"
+  // "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com" // Commented out - not using Realtime Database
 };
 
 // Initialize Firebase
@@ -30,14 +31,13 @@ if (!getApps().length) {
 }
 
 // Initialize services with simple error handling
-let storage, db, auth, rtdb;
+let storage, db, auth;
 
 try {
   if (app) {
     storage = getStorage(app);
     db = getFirestore(app);
     auth = getAuth(app);
-    rtdb = getDatabase(app);
     console.log("✅ Firebase services initialized");
   } else {
     throw new Error('Firebase app not initialized');
@@ -48,7 +48,6 @@ try {
   storage = null;
   db = null;
   auth = null;
-  rtdb = null;
 }
 
-export { app, storage, db, auth, rtdb };
+export { app, storage, db, auth };

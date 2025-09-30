@@ -1,2 +1,2 @@
 // Simplified Firebase Import
-export { app, storage, db, auth, rtdb } from './client-simple';
+export { app, storage, db, auth } from './client-simple';

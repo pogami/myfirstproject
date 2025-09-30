@@ -9,12 +9,15 @@ import { CheckCircle, Mail, Bell, ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { PushNotificationManager } from "@/components/push-notification-manager";
 import { MobileButton } from "@/components/ui/mobile-button";
+import { useToast } from "@/hooks/use-toast";
+import confetti from 'canvas-confetti';
 import { MobileInput } from "@/components/ui/mobile-input";
 
 export default function NewsletterPage() {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,16 +37,80 @@ export default function NewsletterPage() {
       const data = await response.json();
       
       if (response.ok) {
+        console.log('Subscription successful, triggering confetti!');
+        toast({
+          title: "Successfully Subscribed!",
+          description: data.emailSent 
+            ? "Check your email for a welcome message!" 
+            : "You're now subscribed! Welcome email sent.",
+        });
+        setEmail('');
+        
+        // Enhanced confetti animation
+        const duration = 4500; // Longer duration
+        const animationEnd = Date.now() + duration;
+        const defaults = { 
+          startVelocity: 35, // Slightly higher velocity
+          spread: 360, 
+          ticks: 90, // Longer particle life
+          zIndex: 0,
+          gravity: 0.75, // More noticeable gravity
+          drift: 0.05, // Slight horizontal drift
+          scalar: 1.2, // Slightly larger particles
+          shapes: ['circle', 'square', 'star'], // Add different shapes
+          colors: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#8B5A2B', '#FFD700', '#C0C0C0'] // More colors
+        };
+
+        function randomInRange(min: number, max: number) {
+          return Math.random() * (max - min) + min;
+        }
+
+        const interval: NodeJS.Timeout = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 75 * (timeLeft / duration); // Start with more particles
+
+          // Launch from left
+          confetti(Object.assign({}, defaults, {
+            particleCount: particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+          }));
+          // Launch from right
+          confetti(Object.assign({}, defaults, {
+            particleCount: particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+          }));
+          // Optional: Add a central burst occasionally
+          if (Math.random() > 0.7) {
+            confetti(Object.assign({}, defaults, {
+              particleCount: particleCount / 2,
+              angle: randomInRange(60, 120),
+              spread: randomInRange(40, 70),
+              origin: { x: 0.5, y: 0.5 }
+            }));
+          }
+        }, 200); // Slightly faster interval for more continuous flow
+        
         setIsSubscribed(true);
       } else {
         console.error('Subscription failed:', data.error);
-        // You could add error handling here if needed
-        setIsSubscribed(true); // Still show success for demo purposes
+        toast({
+          variant: "destructive",
+          title: "Subscription Failed",
+          description: data.error || "Please try again later.",
+        });
       }
     } catch (error) {
       console.error('Network error:', error);
-      // Still show success for demo purposes
-      setIsSubscribed(true);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to subscribe. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }

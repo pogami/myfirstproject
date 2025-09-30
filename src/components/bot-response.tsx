@@ -96,11 +96,18 @@ function breakIntoParagraphs(text: string): string[] {
 interface BotResponseProps {
   content: string;
   className?: string;
+  sources?: Array<{
+    title: string;
+    url: string;
+    snippet: string;
+  }>;
 }
 
-export default function BotResponse({ content, className = "" }: BotResponseProps) {
+export default function BotResponse({ content, className = "", sources }: BotResponseProps) {
   const isGraph = useMemo(() => looksLikeGraph(content), [content]);
   const [isCopied, setIsCopied] = useState(false);
+  
+  console.log('🤖 BotResponse rendering with sources:', sources?.length || 0, sources);
 
   const copyToClipboard = async () => {
     try {
@@ -146,6 +153,39 @@ export default function BotResponse({ content, className = "" }: BotResponseProp
           {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
         </div>
       ))}
+      
+      {/* Sources section */}
+      {sources && sources.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Sources:</span>
+            <span className="text-xs text-gray-500 dark:text-gray-500">({sources.length})</span>
+          </div>
+          <div className="space-y-2">
+            {sources.map((source, index) => (
+              <div key={index} className="group">
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-2 rounded-md bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400 group-hover:underline">
+                      {source.title}
+                    </span>
+                    <span className="text-xs text-gray-400">↗</span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                    {source.snippet}
+                  </p>
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       <Button
         size="sm"
         variant="ghost"

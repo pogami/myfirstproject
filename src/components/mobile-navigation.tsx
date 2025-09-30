@@ -8,8 +8,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { auth, rtdb } from "@/lib/firebase/client";
-import { ref, set, serverTimestamp } from "firebase/database";
+import { auth } from "@/lib/firebase/client";
+// Realtime Database removed
 import { useToast } from "@/hooks/use-toast";
 import { useChatStore } from "@/hooks/use-chat-store";
 
@@ -66,17 +66,8 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
         description: "You are being signed out of your account.",
       });
 
-      // Set user status to offline in Realtime Database
-      try {
-        const userStatusRef = ref(rtdb, `/status/${user.uid}`);
-        await set(userStatusRef, {
-          state: 'offline',
-          last_changed: serverTimestamp(),
-        });
-        console.log('Mobile user status set to offline');
-      } catch (dbError) {
-        console.warn('Mobile failed to set user status offline:', dbError);
-      }
+      // Realtime Database status tracking removed
+      console.log('Preparing to sign out from mobile');
 
       // Sign out from Firebase Auth
       await signOut(auth);

@@ -6,6 +6,47 @@ body {
   font-family: 'PT Sans', sans-serif;
 }
 
+/* Enhanced scrollbars - modern, subtle, theme-aware */
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99,102,241,0.6), rgba(168,85,247,0.6));
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(99,102,241,0.85), rgba(168,85,247,0.85));
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.7) transparent;
+}
+
+/* Tighter styling for chat scroll area */
+.chat-container [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(59,130,246,0.75), rgba(99,102,241,0.75));
+}
+
+/* Dark mode adjustments */
+.dark *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(99,102,241,0.7), rgba(147,51,234,0.7));
+}
+.dark * {
+  scrollbar-color: rgba(99,102,241,0.8) transparent;
+}
+
 /* Modern Light Mode Enhancements */
 .light {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%, #f8fafc 100%);
@@ -501,6 +542,7 @@ body {
     mask-size: 200vmax;
   }
 }
+
 
 /* Futuristic Chat Input Styles */
 .futuristic-input-container {

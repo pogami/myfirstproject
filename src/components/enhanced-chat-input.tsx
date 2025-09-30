@@ -215,14 +215,22 @@ export function EnhancedChatInput({
 
   return (
     <div className={cn("relative w-full h-10 chat-input-container", className)}>
-      {/* AI Mention Indicator */}
+      {/* AI Mention Indicator - Discord-like */}
       {showAIMention && isPublicChat && (
         <div className={cn(
-          "absolute -top-8 left-2 px-2 py-1 rounded text-xs flex items-center gap-1 z-10",
-          isDark ? "bg-purple-900/80 text-purple-200" : "bg-purple-100 text-purple-700"
+          "absolute -top-12 left-2 px-3 py-2 rounded-lg text-xs flex items-center gap-2 z-10 shadow-lg border",
+          "bg-gradient-to-r from-purple-500 to-blue-500 text-white border-purple-400/30",
+          "animate-in slide-in-from-bottom-2 duration-200"
         )}>
-          <Bot className="h-3 w-3" />
-          AI will respond
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <Bot className="h-3 w-3" />
+            </div>
+            <div>
+              <div className="font-medium">CourseConnect AI</div>
+              <div className="text-xs opacity-80">Will respond to your message</div>
+            </div>
+          </div>
         </div>
       )}
 
