@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Navigation } from '@/components/landing/navigation';
-import { Footer } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, Star, Zap, Crown, Info, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Star, Zap, Crown, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MotionHeadline } from '@/components/ui/motion-section';
+import Link from 'next/link';
+import { SiteFooter } from '@/components/site-footer';
+import { CourseConnectLogo } from '@/components/icons/courseconnect-logo';
+import { useTheme } from '@/contexts/theme-context';
+import { AISupportWidget } from '@/components/ai-support-widget';
 
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(false);
@@ -79,43 +81,38 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <Navigation />
+      {/* Simple Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <Link href="/home" className="flex items-center gap-2">
+            <CourseConnectLogo className="h-6 w-6" />
+            <span className="text-xl font-bold">CourseConnect AI</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/home">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
       
       {/* Header */}
       <div className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="mb-8"
-            >
-              <Button
-                variant="ghost"
-                onClick={() => window.history.back()}
-                className="mb-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </motion.div>
-            
-            <MotionHeadline className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               Simple, Transparent{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Pricing
               </span>
-            </MotionHeadline>
+            </h1>
             
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
-            >
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
               Choose the plan that fits your needs. All plans include our core features with no hidden fees.
-            </motion.p>
+            </p>
 
             {/* Pricing Toggle */}
             <motion.div
@@ -157,8 +154,8 @@ export default function PricingPage() {
       </div>
 
       {/* Pricing Cards */}
-      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
@@ -170,7 +167,7 @@ export default function PricingPage() {
                 transition: { duration: 0.2 }
               }}
               whileTap={{ scale: 0.98 }}
-              className={`relative bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border-2 transition-all duration-300 hover:shadow-2xl cursor-pointer ${
+              className={`relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border-2 transition-all duration-300 hover:shadow-2xl cursor-pointer ${
                 plan.popular 
                   ? 'border-blue-500 scale-105' 
                   : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
@@ -185,7 +182,7 @@ export default function PricingPage() {
                 </div>
               )}
               
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                     plan.popular 
@@ -215,7 +212,7 @@ export default function PricingPage() {
                 </p>
               </div>
               
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-3 mb-6">
                 {plan.features.map((feature, featureIndex) => (
                   <motion.li 
                     key={featureIndex} 
@@ -241,7 +238,7 @@ export default function PricingPage() {
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
-                  className={`w-full py-3 text-lg font-semibold rounded-lg transition-all duration-300 ${
+                  className={`w-full py-2.5 text-base font-semibold rounded-lg transition-all duration-300 ${
                     plan.popular
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -378,7 +375,8 @@ export default function PricingPage() {
         </div>
       </div>
 
-      <Footer />
+      <SiteFooter />
+      <AISupportWidget />
     </div>
   );
 }

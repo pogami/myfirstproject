@@ -55,10 +55,20 @@ export default function PaymentSuccessPage() {
                   
                   setIsSuccess(true);
                   
-                  // Trigger confetti animation
-                  const duration = 3000;
+                  // Enhanced confetti animation
+                  const duration = 4500; // Longer duration
                   const animationEnd = Date.now() + duration;
-                  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                  const defaults = { 
+                    startVelocity: 35, // Slightly higher velocity
+                    spread: 360, 
+                    ticks: 90, // Longer particle life
+                    zIndex: 0,
+                    gravity: 0.75, // More noticeable gravity
+                    drift: 0.05, // Slight horizontal drift
+                    scalar: 1.2, // Slightly larger particles
+                    shapes: ['circle', 'square', 'star'], // Add different shapes
+                    colors: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#8B5A2B', '#FFD700', '#C0C0C0'] // More colors
+                  };
 
                   function randomInRange(min: number, max: number) {
                     return Math.random() * (max - min) + min;
@@ -71,20 +81,28 @@ export default function PaymentSuccessPage() {
                       return clearInterval(interval);
                     }
 
-                    const particleCount = 50 * (timeLeft / duration);
+                    const particleCount = 75 * (timeLeft / duration); // Start with more particles
                     
-                    // Launch confetti from different positions
-                    confetti({
-                      ...defaults,
-                      particleCount,
-                      origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-                    });
-                    confetti({
-                      ...defaults,
-                      particleCount,
-                      origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-                    });
-                  }, 250);
+                    // Launch from left
+                    confetti(Object.assign({}, defaults, { 
+                      particleCount: particleCount, 
+                      origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } 
+                    }));
+                    // Launch from right
+                    confetti(Object.assign({}, defaults, { 
+                      particleCount: particleCount, 
+                      origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } 
+                    }));
+                    // Optional: Add a central burst occasionally
+                    if (Math.random() > 0.7) {
+                      confetti(Object.assign({}, defaults, {
+                        particleCount: particleCount / 2,
+                        angle: randomInRange(60, 120),
+                        spread: randomInRange(40, 70),
+                        origin: { x: 0.5, y: 0.5 }
+                      }));
+                    }
+                  }, 200); // Slightly faster interval for more continuous flow
 
                   toast({
                     title: "🎉 Welcome to Scholar!",

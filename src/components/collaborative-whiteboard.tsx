@@ -40,7 +40,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase/client';
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { rtdb } from '@/lib/firebase/client';
+// import { rtdb } from '@/lib/firebase/client'; // Realtime Database removed
 import { ref, set, onValue, off } from 'firebase/database';
 
 interface DrawingTool {
@@ -603,21 +603,21 @@ export function CollaborativeWhiteboard() {
       setChatMessages(messages);
     });
 
-    // Listen for participant updates
-    const participantsRef = ref(rtdb, `whiteboardSessions/${sessionId}/participants`);
-    const unsubscribeParticipants = onValue(participantsRef, (snapshot) => {
-      const participantsData = snapshot.val();
-      if (participantsData) {
-        const participantsList = Object.values(participantsData) as Participant[];
-        setParticipants(participantsList);
-      }
-    });
+    // Realtime Database participant tracking removed
+    // const participantsRef = ref(rtdb, `whiteboardSessions/${sessionId}/participants`);
+    // const unsubscribeParticipants = onValue(participantsRef, (snapshot) => {
+    //   const participantsData = snapshot.val();
+    //   if (participantsData) {
+    //     const participantsList = Object.values(participantsData) as Participant[];
+    //     setParticipants(participantsList);
+    //   }
+    // });
 
     // Cleanup function
     return () => {
       unsubscribeElements();
       unsubscribeMessages();
-      off(participantsRef);
+      // off(participantsRef); // Realtime DB removed
     };
   };
 

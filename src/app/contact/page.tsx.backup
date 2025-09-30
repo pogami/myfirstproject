@@ -14,7 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
-import { AISupportWidget } from "@/components/ai-support-widget";
+import { AISupportChat } from "@/components/ai-support-chat";
 
 const contactMethods = [
   {
@@ -250,7 +250,7 @@ export default function ContactPage() {
 
       <main className="flex-1 pt-24">
         <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-          {/* Hero Section */}
+        {/* Hero Section */}
         <div className="text-center mb-12 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
             Contact <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Us</span>
@@ -445,11 +445,12 @@ export default function ContactPage() {
             </CardContent>
           </Card>
         </div>
-        </div>
       </main>
 
       <SiteFooter />
-      <AISupportWidget />
+      
+      {/* AI Support Chat Widget */}
+      <AISupportChat />
     </div>
   );
 }

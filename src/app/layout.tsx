@@ -4,8 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 import { Analytics } from '@vercel/analytics/next';
-import { ThemeProvider } from "@/contexts/theme-context";
-import { startBackgroundGitMonitoring } from "@/lib/background-git-monitor";
+import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
   title: "CourseConnect - AI College Platform",
@@ -50,11 +49,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Start background git monitoring
-  if (typeof window === 'undefined') {
-    startBackgroundGitMonitoring();
-  }
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -113,14 +107,14 @@ export default function RootLayout({
         <meta name="theme-color" content="#3b82f6" />
       </head>
       <body className="font-body antialiased bg-gradient-to-b from-purple-50 via-indigo-50 to-blue-50 dark:from-purple-950 dark:via-indigo-950 dark:to-blue-950 min-h-screen" suppressHydrationWarning>
-        <ThemeProvider>
+        <Providers>
           <PageTransitionBar />
           <StudyBreakProvider>
             {children}
           </StudyBreakProvider>
           <Toaster />
           <Analytics />
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

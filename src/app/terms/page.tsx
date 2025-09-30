@@ -4,8 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, FileText, Scale, Shield, Users, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowRight, FileText, Scale, Shield, Users, AlertTriangle, CheckCircle, Sun, Moon, Menu } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
+import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
+import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { useTheme } from "@/contexts/theme-context";
+import { AISupportWidget } from "@/components/ai-support-widget";
 
 const termsSections = [
   {
@@ -73,18 +78,143 @@ const accountTermination = [
 ];
 
 export default function TermsPage() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-transparent">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent">
-        <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
-          <Link href="/home" className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-            <Link href="/home" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              ← Back to Home
-            </Link>
+    <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
+      <style>
+        {`
+          :root {
+            --primary-hsl: 203 76% 70%;
+            --background-hsl: 204 100% 96%;
+          }
+          .dark {
+            --primary-hsl: 203 70% 65%;
+            --background-hsl: 210 15% 12%;
+          }
+          
+          /* Ensure proper centering */
+          body {
+            margin: 0;
+            padding: 0;
+          }
+          
+          .container {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        `}
+      </style>
+      {/* Dynamic Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={cn("flex items-center", isScrolled ? 'justify-center pt-6' : 'h-16 justify-between')}>
+            {isScrolled ? (
+              /* Scrolled state - Floating capsule header */
+              <div className="flex items-center bg-transparent backdrop-blur-md shadow-lg rounded-full px-8 py-4 gap-12">
+                {/* Logo */}
+                <Link href="/home" className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200">
+                  <CourseConnectLogo className="w-6 h-6" />
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    CourseConnect AI
+                  </span>
+                </Link>
+
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex items-center gap-8">
+                  <Link href="/about" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium">
+                    About
+                  </Link>
+                  <Link href="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium">
+                    Pricing
+                  </Link>
+                  <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium">
+                    Sign In
+                  </Link>
+                </div>
+
+                {/* Desktop CTA */}
+                <div className="hidden md:flex items-center gap-4">
+                  <Button size="sm" className="bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" asChild>
+                    <Link href="/dashboard">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                  </Button>
+                </div>
+
+                {/* Mobile Menu Button */}
+                <div className="md:hidden">
+                  <Button variant="ghost" size="sm" className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Normal state - Full width layout */
+              <>
+                {/* Logo */}
+                <Link href="/home" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
+                  <CourseConnectLogo className="w-8 h-8" />
+                  <span className="text-xl font-bold text-gray-900 dark:text-white">
+                    CourseConnect AI
+                  </span>
+                </Link>
+
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
+                  <Link href="/about" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium">
+                    About
+                  </Link>
+                  <Link href="/pricing" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium">
+                    Pricing
+                  </Link>
+                  <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium">
+                    Sign In
+                  </Link>
+                </div>
+
+                {/* Desktop CTA */}
+                <div className="hidden md:flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-3 py-2 h-8"
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                  >
+                    {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-4 py-2 h-8"
+                    asChild
+                  >
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-6 py-2 h-8"
+                    asChild
+                  >
+                    <Link href="/dashboard">Get Started</Link>
+                  </Button>
+                </div>
+
+                {/* Mobile Menu Button */}
+                <div className="md:hidden">
+                  <Button variant="ghost" size="sm" className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -336,6 +466,7 @@ export default function TermsPage() {
       </main>
 
       <SiteFooter />
+      <AISupportWidget />
     </div>
   );
 }

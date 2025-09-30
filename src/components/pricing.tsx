@@ -133,7 +133,7 @@ export function Pricing() {
   ];
 
   return (
-    <div className="py-24 bg-background">
+    <div className="relative z-10">
       <div className="container mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">

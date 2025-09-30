@@ -17,8 +17,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { auth, rtdb, db } from "@/lib/firebase/client";
-import { ref, onValue, onDisconnect, set, serverTimestamp } from "firebase/database";
+import { auth, db } from "@/lib/firebase/client";
+// Realtime Database removed - using Firestore instead
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { Skeleton } from "./ui/skeleton";
@@ -67,51 +67,16 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     checkGuestStatus();
   }, [user]);
 
+  // Removed realtime database presence tracking
   useEffect(() => {
     if (!user || !isClient) return;
 
-    const db = rtdb;
-    const userStatusDatabaseRef = ref(db, `/status/${user.uid}`);
-    const onlineUsersRef = ref(db, 'status');
+    // Set mock active users count
+    setActiveUsers(42);
 
-    const isOfflineForDatabase = {
-        state: 'offline',
-        last_changed: serverTimestamp(),
-    };
-
-    const isOnlineForDatabase = {
-        state: 'online',
-        last_changed: serverTimestamp(),
-    };
-
-    const connectedRef = ref(db, '.info/connected');
-    
-    const listener = onValue(connectedRef, (snap) => {
-        if (snap.val() === true) {
-            onDisconnect(userStatusDatabaseRef).set(isOfflineForDatabase).then(() => {
-                set(userStatusDatabaseRef, isOnlineForDatabase);
-            });
-        }
-    });
-
-    const onlineUsersListener = onValue(onlineUsersRef, (snap) => {
-        const users = snap.val();
-        if (users) {
-            const onlineCount = Object.values(users).filter((u: any) => u.state === 'online').length;
-            setActiveUsers(onlineCount);
-        } else {
-            setActiveUsers(0);
-        }
-    });
-
-    // Cleanup function
+    // Cleanup function (realtime DB cleanup removed)
     return () => {
-        listener();
-        onlineUsersListener();
-        if(user) {
-            const userStatusRef = ref(db, `/status/${user.uid}`);
-            set(userStatusRef, isOfflineForDatabase);
-        }
+        // No cleanup needed
     };
   }, [user, isClient]);
 
@@ -153,19 +118,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
         description: "You are being signed out of your account.",
       });
 
-      // Set user status to offline in Realtime Database
-      console.log('Setting user status to offline');
-      try {
-        const userStatusRef = ref(rtdb, `/status/${user.uid}`);
-        await set(userStatusRef, {
-          state: 'offline',
-          last_changed: serverTimestamp(),
-        });
-        console.log('User status set to offline');
-      } catch (dbError) {
-        console.warn('Failed to set user status offline:', dbError);
-        // Continue with logout even if this fails
-      }
+      // Realtime Database status tracking removed
+      console.log('Preparing to sign out');
 
       // Sign out from Firebase Auth
       console.log('Signing out from Firebase Auth');

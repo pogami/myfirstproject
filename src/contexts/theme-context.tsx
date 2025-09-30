@@ -46,16 +46,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () => {
     const newTheme: Theme = theme === 'light' ? 'dark' : 'light';
-    const doc: any = typeof document !== 'undefined' ? document : undefined;
-
+    
     // Use View Transitions if supported and motion isn't reduced
     if (
-      doc &&
-      'startViewTransition' in doc &&
+      typeof document !== 'undefined' &&
+      'startViewTransition' in document &&
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
-      doc.startViewTransition(() => {
-        // Update state inside transition for smooth swap
+      (document as any).startViewTransition(() => {
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
       });
@@ -66,20 +64,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setTheme = (newTheme: Theme) => {
-    const doc: any = typeof document !== 'undefined' ? document : undefined;
-    if (
-      doc &&
-      'startViewTransition' in doc &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      doc.startViewTransition(() => {
-        setThemeState(newTheme);
-        localStorage.setItem('theme', newTheme);
-      });
-    } else {
-      setThemeState(newTheme);
-      localStorage.setItem('theme', newTheme);
-    }
+    setThemeState(newTheme);
+    localStorage.setItem('theme', newTheme);
   };
 
   return (

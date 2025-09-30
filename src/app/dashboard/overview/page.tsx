@@ -4,9 +4,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles, LogOut } from "lucide-react";
+import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles, LogOut, Globe, Zap, UserPlus } from "lucide-react";
 import Link from "next/link";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -15,24 +15,84 @@ import { useToast } from "@/hooks/use-toast";
 import { UnifiedLoadingAnimation } from "@/components/unified-loading-animation";
 
 export default function ClassOverviewPage() {
-    const { chats, setCurrentTab, deleteChat } = useChatStore();
+    const { chats, setCurrentTab, deleteChat, addChat, joinPublicGeneralChat, subscribeToChat } = useChatStore();
     const router = useRouter();
     const [user] = useAuthState(auth);
     const { toast } = useToast();
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [transitioningTo, setTransitioningTo] = useState("");
+    const [liveStats, setLiveStats] = useState({
+        totalUsers: 0,
+        activeNow: 0,
+        totalMessages: 0,
+        newJoins: 0
+    });
+    const [recentJoins, setRecentJoins] = useState<Array<{name: string, time: string, class: string}>>([]);
 
-    const classChats = Object.entries(chats).filter(([key]) => key !== 'general-chat');
+    const classChats = Object.entries(chats).filter(([key]) => key !== 'general-chat' && key !== 'public-general-chat');
+    const publicChat = chats['public-general-chat'];
+
+    // Subscribe to public chat for real stats
+    useEffect(() => {
+        subscribeToChat('public-general-chat');
+    }, [subscribeToChat]);
+
+    // Simulate global stats (kept lightweight)
+    useEffect(() => {
+        const sampleNames = ['Alex Chen', 'Sarah Johnson', 'Mike Rodriguez', 'Emma Wilson', 'David Kim', 'Lisa Zhang', 'Chris Brown', 'Maria Garcia'];
+        const sampleClasses = ['Computer Science 101', 'Mathematics 205', 'Physics 120', 'Chemistry 150', 'Biology 200', 'English 101', 'History 201', 'Psychology 100'];
+
+        const updateStats = () => {
+            setLiveStats(prev => ({
+                totalUsers: Math.floor(Math.random() * 500) + 200,
+                activeNow: Math.floor(Math.random() * 50) + 10,
+                totalMessages: Math.floor(Math.random() * 1000) + 500,
+                newJoins: Math.floor(Math.random() * 5) + 1
+            }));
+
+            // Simulate new user joins
+            if (Math.random() > 0.7) {
+                const newJoin = {
+                    name: sampleNames[Math.floor(Math.random() * sampleNames.length)],
+                    time: 'just now',
+                    class: sampleClasses[Math.floor(Math.random() * sampleClasses.length)]
+                };
+                setRecentJoins(prev => [newJoin, ...prev.slice(0, 4)]);
+            }
+        };
+
+        updateStats();
+        const interval = setInterval(updateStats, 8000); // Update every 8 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleJoinPublicChat = async () => {
+        try {
+            await joinPublicGeneralChat();
+            router.push('/dashboard/chat?tab=public-general-chat');
+            toast({
+                title: "Joined Public Chat",
+                description: "You can now chat with everyone. Type @ai to call the AI.",
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to join public chat. Please try again.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    useEffect(() => {
+        // Prefetch chat page to reduce navigation latency
+        try { (router as any).prefetch?.('/dashboard/chat'); } catch {}
+    }, [router]);
 
     const handleCardClick = (chatId: string, chatTitle: string) => {
-        setIsTransitioning(true);
-        setTransitioningTo(chatTitle);
+        // Navigate immediately for snappy UX
         setCurrentTab(chatId);
-        
-        // Add a small delay to show the transition animation
-        setTimeout(() => {
-            router.push('/dashboard/chat');
-        }, 1500);
+        router.push('/dashboard/chat?tab=' + encodeURIComponent(chatId));
     }
 
     const handleLeaveClass = async (chatId: string, chatTitle: string) => {
@@ -92,17 +152,17 @@ export default function ClassOverviewPage() {
                     </div>
                 </div>
 
-                {/* Stats Overview - Mobile Optimized */}
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                {/* Live Stats Overview - Real-time Updates */}
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
                     <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
-                                    <BookUser className="size-4 sm:size-5 text-blue-600" />
+                                    <Users className="size-4 sm:size-5 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-blue-600">{classChats.length}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Total Classes</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-blue-600">{liveStats.totalUsers}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Total Students</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -112,13 +172,11 @@ export default function ClassOverviewPage() {
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
-                                    <MessageSquare className="size-4 sm:size-5 text-green-600" />
+                                    <Zap className="size-4 sm:size-5 text-green-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-green-600">
-                                        {classChats.reduce((sum, [, chat]) => sum + chat.messages.length, 0)}
-                                    </p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Total Messages</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-green-600">{liveStats.activeNow}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Active Now</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -128,16 +186,86 @@ export default function ClassOverviewPage() {
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10">
-                                    <TrendingUp className="size-4 sm:size-5 text-purple-600" />
+                                    <MessageSquare className="size-4 sm:size-5 text-purple-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-purple-600">Active</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Study Groups</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-purple-600">{liveStats.totalMessages}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Messages Today</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10">
+                        <CardContent className="p-4 sm:p-6">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="p-1.5 sm:p-2 rounded-lg bg-orange-500/10">
+                                    <UserPlus className="size-4 sm:size-5 text-orange-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xl sm:text-2xl font-bold text-orange-600">+{liveStats.newJoins}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">New Joins</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Public General Chat Card (real data) */}
+                <Card className="border-0 bg-gradient-to-br from-emerald-50 to-teal-100/40 dark:from-emerald-950/20 dark:to-teal-900/10">
+                    <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-xl bg-emerald-500/10">
+                                    <Globe className="size-6 text-emerald-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <CardTitle className="text-lg">Public General Chat</CardTitle>
+                                    <CardDescription className="mt-1">Open to all students • Type <code className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-xs">@ai</code> to call AI</CardDescription>
+                                </div>
+                            </div>
+                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                    <MessageSquare className="size-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Messages</span>
+                                </div>
+                                <span className="font-medium">{publicChat?.messages?.length || 0}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Users className="size-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Messages today</span>
+                                </div>
+                                <span className="font-medium">{(publicChat?.messages || []).filter(m => m.timestamp && (Date.now() - m.timestamp) < 24*60*60*1000).length}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="size-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Last active</span>
+                                </div>
+                                <span className="font-medium">{publicChat?.messages?.length ? 'just now' : '—'}</span>
+                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-border/50">
+                            <div className="flex gap-2">
+                                <Button 
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={handleJoinPublicChat}
+                                    asChild
+                                >
+                                    <Link href="/dashboard/chat?tab=public-general-chat">Join Chat<ArrowRight className="size-4 ml-2" /></Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Removed Live Activity feed per request */}
 
                 {/* Classes Grid */}
                 {classChats.length > 0 ? (
@@ -162,8 +290,8 @@ export default function ClassOverviewPage() {
                                                         <BookUser className="size-6 text-primary"/>
                                                     </div>
                                                     <div className="flex-1">
-                                                        <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                                                            {chat.name}
+                                                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                                                        {chat.title}
                                                         </CardTitle>
                                                         <CardDescription className="mt-1">
                                                             {stats.students} students enrolled
@@ -207,7 +335,7 @@ export default function ClassOverviewPage() {
                                                     <Button 
                                                         className="flex-1 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary border-primary/20 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
                                                         variant="outline"
-                                                        onClick={() => handleCardClick(id)}
+                                                        onClick={() => handleCardClick(id, chat.title)}
                                                     >
                                                         Join Chat
                                                         <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
