@@ -22,7 +22,8 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
-import { MobileAppSection } from "@/components/landing/mobile-app-section";
+import { MobileAppSection } from "@/components/landing/mobile-app-section-lite";
+import { LiveActivityWidget } from "@/components/live-activity-widget";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -36,7 +37,7 @@ const popularClasses = [
 export default function LandingPage() {
     const { toast } = useToast();
 
-    return (
+  return (
         <div className="flex min-h-screen flex-col bg-transparent overflow-hidden relative">
             <style>
                 {`
@@ -84,7 +85,7 @@ export default function LandingPage() {
                                 AI-Powered Learning
                             </p>
                         </div>
-                    </Link>
+                            </Link>
                     
                     {/* Desktop Navigation */}
                     <div className="hidden lg:flex items-center gap-4">
@@ -99,17 +100,17 @@ export default function LandingPage() {
                         </Button>
                         <Button size="sm" className="h-10 text-sm min-h-[44px] bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300" asChild>
                             <Link href="/dashboard">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                        </Button>
+                            </Button>
                     </div>
                     
                     {/* Mobile Navigation */}
                     <div className="flex lg:hidden items-center gap-2">
                         <Button variant="ghost" size="sm" className="h-10 text-xs min-h-[44px] px-2" asChild>
                             <Link href="/login">Sign In</Link>
-                        </Button>
+                                </Button>
                         <Button size="sm" className="h-10 text-xs min-h-[44px] px-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white" asChild>
                             <Link href="/dashboard">Start</Link>
-                        </Button>
+                                </Button>
                     </div>
 
                 </div>
@@ -125,27 +126,27 @@ export default function LandingPage() {
                         </TabsList>
                         
                         <TabsContent value="features" className="space-y-8 sm:space-y-12 lg:space-y-16">
-                            {/* Features Section */}
+            {/* Features Section */}
                             <div className="w-full">
                                 <div className="text-center mb-8 sm:mb-12 lg:mb-16">
                                     <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3 sm:mb-4 lg:mb-6">Everything You Need to Succeed</h2>
                                     <p className="text-sm sm:text-base lg:text-xl text-muted-foreground max-w-3xl mx-auto px-4 sm:px-0">
-                                        CourseConnect combines AI-powered analysis with collaborative study tools to help you ace every class.
-                                    </p>
+                            CourseConnect combines AI-powered analysis with collaborative study tools to help you ace every class.
+                        </p>
                                 </div>
-
+                    
                                 {/* Feature Cards Grid */}
                                 <div className="grid gap-6 sm:gap-8 lg:gap-10 md:grid-cols-2 lg:grid-cols-3 mb-8 sm:mb-12 lg:mb-16">
-                            {/* AI Syllabus Analysis */}
+                        {/* AI Syllabus Analysis */}
                             <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-blue-50/50 dark:from-gray-900 dark:to-blue-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <CardHeader className="relative z-10">
                                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                                         <FileText className="h-8 w-8 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">AI Syllabus Analysis</CardTitle>
                                     <CardDescription className="text-base leading-relaxed">
-                                        Upload any syllabus and get instant insights about course structure, key topics, and study recommendations.
+                                Upload any syllabus and get instant insights about course structure, key topics, and study recommendations.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="relative z-10">
@@ -171,17 +172,17 @@ export default function LandingPage() {
                                     </div>
                                 </CardContent>
                             </Card>
-
-                            {/* Smart Study Groups */}
+                        
+                        {/* Smart Study Groups */}
                             <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-green-50/50 dark:from-gray-900 dark:to-green-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
                                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <CardHeader className="relative z-10">
                                     <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                                         <Users className="h-8 w-8 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Smart Study Groups</CardTitle>
                                     <CardDescription className="text-base leading-relaxed">
-                                        Join or create study groups for your classes. Connect with classmates and collaborate on assignments.
+                                Join or create study groups for your classes. Connect with classmates and collaborate on assignments.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="relative z-10">
@@ -214,10 +215,10 @@ export default function LandingPage() {
                                 <CardHeader className="relative z-10">
                                     <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                                         <GraduationCap className="h-8 w-8 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">AI-Generated Flashcards</CardTitle>
                                     <CardDescription className="text-base leading-relaxed">
-                                        Automatically create study flashcards from your course materials. Perfect for exam preparation.
+                                Automatically create study flashcards from your course materials. Perfect for exam preparation.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="relative z-10">
@@ -243,8 +244,8 @@ export default function LandingPage() {
                                     </div>
                                 </CardContent>
                             </Card>
-
-                            {/* CourseConnect AI Assistant */}
+                        
+                        {/* CourseConnect AI Assistant */}
                             <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-indigo-50/50 dark:from-gray-900 dark:to-indigo-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02]">
                                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <CardHeader className="relative z-10">
@@ -315,6 +316,11 @@ export default function LandingPage() {
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {/* Live Activity Widget */}
+                            <div className="md:col-span-2 lg:col-span-1">
+                                <LiveActivityWidget />
+                            </div>
 
                             {/* Enhanced Mobile App */}
                             <Card className="group relative overflow-hidden bg-gradient-to-br from-white to-orange-50/50 dark:from-gray-900 dark:to-orange-950/20 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02] mobile-card">
@@ -591,16 +597,16 @@ export default function LandingPage() {
                         </TabsContent>
                     </div>
                 </Tabs>
-                
-                {/* Scholar Features Section */}
+
+            {/* Scholar Features Section */}
                 <div className="py-16 bg-transparent">
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="text-center mb-12">
                             <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                Scholar Features
-                            </h2>
+                            Scholar Features
+                        </h2>
                             <p className="text-lg text-blue-700 dark:text-blue-300 max-w-3xl mx-auto">
-                                Advanced tools designed for serious students who want to excel academically
+                            Advanced tools designed for serious students who want to excel academically
                             </p>
                         </div>
                         
@@ -639,10 +645,10 @@ export default function LandingPage() {
                                 <CardHeader>
                                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
                                         <Mic className="h-6 w-6 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Multi-Modal AI</CardTitle>
                                     <CardDescription className="text-purple-600 dark:text-purple-400">
-                                        Voice input and image analysis for comprehensive learning support
+                                Voice input and image analysis for comprehensive learning support
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -659,19 +665,19 @@ export default function LandingPage() {
                                             <CheckCircle className="h-4 w-4 text-purple-500" />
                                             Handwritten text recognition
                                         </li>
-                                    </ul>
+                            </ul>
                                 </CardContent>
                             </Card>
-
-                            {/* Grade Predictions */}
+                        
+                        {/* Grade Predictions */}
                             <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                                 <CardHeader>
                                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
                                         <TrendingUp className="h-6 w-6 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Grade Predictions</CardTitle>
                                     <CardDescription className="text-purple-600 dark:text-purple-400">
-                                        AI-powered grade predictions with personalized recommendations
+                                AI-powered grade predictions with personalized recommendations
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -688,7 +694,7 @@ export default function LandingPage() {
                                             <CheckCircle className="h-4 w-4 text-purple-500" />
                                             Improvement suggestions
                                         </li>
-                                    </ul>
+                            </ul>
                                 </CardContent>
                             </Card>
 
@@ -697,10 +703,10 @@ export default function LandingPage() {
                                 <CardHeader>
                                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
                                         <Calendar className="h-6 w-6 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Smart Scheduling</CardTitle>
                                     <CardDescription className="text-purple-600 dark:text-purple-400">
-                                        Google Calendar integration for better time management
+                                Google Calendar integration for better time management
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -717,19 +723,19 @@ export default function LandingPage() {
                                             <CheckCircle className="h-4 w-4 text-purple-500" />
                                             Exam preparation scheduling
                                         </li>
-                                    </ul>
+                            </ul>
                                 </CardContent>
                             </Card>
-
-                            {/* Focus Music */}
+                        
+                        {/* Focus Music */}
                             <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                                 <CardHeader>
                                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
                                         <Music className="h-6 w-6 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Focus Music</CardTitle>
                                     <CardDescription className="text-purple-600 dark:text-purple-400">
-                                        Curated study playlists and ambient sounds for concentration
+                                Curated study playlists and ambient sounds for concentration
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -746,19 +752,19 @@ export default function LandingPage() {
                                             <CheckCircle className="h-4 w-4 text-purple-500" />
                                             Ambient background sounds
                                         </li>
-                                    </ul>
+                            </ul>
                                 </CardContent>
                             </Card>
-
-                            {/* Advanced Analytics */}
+                        
+                        {/* Advanced Analytics */}
                             <Card className="bg-white/80 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                                 <CardHeader>
                                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center mb-4">
                                         <BarChart3 className="h-6 w-6 text-white" />
-                                    </div>
+                            </div>
                                     <CardTitle className="text-xl text-purple-800 dark:text-purple-200">Advanced Analytics</CardTitle>
                                     <CardDescription className="text-purple-600 dark:text-purple-400">
-                                        Detailed insights into your learning patterns and progress
+                                Detailed insights into your learning patterns and progress
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -775,13 +781,13 @@ export default function LandingPage() {
                                             <CheckCircle className="h-4 w-4 text-purple-500" />
                                             Performance insights
                                         </li>
-                                    </ul>
+                            </ul>
                                 </CardContent>
                             </Card>
-                        </div>
-
+                      </div>
+                    
                         {/* CTA for Scholar Features */}
-                        <div className="text-center mt-12">
+                    <div className="text-center mt-12">
                             <Button 
                                 size="lg" 
                                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
@@ -800,12 +806,12 @@ export default function LandingPage() {
                                 }}
                             >
                                 Unlock Scholar Features <ArrowRight className="ml-2" />
-                            </Button>
+                        </Button>
                             <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-                                Try Scholar features free for 14 days • No credit card required
-                            </p>
-                        </div>
-                    </div>
+                            Try Scholar features free for 14 days • No credit card required
+                        </p>
+          </div>
+        </div>
                 </div>
 
                 {/* Statistics Section */}
@@ -813,34 +819,34 @@ export default function LandingPage() {
                     <div className="container max-w-6xl mx-auto px-6">
                         <div className="text-center mb-12">
                             <h2 className="text-4xl font-bold tracking-tight mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                Trusted by Students Across the U.S.
-                            </h2>
+                            Trusted by Students Across the U.S.
+                        </h2>
                             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                                Join students who are already succeeding with CourseConnect's AI-powered study tools
-                            </p>
-                        </div>
-                        
+                            Join students who are already succeeding with CourseConnect's AI-powered study tools
+                        </p>
+                    </div>
+                    
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
                             {/* AI-Powered Tools */}
-                            <div className="text-center">
+                        <div className="text-center">
                                 <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">AI-Powered</div>
                                 <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">Study Tools</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Smart analysis</div>
-                            </div>
+                        </div>
 
                             {/* U.S. Universities */}
-                            <div className="text-center">
+                        <div className="text-center">
                                 <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">U.S.</div>
                                 <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">Universities</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Nationwide coverage</div>
-                            </div>
+                        </div>
 
                             {/* Free to Start */}
-                            <div className="text-center">
+                        <div className="text-center">
                                 <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">Free</div>
                                 <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">To Start</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">No upfront cost</div>
-                            </div>
+                    </div>
 
                             {/* Success Focus */}
                             <div className="text-center">
@@ -849,7 +855,7 @@ export default function LandingPage() {
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Grade improvement</div>
                             </div>
                         </div>
-
+                        
                         {/* Testimonials */}
                         <div className="mt-16">
                             <h3 className="text-2xl font-bold text-center mb-8 text-blue-800 dark:text-blue-200">What Students Say</h3>
@@ -877,8 +883,8 @@ export default function LandingPage() {
                                             ))}
                                         </div>
                                         <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
-                                            "The study groups feature connected me with amazing classmates. We aced our finals together!"
-                                        </p>
+                                "The study groups feature connected me with amazing classmates. We aced our finals together!"
+                            </p>
                                         <div className="font-semibold text-blue-800 dark:text-blue-200">Alex K.</div>
                                         <div className="text-xs text-blue-600 dark:text-blue-400">Biology Major</div>
                                     </CardContent>
@@ -890,10 +896,10 @@ export default function LandingPage() {
                                             {[...Array(5)].map((_, i) => (
                                                 <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                                             ))}
-                                        </div>
+                                </div>
                                         <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
-                                            "The flashcards feature is a game-changer. I went from C+ to A- in organic chemistry!"
-                                        </p>
+                                "The flashcards feature is a game-changer. I went from C+ to A- in organic chemistry!"
+                            </p>
                                         <div className="font-semibold text-blue-800 dark:text-blue-200">Maria R.</div>
                                         <div className="text-xs text-blue-600 dark:text-blue-400">Chemistry Student</div>
                                     </CardContent>
@@ -901,8 +907,8 @@ export default function LandingPage() {
                             </div>
                         </div>
                     </div>
-                </div>
-
+                        </div>
+                        
                 {/* Dedicated Mobile Section */}
                 <div className="py-12 sm:py-16 lg:py-20">
                     <MobileAppSection />
@@ -919,6 +925,6 @@ export default function LandingPage() {
             
             {/* PWA Install Prompt */}
             <PWAInstallPrompt />
-        </div>
+    </div>
     );
 }

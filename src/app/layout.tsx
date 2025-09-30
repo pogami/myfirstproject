@@ -5,6 +5,7 @@ import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from "@/contexts/theme-context";
+import { startBackgroundGitMonitoring } from "@/lib/background-git-monitor";
 
 export const metadata: Metadata = {
   title: "CourseConnect - AI College Platform",
@@ -49,6 +50,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Start background git monitoring
+  if (typeof window === 'undefined') {
+    startBackgroundGitMonitoring();
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

@@ -283,7 +283,7 @@ export function HeroSection() {
           >
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                10,000+
+                2,500+
               </div>
               <div className="text-gray-600 dark:text-gray-400">
                 Active Students
@@ -291,7 +291,7 @@ export function HeroSection() {
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                500+
+                150+
               </div>
               <div className="text-gray-600 dark:text-gray-400">
                 Universities
@@ -299,7 +299,7 @@ export function HeroSection() {
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
-                95%
+                87%
               </div>
               <div className="text-gray-600 dark:text-gray-400">
                 Satisfaction Rate

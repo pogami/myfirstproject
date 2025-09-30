@@ -19,34 +19,61 @@ export interface SiteLog {
 export class SiteLogManager {
   private static logs: SiteLog[] = [
     {
+      date: "2025-09-25",
+      version: "v2.11.5",
+      changes: [
+        "Added dark/light theme toggle across the platform",
+        "Fixed critical profile picture display issues",
+        "Redesigned footer with better user experience"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-09-20",
+      version: "v2.11.3",
+      changes: [
+        "Enhanced mobile responsiveness and touch interactions",
+        "Improved authentication flow and user session management",
+        "Added comprehensive error handling and fallback systems"
+      ],
+      type: "enhancement",
+      author: "Development Team",
+      impact: "high"
+    },
+    {
+      date: "2025-09-18",
+      version: "v2.11.2",
+      changes: [
+        "Fixed critical React rendering errors causing app crashes",
+        "Implemented daily usage limits for AI features",
+        "Enhanced chat interface stability and performance"
+      ],
+      type: "bug-fix",
+      author: "Development Team",
+      impact: "critical"
+    },
+    {
       date: "2025-09-16",
       version: "v2.11.0",
       changes: [
-        "🚀 Complete PWA implementation with offline capabilities",
-        "Added web app manifest for native app-like experience",
-        "Implemented service worker for caching and offline functionality",
-        "Added PWA install prompts for mobile and desktop users",
-        "Enhanced mobile app experience with native-like features",
-        "Added app shortcuts for quick access to key features",
-        "Implemented offline-first architecture for better performance",
-        "Added comprehensive PWA icons and splash screens"
+        "Launched Progressive Web App (PWA) with offline capabilities",
+        "Added native app-like experience for mobile and desktop",
+        "Implemented app installation prompts and shortcuts"
       ],
-      type: "feature",
+      type: "launch",
       author: "Development Team",
-      impact: "high"
+      impact: "critical"
     },
     {
       date: "2025-09-16",
       version: "v2.10.1",
       changes: [
-        "📱 Comprehensive mobile push notification system",
-        "Implemented web push notifications with VAPID keys",
-        "Added push notification subscription management",
-        "Created mobile-optimized notification UI components",
-        "Added notification permission handling and user prompts",
-        "Implemented test notification functionality for debugging",
-        "Added service worker for background notification handling",
-        "Enhanced mobile user engagement with push notifications"
+        "Implemented comprehensive push notification system",
+        "Added mobile-optimized notification management",
+        "Created notification permission handling and user prompts",
+        "Enhanced mobile user engagement with real-time notifications"
       ],
       type: "feature",
       author: "Development Team",
@@ -56,14 +83,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.10.0",
       changes: [
-        "🔒 Enhanced security measures for admin access control",
-        "Implemented email-based authentication for admin features",
-        "Added secure user permission validation",
-        "Improved data protection for user chat messages",
-        "Enhanced input sanitization for chat messages",
-        "Added secure session management for admin users",
-        "Implemented proper access control for construction features",
-        "Enhanced security headers and protection measures"
+        "Enhanced security with admin access control",
+        "Implemented secure user permission validation",
+        "Improved data protection for chat messages",
+        "Added secure session management for all users"
       ],
       type: "security",
       author: "Development Team",
@@ -73,14 +96,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.1",
       changes: [
-        "📱 Complete mobile optimization overhaul",
-        "Created dedicated mobile UI components (MobileButton, MobileInput, MobileNavigation)",
-        "Implemented touch-optimized interfaces with proper touch targets (44px minimum)",
-        "Added iOS zoom prevention for better mobile experience",
-        "Enhanced responsive design for all screen sizes",
-        "Implemented mobile-first design principles throughout the app",
-        "Added mobile-specific CSS optimizations and styling",
-        "Improved mobile navigation and user experience"
+        "Complete mobile optimization overhaul",
+        "Created touch-optimized interfaces for all devices",
+        "Implemented mobile-first design principles",
+        "Enhanced responsive design for all screen sizes"
       ],
       type: "enhancement",
       author: "Development Team",
@@ -90,14 +109,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.2",
       changes: [
-        "🤖 Advanced AI chat system implementation",
-        "Created comprehensive AI service with academic focus",
-        "Implemented simple AI service for reliable, fast responses",
-        "Added AI response templates for common academic subjects",
-        "Enhanced AI error handling and fallback responses",
-        "Implemented AI timeout protection and performance optimization",
-        "Added AI confidence scoring and response validation",
-        "Created academic-focused AI assistance for students"
+        "Launched advanced AI chat system for academic support",
+        "Implemented reliable AI responses for student questions",
+        "Added AI assistance for common academic subjects",
+        "Created academic-focused AI tutoring capabilities"
       ],
       type: "feature",
       author: "Development Team",
@@ -107,14 +122,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.3",
       changes: [
-        "📧 Complete newsletter and email system",
-        "Implemented dedicated newsletter subscription page",
-        "Added email notification system for changelog updates",
-        "Created professional email templates with CourseConnect branding",
-        "Implemented automated email sending for new updates",
-        "Added email subscriber management and tracking",
-        "Enhanced email system with Gmail integration",
-        "Created comprehensive email notification workflow"
+        "Launched newsletter and email notification system",
+        "Created professional email templates with branding",
+        "Implemented automated email notifications for updates",
+        "Added email subscriber management and tracking"
       ],
       type: "feature",
       author: "Development Team",
@@ -124,14 +135,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.4",
       changes: [
-        "📊 Comprehensive changelog and versioning system",
+        "Launched comprehensive changelog and versioning system",
         "Created advanced changelog page with search and filtering",
-        "Implemented changelog categorization (security, feature, enhancement, bug-fix, performance)",
-        "Added changelog statistics and impact tracking",
-        "Created automated changelog email notifications",
-        "Implemented changelog filtering to show only user-facing changes",
-        "Added changelog versioning and release management",
-        "Enhanced changelog UI with modern design and user experience"
+        "Implemented changelog categorization and impact tracking",
+        "Added automated changelog email notifications"
       ],
       type: "feature",
       author: "Development Team",
@@ -141,14 +148,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.5",
       changes: [
-        "🔐 Firebase authentication and user management",
-        "Implemented Firebase authentication system",
-        "Added user state management with Zustand",
-        "Created secure user session handling",
-        "Implemented offline authentication support",
-        "Added user profile management and data persistence",
-        "Enhanced authentication error handling and fallbacks",
-        "Created comprehensive user management system"
+        "Implemented Firebase authentication and user management",
+        "Added secure user session handling",
+        "Created user profile management and data persistence",
+        "Enhanced authentication error handling and fallbacks"
       ],
       type: "security",
       author: "Development Team",
@@ -158,14 +161,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.6",
       changes: [
-        "⚡ Performance optimizations and caching",
+        "Major performance optimizations and caching improvements",
         "Implemented Next.js performance optimizations",
-        "Added package import optimization for faster builds",
-        "Implemented console log removal in production",
         "Enhanced build performance with Turbopack",
-        "Added static export optimization for deployment",
-        "Implemented efficient component loading and code splitting",
-        "Enhanced overall application performance and speed"
+        "Added efficient component loading and code splitting"
       ],
       type: "performance",
       author: "Development Team",
@@ -175,16 +174,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.9.0",
       changes: [
-        "🚧 Class Chat temporarily under construction for quality improvements",
-        "Added beautiful construction page with feature previews and progress indicators",
-        "Implemented admin-only access to chat functionality for testing",
-        "Enhanced mobile responsiveness with dedicated construction UI",
-        "Added subscription system for construction updates and notifications",
-        "Fixed chat container overflow and positioning issues",
-        "Improved AI response speed and reliability with simplified service",
-        "Added comprehensive error handling and fallback responses",
-        "Added construction banner to homepage for better user awareness",
-        "Made changelog link clickable in construction page for easy navigation"
+        "Class Chat temporarily under construction for quality improvements",
+        "Added beautiful construction page with feature previews",
+        "Implemented admin-only access for testing",
+        "Enhanced mobile responsiveness with dedicated construction UI"
       ],
       type: "enhancement",
       author: "Development Team",
@@ -194,8 +187,8 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.8.0",
       changes: [
-        "Improved chat input clearing behavior for better user experience",
-        "Fixed chat scrolling to keep messages within the chat area",
+        "Improved chat input clearing and user experience",
+        "Fixed chat scrolling and message display issues",
         "Optimized AI response handling in class chat",
         "Added comprehensive changelog email notification system"
       ],
@@ -207,16 +200,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.7.0",
       changes: [
-        "Fixed email subscription system with dedicated Gmail account (courseconnect.noreply@gmail.com)",
-        "Updated email template with CourseConnect branding and professional HTML design",
-        "Fixed 'Get Started' button to redirect to correct Vercel URL (courseconnect-sooty.vercel.app)",
-        "Resolved favicon issues - now shows CourseConnect logo instead of Firebase logo",
-        "Added comprehensive Open Graph and Twitter Card meta tags for social media previews",
-        "Updated site title to 'CourseConnect - AI College Platform' for mobile tabs",
-        "Removed AI bot from homepage for cleaner, more focused design",
-        "Added browserconfig.xml for Windows tile configuration",
-        "Enhanced email system with beautiful welcome emails and proper branding",
-        "Fixed social media link previews to show CourseConnect logo and description"
+        "Fixed email subscription system with dedicated Gmail account",
+        "Updated email templates with professional CourseConnect branding",
+        "Fixed 'Get Started' button redirects and navigation issues",
+        "Resolved favicon and social media preview issues"
       ],
       type: "enhancement",
       author: "Development Team",
@@ -226,14 +213,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.6.0",
       changes: [
-        "Fixed critical React child error in chat interface - resolved object rendering issues",
+        "Fixed critical React errors causing application crashes",
         "Implemented daily usage limits for in-depth analysis (10 per day)",
         "Added usage tracking system with automatic daily reset",
-        "Enhanced in-depth analysis button with usage counter display",
-        "Added upgrade prompt when daily limit is reached with pricing page redirect",
-        "Improved error handling for AI response objects",
-        "Fixed chat interface stability issues causing application crashes",
-        "Enhanced user experience with better error messages and fallbacks"
+        "Enhanced user experience with better error handling"
       ],
       type: "bug-fix",
       author: "Development Team",
@@ -243,13 +226,10 @@ export class SiteLogManager {
       date: "2025-09-16",
       version: "v2.5.0",
       changes: [
-        "Fixed React child error in chat interface - resolved object rendering issues",
-        "Added leave class functionality to class overview tab with confirmation toasts",
-        "Updated class tabs to display syllabus names instead of generic book icons",
-        "Implemented welcome notifications when users join class chats",
-        "Enhanced user experience with better button layouts and responsive design",
-        "Fixed localhost access issues and improved development workflow",
-        "Updated changelog system to show real-time data instead of hardcoded dates"
+        "Fixed React child errors in chat interface",
+        "Added leave class functionality with confirmation",
+        "Updated class tabs to display actual syllabus names",
+        "Implemented welcome notifications for new chat members"
       ],
       type: "bug-fix",
       author: "Development Team",
@@ -261,11 +241,8 @@ export class SiteLogManager {
       changes: [
         "Created dedicated changelog page at /changelog route",
         "Enhanced changelog system with advanced search and filtering",
-        "Added comprehensive changelog page with statistics and categorization",
-        "Implemented automatic deployment logging for localhost and Vercel",
-        "Updated footer navigation to link directly to changelog page",
-        "Added deployment tracking system for better change management",
-        "Enhanced changelog UI with better visual design and user experience"
+        "Added comprehensive changelog statistics and categorization",
+        "Updated footer navigation to link directly to changelog"
       ],
       type: "feature",
       author: "Development Team",
@@ -275,12 +252,10 @@ export class SiteLogManager {
       date: "2025-09-15",
       version: "v2.3.0",
       changes: [
-        "Converted site logs to clickable button in footer navigation",
-        "Created modal-based changelog display for better user experience",
+        "Converted site logs to clickable button in footer",
+        "Created modal-based changelog display for better UX",
         "Enhanced logs system to show complete development history",
-        "Added interactive logs modal with scrollable content",
-        "Improved logs categorization with security and performance types",
-        "Updated footer navigation to include logs as company link"
+        "Improved logs categorization with security and performance types"
       ],
       type: "enhancement",
       author: "Development Team",
@@ -290,13 +265,10 @@ export class SiteLogManager {
       date: "2025-09-14",
       version: "v2.2.0",
       changes: [
-        "Added comprehensive site footer with navigation links and company information",
-        "Implemented site logs management system for tracking all updates",
+        "Added comprehensive site footer with navigation links",
+        "Implemented site logs management system",
         "Created automated changelog system with version tracking",
-        "Enhanced home page with detailed footer including social links",
-        "Added newsletter signup functionality in footer",
-        "Implemented structured logging for all future site changes",
-        "Updated localhost and Vercel synchronization process"
+        "Added newsletter signup functionality in footer"
       ],
       type: "feature",
       author: "Development Team",
@@ -306,12 +278,10 @@ export class SiteLogManager {
       date: "2025-09-13",
       version: "v2.1.0",
       changes: [
-        "Fixed email sign-in authentication flow - resolved infinite loading issue",
+        "Fixed email sign-in authentication flow issues",
         "Improved guest data migration with better error handling",
-        "Enhanced Firebase configuration for localhost and production",
-        "Added comprehensive footer with site logs and navigation links",
-        "Updated Vercel deployment configuration",
-        "Fixed Next.js configuration warnings"
+        "Enhanced Firebase configuration for all environments",
+        "Added comprehensive footer with site logs and navigation"
       ],
       type: "bug-fix",
       author: "Development Team",
@@ -324,7 +294,7 @@ export class SiteLogManager {
         "Enhanced Google OAuth authentication with better error messages",
         "Improved dashboard loading performance",
         "Added environment-specific Firebase configuration",
-        "Updated authentication error handling for better user experience"
+        "Updated authentication error handling for better UX"
       ],
       type: "enhancement",
       author: "Development Team",
@@ -337,8 +307,7 @@ export class SiteLogManager {
         "Added Scholar Features section with advanced AI capabilities",
         "Implemented multi-modal AI support (voice and image analysis)",
         "Enhanced grade prediction system",
-        "Added Google Calendar integration",
-        "Implemented Spotify focus music integration"
+        "Added Google Calendar and Spotify focus music integration"
       ],
       type: "feature",
       author: "Development Team",
@@ -364,8 +333,7 @@ export class SiteLogManager {
         "Launched CourseConnect platform with core features",
         "Implemented AI-powered syllabus analysis",
         "Added study group creation and management",
-        "Created comprehensive dashboard with analytics",
-        "Built responsive web application with modern UI/UX"
+        "Created comprehensive dashboard with analytics"
       ],
       type: "launch",
       author: "Development Team",
@@ -378,8 +346,7 @@ export class SiteLogManager {
         "Finalized core platform architecture",
         "Completed Firebase integration setup",
         "Implemented user authentication system",
-        "Created initial database schema",
-        "Set up development and production environments"
+        "Created initial database schema"
       ],
       type: "enhancement",
       author: "Development Team",
@@ -392,93 +359,7 @@ export class SiteLogManager {
         "Completed initial platform development",
         "Implemented Next.js 15 with App Router",
         "Set up Tailwind CSS and component library",
-        "Created responsive design system",
-        "Integrated Firebase for backend services",
-        "Built authentication and user management"
-      ],
-      type: "launch",
-      author: "Development Team",
-      impact: "critical"
-    },
-    {
-      date: "2025-09-06",
-      version: "v1.5.0",
-      changes: [
-        "Completed UI/UX design phase",
-        "Finalized component architecture",
-        "Created design system and style guide",
-        "Implemented responsive breakpoints",
-        "Set up development workflow and tooling"
-      ],
-      type: "enhancement",
-      author: "Development Team",
-      impact: "medium"
-    },
-    {
-      date: "2025-09-05",
-      version: "v1.4.0",
-      changes: [
-        "Completed project planning and architecture design",
-        "Selected technology stack (Next.js, Firebase, Tailwind)",
-        "Created initial project structure",
-        "Set up development environment",
-        "Implemented basic routing and navigation"
-      ],
-      type: "enhancement",
-      author: "Development Team",
-      impact: "medium"
-    },
-    {
-      date: "2025-09-04",
-      version: "v1.3.0",
-      changes: [
-        "Conducted market research and user interviews",
-        "Defined core features and user personas",
-        "Created wireframes and user flow diagrams",
-        "Established project requirements and scope",
-        "Set up version control and project management"
-      ],
-      type: "enhancement",
-      author: "Development Team",
-      impact: "medium"
-    },
-    {
-      date: "2025-09-03",
-      version: "v1.2.0",
-      changes: [
-        "Completed competitive analysis",
-        "Identified unique value propositions",
-        "Defined target market and user segments",
-        "Created initial business model",
-        "Established development timeline and milestones"
-      ],
-      type: "enhancement",
-      author: "Development Team",
-      impact: "medium"
-    },
-    {
-      date: "2025-09-02",
-      version: "v1.1.0",
-      changes: [
-        "Conducted initial market research",
-        "Identified pain points in student collaboration",
-        "Researched AI integration opportunities",
-        "Analyzed existing educational platforms",
-        "Defined initial feature set and requirements"
-      ],
-      type: "enhancement",
-      author: "Development Team",
-      impact: "medium"
-    },
-    {
-      date: "2025-09-01",
-      version: "v1.0.0",
-      changes: [
-        "CourseConnect project conception and ideation",
-        "Initial brainstorming and concept development",
-        "Market opportunity identification",
-        "Team formation and role assignment",
-        "Project kickoff and initial planning"
+        "Integrated Firebase for backend services"
       ],
       type: "launch",
       author: "Development Team",
@@ -551,6 +432,10 @@ export class SiteLogManager {
         return userFacingTypes.includes(log.type);
       })
       .filter(log => {
+        // Emphasize high-impact items only
+        return (log.impact === 'high' || log.impact === 'critical' || log.type === 'launch');
+      })
+      .filter(log => {
         // Filter out internal/development-only changes
         const internalKeywords = [
           'localhost', 'vercel', 'deployment', 'internal', 
@@ -568,9 +453,10 @@ export class SiteLogManager {
       })
       .map(log => ({
         ...log,
-        changes: log.changes.map(change => 
-          change.charAt(0).toUpperCase() + change.slice(1)
-        )
+        // Keep only the most important bullets per entry (max 4)
+        changes: log.changes
+          .map(change => change.charAt(0).toUpperCase() + change.slice(1))
+          .slice(0, 4)
       }));
   }
 

@@ -44,7 +44,7 @@ const testimonials = [
 const stats = [
   {
     icon: Users,
-    number: '10,000+',
+    number: '2,500+',
     label: 'Active Students',
     color: 'from-blue-500 to-blue-600'
   },
@@ -62,7 +62,7 @@ const stats = [
   },
   {
     icon: Award,
-    number: '500+',
+    number: '150+',
     label: 'Universities Supported',
     color: 'from-orange-500 to-orange-600'
   }

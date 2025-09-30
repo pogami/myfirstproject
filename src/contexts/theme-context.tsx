@@ -45,39 +45,42 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, mounted]);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    
-    // Use View Transition API if supported
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
+    const newTheme: Theme = theme === 'light' ? 'dark' : 'light';
+    const doc: any = typeof document !== 'undefined' ? document : undefined;
+
+    // Use View Transitions if supported and motion isn't reduced
+    if (
+      doc &&
+      'startViewTransition' in doc &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      doc.startViewTransition(() => {
+        // Update state inside transition for smooth swap
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
       });
     } else {
-      // Fallback for browsers that don't support View Transition API
       setThemeState(newTheme);
       localStorage.setItem('theme', newTheme);
     }
   };
 
   const setTheme = (newTheme: Theme) => {
-    // Use View Transition API if supported
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
+    const doc: any = typeof document !== 'undefined' ? document : undefined;
+    if (
+      doc &&
+      'startViewTransition' in doc &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      doc.startViewTransition(() => {
         setThemeState(newTheme);
         localStorage.setItem('theme', newTheme);
       });
     } else {
-      // Fallback for browsers that don't support View Transition API
       setThemeState(newTheme);
       localStorage.setItem('theme', newTheme);
     }
   };
-
-  // Don't render until mounted to prevent hydration mismatch
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>

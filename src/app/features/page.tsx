@@ -708,9 +708,9 @@ export default function FeaturesPage() {
               className="flex flex-wrap justify-center gap-8 mb-12"
             >
               {[
-                { number: "10,000+", label: "Students", icon: Users },
-                { number: "500+", label: "Universities", icon: Globe },
-                { number: "95%", label: "Success Rate", icon: Target },
+                { number: "2,500+", label: "Students", icon: Users },
+                { number: "150+", label: "Universities", icon: Globe },
+                { number: "87%", label: "Success Rate", icon: Target },
                 { number: "24/7", label: "AI Support", icon: Clock }
               ].map((stat, index) => (
                 <motion.div

@@ -22,21 +22,66 @@ import {
   Zap,
   Rocket
 } from "lucide-react";
-import { SiteFooter } from "@/components/site-footer";
+import { Footer as SaaSFooter } from "@/components/landing/footer";
+import { Navigation } from "@/components/landing/navigation";
 import { getSiteLogsForDisplay, SiteLogManager } from "@/lib/site-logs";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MotionHeadline, MotionCard, MotionSection } from "@/components/ui/motion-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRealtimeChangelog } from "@/hooks/use-realtime-changelog";
+import { RealtimeChangelogEntry } from "@/lib/realtime-changelog";
+import { useUserLocation } from "@/hooks/use-user-location";
+
+// Custom rocket animation styles
+const rocketAnimation = `
+  @keyframes rocket-blast {
+    0% {
+      transform: rotate(-45deg) translateY(0px);
+      opacity: 1;
+    }
+    25% {
+      transform: rotate(-45deg) translateY(-2px);
+      opacity: 0.8;
+    }
+    50% {
+      transform: rotate(-45deg) translateY(-4px);
+      opacity: 0.6;
+    }
+    75% {
+      transform: rotate(-45deg) translateY(-2px);
+      opacity: 0.8;
+    }
+    100% {
+      transform: rotate(-45deg) translateY(0px);
+      opacity: 1;
+    }
+  }
+`;
 
 export default function ChangelogPage() {
+  // Use real-time changelog hook
+  const { entries: realtimeEntries, loading, error, stats, isConnected } = useRealtimeChangelog({
+    userFacingOnly: true,
+    limit: 100
+  });
+
+  // Get user's location and time
+  const { currentTime, timezone, city, country, isLoading: locationLoading } = useUserLocation();
+
+  // Fallback to static logs if real-time fails
   const siteLogs = getSiteLogsForDisplay();
+  const [useRealtime, setUseRealtime] = useState(true);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterImpact, setFilterImpact] = useState<string>("all");
 
+  // Use real-time entries if available, otherwise fallback to static
+  const currentEntries = useRealtime && realtimeEntries.length > 0 ? realtimeEntries : siteLogs;
+
   const filteredLogs = useMemo(() => {
-    return siteLogs.filter(log => {
+    return currentEntries.filter(log => {
       const matchesSearch = log.changes.some(change => 
         change.toLowerCase().includes(searchTerm.toLowerCase())
       ) || log.version.toLowerCase().includes(searchTerm.toLowerCase());
@@ -46,11 +91,21 @@ export default function ChangelogPage() {
       
       return matchesSearch && matchesType && matchesImpact;
     });
-  }, [siteLogs, searchTerm, filterType, filterImpact]);
+  }, [currentEntries, searchTerm, filterType, filterImpact]);
 
   // Get user-facing stats only
   const userFacingStats = useMemo(() => {
-    const userFacingLogs = siteLogs.filter(log => 
+    // Use real-time stats if available, otherwise calculate from current entries
+    if (stats) {
+      return {
+        totalLogs: stats.userFacingEntries,
+        byType: stats.byType,
+        byImpact: stats.byImpact,
+        latestVersion: stats.latestVersion
+      };
+    }
+
+    const userFacingLogs = currentEntries.filter(log => 
       ['launch', 'feature', 'enhancement', 'bug-fix', 'security', 'performance'].includes(log.type)
     );
     
@@ -70,7 +125,7 @@ export default function ChangelogPage() {
       byImpact,
       latestVersion: userFacingLogs[0]?.version || 'v1.0.0'
     };
-  }, [siteLogs]);
+  }, [stats, currentEntries]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -99,22 +154,12 @@ export default function ChangelogPage() {
   // Use filtered stats instead of all stats
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-3 sm:px-6 items-center justify-between">
-          <Link href="/home" className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary tracking-tight">CourseConnect</h1>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-            <Link href="/home" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              ← Back to Home
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50/40 dark:from-gray-900 dark:to-purple-900/20">
+      <style dangerouslySetInnerHTML={{ __html: rocketAnimation }} />
+      {/* SaaS Navigation matching homepage */}
+      <Navigation />
 
-      <main className="container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="container max-w-6xl mx-auto px-4 sm:px-6 py-24">
         {/* Hero Section */}
         <MotionSection className="text-center mb-12 sm:mb-16">
           <motion.div
@@ -123,7 +168,7 @@ export default function ChangelogPage() {
             transition={{ duration: 0.6 }}
             className="flex justify-center mb-6"
           >
-            <div className="p-4 rounded-full bg-primary/10">
+            <div className="p-4 rounded-full bg-gradient-to-r from-blue-600/10 to-purple-600/10 ring-1 ring-primary/20">
               <History className="h-12 w-12 text-primary" />
             </div>
           </motion.div>
@@ -138,28 +183,43 @@ export default function ChangelogPage() {
           >
             User-focused updates, new features, and improvements to CourseConnect.
             <span className="text-sm text-muted-foreground/70 block mt-2">
-              Only showing changes that directly impact your experience.
+              Highlighting updates that matter most to you.
             </span>
           </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="flex flex-wrap justify-center gap-4 mb-8"
-          >
-            <Badge variant="outline" className="text-sm px-3 py-1">
-              <Calendar className="h-3 w-3 mr-1" />
-              {userFacingStats.totalLogs} User Updates
-            </Badge>
-            <Badge variant="outline" className="text-sm px-3 py-1">
-              <Rocket className="h-3 w-3 mr-1" />
-              Latest: {userFacingStats.latestVersion}
-            </Badge>
-            <Badge variant="outline" className="text-sm px-3 py-1">
-              <Clock className="h-3 w-3 mr-1" />
-              Updated Daily
-            </Badge>
-          </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.15 }}
+                    className="flex flex-wrap justify-center gap-4 mb-8"
+                  >
+                    <Badge variant="outline" className="text-sm px-3 py-1">
+                      <Calendar className="h-3 w-3 mr-1 animate-pulse" />
+                      {userFacingStats.totalLogs} User Updates
+                    </Badge>
+                    <Badge variant="outline" className="text-sm px-3 py-1">
+                      <Rocket className="h-3 w-3 mr-1 animate-bounce" style={{ 
+                        transform: 'rotate(-45deg)',
+                        animation: 'rocket-blast 2s ease-in-out infinite'
+                      }} />
+                      Latest: {userFacingStats.latestVersion}
+                    </Badge>
+                    <Badge variant="outline" className="text-sm px-3 py-1">
+                      <Clock className="h-3 w-3 mr-1 animate-spin" />
+                      {isConnected ? 'Live Updates' : 'Updated Daily'}
+                    </Badge>
+                    {!locationLoading && (
+                      <Badge variant="outline" className="text-sm px-3 py-1">
+                        <Clock className="h-3 w-3 mr-1 animate-spin" />
+                        {currentTime} {city}
+                      </Badge>
+                    )}
+                    {error && (
+                      <Badge variant="destructive" className="text-sm px-3 py-1">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Offline Mode
+                      </Badge>
+                    )}
+                  </motion.div>
         </MotionSection>
 
         {/* Search and Filters */}
@@ -306,7 +366,7 @@ export default function ChangelogPage() {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <Card className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-primary/20">
             <CardContent className="p-6 sm:p-8">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">Stay Updated</h2>
               <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
@@ -358,7 +418,7 @@ export default function ChangelogPage() {
         </div>
       </main>
 
-      <SiteFooter />
+      <SaaSFooter />
     </div>
   );
 }

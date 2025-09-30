@@ -85,7 +85,7 @@ export function TestimonialsSection() {
           >
             Loved by{' '}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              10,000+ students
+              2,500+ students
             </span>
           </motion.h2>
           <motion.p
@@ -169,7 +169,7 @@ export function TestimonialsSection() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                10,000+
+                2,500+
               </div>
               <div className="text-gray-600 dark:text-gray-300">
                 Active Students
@@ -177,7 +177,7 @@ export function TestimonialsSection() {
             </div>
             <div>
               <div className="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                500+
+                150+
               </div>
               <div className="text-gray-600 dark:text-gray-300">
                 Universities
@@ -185,7 +185,7 @@ export function TestimonialsSection() {
             </div>
             <div>
               <div className="text-3xl md:text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
-                95%
+                87%
               </div>
               <div className="text-gray-600 dark:text-gray-300">
                 Satisfaction Rate
