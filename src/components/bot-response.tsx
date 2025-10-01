@@ -15,6 +15,7 @@ import { TruncatedText } from './truncated-text';
 import { AIResponse } from './ai-response';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SourceIcon } from './source-icon';
 
 // Detect if content looks like data points (array of {x, y})
 function looksLikeGraph(content: string): boolean {
@@ -25,6 +26,13 @@ function looksLikeGraph(content: string): boolean {
     return false;
   }
 }
+
+// Helper function to highlight @ai mentions
+const highlightAIMentions = (text: string) => {
+  return text.replace(/(?<!\w)@ai(?!\w)/gi, (match) => 
+    `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">${match}</span>`
+  );
+};
 
 // Detect math and render with KaTeX
 function renderMathLine(line: string, i: number) {
@@ -55,7 +63,7 @@ function renderMathLine(line: string, i: number) {
         );
       }
     }
-    return <p key={i} className="text-sm break-words ai-response mb-2">{line}</p>;
+    return <p key={i} className="text-sm break-words ai-response mb-2" dangerouslySetInnerHTML={{ __html: highlightAIMentions(line) }}></p>;
   }
 }
 
@@ -96,18 +104,16 @@ function breakIntoParagraphs(text: string): string[] {
 interface BotResponseProps {
   content: string;
   className?: string;
-  sources?: Array<{
+  sources?: {
     title: string;
     url: string;
     snippet: string;
-  }>;
+  }[];
 }
 
 export default function BotResponse({ content, className = "", sources }: BotResponseProps) {
   const isGraph = useMemo(() => looksLikeGraph(content), [content]);
   const [isCopied, setIsCopied] = useState(false);
-  
-  console.log('🤖 BotResponse rendering with sources:', sources?.length || 0, sources);
 
   const copyToClipboard = async () => {
     try {
@@ -147,57 +153,37 @@ export default function BotResponse({ content, className = "", sources }: BotRes
 
   // Otherwise treat as text + math (original behavior)
   return (
-    <div className={`relative leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response ${className}`}>
+    <div className={`relative leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group ${className}`}>
       {breakIntoParagraphs(content).map((paragraph, i) => (
         <div key={i} className="mb-3">
           {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
         </div>
       ))}
       
-      {/* Sources section */}
-      {sources && sources.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Sources:</span>
-            <span className="text-xs text-gray-500 dark:text-gray-500">({sources.length})</span>
-          </div>
-          <div className="space-y-2">
-            {sources.map((source, index) => (
-              <div key={index} className="group">
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-2 rounded-md bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400 group-hover:underline">
-                      {source.title}
-                    </span>
-                    <span className="text-xs text-gray-400">↗</span>
-                  </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                    {source.snippet}
-                  </p>
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Source Icon */}
+      <div className="absolute top-2 right-10 z-10">
+        <SourceIcon sources={sources || []} />
+      </div>
       
-      <Button
-        size="sm"
-        variant="ghost"
-        className="absolute top-2 right-2 h-8 w-8 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
+      {/* Copy Button */}
+      <button
+        className="absolute bottom-2 right-2 h-6 w-6 p-0 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 z-10 flex items-center justify-center transition-all duration-200 ease-in-out"
         onClick={copyToClipboard}
+        title="Copy message"
       >
-        {isCopied ? (
-          <Check className="h-4 w-4 text-green-500" />
-        ) : (
-          <img src="/copy-icon.svg" alt="Copy" className="h-4 w-4" />
-        )}
-      </Button>
+        <div className="relative">
+          <Copy 
+            className={`h-4 w-4 text-gray-500 dark:text-gray-400 transition-all duration-300 ease-in-out ${
+              isCopied ? 'opacity-0 scale-0 rotate-180' : 'opacity-100 scale-100 rotate-0'
+            }`} 
+          />
+          <Check 
+            className={`absolute inset-0 h-4 w-4 text-green-600 transition-all duration-300 ease-in-out ${
+              isCopied ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-180'
+            }`} 
+          />
+        </div>
+      </button>
     </div>
   );
 }

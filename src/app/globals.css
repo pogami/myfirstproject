@@ -2,6 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* SaaS-level pulsing animations */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-fast {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes ping-delayed {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-pulse-fast {
+  animation: pulse-fast 1.5s ease-in-out infinite;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animate-ping-delayed {
+  animation: ping-delayed 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 body {
   font-family: 'PT Sans', sans-serif;
 }
@@ -293,7 +343,7 @@ body {
 
 .light .ai-response {
   color: black !important; /* Black text for AI responses in light mode */
-  background-color: white !important; /* White background for AI responses */
+  background: transparent !important; /* Transparent background for AI responses */
   padding: 8px 12px !important;
   border-radius: 8px !important;
   font-size: 0.875rem !important; /* Consistent font size */

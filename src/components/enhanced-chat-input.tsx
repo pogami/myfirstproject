@@ -19,6 +19,8 @@ interface EnhancedChatInputProps {
   isPublicChat?: boolean;
   isClassChat?: boolean;
   isSending?: boolean;
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 }
 
 export function EnhancedChatInput({
@@ -33,7 +35,9 @@ export function EnhancedChatInput({
   className = "",
   isPublicChat = false,
   isClassChat = false,
-  isSending = false
+  isSending = false,
+  onTypingStart,
+  onTypingStop
 }: EnhancedChatInputProps) {
   const { theme } = useTheme();
   const [isTyping, setIsTyping] = useState(false);
@@ -76,7 +80,15 @@ export function EnhancedChatInput({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e);
-    setIsTyping(e.target.value.length > 0);
+    
+    // Handle typing indicators
+    if (e.target.value.length > 0 && !isTyping) {
+      setIsTyping(true);
+      onTypingStart?.();
+    } else if (e.target.value.length === 0 && isTyping) {
+      setIsTyping(false);
+      onTypingStop?.();
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -94,6 +106,7 @@ export function EnhancedChatInput({
       // Check if AI should be called
       const shouldCallAI = !isPublicChat || value.includes('@ai') || value.includes('@AI');
       onSend(shouldCallAI);
+      onTypingStop?.();
     }
   };
 
@@ -215,21 +228,21 @@ export function EnhancedChatInput({
 
   return (
     <div className={cn("relative w-full h-10 chat-input-container", className)}>
-      {/* AI Mention Indicator - Discord-like */}
+      {/* AI Mention Indicator */}
       {showAIMention && isPublicChat && (
         <div className={cn(
-          "absolute -top-12 left-2 px-3 py-2 rounded-lg text-xs flex items-center gap-2 z-10 shadow-lg border",
-          "bg-gradient-to-r from-purple-500 to-blue-500 text-white border-purple-400/30",
-          "animate-in slide-in-from-bottom-2 duration-200"
+          "absolute -top-10 left-2 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 z-10 shadow-lg border backdrop-blur-sm animate-in slide-in-from-bottom-2 duration-200",
+          isDark 
+            ? "bg-gradient-to-r from-purple-900/90 to-blue-900/90 text-purple-100 border-purple-700/50" 
+            : "bg-gradient-to-r from-purple-50 to-blue-50 text-purple-800 border-purple-200/50"
         )}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-              <Bot className="h-3 w-3" />
-            </div>
-            <div>
-              <div className="font-medium">CourseConnect AI</div>
-              <div className="text-xs opacity-80">Will respond to your message</div>
-            </div>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <Bot className="h-4 w-4" />
+            <span>AI will respond</span>
+          </div>
+          <div className="text-xs opacity-75">
+            Press Enter to send
           </div>
         </div>
       )}

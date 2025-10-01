@@ -201,7 +201,5 @@ export class OllamaModelManager {
   }
 }
 
-// Initialize available models on startup
-if (typeof window === 'undefined') { // Server-side only
-  OllamaModelManager.refreshAvailableModels();
-}
+// Note: Avoid triggering network calls at module import time in serverless/edge runtimes.
+// Call `OllamaModelManager.refreshAvailableModels()` from handlers as needed instead.

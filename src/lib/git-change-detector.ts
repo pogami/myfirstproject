@@ -313,3 +313,4 @@ export function startGitMonitoring(intervalMs: number = 30000): () => void {
 export async function autoLogRecentCommits(limit: number = 5): Promise<string[]> {
   return GitChangeDetector.autoLogImportantCommits(limit);
 }
+

@@ -31,6 +31,11 @@ export interface AIResponse {
   answer: string;
   provider: AIProvider;
   error?: string;
+  sources?: {
+    title: string;
+    url: string;
+    snippet: string;
+  }[];
 }
 
 export interface StudyAssistanceInput {

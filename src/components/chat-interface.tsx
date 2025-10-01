@@ -462,20 +462,37 @@ export default function ChatInterface() {
                 const { provideStudyAssistanceWithFallback } = await import("@/ai/services/dual-ai-service");
                 
                 const context = chats[currentTab!]?.title || 'General Chat';
-                const result = await provideStudyAssistanceWithFallback({
-                    question: messageToProcess.text,
-                    context: context,
-                    conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
-                        role: msg.sender === 'bot' ? 'assistant' as const : 'user' as const,
-                        content: msg.text
-                    })) || []
+                // Call the chat API directly to get sources
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: messageToProcess.text,
+                        context: context,
+                        conversationHistory: chats[currentTab!]?.messages?.slice(-10).map(msg => ({
+                            role: msg.sender === 'bot' ? 'assistant' as const : 'user' as const,
+                            content: msg.text
+                        })) || [],
+                        shouldCallAI: true,
+                        isPublicChat: currentTab?.includes('public'),
+                        hasAIMention: messageToProcess.text.toLowerCase().includes('@ai')
+                    })
                 });
+                
+                if (!response.ok) {
+                    throw new Error('Chat API failed');
+                }
+                
+                const result = await response.json();
                 
                 const assistanceMessage: Message = {
                     sender: "bot",
                     text: result.answer || 'I apologize, but I couldn\'t generate a response.',
                     name: "AI",
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    sources: result.sources
                 };
                 
                 await addMessage(currentTab, assistanceMessage);
@@ -907,17 +924,46 @@ export default function ChatInterface() {
             console.log('Document context exists:', !!documentContext);
             console.log('Context preview:', fullContext.substring(0, 300) + '...');
             
-            const result = await provideStudyAssistanceWithFallback({
-                question: messageToProcess,
-                context: fullContext,
-                conversationHistory: conversationHistory
+            // Determine if AI should respond based on chat type and @ai mention
+            const isPublicChat = currentTab?.includes('public');
+            const hasAIMention = messageToProcess.toLowerCase().includes('@ai');
+            const shouldCallAI = isPublicChat ? hasAIMention : true;
+            
+            console.log('AI Response Logic:', {
+                isPublicChat,
+                hasAIMention,
+                shouldCallAI,
+                messageToProcess
             });
+            
+            // Call the chat API directly to get sources
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: messageToProcess,
+                    context: fullContext,
+                    conversationHistory: conversationHistory,
+                    shouldCallAI: shouldCallAI,
+                    isPublicChat: isPublicChat,
+                    hasAIMention: hasAIMention
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Chat API failed');
+            }
+            
+            const result = await response.json();
             
             const assistanceMessage: Message = {
                 sender: "bot",
                 text: result.answer || 'I apologize, but I couldn\'t generate a response.',
                 name: "CourseConnect AI",
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                sources: result.sources
             };
             
             await addMessage(currentTab, assistanceMessage);
@@ -1312,6 +1358,7 @@ export default function ChatInterface() {
                                                                     <AIResponseRenderer 
                                                                         content={msg.text}
                                                                         className="text-xs sm:text-sm leading-relaxed opacity-90 ai-response"
+                                                                        sources={msg.sources}
                                                                     />
                                                                     {msg.file && (
                                                                         <div className="mt-3">
