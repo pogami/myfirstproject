@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, OAuthProvider, GoogleAuthProvider, signInWithPopup, updateProfile, signInAnonymously, sendPasswordResetEmail } from "firebase/auth";
-import { auth, db } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client-simple";
 import { doc, setDoc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

@@ -8,7 +8,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 // Realtime Database removed
 import { useToast } from "@/hooks/use-toast";
 import { useChatStore } from "@/hooks/use-chat-store";

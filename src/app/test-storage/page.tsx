@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { storage } from "@/lib/firebase/client";
+import { storage } from "@/lib/firebase/client-simple";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

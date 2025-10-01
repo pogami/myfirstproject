@@ -14,10 +14,10 @@ import { useChatStore, Chat } from "@/hooks/use-chat-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase/client-simple";
 import { addDoc, collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 
 export default function FlashcardGenerator() {
     const { chats } = useChatStore();

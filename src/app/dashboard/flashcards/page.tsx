@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, Brain, Target, Zap, Sparkles, BookOpen, ArrowRight, TrendingUp, Clock, CheckCircle, RefreshCw, Plus, Eye } from "lucide-react";
 import FlashcardGenerator from "@/components/flashcard-generator";
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase/client";
+import { db } from "@/lib/firebase/client-simple";
 import { collection, getDocs, addDoc, query, orderBy, limit, onSnapshot, where } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 

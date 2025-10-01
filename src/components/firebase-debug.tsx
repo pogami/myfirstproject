@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wifi, WifiOff, RefreshCw, CheckCircle, XCircle } from "lucide-react";
-import { checkFirebaseConnection, reconnectFirebase } from "@/lib/firebase/client";
+import { checkFirebaseConnection, reconnectFirebase } from "@/lib/firebase/client-simple";
 
 export function FirebaseDebug() {
   const [isOnline, setIsOnline] = useState(false);

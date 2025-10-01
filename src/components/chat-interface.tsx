@@ -25,7 +25,7 @@ import { AIResponseRenderer } from "@/components/ai-response-renderer";
 import Link from "next/link";
 import { useChatStore, Message } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client-simple";
 import { doc, getDoc } from "firebase/firestore";
 import { getInDepthAnalysis } from "@/ai/services/dual-ai-service";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";

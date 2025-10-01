@@ -18,7 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/use-notifications";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";

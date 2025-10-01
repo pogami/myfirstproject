@@ -12,7 +12,7 @@ import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOp
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { useSocket } from "@/hooks/use-socket";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { OnlineUsersIndicator } from "@/components/online-users-indicator";

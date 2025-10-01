@@ -9,7 +9,7 @@ import { MessageSquare, Upload, BookOpen, Users, TrendingUp, Clock, Sparkles, Cr
 import { StatCards } from "@/components/stat-cards";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { MobileNavigation } from "@/components/mobile-navigation";

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useEffect, useState } from "react";
 import { useChatStore } from "@/hooks/use-chat-store";

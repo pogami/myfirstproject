@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { auth, db } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client-simple";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { safeFirebaseOperation, safeDocumentExists, safeDocumentData } from "@/lib/firebase-error-handler";

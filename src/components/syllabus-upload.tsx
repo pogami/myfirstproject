@@ -12,7 +12,7 @@ import { AISyllabusParser } from '@/lib/syllabus-parser/ai-parser';
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { Progress } from "@/components/ui/progress";
 import { AnalyzingIcon } from "./icons/analyzing-icon";
 import { Checkbox } from "@/components/ui/checkbox";

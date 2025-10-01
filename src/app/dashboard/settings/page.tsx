@@ -23,7 +23,7 @@ import {
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 
 export default function SettingsPage() {
   const { toast } = useToast();

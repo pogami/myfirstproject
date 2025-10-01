@@ -17,7 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { auth, db } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client-simple";
 // Realtime Database removed - using Firestore instead
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";

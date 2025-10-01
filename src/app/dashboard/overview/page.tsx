@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase/client";
+import { auth } from "@/lib/firebase/client-simple";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedLoadingAnimation } from "@/components/unified-loading-animation";
 
