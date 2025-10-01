@@ -10,8 +10,8 @@ const port = process.env.PORT || 9002;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
-// Store active users and typing status per room
-const activeUsers = new Map();
+// Store user count and typing status per room
+const roomUserCounts = new Map();
 const typingUsers = new Map();
 
 app.prepare().then(() => {
@@ -46,33 +46,19 @@ app.prepare().then(() => {
       socket.join(room);
       socket.data = { userId, username, room };
 
-      // Add user to active users for this room
-      if (!activeUsers.has(room)) {
-        activeUsers.set(room, new Map());
+      // Update user count for this room
+      if (!roomUserCounts.has(room)) {
+        roomUserCounts.set(room, new Set());
       }
-      activeUsers.get(room).set(userId, {
-        userId,
-        username,
-        avatar,
-        joinedAt: Date.now()
-      });
+      roomUserCounts.get(room).add(userId);
 
-      // Notify room about new user
-      socket.to(room).emit('user-joined', {
-        userId,
-        username,
-        avatar,
-        timestamp: Date.now()
-      });
-
-      // Send current online users to the new user
-      const roomUsers = Array.from(activeUsers.get(room)?.values() || []);
-      socket.emit('online-users', roomUsers);
+      // Get current user count
+      const userCount = roomUserCounts.get(room).size;
       
-      // Also broadcast updated user count to all users in the room
-      io.to(room).emit('online-users', roomUsers);
+      // Broadcast updated user count to all users in the room
+      io.to(room).emit('user-count-update', userCount);
 
-      console.log(`${username} joined room: ${room}`);
+      console.log(`${username} joined room: ${room} (${userCount} users)`);
     });
 
     // Handle typing indicators
@@ -80,16 +66,11 @@ app.prepare().then(() => {
       const { room, userId, username } = data;
       
       if (!typingUsers.has(room)) {
-        typingUsers.set(room, new Map());
+        typingUsers.set(room, new Set());
       }
       
-      typingUsers.get(room).set(userId, {
-        userId,
-        username,
-        timestamp: Date.now()
-      });
-
-      socket.to(room).emit('user-typing', { userId, username, timestamp: Date.now() });
+      typingUsers.get(room).add(userId);
+      socket.to(room).emit('user-typing', { userId });
     });
 
     socket.on('typing-stop', (data) => {
@@ -103,10 +84,10 @@ app.prepare().then(() => {
 
     // Handle AI thinking events
     socket.on('ai-thinking-start', (data) => {
-      const { room, userId, username, timestamp } = data;
+      const { room } = data;
       
       // Broadcast to all users in the room
-      io.to(room).emit('ai-thinking-start', { userId, username, timestamp });
+      io.to(room).emit('ai-thinking-start');
     });
 
     socket.on('ai-thinking-stop', (data) => {
@@ -139,16 +120,6 @@ app.prepare().then(() => {
       });
     });
 
-    // Handle user presence updates
-    socket.on('update-presence', (data) => {
-      const { room, userId, status } = data;
-      
-      socket.to(room).emit('presence-updated', {
-        userId,
-        status,
-        timestamp: Date.now()
-      });
-    });
 
     // Handle disconnection
     socket.on('disconnect', () => {
@@ -156,9 +127,9 @@ app.prepare().then(() => {
       if (socketData) {
         const { room, userId, username } = socketData;
         
-        // Remove from active users
-        if (activeUsers.has(room)) {
-          activeUsers.get(room).delete(userId);
+        // Remove from user count
+        if (roomUserCounts.has(room)) {
+          roomUserCounts.get(room).delete(userId);
         }
         
         // Remove from typing users
@@ -166,33 +137,26 @@ app.prepare().then(() => {
           typingUsers.get(room).delete(userId);
         }
         
-        // Notify room about user leaving
-        socket.to(room).emit('user-left', {
-          userId,
-          username,
-          timestamp: Date.now()
-        });
+        // Get updated user count
+        const userCount = roomUserCounts.get(room)?.size || 0;
         
         // Broadcast updated user count to remaining users
-        const remainingUsers = Array.from(activeUsers.get(room)?.values() || []);
-        io.to(room).emit('online-users', remainingUsers);
+        io.to(room).emit('user-count-update', userCount);
         
-        console.log(`${username} left room: ${room}`);
+        console.log(`${username} left room: ${room} (${userCount} users remaining)`);
       }
     });
 
     // Clean up typing indicators periodically
     setInterval(() => {
-      const now = Date.now();
       typingUsers.forEach((roomTypingUsers, room) => {
-        roomTypingUsers.forEach((typingUser, userId) => {
-          if (now - typingUser.timestamp > 5000) { // 5 seconds timeout
-            roomTypingUsers.delete(userId);
-            socket.to(room).emit('user-stopped-typing', { userId });
-          }
-        });
+        // Clear all typing users after 5 seconds (simplified)
+        if (roomTypingUsers.size > 0) {
+          roomTypingUsers.clear();
+          io.to(room).emit('typing-clear');
+        }
       });
-    }, 2000);
+    }, 5000);
   });
 
   server.once('error', (err) => {

@@ -13,7 +13,8 @@ import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
 import { useSocket } from "@/hooks/use-socket";
 import { TypingIndicator } from "@/components/typing-indicator";
-import { OnlineUsersIndicator } from "@/components/online-users-indicator";
+import { LiveUserCount } from "@/components/live-user-count";
+import { ChatSidebar } from "@/components/chat-sidebar";
 import { auth } from "@/lib/firebase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,7 +36,6 @@ import { RippleText } from "@/components/ripple-text";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { InDepthAnalysis } from "@/components/in-depth-analysis";
 import { JoinMessage } from "@/components/join-message";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -53,17 +53,50 @@ export default function ChatPage() {
         deleteChat, 
         initializeGeneralChats,
         subscribeToChat,
-        onlineUsers,
         typingUsers,
-        setOnlineUsers,
         setTypingUsers,
         setSocketConnected
     } = useChatStore();
     const [inputValue, setInputValue] = useState("");
-    // Simulated identity for public chat testing
-    const [simulatedName, setSimulatedName] = useState<string>("Alice");
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [userCount, setUserCount] = useState(0);
+    const [activeChatId, setActiveChatId] = useState('public-general-chat');
+    
+    // Real chat data from chat store
+    const availableChats = [
+        {
+            id: 'public-general-chat',
+            name: 'General Chat',
+            type: 'public' as const,
+            lastMessage: generalChat?.messages?.[generalChat.messages.length - 1]?.text || 'Welcome to the general chat!',
+            lastMessageTime: generalChat?.messages?.[generalChat.messages.length - 1]?.timestamp || Date.now(),
+            unreadCount: 0,
+            isActive: activeChatId === 'public-general-chat',
+            isPinned: true,
+            isStarred: false,
+            userCount: userCount,
+            isPermanent: true, // Cannot be deleted
+            canReset: true,
+            canExport: true
+        },
+        // Add other chats from your chat store here
+        ...Object.entries(chats || {}).map(([chatId, chat]) => ({
+            id: chatId,
+            name: chat.name || `Chat ${chatId}`,
+            type: chat.type || 'public' as const,
+            lastMessage: chat.messages?.[chat.messages.length - 1]?.text || 'No messages yet',
+            lastMessageTime: chat.messages?.[chat.messages.length - 1]?.timestamp || Date.now(),
+            unreadCount: 0,
+            isActive: activeChatId === chatId,
+            isPinned: false,
+            isStarred: false,
+            userCount: 1,
+            isPermanent: false,
+            canReset: true,
+            canExport: true
+        }))
+    ];
     
     const [forceLoad, setForceLoad] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -71,6 +104,39 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+    // Chat navigation handlers
+    const handleChatSelect = (chatId: string) => {
+        setActiveChatId(chatId);
+        // In a real app, you would load the chat messages here
+        console.log('Switching to chat:', chatId);
+    };
+
+    const handleCreateChat = () => {
+        // In a real app, you would open a create chat dialog
+        console.log('Create new chat');
+    };
+
+    const handleResetChat = (chatId: string) => {
+        if (chatId === 'public-general-chat') {
+            setShowResetDialog(true);
+        } else {
+            // Reset other chats
+            resetChat(chatId);
+        }
+    };
+
+    const handleExportChat = (chatId: string) => {
+        exportChat(chatId);
+    };
+
+    const handleDeleteChat = (chatId: string) => {
+        if (chatId === 'public-general-chat') {
+            // General chat cannot be deleted
+            return;
+        }
+        setShowDeleteDialog(true);
+    };
     const { toast } = useToast();
 
     const copyToClipboard = async (text: string, messageId: string) => {
@@ -99,8 +165,8 @@ export default function ChatPage() {
     // Socket.IO connection for real-time features (only for public and class chats)
     const socket = useSocket({
         room: 'public-general-chat',
-        userId: user?.uid || `guest-${simulatedName}-${Date.now()}`,
-        username: user?.displayName || simulatedName,
+        userId: user?.uid || `guest-${Date.now()}`,
+        username: user?.displayName || 'Anonymous',
         avatar: user?.photoURL,
         onMessageReceived: (message) => {
             // Add message to local state for instant display
@@ -117,26 +183,17 @@ export default function ChatPage() {
             };
             addMessage('public-general-chat', aiMessage);
         },
-        onUserJoined: (user) => {
-            console.log('User joined:', user);
+        onUserCountUpdate: (count) => {
+            setUserCount(count);
         },
-        onUserLeft: (user) => {
-            console.log('User left:', user);
-        },
-        onOnlineUsers: (users) => {
-            setOnlineUsers(users);
-        },
-        onTypingStart: (user) => {
-            setTypingUsers([...typingUsers.filter(u => u.userId !== user.userId), user]);
+        onTypingStart: (userId) => {
+            setTypingUsers(prev => [...prev.filter(id => id !== userId), userId]);
         },
         onTypingStop: (userId) => {
-            setTypingUsers(typingUsers.filter(u => u.userId !== userId));
+            setTypingUsers(prev => prev.filter(id => id !== userId));
         },
-        onPresenceUpdate: (userId, status) => {
-            console.log('Presence updated:', userId, status);
-        },
-        onAIThinkingStart: (user) => {
-            console.log('AI thinking started by:', user);
+        onAIThinkingStart: () => {
+            console.log('AI thinking started');
             setIsLoading(true);
         },
         onAIThinkingStop: () => {
@@ -340,7 +397,7 @@ export default function ChatPage() {
             id: generateMessageId(),
             text: messageText,
             sender: 'user' as const,
-            name: isPublicChat ? (user?.displayName || simulatedName || 'Anonymous') : (user?.displayName || 'Anonymous'),
+            name: user?.displayName || 'Anonymous',
             userId: user?.uid || 'guest',
             timestamp: Date.now()
         };
@@ -686,19 +743,37 @@ export default function ChatPage() {
     }
 
     return (
-        <>
-        <div className="min-h-screen bg-transparent flex flex-col">
+        <div className="min-h-screen bg-transparent flex">
+            {/* Chat Sidebar */}
+            <ChatSidebar
+                chats={availableChats}
+                activeChatId={activeChatId}
+                onChatSelect={handleChatSelect}
+                onCreateChat={handleCreateChat}
+                onResetChat={handleResetChat}
+                onExportChat={handleExportChat}
+                onDeleteChat={handleDeleteChat}
+                userCount={userCount}
+            />
 
-            <div className="container mx-auto p-6 max-w-7xl flex-1 flex flex-col">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold mb-2">Class Chat</h1>
-                    <p className="text-muted-foreground">
-                        Join class discussions, ask questions, and collaborate with classmates
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col">
+                <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+                    <h1 className="text-2xl font-bold mb-1">
+                        {availableChats.find(chat => chat.id === activeChatId)?.name || 'Chat'}
+                    </h1>
+                    <p className="text-muted-foreground text-sm">
+                        {availableChats.find(chat => chat.id === activeChatId)?.type === 'public' 
+                            ? 'Public discussion channel' 
+                            : availableChats.find(chat => chat.id === activeChatId)?.type === 'group'
+                            ? 'Group conversation'
+                            : 'Private conversation'
+                        }
                     </p>
                 </div>
 
-                {/* Simple chat interface - no tabs needed */}
-                <div className="w-full flex-1 flex flex-col">
+                {/* Chat Interface */}
+                <div className="flex-1 flex flex-col p-6">
 
                     {/* General Chat Interface */}
                         <Card className="flex-1 flex flex-col overflow-hidden relative">
@@ -710,30 +785,9 @@ export default function ChatPage() {
                                             <Users className="h-3 w-3 mr-1" />
                                             {generalChat?.messages?.filter(m => m.sender === 'user').length || 0} Users
                                         </Badge>
-                                        {/* Online Users Indicator */}
+                                        {/* Live User Count */}
                                         <div className="mr-2">
-                                                <OnlineUsersIndicator 
-                                                    onlineUsers={onlineUsers}
-                                                    currentUserId={user?.uid || `guest-${simulatedName}-${Date.now()}`}
-                                                    showCount={true}
-                                                    maxVisible={3}
-                                                />
-                                        </div>
-                                        {/* Identity Switcher (Public Chat Only) */}
-                                        <div className="hidden sm:flex items-center gap-2 ml-2">
-                                            <span className="text-xs text-muted-foreground">Send as</span>
-                                            <Select value={simulatedName} onValueChange={setSimulatedName}>
-                                                <SelectTrigger className="h-8 w-[120px]">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {user?.displayName && (
-                                                        <SelectItem value={user.displayName}>{user.displayName}</SelectItem>
-                                                    )}
-                                                    <SelectItem value="Alice">Alice</SelectItem>
-                                                    <SelectItem value="Bob">Bob</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                <LiveUserCount userCount={userCount} />
                                         </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -848,7 +902,7 @@ export default function ChatPage() {
                                             {/* Typing Indicator */}
                                             <TypingIndicator 
                                                 typingUsers={typingUsers}
-                                                currentUserId={user?.uid || `guest-${simulatedName}-${Date.now()}`}
+                                                currentUserId={user?.uid || `guest-${Date.now()}`}
                                             />
                                             
                                             {/* Scroll target for auto-scroll */}
@@ -891,13 +945,14 @@ export default function ChatPage() {
                                     </div>
                                 </CardContent>
                             </Card>
-                                                                    </div>
-                                                                </div>
-        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        {/* Reset Chat Confirmation Dialog */}
-        <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-            <DialogContent>
+            {/* Reset Chat Confirmation Dialog */}
+            <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                <DialogContent>
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <RotateCcw className="h-5 w-5 text-orange-500" />
@@ -951,7 +1006,7 @@ export default function ChatPage() {
                     </Button>
                 </div>
             </DialogContent>
-        </Dialog>
-        </>
+            </Dialog>
+        </div>
     );
 }

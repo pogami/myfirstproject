@@ -1,19 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-interface SocketUser {
-  userId: string;
-  username: string;
-  avatar?: string;
-  joinedAt: number;
-}
-
-interface TypingUser {
-  userId: string;
-  username: string;
-  timestamp: number;
-}
-
 interface Message {
   id: string;
   sender: 'user' | 'bot';
@@ -31,13 +18,10 @@ interface UseSocketProps {
   avatar?: string;
   onMessageReceived?: (message: Message) => void;
   onAIResponse?: (message: Message, aiResponse: string) => void;
-  onUserJoined?: (user: SocketUser) => void;
-  onUserLeft?: (user: { userId: string; username: string; timestamp: number }) => void;
-  onOnlineUsers?: (users: SocketUser[]) => void;
-  onTypingStart?: (user: TypingUser) => void;
+  onUserCountUpdate?: (count: number) => void;
+  onTypingStart?: (userId: string) => void;
   onTypingStop?: (userId: string) => void;
-  onPresenceUpdate?: (userId: string, status: 'online' | 'away' | 'offline') => void;
-  onAIThinkingStart?: (user: { userId: string; username: string; timestamp: number }) => void;
+  onAIThinkingStart?: () => void;
   onAIThinkingStop?: () => void;
 }
 
@@ -48,19 +32,17 @@ export const useSocket = ({
   avatar,
   onMessageReceived,
   onAIResponse,
-  onUserJoined,
-  onUserLeft,
-  onOnlineUsers,
+  onUserCountUpdate,
   onTypingStart,
   onTypingStop,
-  onPresenceUpdate,
   onAIThinkingStart,
   onAIThinkingStop
 }: UseSocketProps) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<SocketUser[]>([]);
-  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+  const [userCount, setUserCount] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [isAIThinking, setIsAIThinking] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -98,22 +80,11 @@ export const useSocket = ({
       setIsConnected(false);
     });
 
-    // Room events
-    socket.on('user-joined', (user: SocketUser) => {
-      console.log('User joined:', user);
-      onUserJoined?.(user);
-    });
-
-    socket.on('user-left', (user: { userId: string; username: string; timestamp: number }) => {
-      console.log('User left:', user);
-      onUserLeft?.(user);
-      setOnlineUsers(prev => prev.filter(u => u.userId !== user.userId));
-    });
-
-    socket.on('online-users', (users: SocketUser[]) => {
-      console.log('Online users:', users);
-      setOnlineUsers(users);
-      onOnlineUsers?.(users);
+    // User count events
+    socket.on('user-count-update', (count: number) => {
+      console.log('User count updated:', count);
+      setUserCount(count);
+      onUserCountUpdate?.(count);
     });
 
     // Message events
@@ -128,32 +99,31 @@ export const useSocket = ({
     });
 
     // Typing events
-    socket.on('user-typing', (user: TypingUser) => {
+    socket.on('user-typing', (data: { userId: string }) => {
       setTypingUsers(prev => {
-        const filtered = prev.filter(u => u.userId !== user.userId);
-        return [...filtered, user];
+        if (!prev.includes(data.userId)) {
+          return [...prev, data.userId];
+        }
+        return prev;
       });
-      onTypingStart?.(user);
+      onTypingStart?.(data.userId);
     });
 
     socket.on('user-stopped-typing', (data: { userId: string }) => {
-      setTypingUsers(prev => prev.filter(u => u.userId !== data.userId));
+      setTypingUsers(prev => prev.filter(id => id !== data.userId));
       onTypingStop?.(data.userId);
     });
 
-    // Presence events
-    socket.on('presence-updated', (data: { userId: string; status: 'online' | 'away' | 'offline'; timestamp: number }) => {
-      onPresenceUpdate?.(data.userId, data.status);
-    });
-
     // AI thinking events
-    socket.on('ai-thinking-start', (user: { userId: string; username: string; timestamp: number }) => {
-      console.log('AI thinking started by:', user);
-      onAIThinkingStart?.(user);
+    socket.on('ai-thinking-start', () => {
+      console.log('AI thinking started');
+      setIsAIThinking(true);
+      onAIThinkingStart?.();
     });
 
     socket.on('ai-thinking-stop', () => {
       console.log('AI thinking stopped');
+      setIsAIThinking(false);
       onAIThinkingStop?.();
     });
 
@@ -216,16 +186,6 @@ export const useSocket = ({
     }
   };
 
-  const updatePresence = (status: 'online' | 'away' | 'offline') => {
-    if (socketRef.current && isConnected && room) {
-      socketRef.current.emit('update-presence', {
-        room,
-        userId,
-        status
-      });
-    }
-  };
-
   const startAIThinking = () => {
     if (socketRef.current && isConnected && room) {
       socketRef.current.emit('ai-thinking-start', {
@@ -247,13 +207,13 @@ export const useSocket = ({
 
   return {
     isConnected,
-    onlineUsers,
+    userCount,
     typingUsers,
+    isAIThinking,
     sendMessage,
     sendAIResponse,
     startTyping,
     stopTyping,
-    updatePresence,
     startAIThinking,
     stopAIThinking
   };
