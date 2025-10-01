@@ -256,7 +256,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       toast({
         variant: "destructive",
         title: "Authentication Failed",
-        description: description,
+        description: `${description}\n\nError Code: ${error?.code || 'Unknown'}\nError Message: ${error?.message || 'No details available'}`,
       });
     } finally {
         setIsSubmittingGoogle(false);
