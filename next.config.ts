@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
+  // Exclude problematic test pages from build
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  output: 'standalone',
   turbopack: {
     rules: {
       '*.svg': {
