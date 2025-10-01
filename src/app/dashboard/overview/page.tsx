@@ -220,7 +220,7 @@ export default function ClassOverviewPage() {
                                     <Globe className="size-6 text-emerald-600" />
                                 </div>
                                 <div className="flex-1">
-                                    <CardTitle className="text-lg">Public General Chat</CardTitle>
+                                    <CardTitle className="text-lg">Community</CardTitle>
                                     <CardDescription className="mt-1">Open to all students • Type <code className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-xs">@ai</code> to call AI</CardDescription>
                                 </div>
                             </div>

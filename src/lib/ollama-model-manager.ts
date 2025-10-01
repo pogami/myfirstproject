@@ -85,20 +85,19 @@ export class OllamaModelManager {
    * Get the best available model for general chat/analysis
    */
   static getBestGeneralModel(): string {
-    // Prioritize faster models for better response times
-    // Try gemma3:1b first (815MB - fastest)
+    // Prioritize GPT OSS model (qwen2.5:1.5b) for best chat experience
+    if (this.isModelAvailable('qwen2.5:1.5b')) {
+      return 'qwen2.5:1.5b';
+    }
+    
+    // Try gemma3:1b second (815MB - fastest)
     if (this.isModelAvailable('gemma3:1b')) {
       return 'gemma3:1b';
     }
     
-    // Try gemma2:2b second (1.6GB - fast)
+    // Try gemma2:2b third (1.6GB - fast)
     if (this.isModelAvailable('gemma2:2b')) {
       return 'gemma2:2b';
-    }
-    
-    // Try qwen2.5:1.5b third (986MB - fast)
-    if (this.isModelAvailable('qwen2.5:1.5b')) {
-      return 'qwen2.5:1.5b';
     }
     
     // Fallback to llama3.1:8b for better quality when needed

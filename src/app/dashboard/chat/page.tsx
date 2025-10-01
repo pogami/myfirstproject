@@ -2,20 +2,23 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
-import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, ChevronLeft, ChevronRight, Globe } from "lucide-react";
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
 import { auth } from "@/lib/firebase/client";
+import { useSocket } from "@/hooks/use-socket";
+import { TypingIndicator } from "@/components/typing-indicator";
+import { OnlineUsersIndicator } from "@/components/online-users-indicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -30,9 +33,9 @@ import { MessageTimestamp } from "@/components/message-timestamp";
 import BotResponse from "@/components/bot-response";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { RippleText } from "@/components/ripple-text";
-import { useSidebar } from "@/hooks/use-sidebar";
 import { InDepthAnalysis } from "@/components/in-depth-analysis";
 import { JoinMessage } from "@/components/join-message";
+import { WelcomeCard } from "@/components/welcome-card";
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -48,24 +51,66 @@ export default function ChatPage() {
         exportChat, 
         resetChat, 
         deleteChat, 
-        initializeGeneralChats 
+        initializeGeneralChats,
+        // Socket.IO state
+        socket,
+        isSocketConnected,
+        activeUsers,
+        typingUsers,
+        isAiThinking,
+        setSocket,
+        setSocketConnected,
+        setActiveUsers,
+        setTypingUsers,
+        setAiThinking,
+        sendRealtimeMessage,
+        startTyping,
+        stopTyping
     } = useChatStore();
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [isGuest, setIsGuest] = useState(false);
     const [forceLoad, setForceLoad] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const tabsScrollRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     // New chat creation is disabled here (only via Upload Syllabus)
-    const [canScrollLeft, setCanScrollLeft] = useState(false);
-    const [canScrollRight, setCanScrollRight] = useState(false);
     const [unreadById, setUnreadById] = useState<Record<string, number>>({});
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
     const { toast } = useToast();
+
+    // Socket.IO integration
+    const {
+        socket: socketInstance,
+        isConnected: socketConnected,
+        activeUsers: socketActiveUsers,
+        typingUsers: socketTypingUsers,
+        isAiThinking: socketAiThinking,
+        availableChats: socketAvailableChats,
+        sendMessage: socketSendMessage,
+        startTyping: socketStartTyping,
+        stopTyping: socketStopTyping,
+        joinChat,
+        leaveChat
+    } = useSocket({
+        chatId: currentTab || '',
+        userId: user?.uid || 'guest',
+        userName: user?.displayName || user?.email || 'Guest User',
+        userPhotoURL: !isGuest ? user?.photoURL : undefined,
+        enabled: !!currentTab
+    });
+
+    // Debug user state changes
+    useEffect(() => {
+        console.log('User state changed:', { 
+            user: user ? { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL } : null,
+            userName: user?.displayName || user?.email || 'Guest User',
+            userPhotoURL: user?.photoURL
+        });
+    }, [user]);
 
     const copyToClipboard = async (text: string, messageId: string) => {
         try {
@@ -113,6 +158,15 @@ export default function ChatPage() {
         }
     }, [currentTab]);
 
+    // Sync Socket.IO state with chat store
+    useEffect(() => {
+        setSocket(socketInstance);
+        setSocketConnected(socketConnected);
+        setActiveUsers(socketActiveUsers);
+        setTypingUsers(socketTypingUsers);
+        setAiThinking(socketAiThinking);
+    }, [socketInstance, socketConnected, socketActiveUsers, socketTypingUsers, socketAiThinking, setSocket, setSocketConnected, setActiveUsers, setTypingUsers, setAiThinking]);
+
     // Initialize general chats when component mounts
     useEffect(() => {
         initializeGeneralChats();
@@ -141,14 +195,21 @@ export default function ChatPage() {
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
         try {
+            console.log('Initializing auth listener...');
             // Check if we're online before initializing auth listener
             if (navigator.onLine) {
-                initializeAuthListener();
+                const unsubscribe = initializeAuthListener();
+                console.log('Auth listener initialized, unsubscribe function:', typeof unsubscribe);
             } else {
                 console.log('Offline mode - skipping auth listener initialization');
             }
         } catch (error) {
             console.warn('Failed to initialize auth listener:', error);
+            // Force load if auth fails
+            setTimeout(() => {
+                console.log('Auth failed, forcing load');
+                setForceLoad(true);
+            }, 1000);
         }
     }, [initializeAuthListener]);
 
@@ -181,19 +242,26 @@ export default function ChatPage() {
         try {
             if (auth && typeof auth.onAuthStateChanged === 'function') {
                 const unsubscribe = auth.onAuthStateChanged(
-                    (user: any) => setUser(user),
+                    (user: any) => {
+                        setUser(user);
+                        // Check if user is guest/anonymous
+                        setIsGuest(user?.isAnonymous || user?.isGuest || false);
+                    },
                     (error: any) => {
                         console.warn("Auth state error in chat page:", error);
                         setUser(null);
+                        setIsGuest(false);
                     }
                 );
                 return unsubscribe;
             } else {
                 setUser(null);
+                setIsGuest(false);
             }
         } catch (authError) {
             console.warn("Auth initialization error in chat page:", authError);
             setUser(null);
+            setIsGuest(false);
         }
     }, []);
 
@@ -247,34 +315,6 @@ export default function ChatPage() {
         setUnreadById((m) => ({ ...m, [currentTab]: 0 }));
     }, [currentTab]);
 
-    // Tabs chevron auto-hide and momentum scroll helpers
-    useEffect(() => {
-        const el = tabsScrollRef.current;
-        if (!el) return;
-        const update = () => {
-            setCanScrollLeft(el.scrollLeft > 2);
-            setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-        };
-        update();
-        el.addEventListener('scroll', update, { passive: true });
-        const ro = new ResizeObserver(update);
-        ro.observe(el);
-        return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
-    }, []);
-
-    // Touch swipe for tabs on mobile
-    useEffect(() => {
-        const el = tabsScrollRef.current;
-        if (!el) return;
-        let startX = 0; let lastX = 0; let active = false;
-        const onStart = (e: TouchEvent) => { active = true; startX = lastX = e.touches[0].clientX; };
-        const onMove = (e: TouchEvent) => { if (!active) return; const x = e.touches[0].clientX; const dx = lastX - x; lastX = x; el.scrollLeft += dx; };
-        const onEnd = () => { active = false; };
-        el.addEventListener('touchstart', onStart, { passive: true });
-        el.addEventListener('touchmove', onMove, { passive: true });
-        el.addEventListener('touchend', onEnd, { passive: true });
-        return () => { el.removeEventListener('touchstart', onStart); el.removeEventListener('touchmove', onMove); el.removeEventListener('touchend', onEnd); };
-    }, []);
 
     // Initialize general chat if it doesn't exist and set current tab
     useEffect(() => {
@@ -291,21 +331,24 @@ export default function ChatPage() {
         }
     }, [initializeGeneralChats, currentTab, setCurrentTab]);
 
-    // Force load after 3 seconds to prevent infinite loading
+    // Force load after 2 seconds to prevent infinite loading
     useEffect(() => {
         const timer = setTimeout(() => {
             if (isStoreLoading) {
                 console.log('ChatPage - Force loading after timeout');
                 setForceLoad(true);
             }
-        }, 3000);
+        }, 2000);
 
         return () => clearTimeout(timer);
     }, [isStoreLoading]);
 
-    // Generate unique message ID
+    // Generate unique message ID with better uniqueness
     const generateMessageId = () => {
-        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substr(2, 9);
+        const sessionId = Math.random().toString(36).substr(2, 4);
+        return `${timestamp}-${random}-${sessionId}`;
     };
 
     // Keyboard shortcuts for tab switching and focusing input
@@ -350,11 +393,17 @@ export default function ChatPage() {
             text: messageText,
             sender: 'user' as const,
             name: user?.displayName || 'Anonymous',
+            userId: user?.uid || 'guest',
             timestamp: Date.now()
         };
 
         // Clear input immediately to prevent spam
         setInputValue("");
+
+        // Stop typing indicator when message is sent
+        if (currentTab) {
+            stopTyping(currentTab);
+        }
 
         // Set loading state immediately for instant thinking animation
         if (shouldCallAIFinal) {
@@ -364,6 +413,8 @@ export default function ChatPage() {
 
         // Add user message
         await addMessage(currentTab || 'private-general-chat', userMessage);
+
+        // Real-time message broadcasting is now handled in the chat store
 
         // Only get AI response if appropriate
         if (shouldCallAIFinal) {
@@ -464,6 +515,8 @@ export default function ChatPage() {
 
                 // Add AI response
                 await addMessage(currentTab || 'private-general-chat', aiMessage);
+
+                // Real-time AI response broadcasting is now handled in the chat store
             } catch (error) {
                 console.error('AI Error:', error);
                 const errorMessage = {
@@ -674,6 +727,7 @@ export default function ChatPage() {
     console.log('ChatPage - classChats:', classChats);
     console.log('ChatPage - generalChat:', generalChat);
     console.log('ChatPage - isLoading:', isLoading, 'lastMessageSender:', generalChat?.messages?.at(-1)?.sender);
+    console.log('ChatPage - Socket.IO state:', { isSocketConnected, activeUsers: activeUsers.length, typingUsers: typingUsers.length, isAiThinking });
 
     // Show loading state while chat store is initializing (but not if force loaded)
     if (isStoreLoading && !forceLoad) {
@@ -709,102 +763,174 @@ export default function ChatPage() {
 
             <div className="container mx-auto p-6 max-w-7xl flex-1 flex flex-col">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold mb-2">{currentTab === 'public-general-chat' ? 'Public General Chat' : 'Class Chat'}</h1>
-                    <p className="text-muted-foreground">
-                        Join class discussions, ask questions, and collaborate with classmates
-                    </p>
-                </div>
-
-                {/* Chat Tabs Switcher */}
-                <div className="mb-4 sticky top-20 z-30">
-                    <div className="w-full rounded-xl border border-border/30 bg-card/80 backdrop-blur p-2 flex items-center gap-2 shadow-sm">
-                        <button
-                            aria-label="Scroll tabs left"
-                            className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-muted hover:bg-muted/70"
-                            onMouseDown={() => {
-                                const el = document.querySelector('[data-cc-tabs]') as HTMLElement | null;
-                                if (!el) return;
-                                const id = setInterval(() => el.scrollBy({ left: -40, behavior: 'smooth' }), 60);
-                                const up = () => { clearInterval(id as any); window.removeEventListener('mouseup', up); };
-                                window.addEventListener('mouseup', up);
-                            }}
-                            onClick={() => {
-                                const el = document.querySelector('[data-cc-tabs]') as HTMLElement | null;
-                                if (el) el.scrollBy({ left: -240, behavior: 'smooth' });
-                            }}
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <div className="flex-1 overflow-hidden" data-cc-tabs ref={tabsScrollRef}>
-                            <Tabs
-                                value={currentTab || 'private-general-chat'}
-                                onValueChange={(val) => { setCurrentTab(val); try { localStorage.setItem('cc-active-tab', val); } catch {} }}
-                            >
-                                <TabsList className="flex gap-2 w-full justify-center">
-                                    {(() => {
-                                        const order = ['private-general-chat', 'public-general-chat'];
-                                        const rest = Object.keys(chats).filter(id => !order.includes(id));
-                                        const ordered = [...order.filter(id => chats[id]), ...rest];
-                                        return ordered.map(id => {
-                                            const chat = chats[id];
-                                            if (!chat) return null;
-                                            const isPublic = id === 'public-general-chat';
-                                            const unread = unreadById[id] ?? 0;
-                                            return (
-                                                <TabsTrigger
-                                                    key={id}
-                                                    value={id}
-                                                    className="relative whitespace-nowrap px-3 py-1.5 rounded-full text-sm bg-muted/40 hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-colors"
-                                                >
-                                                    <span className="inline-flex items-center gap-2">
-                                                        {id === 'private-general-chat' ? <MessageSquare className="h-3.5 w-3.5" /> : isPublic ? <Globe className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
-                                                        <span>{chat.title || id}</span>
-                                                        {isPublic ? (
-                                                            <span className="ml-1 inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Live</span>
-                                                        ) : null}
-                                                        {unread > 0 ? (
-                                                            <span className="ml-1 inline-flex items-center justify-center text-[10px] min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white">{unread > 9 ? '9+' : unread}</span>
-                                                        ) : null}
-                                                    </span>
-                                                    {/* Animated underline */}
-                                                    <span className="absolute left-2 right-2 -bottom-1 h-0.5 rounded bg-primary/60 opacity-0 data-[state=active]:opacity-100 transition-opacity duration-200" />
-                                                </TabsTrigger>
-                                            );
-                                        });
-                                    })()}
-                                </TabsList>
-                            </Tabs>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold mb-2">{currentTab === 'public-general-chat' ? 'Community' : 'Class Chat'}</h1>
+                            <p className="text-muted-foreground">
+                                Join class discussions, ask questions, and collaborate with classmates
+                            </p>
                         </div>
-                        <button
-                            aria-label="Scroll tabs right"
-                            className="h-9 w-9 inline-flex items-center justify-center rounded-md bg-muted hover:bg-muted/70"
-                            onMouseDown={() => {
-                                const el = document.querySelector('[data-cc-tabs]') as HTMLElement | null;
-                                if (!el) return;
-                                const id = setInterval(() => el.scrollBy({ left: 40, behavior: 'smooth' }), 60);
-                                const up = () => { clearInterval(id as any); window.removeEventListener('mouseup', up); };
-                                window.addEventListener('mouseup', up);
-                            }}
-                            onClick={() => {
-                                const el = document.querySelector('[data-cc-tabs]') as HTMLElement | null;
-                                if (el) el.scrollBy({ left: 240, behavior: 'smooth' });
-                            }}
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                        {/* Chat creation moved to Upload Syllabus flow; no inline + New */}
+                        {/* Real-time status indicator */}
+                        {currentTab === 'public-general-chat' && (
+                            <OnlineUsersIndicator 
+                                users={activeUsers}
+                                isConnected={isSocketConnected}
+                                showAvatars={true}
+                                maxVisible={5}
+                            />
+                        )}
                     </div>
                 </div>
 
-                {/* Simple chat interface - no tabs needed */}
-                <div className="w-full flex-1 flex flex-col">
 
-                    {/* General Chat Interface */}
+                {/* Chat Interface with Sidebar */}
+                <div className="w-full flex-1 flex gap-4">
+                    {/* Chat Sidebar */}
+                    <div className="w-64 flex-shrink-0">
+                        <Card className="h-full flex flex-col">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <MessageSquare className="h-5 w-5" />
+                                    Chats
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1 overflow-hidden p-0">
+                                <div className="h-full overflow-y-auto">
+                                    <div className="p-4 space-y-2">
+                                        {(() => {
+                                            // Always show permanent chats first
+                                            const permanentChats = [
+                                                {
+                                                    chatId: 'private-general-chat',
+                                                    title: 'General Chat',
+                                                    userCount: 1, // Always show as available
+                                                    isActive: true,
+                                                    isPermanent: true
+                                                },
+                                                {
+                                                    chatId: 'public-general-chat',
+                                                    title: 'Community',
+                                                    userCount: socketAvailableChats.find(c => c.chatId === 'public-general-chat')?.userCount || 0,
+                                                    isActive: true,
+                                                    isPermanent: true
+                                                }
+                                            ];
+
+                                            // Get other active chats from socket
+                                            const otherChats = socketAvailableChats
+                                                .filter(chat => chat.isActive && !chat.chatId.includes('general-chat'))
+                                                .sort((a, b) => {
+                                                    // Sort by user count (descending), then by title
+                                                    if (a.userCount !== b.userCount) {
+                                                        return b.userCount - a.userCount;
+                                                    }
+                                                    return a.title.localeCompare(b.title);
+                                                });
+
+                                            // Combine permanent chats with other chats
+                                            const allChats = [...permanentChats, ...otherChats];
+
+                                            return allChats.map(chat => {
+                                                const isPublic = chat.chatId === 'public-general-chat';
+                                                const isPrivate = chat.chatId === 'private-general-chat';
+                                                const unread = unreadById[chat.chatId] ?? 0;
+                                                const isActive = currentTab === chat.chatId;
+                                                
+                                                return (
+                                                    <button
+                                                        key={chat.chatId}
+                                                        onClick={() => { 
+                                                            setCurrentTab(chat.chatId); 
+                                                            try { localStorage.setItem('cc-active-tab', chat.chatId); } catch {} 
+                                                        }}
+                                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-muted/50 ${
+                                                            isActive 
+                                                                ? 'bg-primary/10 border border-primary/20 text-primary' 
+                                                                : 'hover:bg-muted/30'
+                                                        }`}
+                                                    >
+                                                        <div className="flex-shrink-0">
+                                                            {isPrivate ? (
+                                                                <MessageSquare className="h-4 w-4" />
+                                                            ) : isPublic ? (
+                                                                <Globe className="h-4 w-4" />
+                                                            ) : (
+                                                                <BookOpen className="h-4 w-4" />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium truncate">
+                                                                    {chat.title}
+                                                                </span>
+                                                                {isPublic && (
+                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                                                        Live
+                                                                    </span>
+                                                                )}
+                                                                {isPrivate && (
+                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                                                                        AI
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground truncate">
+                                                                {isPrivate ? (
+                                                                    'AI Assistant • Private'
+                                                                ) : isPublic ? (
+                                                                    <>
+                                                                        <div className="font-medium text-muted-foreground/80 mb-0.5">
+                                                                            Connect with students • Share knowledge • Study together
+                                                                        </div>
+                                                                        <div>
+                                                                            {chat.userCount} user{chat.userCount !== 1 ? 's' : ''} online
+                                                                            {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage && (
+                                                                                <span className="ml-2">
+                                                                                    • {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.length > 30 
+                                                                                        ? socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.substring(0, 30) + '...' 
+                                                                                        : socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        {chat.userCount} user{chat.userCount !== 1 ? 's' : ''} online
+                                                                        {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage && (
+                                                                            <span className="ml-2">
+                                                                                • {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.length > 30 
+                                                                                    ? socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.substring(0, 30) + '...' 
+                                                                                    : socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text}
+                                                                            </span>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {unread > 0 && (
+                                                            <div className="flex-shrink-0">
+                                                                <span className="inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white font-medium">
+                                                                    {unread > 9 ? '9+' : unread}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            });
+                                        })()}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Chat Content */}
+                    <div className="flex-1 flex flex-col">
                         <Card className="flex-1 flex flex-col overflow-hidden relative">
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
-                                        {currentTab === 'public-general-chat' ? 'Public General Chat' : 'General Chat'}
+                                        {currentTab === 'public-general-chat' ? 'Community' : 'General Chat'}
                                         <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
                                             All Users
@@ -842,24 +968,53 @@ export default function ChatPage() {
                     {/* New chat modal removed: chats are created via Upload Syllabus only */}
                                     <ScrollArea className="h-[calc(100vh-200px)] px-4" ref={scrollAreaRef}>
                                         <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
+                                            {/* Welcome Card - only show for first message and if it's a welcome message */}
+                                            {generalChat?.messages?.length === 1 && 
+                                             generalChat.messages[0]?.sender === 'bot' && 
+                                             generalChat.messages[0]?.text?.includes('Welcome') && (
+                                                <WelcomeCard 
+                                                    chatType={currentTab === 'public-general-chat' ? 'community' : 'general'}
+                                                    onQuickAction={(action) => {
+                                                        setInputValue(action);
+                                                        // Focus on input after setting value
+                                                        setTimeout(() => {
+                                                            const input = document.querySelector('textarea[placeholder*="message"]') as HTMLTextAreaElement;
+                                                            if (input) {
+                                                                input.focus();
+                                                                input.setSelectionRange(input.value.length, input.value.length);
+                                                            }
+                                                        }, 100);
+                                                    }}
+                                                />
+                                            )}
+                                            
                                             {generalChat?.messages?.map((message, index) => {
                                                 // Handle system messages (join notifications)
                                                 if (message.sender === 'system') {
                                                     return (
                                                         <JoinMessage 
-                                                            key={`${message.id || 'msg'}-${index}-${message.timestamp}`}
+                                                            key={`join-${message.id || `fallback-${index}-${message.timestamp}`}`}
                                                             message={message}
                                                         />
                                                     );
                                                 }
                                                 
+                                                // Skip the welcome message - we show the interactive card instead
+                                                if (message.sender === 'bot' && message.text?.includes('Welcome')) {
+                                                    return null;
+                                                }
+                                                
                                                 return (
-                                                <div key={`${message.id || 'msg'}-${index}-${message.timestamp}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
+                                                <div key={`msg-${message.id || `fallback-${index}-${message.timestamp}`}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
                                                     <div className={`flex gap-3 max-w-[85%] min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         <Avatar className="w-8 h-8 flex-shrink-0">
-                                                            <AvatarImage src={message.sender === 'user' ? user?.photoURL || '' : ''} />
+                                                            {message.sender === 'user' && !isGuest && user?.photoURL ? (
+                                                                <AvatarImage src={user.photoURL} />
+                                                            ) : null}
                                                             <AvatarFallback className="text-xs">
-                                                                {message.sender === 'user' ? (user?.displayName?.[0] || user?.email?.[0] || 'U') : (
+                                                                {message.sender === 'user' ? (
+                                                                    isGuest ? 'G' : (user?.displayName?.[0] || user?.email?.[0] || 'U')
+                                                                ) : (
                                                                     <CourseConnectLogo className="w-4 h-4" />
                                                                 )}
                                                             </AvatarFallback>
@@ -950,26 +1105,60 @@ export default function ChatPage() {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Real-time typing indicator - compact design */}
+                                            {typingUsers.length > 0 && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: 5 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -5 }}
+                                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                                    className="flex gap-2 justify-start max-w-full"
+                                                >
+                                                    <div className="flex gap-2 max-w-[85%] min-w-0 flex-row">
+                                                        <Avatar className="w-6 h-6 flex-shrink-0">
+                                                            <AvatarImage src="" />
+                                                            <AvatarFallback className="bg-muted/50 text-muted-foreground text-xs">
+                                                                <Users className="w-2.5 h-2.5" />
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="bg-muted/30 dark:bg-muted/20 rounded-lg px-2 py-1.5 border border-border/30">
+                                                                <TypingIndicator users={typingUsers} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
                                         </div>
                                     </ScrollArea>
                                     <div className="p-4 sm:p-6 flex-shrink-0 bg-background pb-safe">
                                         <EnhancedChatInput
                                             value={inputValue}
-                                            onChange={(e) => setInputValue(e.target.value)}
+                                            onChange={(e) => {
+                                                setInputValue(e.target.value);
+                                                // Start typing indicator
+                                                if (currentTab && e.target.value.length > 0) {
+                                                    startTyping(currentTab);
+                                                } else if (currentTab) {
+                                                    stopTyping(currentTab);
+                                                }
+                                            }}
                                             onSend={handleSendMessage}
                                             onFileUpload={handleFileUpload}
                                         placeholder="Ask AI anything or chat with classmates"
                                             disabled={false}
                                             className="w-full"
-                                            isPublicChat={false}
+                                            isPublicChat={currentTab === 'public-general-chat'}
                                             isClassChat={false}
                                         />
                                     </div>
                                 </CardContent>
                             </Card>
-                                                                    </div>
-                                                                </div>
-        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         {/* Reset Chat Confirmation Dialog */}
         <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>

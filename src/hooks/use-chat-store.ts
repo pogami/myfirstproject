@@ -6,6 +6,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/client';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { Socket } from 'socket.io-client';
 
 export type Message = {
     id?: string;
@@ -50,6 +51,12 @@ interface ChatState {
   trialActivated: boolean; // Whether user has activated their trial
   trialStartDate: number | null; // When the trial started (timestamp)
   trialDaysLeft: number; // Days remaining in trial
+  // Socket.IO integration
+  socket: Socket | null;
+  isSocketConnected: boolean;
+  activeUsers: Array<{ userId: string; userName: string }>;
+  typingUsers: Array<{ userId: string; userName: string }>;
+  isAiThinking: boolean;
   addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class') => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   addUserJoinMessage: (chatId: string, userName: string, userId: string) => Promise<void>;
@@ -66,6 +73,16 @@ interface ChatState {
   exportChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   initializeGeneralChats: () => void;
+  // Socket.IO methods
+  setSocket: (socket: Socket | null) => void;
+  setSocketConnected: (connected: boolean) => void;
+  setActiveUsers: (users: Array<{ userId: string; userName: string }>) => void;
+  setTypingUsers: (users: Array<{ userId: string; userName: string }>) => void;
+  setAiThinking: (thinking: boolean) => void;
+  sendRealtimeMessage: (chatId: string, message: Message) => void;
+  startTyping: (chatId: string) => void;
+  stopTyping: (chatId: string) => void;
+  receiveRealtimeMessage: (chatId: string, message: Message) => void;
 }
 
 const getChatId = (chatName: string) => chatName.toLowerCase().replace(/[\\s:]/g, '-');
@@ -84,31 +101,37 @@ export const useChatStore = create<ChatState>()(
       trialActivated: false, // Trial not activated by default
       trialStartDate: null, // No trial start date initially
       trialDaysLeft: 14, // Full 14 days available
+      // Socket.IO state
+      socket: null,
+      isSocketConnected: false,
+      activeUsers: [],
+      typingUsers: [],
+      isAiThinking: false,
       // Track active Firestore subscriptions to avoid duplicates
       _chatSubscriptions: {} as Record<string, () => void>,
 
       initializeAuthListener: () => {
+        console.log("initializeAuthListener called");
+        
+        // Immediately set loading to false and enable guest mode for real-time chat
+        console.log("Setting isStoreLoading to false and isGuest to true");
+        set({ isStoreLoading: false, isGuest: true });
+        
         // Check if auth is properly initialized
         if (!auth || typeof auth !== 'object' || typeof auth.onAuthStateChanged !== 'function') {
-          console.warn("Auth object not properly initialized, falling back to guest mode");
-          set({ isGuest: true, isStoreLoading: false });
+          console.warn("Auth object not properly initialized, using guest mode for real-time chat");
           return () => {}; // Return empty unsubscribe function
         }
         
-        // Set loading to false immediately to prevent infinite loading
-        setTimeout(() => {
-          const currentState = get();
-          if (currentState.isStoreLoading) {
-            console.log("Setting store loading to false after timeout");
-            set({ isStoreLoading: false });
-          }
-        }, 1000); // 1 second timeout
+        console.log("Auth object is properly initialized, setting up auth listener");
         
         const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
           try {
+            console.log("Auth state changed, user:", user ? "signed in" : "signed out");
             if (user) {
               // User is signed in.
-              set({ isGuest: false, isStoreLoading: true });
+              console.log("User signed in, loading chats...");
+              set({ isGuest: false, isStoreLoading: false }); // Keep loading false for real-time chat
               
               try {
                 const userDocRef = doc(db as Firestore, 'users', user.uid);
@@ -152,6 +175,7 @@ export const useChatStore = create<ChatState>()(
               }
             } else {
               // User is signed out. The persisted local state for guests will be used.
+              console.log("User signed out, switching to guest mode");
               set({ isGuest: true, isStoreLoading: false });
             }
           } catch (authError) {
@@ -275,13 +299,14 @@ export const useChatStore = create<ChatState>()(
       },
 
       addMessage: async (chatId, message, replaceLast = false) => {
-        const { isGuest } = get();
+        console.log('addMessage called:', { chatId, message: { id: message.id, text: message.text, sender: message.sender } });
+        const { isGuest, socket, isSocketConnected } = get();
         // Ensure chat exists locally
         set((state) => {
           if (!state.chats[chatId]) {
             state.chats[chatId] = {
               id: chatId,
-              title: chatId === 'public-general-chat' ? 'Public General Chat' : chatId,
+              title: chatId === 'public-general-chat' ? 'Community' : chatId,
               messages: [],
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -291,15 +316,60 @@ export const useChatStore = create<ChatState>()(
           return state;
         });
         
-        // Ensure message text is always a string
+        // Generate unique ID for message if it doesn't have one
+        const generateMessageId = () => {
+          const timestamp = Date.now();
+          const random = Math.random().toString(36).substr(2, 9);
+          const sessionId = Math.random().toString(36).substr(2, 4);
+          return `${timestamp}-${random}-${sessionId}`;
+        };
+        
+        // Ensure message text is always a string and has a unique ID
         const safeMessage = {
           ...message,
+          id: message.id || generateMessageId(), // Generate ID if missing
           text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
         };
         
-        // Optimistic update for immediate UI response
+        // Optimistic update for immediate UI response (with deduplication)
         set((state) => {
           if (!state.chats[chatId]) return state;
+          
+        // Check if message already exists (by ID first, then by content)
+        const existingById = state.chats[chatId].messages.find(m => m.id === safeMessage.id);
+        const existingByContent = state.chats[chatId].messages.find(m => 
+          m.timestamp === safeMessage.timestamp && 
+          m.userId === safeMessage.userId && 
+          m.text === safeMessage.text
+        );
+        
+        if (existingById) {
+          console.log('Message already exists by ID in addMessage, skipping duplicate:', { 
+            id: safeMessage.id, 
+            existingId: existingById.id,
+            text: safeMessage.text?.substring(0, 50) + '...',
+            totalMessages: state.chats[chatId].messages.length
+          });
+          return state;
+        }
+        
+        if (existingByContent) {
+          console.log('Message already exists by content in addMessage, skipping duplicate:', { 
+            id: safeMessage.id, 
+            existingId: existingByContent.id,
+            text: safeMessage.text?.substring(0, 50) + '...',
+            totalMessages: state.chats[chatId].messages.length
+          });
+          return state;
+        }
+        
+        console.log('Adding new message to chat:', { 
+          id: safeMessage.id, 
+          userId: safeMessage.userId,
+          text: safeMessage.text?.substring(0, 50) + '...',
+          totalMessages: state.chats[chatId].messages.length + 1
+        });
+          
           const messages = state.chats[chatId].messages;
           const newMessages = replaceLast ? [...messages.slice(0, -1), safeMessage] : [...messages, safeMessage];
            return {
@@ -313,8 +383,28 @@ export const useChatStore = create<ChatState>()(
           };
         });
 
-        // Persist to Firestore in background (non-blocking)
-        if (!isGuest) {
+        // Broadcast message via Socket.IO for real-time delivery
+        if (socket && isSocketConnected) {
+          console.log('Broadcasting message via Socket.IO:', { 
+            messageId: safeMessage.id, 
+            userId: safeMessage.userId, 
+            userName: safeMessage.name,
+            chatId 
+          });
+          socket.emit('send-message', {
+            chatId,
+            message: safeMessage
+          });
+        } else {
+          console.log('Socket not connected, message not broadcasted:', { 
+            hasSocket: !!socket, 
+            isSocketConnected, 
+            messageId: safeMessage.id 
+          });
+        }
+
+        // Persist to Firestore in background (non-blocking) - works for both guest and authenticated users
+        try {
             // Don't await this - let it run in background
             const chatDocRef = doc(db as Firestore, 'chats', chatId);
             getDoc(chatDocRef).then(chatDocSnap => {
@@ -325,7 +415,7 @@ export const useChatStore = create<ChatState>()(
               } else {
                 // Create the chat doc if missing (especially for public-general-chat)
                 const newChat: Omit<Chat, 'id'> = {
-                  title: chatId === 'public-general-chat' ? 'Public General Chat' : chatId,
+                  title: chatId === 'public-general-chat' ? 'Community' : chatId,
                   messages: [safeMessage],
                   createdAt: Date.now(),
                   updatedAt: Date.now(),
@@ -340,6 +430,9 @@ export const useChatStore = create<ChatState>()(
                 }
                 // Continue working in offline mode - the message is already in local state
             });
+        } catch (error) {
+            console.warn("Failed to save message to Firestore:", error);
+            // Continue in real-time mode even if Firestore fails
         }
       },
 
@@ -360,7 +453,7 @@ export const useChatStore = create<ChatState>()(
       // Ensure public-general-chat exists and subscribe to it
       joinPublicGeneralChat: async () => {
         const chatId = 'public-general-chat';
-        const chatTitle = 'Public General Chat';
+        const chatTitle = 'Community';
         const { isGuest } = get();
 
         // Optimistically create locally if missing
@@ -375,7 +468,7 @@ export const useChatStore = create<ChatState>()(
                 messages: [{
                   sender: 'bot',
                   name: 'CourseConnect AI',
-                  text: 'Welcome to the Public General Chat! Type @ai to ask the AI in this room.',
+                  text: 'Welcome to Community Chat! Connect with students, share knowledge, and study together. Type @ai to ask the AI in this room.',
                   timestamp: Date.now()
                 }],
                 chatType: 'public',
@@ -506,10 +599,14 @@ export const useChatStore = create<ChatState>()(
         if (!chat) return;
 
         // Clear all messages and add new welcome message
-        const newWelcomeMessage = {
+        const newWelcomeMessage = chatId === 'public-general-chat' ? {
           sender: 'bot' as const,
           name: 'CourseConnect AI',
-          text: 'Hey there! 👋 Welcome to General Chat!\n\nI\'m CourseConnect AI, your study buddy. I can help with homework, explain tricky concepts, or just chat about anything academic.\n\nWhat\'s on your mind today? Try asking:\n• "Help me understand calculus derivatives"\n• "Explain photosynthesis in simple terms"\n• "What\'s the best way to study for exams?"'
+          text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`
+        } : {
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: `Welcome to General Chat! 👋 I'm your personal AI assistant, ready to help with any academic questions. I can help with study support, homework, academic guidance, and any subject. Simply type your question below and I'll provide detailed responses. Ready to learn? Ask me anything! 🚀`
         };
         const resetMessages = [newWelcomeMessage];
 
@@ -624,7 +721,7 @@ export const useChatStore = create<ChatState>()(
           const privateGeneralMessage = {
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to Private General Chat! 🤖\n\n**Private Chat Features:**\n• Direct AI assistance with any topic\n• Personalized study help\n• Homework support\n• Academic guidance\n\n**How to use:**\n• Just type your question - AI responds automatically\n• No need for @ mentions here\n• Get detailed, step-by-step explanations\n\nWhat can I help you with today?`,
+            text: `Welcome to General Chat! 👋 I'm your personal AI assistant, ready to help with any academic questions. I can help with study support, homework, academic guidance, and any subject. Simply type your question below and I'll provide detailed responses. Ready to learn? Ask me anything! 🚀`,
             timestamp: Date.now()
           };
           
@@ -633,7 +730,7 @@ export const useChatStore = create<ChatState>()(
               ...state.chats,
               'private-general-chat': {
                 id: 'private-general-chat',
-                title: 'Private General Chat',
+                title: 'General Chat',
                 messages: [privateGeneralMessage],
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -649,7 +746,7 @@ export const useChatStore = create<ChatState>()(
           const publicGeneralMessage = {
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to Public General Chat! 👥\n\nQuick Start: Chat with other students, share study resources, or collaborate on topics. Type @ai to call the AI assistant.\n\nFeatures: Student collaboration, AI assistance, knowledge sharing & more.`,
+            text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`,
             timestamp: Date.now()
           };
           
@@ -658,7 +755,7 @@ export const useChatStore = create<ChatState>()(
               ...state.chats,
               'public-general-chat': {
                 id: 'public-general-chat',
-                title: 'Public General Chat',
+                title: 'Community',
                 messages: [publicGeneralMessage],
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -668,6 +765,125 @@ export const useChatStore = create<ChatState>()(
             }
           }));
         }
+      },
+
+      // Socket.IO methods
+      setSocket: (socket) => set({ socket }),
+      setSocketConnected: (connected) => set({ isSocketConnected: connected }),
+      setActiveUsers: (users) => set({ activeUsers: users }),
+      setTypingUsers: (users) => set({ typingUsers: users }),
+      setAiThinking: (thinking) => set({ isAiThinking: thinking }),
+      
+      sendRealtimeMessage: (chatId, message) => {
+        const { socket } = get();
+        if (socket && get().isSocketConnected) {
+          console.log('Sending real-time message:', { chatId, message });
+          socket.emit('send-message', { chatId, message });
+        }
+      },
+      
+      startTyping: (chatId) => {
+        const { socket } = get();
+        if (socket && get().isSocketConnected) {
+          console.log('Starting typing indicator for chat:', chatId);
+          socket.emit('typing-start', { chatId });
+        }
+      },
+      
+      stopTyping: (chatId) => {
+        const { socket } = get();
+        if (socket && get().isSocketConnected) {
+          console.log('Stopping typing indicator for chat:', chatId);
+          socket.emit('typing-stop', { chatId });
+        }
+      },
+      
+      receiveRealtimeMessage: (chatId, message) => {
+        console.log('Receiving real-time message:', { chatId, message });
+        
+        // Skip messages from the current user to avoid duplicates
+        const { isGuest } = get();
+        const currentUserId = isGuest ? 'guest' : (auth as Auth)?.currentUser?.uid;
+        
+        if (message.userId === currentUserId) {
+          console.log('Skipping message from current user to avoid duplicate:', { 
+            messageUserId: message.userId, 
+            currentUserId,
+            messageId: message.id 
+          });
+          return;
+        }
+        
+        // Generate unique ID for incoming message if it doesn't have one
+        const generateMessageId = () => {
+          const timestamp = Date.now();
+          const random = Math.random().toString(36).substr(2, 9);
+          const sessionId = Math.random().toString(36).substr(2, 4);
+          return `${timestamp}-${random}-${sessionId}`;
+        };
+        
+        // Ensure chat exists locally
+        set((state) => {
+          if (!state.chats[chatId]) {
+            state.chats[chatId] = {
+              id: chatId,
+              title: chatId === 'public-general-chat' ? 'Community' : chatId,
+              messages: [],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              chatType: chatId === 'public-general-chat' ? 'public' : 'private'
+            } as Chat;
+          }
+          return state;
+        });
+        
+        // Ensure message text is always a string and has a unique ID
+        const safeMessage = {
+          ...message,
+          id: message.id || generateMessageId(), // Generate ID if missing
+          text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
+        };
+        
+        // Add message to local state (avoid duplicates)
+        set((state) => {
+          if (!state.chats[chatId]) return state;
+          
+          // Check if message already exists (by ID first, then by content)
+          const existingById = state.chats[chatId].messages.find(m => m.id === safeMessage.id);
+          const existingByContent = state.chats[chatId].messages.find(m => 
+            m.timestamp === safeMessage.timestamp && 
+            m.userId === safeMessage.userId && 
+            m.text === safeMessage.text
+          );
+          
+          if (existingById) {
+            console.log('Message already exists by ID, skipping duplicate:', { 
+              id: safeMessage.id, 
+              existingId: existingById.id,
+              text: safeMessage.text 
+            });
+            return state;
+          }
+          
+          if (existingByContent) {
+            console.log('Message already exists by content, skipping duplicate:', { 
+              id: safeMessage.id, 
+              existingId: existingByContent.id,
+              text: safeMessage.text 
+            });
+            return state;
+          }
+          
+          return {
+            chats: {
+              ...state.chats,
+              [chatId]: {
+                ...state.chats[chatId],
+                messages: [...state.chats[chatId].messages, safeMessage],
+              },
+            },
+          };
+        });
       },
     }),
     {
@@ -684,6 +900,17 @@ export const useChatStore = create<ChatState>()(
           removeItem: () => {},
         };
       }),
+      // Only persist specific fields, not the entire state (exclude Socket.IO objects)
+      partialize: (state) => ({
+        chats: state.chats,
+        currentTab: state.currentTab,
+        isGuest: state.isGuest,
+        isDemoMode: state.isDemoMode,
+        trialActivated: state.trialActivated,
+        trialStartDate: state.trialStartDate,
+        trialDaysLeft: state.trialDaysLeft
+        // Exclude: socket, isSocketConnected, activeUsers, typingUsers, isAiThinking
+      })
     }
   )
 );
