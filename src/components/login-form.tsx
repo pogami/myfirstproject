@@ -162,10 +162,13 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
     });
     
     try {
-      console.log('Attempting Google sign-in...');
+      console.log('🔍 Google Sign-in Debug Info:');
       console.log('Current domain:', window.location.hostname);
       console.log('Current port:', window.location.port);
       console.log('Full URL:', window.location.href);
+      console.log('Firebase auth domain:', auth.app.options.authDomain);
+      console.log('Firebase project ID:', auth.app.options.projectId);
+      console.log('Attempting Google sign-in...');
       
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
