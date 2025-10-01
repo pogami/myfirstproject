@@ -389,7 +389,7 @@ export default function LandingPage() {
 
                                     {/* Mobile CTA */}
                                     <div className="flex flex-col sm:flex-row gap-2">
-                                        <Link href="/auth" className="flex-1">
+                                        <Link href="/login" className="flex-1">
                                             <MobileButton className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 touch-manipulation mobile-full-width" mobileSize="md">
                                                 Try Mobile App
                                             </MobileButton>
