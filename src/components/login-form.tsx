@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, OAuthProvider, GoogleAuthProvider, signInWithPopup, updateProfile, signInAnonymously } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, OAuthProvider, GoogleAuthProvider, signInWithPopup, updateProfile, signInAnonymously, sendPasswordResetEmail } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, setDoc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,9 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   const [isSubmittingGoogle, setIsSubmittingGoogle] = useState(false);
   const [isSubmittingGuest, setIsSubmittingGuest] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(initialState === 'signup');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { chats: guestChats, clearGuestData } = useChatStore();
@@ -151,7 +154,19 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
     setIsSubmittingGoogle(true);
     const provider = new GoogleAuthProvider();
     
+    // Add additional scopes and parameters for better compatibility
+    provider.addScope('email');
+    provider.addScope('profile');
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
     try {
+      console.log('Attempting Google sign-in...');
+      console.log('Current domain:', window.location.hostname);
+      console.log('Current port:', window.location.port);
+      console.log('Full URL:', window.location.href);
+      
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
@@ -226,7 +241,49 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
     } finally {
         setIsSubmittingGoogle(false);
     }
-  }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address.",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for instructions to reset your password.",
+      });
+      setShowForgotPassword(false);
+      setResetEmail("");
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      let errorMessage = 'Failed to send password reset email. Please try again.';
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      }
+      
+      toast({
+        variant: "destructive",
+        title: "Password Reset Failed",
+        description: errorMessage,
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   const handleMicrosoftSignIn = async () => {
     setIsSubmittingMicrosoft(true);
@@ -436,7 +493,19 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Password</Label>
+                  {!isSigningUp && (
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-purple-600 hover:text-purple-700 hover:underline transition-colors duration-200"
+                      disabled={isSubmitting || isSubmittingMicrosoft || isSubmittingGoogle || isSubmittingGuest}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -508,6 +577,56 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Forgot Password Modal */}
+        {showForgotPassword && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>
+                  Enter your email address and we'll send you a link to reset your password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email</Label>
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    disabled={isResettingPassword}
+                    className="h-12"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleForgotPassword}
+                    disabled={isResettingPassword || !resetEmail}
+                    className="flex-1"
+                  >
+                    {isResettingPassword ? (
+                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    ) : null}
+                    Send Reset Email
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail("");
+                    }}
+                    disabled={isResettingPassword}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
   );
 }
