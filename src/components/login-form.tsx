@@ -211,7 +211,8 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         message: error?.message,
         domain: window.location.hostname,
         port: window.location.port,
-        fullUrl: window.location.href
+        fullUrl: window.location.href,
+        stack: error?.stack
       });
       
       let description = "Could not sign in with Google. Please try again or use another method.";
@@ -231,6 +232,22 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         3. Current URL: ${window.location.href}`;
       } else if (error?.message?.includes('redirect_uri_mismatch')) {
         description = `Redirect URI mismatch. Please add 'http://localhost:${window.location.port}/__/auth/handler' to Google Cloud Console → Credentials → OAuth 2.0 Client ID → Authorized redirect URIs`;
+      } else if (error?.code === 'auth/network-request-failed') {
+        description = "Network error. Please check your internet connection and try again.";
+      } else if (error?.code === 'auth/too-many-requests') {
+        description = "Too many failed attempts. Please try again later.";
+      } else if (error?.message?.includes('404') || error?.message?.includes('not found')) {
+        description = `404 Error: OAuth configuration issue. Please check:
+        1. Firebase Console → Authentication → Settings → Authorized domains (add 'localhost')
+        2. Google Cloud Console → Credentials → OAuth 2.0 Client ID → Authorized JavaScript origins (add 'http://localhost:${window.location.port}')
+        3. Google Cloud Console → Credentials → OAuth 2.0 Client ID → Authorized redirect URIs (add 'http://localhost:${window.location.port}/__/auth/handler')
+        4. Current URL: ${window.location.href}`;
+      } else if (error?.code === 'auth/configuration-not-found') {
+        description = "Firebase configuration not found. Please check your Firebase project settings.";
+      } else if (error?.code === 'auth/invalid-api-key') {
+        description = "Invalid Firebase API key. Please check your Firebase configuration.";
+      } else if (error?.code === 'auth/app-not-authorized') {
+        description = "Firebase app not authorized. Please check your Firebase project configuration.";
       }
 
       toast({
