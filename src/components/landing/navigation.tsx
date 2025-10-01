@@ -78,7 +78,7 @@ export function Navigation() {
                 <Button
                   variant="ghost"
                   className="text-gray-300 hover:text-white text-sm px-4 py-2 h-8"
-                  onClick={() => window.location.href = '/auth'}
+                  onClick={() => window.location.href = '/login'}
                 >
                   Sign In
                 </Button>
@@ -131,7 +131,7 @@ export function Navigation() {
                 <Button
                   variant="ghost"
                   className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                  onClick={() => window.location.href = '/auth'}
+                  onClick={() => window.location.href = '/login'}
                 >
                   Sign In
                 </Button>
@@ -197,7 +197,7 @@ export function Navigation() {
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 h-12"
-                  onClick={() => window.location.href = '/auth'}
+                  onClick={() => window.location.href = '/login'}
                 >
                   Sign In
                 </Button>
@@ -221,7 +221,7 @@ export function Navigation() {
             <Button 
               variant="outline" 
               className="flex-1 h-12"
-              onClick={() => window.location.href = '/auth'}
+              onClick={() => window.location.href = '/login'}
             >
               Sign In
             </Button>

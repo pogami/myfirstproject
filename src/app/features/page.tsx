@@ -940,7 +940,7 @@ export default function FeaturesPage() {
               <Button
                 size="lg"
                 className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={() => window.location.href = '/auth'}
+                onClick={() => window.location.href = '/login'}
               >
                 <Play className="h-5 w-5 mr-2" />
                 Get Started Free

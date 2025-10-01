@@ -182,7 +182,7 @@ export function HeroSection() {
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto mobile-button mobile-full-width"
-              onClick={() => window.location.href = '/auth'}
+              onClick={() => window.location.href = '/login'}
             >
               Get Started Free
               <ArrowRight className="ml-2 h-5 w-5" />

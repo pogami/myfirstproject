@@ -243,7 +243,7 @@ export default function PricingPage() {
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
-                  onClick={() => window.location.href = '/auth'}
+                  onClick={() => window.location.href = '/login'}
                 >
                   {plan.cta}
                 </Button>

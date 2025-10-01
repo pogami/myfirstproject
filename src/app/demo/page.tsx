@@ -311,7 +311,7 @@ Give a brief, helpful response:`,
               </div>
             </div>
             <Button
-              onClick={() => router.push('/auth')}
+              onClick={() => router.push('/login')}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               Get Started
@@ -427,7 +427,7 @@ Give a brief, helpful response:`,
               </div>
             </div>
             <Button
-              onClick={() => router.push('/auth')}
+              onClick={() => router.push('/login')}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               Get Started

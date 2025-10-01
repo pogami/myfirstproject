@@ -59,7 +59,7 @@ export function CTASection() {
             <Button
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => window.location.href = '/auth'}
+              onClick={() => window.location.href = '/login'}
             >
               Get Started Free
               <ArrowRight className="ml-2 h-5 w-5" />
