@@ -24,7 +24,7 @@
 In Vercel Dashboard → Settings → Environment Variables, add:
 
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDk-zhYbWHSWdk-cDzq5b_kwZ2L3wFsYgQ
+NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_FIREBASE_API_KEY
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=courseconnect-61eme.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=courseconnect-61eme
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=courseconnect-61eme.firebasestorage.app
@@ -89,7 +89,7 @@ const firebaseConfig = {
   "projectId": "courseconnect-61eme",
   "appId": "1:150901346125:web:116c79e5f3521488e97104",
   "storageBucket": "courseconnect-61eme.firebasestorage.app",
-  "apiKey": "AIzaSyDk-zhYbWHSWdk-cDzq5b_kwZ2L3wFsYgQ",
+  "apiKey": "YOUR_FIREBASE_API_KEY",
   "authDomain": "www.courseconnectai.com", // Updated for production
   "messagingSenderId": "150901346125",
   "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com"

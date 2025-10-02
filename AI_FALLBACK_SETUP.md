@@ -6,7 +6,7 @@ To use DeepSeek AI as a fallback option, add the following to your environment v
 
 ```bash
 # .env.local
-DEEPSEEK_API_KEY=sk-4029f2dbc86d4daabca61761232e6a23
+DEEPSEEK_API_KEY=YOUR_DEEPSEEK_API_KEY
 ```
 
 ## AI Provider Fallback Chain
@@ -24,7 +24,7 @@ The system now uses the following fallback order:
 GOOGLE_AI_API_KEY=your_google_ai_key_here
 
 # Fallback AI Providers
-DEEPSEEK_API_KEY=sk-4029f2dbc86d4daabca61761232e6a23
+DEEPSEEK_API_KEY=YOUR_DEEPSEEK_API_KEY
 OPENAI_API_KEY=your_openai_key_here
 
 # Provider Preference (optional)

@@ -10,7 +10,7 @@ const firebaseConfig = {
   "projectId": "courseconnect-61eme",
   "appId": "1:150901346125:web:116c79e5f3521488e97104",
   "storageBucket": "courseconnect-61eme.firebasestorage.app",
-  "apiKey": "AIzaSyDk-zhYbWHSWdk-cDzq5b_kwZ2L3wFsYgQ",
+  "apiKey": process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "YOUR_FIREBASE_API_KEY",
   "authDomain": "courseconnect-61eme.firebaseapp.com",
   "messagingSenderId": "150901346125",
   "databaseURL": "https://courseconnect-61eme-default-rtdb.firebaseio.com"

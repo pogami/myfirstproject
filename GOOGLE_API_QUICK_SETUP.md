@@ -30,7 +30,7 @@ Edit the `.env.local` file in your project root:
 
 ```env
 # Replace with your actual values
-GOOGLE_SEARCH_API_KEY=AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GOOGLE_SEARCH_API_KEY=YOUR_GOOGLE_SEARCH_API_KEY
 GOOGLE_SEARCH_ENGINE_ID=012345678901234567890:abcdefghijk
 ```
 

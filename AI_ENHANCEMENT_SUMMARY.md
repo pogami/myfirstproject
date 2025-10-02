@@ -66,10 +66,10 @@ The AI now provides **15+ contextual response types** instead of generic respons
 ### **API Key Configuration**
 Your environment variables are properly configured:
 ```bash
-GOOGLE_SEARCH_API_KEY=AIzaSyDlLQxg8zFHhrmrRXakia5AyTQc5VP4I8A
+GOOGLE_SEARCH_API_KEY=YOUR_GOOGLE_SEARCH_API_KEY
 GOOGLE_SEARCH_ENGINE_ID=a44c92909b0a643aa
-GOOGLE_AI_API_KEY=AIzaSyDjMZmrQsdSf8B8csnWvZSvT-_zGgiTg14
-OPENAI_API_KEY=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
+GOOGLE_AI_API_KEY=YOUR_GOOGLE_AI_API_KEY
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 ```
 
 ### **Fallback Chain**
