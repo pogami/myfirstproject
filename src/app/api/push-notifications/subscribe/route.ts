@@ -4,8 +4,8 @@ import webpush from 'web-push';
 // VAPID keys for push notifications
 // In production, these should be environment variables
 const vapidKeys = {
-  publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BBNTISOni2FGyolL0qVJVJpnMV0d2q7U7uCxF20qT-KOmP_dSj8Q927pJS5CKuHa8BQ20-miUmfDAbThgbdP2YA',
-  privateKey: process.env.VAPID_PRIVATE_KEY || '8eAB81e-XXLZvm8wMQZsMMWs_bhGn_lQRAwUfS08Fpw'
+  publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'YOUR_VAPID_PUBLIC_KEY',
+  privateKey: process.env.VAPID_PRIVATE_KEY || 'YOUR_VAPID_PRIVATE_KEY'
 };
 
 // Configure web-push

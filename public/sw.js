@@ -285,7 +285,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
     self.registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(
-        'BBNTISOni2FGyolL0qVJVJpnMV0d2q7U7uCxF20qT-KOmP_dSj8Q927pJS5CKuHa8BQ20-miUmfDAbThgbdP2YA'
+        'YOUR_VAPID_PUBLIC_KEY'
       )
     }).then((subscription) => {
       // Send new subscription to server

@@ -103,7 +103,7 @@ export function usePushNotifications() {
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BBNTISOni2FGyolL0qVJVJpnMV0d2q7U7uCxF20qT-KOmP_dSj8Q927pJS5CKuHa8BQ20-miUmfDAbThgbdP2YA'
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'YOUR_VAPID_PUBLIC_KEY'
         )
       });
 

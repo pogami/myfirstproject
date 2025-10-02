@@ -9,7 +9,7 @@ import { Metadata } from 'next';
 
 // Base configuration
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.courseconnectai.com';
-const DEFAULT_IMAGE = 'https://opengraph.b-cdn.net/production/images/59741583-5e8a-4bd8-9ab3-9cd7836cac96.png?token=dNJBZX5ve_oxlGmmh65ECUGwOq6iDbdvmPT-tJ7gjrc&height=893&width=1027&expires=33295101317';
+const DEFAULT_IMAGE = 'https://opengraph.b-cdn.net/production/images/59741583-5e8a-4bd8-9ab3-9cd7836cac96.png?token=YOUR_CDN_TOKEN&height=893&width=1027&expires=33295101317';
 const DEFAULT_IMAGE_WIDTH = 1027;
 const DEFAULT_IMAGE_HEIGHT = 893;
 
