@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useChatStore } from './use-chat-store';
 
 interface SocketUser {
   userId: string;
@@ -94,7 +95,7 @@ export function useSocket({
     // Initialize socket connection
     const newSocket = io(process.env.NODE_ENV === 'production' 
       ? 'https://www.courseconnectai.com' 
-      : 'http://localhost:9002', {
+      : `http://${window.location.hostname}:9002`, {
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true
@@ -193,11 +194,9 @@ export function useSocket({
         text: message.text?.substring(0, 50) + '...',
         chatId 
       });
-      // Import the chat store dynamically to avoid circular dependencies
-      import('@/hooks/use-chat-store').then(({ useChatStore }) => {
-        const { receiveRealtimeMessage } = useChatStore.getState();
-        receiveRealtimeMessage(chatId, message);
-      });
+      // Use direct import for instant message delivery
+      const { receiveRealtimeMessage } = useChatStore.getState();
+      receiveRealtimeMessage(chatId, message);
     });
 
     newSocket.on('ai-thinking-update', (data: { isThinking: boolean }) => {

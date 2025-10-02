@@ -7,12 +7,18 @@ const vapidKeys = {
   privateKey: process.env.VAPID_PRIVATE_KEY || 'YOUR_VAPID_PRIVATE_KEY'
 };
 
-// Configure web-push
-webpush.setVapidDetails(
-  'mailto:courseconnect.noreply@gmail.com',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+// Configure web-push only if valid keys are provided
+if (vapidKeys.publicKey !== 'YOUR_VAPID_PUBLIC_KEY' && vapidKeys.privateKey !== 'YOUR_VAPID_PRIVATE_KEY') {
+  try {
+    webpush.setVapidDetails(
+      'mailto:courseconnect.noreply@gmail.com',
+      vapidKeys.publicKey,
+      vapidKeys.privateKey
+    );
+  } catch (error) {
+    console.warn('Failed to configure VAPID keys:', error);
+  }
+}
 
 // Import push subscriptions from the subscribe endpoint
 // In production, this would be a shared database

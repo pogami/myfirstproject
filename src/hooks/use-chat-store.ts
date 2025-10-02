@@ -6,7 +6,24 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/client';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
-import { Socket } from 'socket.io-client';
+// Socket.IO removed - using Pusher for real-time messaging
+
+// Helper function to get guest display name from localStorage
+const getGuestDisplayName = (): string => {
+  if (typeof window === 'undefined') return 'Guest User';
+  
+  try {
+    const guestUser = localStorage.getItem('guestUser');
+    if (guestUser) {
+      const parsed = JSON.parse(guestUser);
+      return parsed.displayName || 'Guest User';
+    }
+  } catch (error) {
+    console.warn('Failed to parse guest user from localStorage:', error);
+  }
+  
+  return 'Guest User';
+};
 
 export type Message = {
     id?: string;
@@ -51,12 +68,7 @@ interface ChatState {
   trialActivated: boolean; // Whether user has activated their trial
   trialStartDate: number | null; // When the trial started (timestamp)
   trialDaysLeft: number; // Days remaining in trial
-  // Socket.IO integration
-  socket: Socket | null;
-  isSocketConnected: boolean;
-  activeUsers: Array<{ userId: string; userName: string }>;
-  typingUsers: Array<{ userId: string; userName: string }>;
-  isAiThinking: boolean;
+  // Real-time messaging handled by Pusher (no longer using Socket.IO)
   addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class') => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   addUserJoinMessage: (chatId: string, userName: string, userId: string) => Promise<void>;
@@ -73,12 +85,7 @@ interface ChatState {
   exportChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   initializeGeneralChats: () => void;
-  // Socket.IO methods
-  setSocket: (socket: Socket | null) => void;
-  setSocketConnected: (connected: boolean) => void;
-  setActiveUsers: (users: Array<{ userId: string; userName: string }>) => void;
-  setTypingUsers: (users: Array<{ userId: string; userName: string }>) => void;
-  setAiThinking: (thinking: boolean) => void;
+  // Real-time messaging methods (Pusher handles this directly)
   sendRealtimeMessage: (chatId: string, message: Message) => void;
   startTyping: (chatId: string) => void;
   stopTyping: (chatId: string) => void;
@@ -101,21 +108,83 @@ export const useChatStore = create<ChatState>()(
       trialActivated: false, // Trial not activated by default
       trialStartDate: null, // No trial start date initially
       trialDaysLeft: 14, // Full 14 days available
-      // Socket.IO state
-      socket: null,
-      isSocketConnected: false,
-      activeUsers: [],
-      typingUsers: [],
-      isAiThinking: false,
+      // Real-time messaging state (handled by Pusher)
       // Track active Firestore subscriptions to avoid duplicates
       _chatSubscriptions: {} as Record<string, () => void>,
 
       initializeAuthListener: () => {
         console.log("initializeAuthListener called");
         
-        // Immediately set loading to false and enable guest mode for real-time chat
-        console.log("Setting isStoreLoading to false and isGuest to true");
-        set({ isStoreLoading: false, isGuest: true });
+        // Initialize general chats immediately for real-time functionality
+        const initializeGeneralChats = () => {
+          console.log("initializeGeneralChats called");
+          set((state) => {
+            console.log("Setting up chats in store, current state:", { 
+              chatsCount: Object.keys(state.chats).length,
+              currentTab: state.currentTab,
+              isStoreLoading: state.isStoreLoading 
+            });
+            
+            const newState = { ...state };
+            
+            // Create public-general-chat if it doesn't exist
+            if (!newState.chats['public-general-chat']) {
+              console.log("Creating public-general-chat");
+              newState.chats['public-general-chat'] = {
+                id: 'public-general-chat',
+                title: 'Community',
+                messages: [],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                chatType: 'public'
+              } as Chat;
+            }
+            
+            // Create private-general-chat if it doesn't exist
+            if (!newState.chats['private-general-chat']) {
+              console.log("Creating private-general-chat");
+              newState.chats['private-general-chat'] = {
+                id: 'private-general-chat',
+                title: 'General',
+                messages: [],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                chatType: 'private'
+              } as Chat;
+            }
+            
+            console.log("Chats initialized:", Object.keys(newState.chats));
+            return newState;
+          });
+        };
+        
+        // Initialize chats immediately
+        initializeGeneralChats();
+        
+        // Immediately set loading to false, enable guest mode, and set default currentTab for real-time chat
+        console.log("Setting isStoreLoading to false, isGuest to true, and currentTab to public-general-chat");
+        set({ 
+          isStoreLoading: false, 
+          isGuest: true,
+          currentTab: 'public-general-chat' // Set default tab immediately
+        });
+        
+        console.log("Store initialization complete, new state:", {
+          isStoreLoading: false,
+          isGuest: true,
+          currentTab: 'public-general-chat'
+        });
+        
+        // Subscribe to Firestore for message persistence
+        console.log("Setting up Firestore subscriptions for message persistence");
+        try {
+          // Subscribe to both general chats for message history
+          get().subscribeToChat('public-general-chat');
+          get().subscribeToChat('private-general-chat');
+          console.log("Firestore subscriptions established");
+        } catch (error) {
+          console.warn("Failed to establish Firestore subscriptions:", error);
+        }
         
         // Check if auth is properly initialized
         if (!auth || typeof auth !== 'object' || typeof auth.onAuthStateChanged !== 'function') {
@@ -300,7 +369,7 @@ export const useChatStore = create<ChatState>()(
 
       addMessage: async (chatId, message, replaceLast = false) => {
         console.log('addMessage called:', { chatId, message: { id: message.id, text: message.text, sender: message.sender } });
-        const { isGuest, socket, isSocketConnected } = get();
+        const { isGuest } = get();
         // Ensure chat exists locally
         set((state) => {
           if (!state.chats[chatId]) {
@@ -324,11 +393,19 @@ export const useChatStore = create<ChatState>()(
           return `${timestamp}-${random}-${sessionId}`;
         };
         
-        // Ensure message text is always a string and has a unique ID
+        // Ensure message text is always a string and has a unique ID, filter out undefined values
         const safeMessage = {
-          ...message,
           id: message.id || generateMessageId(), // Generate ID if missing
-          text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
+          text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text),
+          sender: message.sender || 'user',
+          name: message.name || getGuestDisplayName(),
+          userId: message.userId || 'guest',
+          timestamp: message.timestamp || Date.now(),
+          // Only include other fields if they're not undefined
+          ...(message.avatar && { avatar: message.avatar }),
+          ...(message.photoURL && { photoURL: message.photoURL }),
+          ...(message.isAI && { isAI: message.isAI }),
+          ...(message.metadata && { metadata: message.metadata })
         };
         
         // Optimistic update for immediate UI response (with deduplication)
@@ -383,25 +460,13 @@ export const useChatStore = create<ChatState>()(
           };
         });
 
-        // Broadcast message via Socket.IO for real-time delivery
-        if (socket && isSocketConnected) {
-          console.log('Broadcasting message via Socket.IO:', { 
-            messageId: safeMessage.id, 
-            userId: safeMessage.userId, 
-            userName: safeMessage.name,
-            chatId 
-          });
-          socket.emit('send-message', {
-            chatId,
-            message: safeMessage
-          });
-        } else {
-          console.log('Socket not connected, message not broadcasted:', { 
-            hasSocket: !!socket, 
-            isSocketConnected, 
-            messageId: safeMessage.id 
-          });
-        }
+        // Message will be broadcasted via Pusher in the chat component
+        console.log('Message added to store:', { 
+          messageId: safeMessage.id, 
+          userId: safeMessage.userId, 
+          userName: safeMessage.name,
+          chatId 
+        });
 
         // Persist to Firestore in background (non-blocking) - works for both guest and authenticated users
         try {
@@ -519,21 +584,48 @@ export const useChatStore = create<ChatState>()(
           }
 
           const chatDocRef = doc(db as Firestore, 'chats', chatId);
+          
+          // Get user's join time for this chat
+          const joinTimeKey = `chat-join-time-${chatId}`;
+          const userJoinTime = localStorage.getItem(joinTimeKey);
+          const currentTime = Date.now();
+          
+          // If this is the first time joining this chat, set join time
+          if (!userJoinTime) {
+            localStorage.setItem(joinTimeKey, currentTime.toString());
+            console.log(`First time joining ${chatId}, set join time: ${currentTime}`);
+          }
+          
           const unsubscribe = onSnapshot(chatDocRef, (snap) => {
             if (snap.exists()) {
               const data = snap.data() as Omit<Chat, 'id'>;
               // Ensure messages text are strings for safety
-              const safeMessages = (data.messages || []).map((m: any) => ({
+              const allMessages = (data.messages || []).map((m: any) => ({
                 ...m,
                 text: typeof m.text === 'string' ? m.text : JSON.stringify(m.text)
               }));
+              
+              // Filter messages based on user's join time
+              const savedJoinTime = localStorage.getItem(joinTimeKey);
+              let filteredMessages = allMessages;
+              
+              if (savedJoinTime) {
+                const joinTime = parseInt(savedJoinTime);
+                filteredMessages = allMessages.filter((msg: any) => {
+                  // Show messages from after user joined, or if no timestamp, show all
+                  return !msg.timestamp || msg.timestamp >= joinTime;
+                });
+              }
+              
+              console.log(`Received ${allMessages.length} total messages, showing ${filteredMessages.length} for ${chatId}`);
+              
               set((state) => ({
                 chats: {
                   ...state.chats,
                   [chatId]: {
                     id: chatId,
                     ...data,
-                    messages: safeMessages
+                    messages: filteredMessages
                   }
                 }
               }));
@@ -767,63 +859,49 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      // Socket.IO methods
-      setSocket: (socket) => set({ socket }),
-      setSocketConnected: (connected) => set({ isSocketConnected: connected }),
-      setActiveUsers: (users) => set({ activeUsers: users }),
-      setTypingUsers: (users) => set({ typingUsers: users }),
-      setAiThinking: (thinking) => set({ isAiThinking: thinking }),
+      // Real-time messaging methods (Pusher handles this directly)
       
       sendRealtimeMessage: (chatId, message) => {
-        const { socket } = get();
-        if (socket && get().isSocketConnected) {
-          console.log('Sending real-time message:', { chatId, message });
-          socket.emit('send-message', { chatId, message });
-        }
+        // Real-time messaging is now handled by Pusher in the chat component
+        console.log('Real-time message handled by Pusher:', { chatId, messageId: message.id });
       },
       
       startTyping: (chatId) => {
-        const { socket } = get();
-        if (socket && get().isSocketConnected) {
-          console.log('Starting typing indicator for chat:', chatId);
-          socket.emit('typing-start', { chatId });
-        }
+        // Typing indicators are now handled by Pusher in the chat component
+        console.log('Typing start handled by Pusher:', { chatId });
       },
       
       stopTyping: (chatId) => {
-        const { socket } = get();
-        if (socket && get().isSocketConnected) {
-          console.log('Stopping typing indicator for chat:', chatId);
-          socket.emit('typing-stop', { chatId });
-        }
+        // Typing indicators are now handled by Pusher in the chat component
+        console.log('Typing stop handled by Pusher:', { chatId });
       },
       
       receiveRealtimeMessage: (chatId, message) => {
-        console.log('Receiving real-time message:', { chatId, message });
-        
         // Skip messages from the current user to avoid duplicates
         const { isGuest } = get();
         const currentUserId = isGuest ? 'guest' : (auth as Auth)?.currentUser?.uid;
         
         if (message.userId === currentUserId) {
-          console.log('Skipping message from current user to avoid duplicate:', { 
-            messageUserId: message.userId, 
-            currentUserId,
-            messageId: message.id 
-          });
-          return;
+          return; // Skip silently for performance
         }
         
         // Generate unique ID for incoming message if it doesn't have one
         const generateMessageId = () => {
           const timestamp = Date.now();
           const random = Math.random().toString(36).substr(2, 9);
-          const sessionId = Math.random().toString(36).substr(2, 4);
-          return `${timestamp}-${random}-${sessionId}`;
+          return `${timestamp}-${random}`;
         };
         
-        // Ensure chat exists locally
+        // Ensure message text is always a string and has a unique ID
+        const safeMessage = {
+          ...message,
+          id: message.id || generateMessageId(),
+          text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
+        };
+        
+        // Add message to local state (optimized for speed)
         set((state) => {
+          // Ensure chat exists
           if (!state.chats[chatId]) {
             state.chats[chatId] = {
               id: chatId,
@@ -834,44 +912,11 @@ export const useChatStore = create<ChatState>()(
               chatType: chatId === 'public-general-chat' ? 'public' : 'private'
             } as Chat;
           }
-          return state;
-        });
-        
-        // Ensure message text is always a string and has a unique ID
-        const safeMessage = {
-          ...message,
-          id: message.id || generateMessageId(), // Generate ID if missing
-          text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
-        };
-        
-        // Add message to local state (avoid duplicates)
-        set((state) => {
-          if (!state.chats[chatId]) return state;
           
-          // Check if message already exists (by ID first, then by content)
+          // Quick duplicate check by ID only (faster than content check)
           const existingById = state.chats[chatId].messages.find(m => m.id === safeMessage.id);
-          const existingByContent = state.chats[chatId].messages.find(m => 
-            m.timestamp === safeMessage.timestamp && 
-            m.userId === safeMessage.userId && 
-            m.text === safeMessage.text
-          );
-          
           if (existingById) {
-            console.log('Message already exists by ID, skipping duplicate:', { 
-              id: safeMessage.id, 
-              existingId: existingById.id,
-              text: safeMessage.text 
-            });
-            return state;
-          }
-          
-          if (existingByContent) {
-            console.log('Message already exists by content, skipping duplicate:', { 
-              id: safeMessage.id, 
-              existingId: existingByContent.id,
-              text: safeMessage.text 
-            });
-            return state;
+            return state; // Skip duplicate silently
           }
           
           return {
@@ -909,7 +954,7 @@ export const useChatStore = create<ChatState>()(
         trialActivated: state.trialActivated,
         trialStartDate: state.trialStartDate,
         trialDaysLeft: state.trialDaysLeft
-        // Exclude: socket, isSocketConnected, activeUsers, typingUsers, isAiThinking
+        // Real-time messaging state handled by Pusher
       })
     }
   )

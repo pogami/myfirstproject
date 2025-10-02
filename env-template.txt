@@ -1,0 +1,25 @@
+# Copy this to .env.local for local development
+# Copy this to Vercel environment variables for production
+
+# Pusher Configuration
+NEXT_PUBLIC_PUSHER_KEY=1e4d1e2b0527bdbbbea7
+NEXT_PUBLIC_PUSHER_CLUSTER=us2
+PUSHER_APP_ID=2058327
+PUSHER_KEY=1e4d1e2b0527bdbbbea7
+PUSHER_SECRET=98d3b598ddb894e41e38
+PUSHER_CLUSTER=us2
+
+# Firebase Configuration (add your actual keys)
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key_here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain_here
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id_here
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket_here
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id_here
+NEXT_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id_here
+
+# Instructions:
+# 1. Copy this file to .env.local for local development
+# 2. Add these variables to Vercel for production
+# 3. Never commit .env.local to GitHub
+# 4. The NEXT_PUBLIC_ variables are safe to expose (client-side)
+# 5. The non-NEXT_PUBLIC_ variables are private (server-side only)

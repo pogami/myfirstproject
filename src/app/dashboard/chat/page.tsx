@@ -12,10 +12,32 @@ import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOp
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
-import { auth } from "@/lib/firebase/client-simple";
-import { useSocket } from "@/hooks/use-socket";
+import { auth } from "@/lib/firebase/client";
+import { Auth } from 'firebase/auth';
+
+// Type assertion for auth
+const typedAuth = auth as Auth;
+import { usePusherChat } from "@/hooks/use-pusher-chat";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { OnlineUsersIndicator } from "@/components/online-users-indicator";
+
+// Helper function to get guest display name from localStorage
+const getGuestDisplayName = (): string => {
+  if (typeof window === 'undefined') return 'Guest User';
+  
+  try {
+    const guestUser = localStorage.getItem('guestUser');
+    if (guestUser) {
+      const parsed = JSON.parse(guestUser);
+      return parsed.displayName || 'Guest User';
+    }
+  } catch (error) {
+    console.warn('Failed to parse guest user from localStorage:', error);
+  }
+  
+  return 'Guest User';
+};
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -52,17 +74,6 @@ export default function ChatPage() {
         resetChat, 
         deleteChat, 
         initializeGeneralChats,
-        // Socket.IO state
-        socket,
-        isSocketConnected,
-        activeUsers,
-        typingUsers,
-        isAiThinking,
-        setSocket,
-        setSocketConnected,
-        setActiveUsers,
-        setTypingUsers,
-        setAiThinking,
         sendRealtimeMessage,
         startTyping,
         stopTyping
@@ -82,25 +93,24 @@ export default function ChatPage() {
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
     const { toast } = useToast();
 
-    // Socket.IO integration
+    // Pusher integration
     const {
-        socket: socketInstance,
-        isConnected: socketConnected,
-        activeUsers: socketActiveUsers,
-        typingUsers: socketTypingUsers,
-        isAiThinking: socketAiThinking,
-        availableChats: socketAvailableChats,
-        sendMessage: socketSendMessage,
-        startTyping: socketStartTyping,
-        stopTyping: socketStopTyping,
+        isConnected: pusherConnected,
+        activeUsers: pusherActiveUsers,
+        typingUsers: pusherTypingUsers,
+        isAiThinking: pusherIsAiThinking,
+        availableChats: pusherAvailableChats,
+        sendMessage: pusherSendMessage,
+        startTyping: pusherStartTyping,
+        stopTyping: pusherStopTyping,
         joinChat,
         leaveChat
-    } = useSocket({
-        chatId: currentTab || '',
+    } = usePusherChat({
+        chatId: currentTab || 'public-general-chat',
         userId: user?.uid || 'guest',
-        userName: user?.displayName || user?.email || 'Guest User',
+        userName: user?.displayName || user?.email || getGuestDisplayName(),
         userPhotoURL: !isGuest ? user?.photoURL : undefined,
-        enabled: !!currentTab
+        enabled: true // Always enable Pusher for real-time messaging
     });
 
     // Debug user state changes
@@ -111,6 +121,25 @@ export default function ChatPage() {
             userPhotoURL: user?.photoURL
         });
     }, [user]);
+
+    // Debug Pusher state
+    useEffect(() => {
+        console.log('Pusher state changed:', {
+            isConnected: pusherConnected,
+            activeUsers: pusherActiveUsers.length,
+            typingUsers: pusherTypingUsers.length,
+            isAiThinking: pusherIsAiThinking,
+            currentTab
+        });
+    }, [pusherConnected, pusherActiveUsers, pusherTypingUsers, pusherIsAiThinking, currentTab]);
+
+    // Immediate fallback to set currentTab if undefined
+    useEffect(() => {
+        if (!currentTab && !isStoreLoading) {
+            console.log('Immediate fallback: Setting currentTab to public-general-chat');
+            setCurrentTab('public-general-chat');
+        }
+    }, [currentTab, isStoreLoading, setCurrentTab]);
 
     const copyToClipboard = async (text: string, messageId: string) => {
         try {
@@ -158,14 +187,7 @@ export default function ChatPage() {
         }
     }, [currentTab]);
 
-    // Sync Socket.IO state with chat store
-    useEffect(() => {
-        setSocket(socketInstance);
-        setSocketConnected(socketConnected);
-        setActiveUsers(socketActiveUsers);
-        setTypingUsers(socketTypingUsers);
-        setAiThinking(socketAiThinking);
-    }, [socketInstance, socketConnected, socketActiveUsers, socketTypingUsers, socketAiThinking, setSocket, setSocketConnected, setActiveUsers, setTypingUsers, setAiThinking]);
+    // Pusher state is managed directly by the usePusherChat hook
 
     // Initialize general chats when component mounts
     useEffect(() => {
@@ -240,8 +262,8 @@ export default function ChatPage() {
     // Safely handle auth state
     useEffect(() => {
         try {
-            if (auth && typeof auth.onAuthStateChanged === 'function') {
-                const unsubscribe = auth.onAuthStateChanged(
+            if (typedAuth && typeof typedAuth.onAuthStateChanged === 'function') {
+                const unsubscribe = typedAuth.onAuthStateChanged(
                     (user: any) => {
                         setUser(user);
                         // Check if user is guest/anonymous
@@ -334,14 +356,26 @@ export default function ChatPage() {
     // Force load after 2 seconds to prevent infinite loading
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (isStoreLoading) {
-                console.log('ChatPage - Force loading after timeout');
+            if (isStoreLoading || !currentTab) {
+                console.log('ChatPage - Force loading after timeout, currentTab:', currentTab);
                 setForceLoad(true);
+                // Also initialize auth listener as fallback
+                try {
+                    initializeAuthListener();
+                } catch (error) {
+                    console.warn('Failed to initialize auth listener as fallback:', error);
+                }
+                
+                // Force set currentTab if it's undefined
+                if (!currentTab) {
+                    console.log('Force setting currentTab to public-general-chat');
+                    setCurrentTab('public-general-chat');
+                }
             }
         }, 2000);
 
         return () => clearTimeout(timer);
-    }, [isStoreLoading]);
+    }, [isStoreLoading, currentTab, initializeAuthListener, setCurrentTab]);
 
     // Generate unique message ID with better uniqueness
     const generateMessageId = () => {
@@ -402,7 +436,7 @@ export default function ChatPage() {
 
         // Stop typing indicator when message is sent
         if (currentTab) {
-            stopTyping(currentTab);
+            pusherStopTyping();
         }
 
         // Set loading state immediately for instant thinking animation
@@ -411,10 +445,11 @@ export default function ChatPage() {
             setIsLoading(true);
         }
 
-        // Add user message
-        await addMessage(currentTab || 'private-general-chat', userMessage);
+        // Send message via Pusher for real-time broadcasting (this will update other tabs)
+        pusherSendMessage(userMessage);
 
-        // Real-time message broadcasting is now handled in the chat store
+        // Add user message immediately for instant UI response (non-blocking)
+        addMessage(currentTab || 'private-general-chat', userMessage).catch(console.error);
 
         // Only get AI response if appropriate
         if (shouldCallAIFinal) {
@@ -590,7 +625,7 @@ export default function ChatPage() {
             // Add AI analysis as a message with proper formatting
             const analysisMessage = {
                 id: generateMessageId(),
-                text: `**📄 Document Analysis: ${fileName}**\n\n${result.summary || result.content || 'Analysis completed successfully.'}\n\n*Document content loaded - ask me anything about it!*`,
+                text: `**📄 Document Analysis: ${fileName}**\n\n${result.summary || 'Analysis completed successfully.'}\n\n*Document content loaded - ask me anything about it!*`,
                 sender: 'bot' as const,
                 name: 'CourseConnect AI',
                 timestamp: Date.now()
@@ -727,7 +762,7 @@ export default function ChatPage() {
     console.log('ChatPage - classChats:', classChats);
     console.log('ChatPage - generalChat:', generalChat);
     console.log('ChatPage - isLoading:', isLoading, 'lastMessageSender:', generalChat?.messages?.at(-1)?.sender);
-    console.log('ChatPage - Socket.IO state:', { isSocketConnected, activeUsers: activeUsers.length, typingUsers: typingUsers.length, isAiThinking });
+    console.log('ChatPage - Pusher state:', { isConnected: pusherConnected, activeUsers: pusherActiveUsers.length, typingUsers: pusherTypingUsers.length, isAiThinking: pusherIsAiThinking });
 
     // Show loading state while chat store is initializing (but not if force loaded)
     if (isStoreLoading && !forceLoad) {
@@ -773,8 +808,8 @@ export default function ChatPage() {
                         {/* Real-time status indicator */}
                         {currentTab === 'public-general-chat' && (
                             <OnlineUsersIndicator 
-                                users={activeUsers}
-                                isConnected={isSocketConnected}
+                                users={pusherActiveUsers}
+                                isConnected={pusherConnected}
                                 showAvatars={true}
                                 maxVisible={5}
                             />
@@ -810,14 +845,14 @@ export default function ChatPage() {
                                                 {
                                                     chatId: 'public-general-chat',
                                                     title: 'Community',
-                                                    userCount: socketAvailableChats.find(c => c.chatId === 'public-general-chat')?.userCount || 0,
+                                                    userCount: pusherAvailableChats.find(c => c.chatId === 'public-general-chat')?.userCount || 0,
                                                     isActive: true,
                                                     isPermanent: true
                                                 }
                                             ];
 
-                                            // Get other active chats from socket
-                                            const otherChats = socketAvailableChats
+                                            // Get other active chats from pusher
+                                            const otherChats = pusherAvailableChats
                                                 .filter(chat => chat.isActive && !chat.chatId.includes('general-chat'))
                                                 .sort((a, b) => {
                                                     // Sort by user count (descending), then by title
@@ -884,11 +919,11 @@ export default function ChatPage() {
                                                                         </div>
                                                                         <div>
                                                                             {chat.userCount} user{chat.userCount !== 1 ? 's' : ''} online
-                                                                            {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage && (
+                                                                            {pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage && (
                                                                                 <span className="ml-2">
-                                                                                    • {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.length > 30 
-                                                                                        ? socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.substring(0, 30) + '...' 
-                                                                                        : socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text}
+                                                                                    • {pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage?.text.length > 30 
+                                                                                        ? pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage?.text.substring(0, 30) + '...' 
+                                                                                        : pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage?.text}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -896,11 +931,11 @@ export default function ChatPage() {
                                                                 ) : (
                                                                     <>
                                                                         {chat.userCount} user{chat.userCount !== 1 ? 's' : ''} online
-                                                                        {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage && (
+                                                                        {pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage && (
                                                                             <span className="ml-2">
-                                                                                • {socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.length > 30 
-                                                                                    ? socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text.substring(0, 30) + '...' 
-                                                                                    : socketAvailableChats.find(c => c.chatId === chat.chatId)?.lastMessage?.text}
+                                                                                • {pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage?.text.length > 30 
+                                                                                    ? pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage?.text.substring(0, 30) + '...' 
+                                                                                    : pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage?.text}
                                                                             </span>
                                                                         )}
                                                                     </>
@@ -1065,7 +1100,10 @@ export default function ChatPage() {
                                                                             return shouldShowMathAnalysis ? (
                                                                                 <InDepthAnalysis 
                                                                                     question={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                                    conversationHistory={generalChat?.messages || []}
+                                                                                    conversationHistory={(generalChat?.messages || []).map(msg => ({
+                                                                                        sender: msg.sender === 'system' ? 'bot' : msg.sender,
+                                                                                        text: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+                                                                                    }))}
                                                                                 />
                                                                             ) : null;
                                                                         })()}
@@ -1107,7 +1145,7 @@ export default function ChatPage() {
                                             )}
 
                                             {/* Real-time typing indicator - compact design */}
-                                            {typingUsers.length > 0 && (
+                                            {pusherTypingUsers.length > 0 && (
                                                 <motion.div 
                                                     initial={{ opacity: 0, y: 5 }}
                                                     animate={{ opacity: 1, y: 0 }}
@@ -1123,9 +1161,7 @@ export default function ChatPage() {
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="bg-muted/30 dark:bg-muted/20 rounded-lg px-2 py-1.5 border border-border/30">
-                                                                <TypingIndicator users={typingUsers} />
-                                                            </div>
+                                                            <TypingIndicator users={pusherTypingUsers.filter(typingUser => typingUser.userId !== (user?.uid || 'guest'))} />
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -1139,9 +1175,9 @@ export default function ChatPage() {
                                                 setInputValue(e.target.value);
                                                 // Start typing indicator
                                                 if (currentTab && e.target.value.length > 0) {
-                                                    startTyping(currentTab);
+                                                    pusherStartTyping();
                                                 } else if (currentTab) {
-                                                    stopTyping(currentTab);
+                                                    pusherStopTyping();
                                                 }
                                             }}
                                             onSend={handleSendMessage}

@@ -14,11 +14,13 @@ import { Label } from "@/components/ui/label";
 import { MicrosoftLogo } from "@/components/icons/microsoft-logo";
 import { GoogleLogo } from "@/components/icons/google-logo";
 import { Loader2, User } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useAnimatedToast } from "@/hooks/use-animated-toast";
+import { ToastContainer } from "@/components/animated-toast";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { useChatStore, Chat } from "@/hooks/use-chat-store";
+import { GuestUsernamePopup } from "@/components/guest-username-popup";
 
 
 interface LoginFormProps {
@@ -40,8 +42,9 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showGuestUsernamePopup, setShowGuestUsernamePopup] = useState(false);
   const router = useRouter();
-  const { toast } = useToast();
+  const { toast, toasts, removeToast } = useAnimatedToast();
   const { chats: guestChats, clearGuestData } = useChatStore();
 
 
@@ -335,15 +338,20 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   }
 
   const handleGuestLogin = async () => {
+    // Show username popup instead of directly logging in
+    setShowGuestUsernamePopup(true);
+  }
+
+  const handleGuestUsernameSet = async (username: string) => {
     setIsSubmittingGuest(true);
     
     try {
-      console.log("Starting guest login process...");
+      console.log("Starting guest login process with username:", username);
       
-      // Create a simple guest user object
+      // Create a simple guest user object with the chosen username
       const guestUser = {
         uid: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        displayName: "Guest User",
+        displayName: username,
         email: null,
         photoURL: null,
         isAnonymous: true,
@@ -357,10 +365,11 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       console.log("Stored guest user in localStorage");
 
       // Show success message
-      toast({ 
-        title: "Welcome, Guest!", 
-        description: "You're now exploring CourseConnect. Create an account anytime to save your progress." 
-      });
+        toast({ 
+          title: `Welcome, ${username}!`, 
+          description: "You're now exploring CourseConnect. Create an account anytime to save your progress.",
+          variant: 'success'
+        });
       
       console.log("Redirecting to dashboard...");
       
@@ -647,6 +656,16 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
             </Card>
           </div>
         )}
+
+        {/* Guest Username Popup */}
+        <GuestUsernamePopup
+          isOpen={showGuestUsernamePopup}
+          onClose={() => setShowGuestUsernamePopup(false)}
+          onUsernameSet={handleGuestUsernameSet}
+        />
+
+        {/* Animated Toast Container */}
+        <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
   );
 }

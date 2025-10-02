@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface TypingIndicatorProps {
   users: Array<{
     userId: string;
     userName: string;
+    userPhotoURL?: string;
   }>;
   className?: string;
 }
@@ -39,54 +41,78 @@ export function TypingIndicator({ users, className = "" }: TypingIndicatorProps)
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -3 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className={`flex items-center gap-2 text-xs ${className}`}
+      className={`flex items-center gap-3 p-3 bg-muted/30 dark:bg-muted/20 rounded-lg border border-border/30 ${className}`}
     >
-      {/* Compact typing dots */}
-      <div className="flex items-center gap-1">
-        <motion.div
-          className="w-1.5 h-1.5 bg-primary/60 rounded-full"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 1, 0.4]
-          }}
-          transition={{ 
-            duration: 1.2, 
-            repeat: Infinity, 
-            delay: 0,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="w-1.5 h-1.5 bg-primary/60 rounded-full"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 1, 0.4]
-          }}
-          transition={{ 
-            duration: 1.2, 
-            repeat: Infinity, 
-            delay: 0.2,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="w-1.5 h-1.5 bg-primary/60 rounded-full"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 1, 0.4]
-          }}
-          transition={{ 
-            duration: 1.2, 
-            repeat: Infinity, 
-            delay: 0.4,
-            ease: "easeInOut"
-          }}
-        />
+      {/* Profile pictures */}
+      <div className="flex -space-x-2">
+        {users.slice(0, 3).map((user, index) => (
+          <Avatar key={user.userId} className="w-8 h-8 border-2 border-background">
+            <AvatarImage 
+              src={user.userPhotoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.userId}`} 
+              alt={user.userName} 
+            />
+            <AvatarFallback className="text-xs font-semibold bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+              {user.userName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        ))}
+        {users.length > 3 && (
+          <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+            <span className="text-xs font-semibold text-muted-foreground">
+              +{users.length - 3}
+            </span>
+          </div>
+        )}
       </div>
-      
-      <span className="text-muted-foreground font-medium">
-        {getTypingText()}
-      </span>
+
+      {/* Typing animation and text */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <motion.div
+            className="w-1.5 h-1.5 bg-primary/60 rounded-full"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.4, 1, 0.4]
+            }}
+            transition={{ 
+              duration: 1.2, 
+              repeat: Infinity, 
+              delay: 0,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="w-1.5 h-1.5 bg-primary/60 rounded-full"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.4, 1, 0.4]
+            }}
+            transition={{ 
+              duration: 1.2, 
+              repeat: Infinity, 
+              delay: 0.2,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="w-1.5 h-1.5 bg-primary/60 rounded-full"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.4, 1, 0.4]
+            }}
+            transition={{ 
+              duration: 1.2, 
+              repeat: Infinity, 
+              delay: 0.4,
+              ease: "easeInOut"
+            }}
+          />
+        </div>
+        
+        <span className="text-sm text-muted-foreground font-medium">
+          {getTypingText()}
+        </span>
+      </div>
     </motion.div>
   );
 }

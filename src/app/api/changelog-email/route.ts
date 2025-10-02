@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import { emailSubscribers } from '../newsletter/route';
+
+// Temporary email subscribers list (replace with database in production)
+const emailSubscribers: string[] = [];
 
 // Email configuration
 const transporter = nodemailer.createTransport({
