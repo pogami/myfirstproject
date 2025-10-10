@@ -5,7 +5,6 @@ import { HeroSection } from '@/components/landing/hero-section';
 import { FeaturesSection } from '@/components/landing/features-section';
 // Removed PricingSection from home page
 import { SocialProofSection } from '@/components/landing/social-proof-section';
-import { IntegrationsStrip } from '@/components/landing/integrations-strip';
 // MobileAppSection removed from home page
 // Mobile previews removed
 // Removed DetailedPricingSection from home page
@@ -13,6 +12,7 @@ import { TestimonialsSection } from '@/components/landing/testimonials-section';
 import { CTASection } from '@/components/landing/cta-section';
 import { Footer } from '@/components/landing/footer';
 import { AISupportWidget } from '@/components/ai-support-widget';
+import { AIComparisonSection } from '@/components/landing/ai-comparison-section';
 
 export default function HomePage() {
   return (
@@ -21,9 +21,10 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <FeaturesSection />
+        
         {/* PricingSection removed from home page */}
         <SocialProofSection />
-        <IntegrationsStrip />
+        <AIComparisonSection />
         {/* Mobile sections removed as requested */}
         {/* DetailedPricingSection removed from home page */}
         <TestimonialsSection />

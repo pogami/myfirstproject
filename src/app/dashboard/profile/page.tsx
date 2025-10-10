@@ -13,7 +13,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { safeFirebaseOperation, safeDocumentExists, safeDocumentData } from "@/lib/firebase-error-handler";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings, CreditCard, AlertTriangle } from "lucide-react";
+import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings, CreditCard, AlertTriangle, MapPin, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +35,15 @@ export default function ProfilePage() {
     const [major, setMajor] = useState("");
     const [graduationYear, setGraduationYear] = useState("");
     const [profilePicture, setProfilePicture] = useState<string>("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [location, setLocation] = useState("");
+    const [birthday, setBirthday] = useState("");
+    const [bio, setBio] = useState("");
+    const [gpa, setGpa] = useState("");
+    const [credits, setCredits] = useState("");
+    const [academicYear, setAcademicYear] = useState("");
     
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -151,6 +160,11 @@ export default function ProfilePage() {
             setDisplayName(user.displayName || "");
             setProfilePicture(user.photoURL || "");
             
+            // Parse display name into first and last name
+            const nameParts = (user.displayName || "").split(" ");
+            setFirstName(nameParts[0] || "");
+            setLastName(nameParts.slice(1).join(" ") || "");
+            
             try {
                 // First try to sync any pending data
                 await syncPendingData();
@@ -165,6 +179,13 @@ export default function ProfilePage() {
                         setSchool(userData.school || "");
                         setMajor(userData.major || "");
                         setGraduationYear(userData.graduationYear || "");
+                        setPhoneNumber(userData.phoneNumber || "");
+                        setLocation(userData.location || "");
+                        setBirthday(userData.birthday || "");
+                        setBio(userData.bio || "");
+                        setGpa(userData.gpa || "");
+                        setCredits(userData.credits || "");
+                        setAcademicYear(userData.academicYear || "");
                         if (userData.profilePicture) {
                             setProfilePicture(userData.profilePicture);
                         }
@@ -177,6 +198,13 @@ export default function ProfilePage() {
                         setSchool(profileData.school || "");
                         setMajor(profileData.major || "");
                         setGraduationYear(profileData.graduationYear || "");
+                        setPhoneNumber(profileData.phoneNumber || "");
+                        setLocation(profileData.location || "");
+                        setBirthday(profileData.birthday || "");
+                        setBio(profileData.bio || "");
+                        setGpa(profileData.gpa || "");
+                        setCredits(profileData.credits || "");
+                        setAcademicYear(profileData.academicYear || "");
                         if (profileData.profilePicture) {
                             setProfilePicture(profileData.profilePicture);
                         }
@@ -437,18 +465,29 @@ export default function ProfilePage() {
         setIsSaving(true);
         try {
             // Update displayName in Auth
-            if (user.displayName !== displayName) {
-                await updateProfile(user, { displayName });
+            const fullName = `${firstName} ${lastName}`.trim();
+            if (user.displayName !== fullName) {
+                await updateProfile(user, { displayName: fullName });
+                setDisplayName(fullName);
             }
 
             // Update user data in Firestore with safe operation
             const userDocRef = doc(db, "users", user.uid);
             await localSafeFirebaseOperation(() => setDoc(userDocRef, {
-                displayName,
+                displayName: fullName,
+                firstName,
+                lastName,
                 email: user.email,
                 school,
                 major,
                 graduationYear,
+                phoneNumber,
+                location,
+                birthday,
+                bio,
+                gpa,
+                credits,
+                academicYear,
                 profilePicture,
             }, { merge: true }), "save user profile");
 
@@ -463,11 +502,20 @@ export default function ProfilePage() {
             if (error.code === 'unavailable' || error.message?.includes('offline')) {
                 // Store data locally for when online
                 const profileData = {
-                    displayName,
+                    displayName: fullName,
+                    firstName,
+                    lastName,
                     email: user.email,
                     school,
                     major,
                     graduationYear,
+                    phoneNumber,
+                    location,
+                    birthday,
+                    bio,
+                    gpa,
+                    credits,
+                    academicYear,
                     profilePicture,
                     lastUpdated: Date.now(),
                     pendingSync: true
@@ -598,351 +646,222 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-transparent">
-            <div className="max-w-4xl mx-auto space-y-8">
-                {/* Hero Section */}
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-8 border border-primary/20">
-                    <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-                    <div className="relative">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 rounded-xl bg-primary/10">
-                                <User className="size-6 text-primary" />
-                            </div>
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                                Profile Settings
-                            </Badge>
-                        </div>
-                        <h1 className="text-4xl font-bold tracking-tight mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            Your Profile
-                        </h1>
-                        <p className="text-lg text-muted-foreground max-w-2xl">
-                            Manage your account details, academic information, and profile preferences. 
-                            Keep your information up to date to connect with the right study groups.
-                        </p>
-                    </div>
+            <div className="max-w-6xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="text-center space-y-2">
+                    <h1 className="text-3xl font-bold">Dashboard</h1>
+                    <p className="text-muted-foreground">Manage your personal information and academic profile</p>
                 </div>
 
-                {/* Profile Card */}
-                <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <User className="size-5 text-primary" />
-                            Profile Information
-                        </CardTitle>
-                        <CardDescription>
-                            Update your personal details and academic information
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Avatar Section */}
-                        <div className="flex items-center gap-6 p-6 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 border border-border/50">
-                            <div className="relative">
-                                <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                                    <AvatarImage src={profilePicture || user?.photoURL || ''} alt={user?.displayName || ''} />
-                                    <AvatarFallback className="text-3xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                                        {getInitials(user?.displayName || user?.email)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        console.log("File input changed:", e.target.files);
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            console.log("File selected:", file.name);
-                                            handleProfilePictureUpload(file);
-                                        } else {
-                                            console.log("No file selected");
-                                        }
-                                    }}
-                                    className="hidden"
-                                    id="profile-picture-upload"
-                                    disabled={isUploading}
-                                />
-                                <Button 
-                                    size="icon" 
-                                    variant="outline" 
-                                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                                    disabled={isUploading}
-                                    onClick={() => {
-                                        console.log("Camera button clicked");
-                                        const fileInput = document.getElementById('profile-picture-upload') as HTMLInputElement;
-                                        if (fileInput) {
-                                            console.log("File input found, triggering click");
-                                            fileInput.click();
-                                        } else {
-                                            console.log("File input not found");
-                                        }
-                                    }}
-                                >
-                                    {isUploading ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Camera className="h-4 w-4"/>
-                                    )}
-                                    <span className="sr-only">Change Photo</span>
-                                </Button>
-                            </div>
-                            <div className="flex-1">
-                                <h2 className="text-2xl font-bold text-foreground">{displayName || 'Student User'}</h2>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Mail className="size-4 text-muted-foreground" />
-                                    <p className="text-muted-foreground">{user?.email}</p>
-                                </div>
-                                {isUploading && (
-                                    <div className="mt-2 space-y-2">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-primary font-medium">{uploadStatus}</span>
-                                            <span className="text-muted-foreground">{uploadProgress}%</span>
+                {/* Main Content - Two Column Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column - Profile Card & Academic Stats */}
+                    <div className="lg:col-span-1 space-y-6">
+                        {/* User Profile Card */}
+                        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
+                            <CardContent className="p-6">
+                                <div className="text-center space-y-4">
+                                    <div className="relative mx-auto w-24 h-24">
+                                        <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                                            <AvatarImage src={profilePicture || user?.photoURL || ''} alt={user?.displayName || ''} />
+                                            <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
+                                                {getInitials(user?.displayName || user?.email)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    handleProfilePictureUpload(file);
+                                                }
+                                            }}
+                                            className="hidden"
+                                            id="profile-picture-upload"
+                                            disabled={isUploading}
+                                        />
+                                        <Button 
+                                            size="icon" 
+                                            variant="outline" 
+                                            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                                            disabled={isUploading}
+                                            onClick={() => {
+                                                const fileInput = document.getElementById('profile-picture-upload') as HTMLInputElement;
+                                                if (fileInput) {
+                                                    fileInput.click();
+                                                }
+                                            }}
+                                        >
+                                            {isUploading ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Camera className="h-4 w-4"/>
+                                            )}
+                                        </Button>
+                                    </div>
+                                    
+                                    <div>
+                                        <h2 className="text-xl font-bold">{displayName || 'John Doe'}</h2>
+                                        <p className="text-muted-foreground">{major || 'Computer Science'}</p>
+                                        <Badge variant="secondary" className="mt-2 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                                            {academicYear || 'Junior'}
+                                        </Badge>
+                                    </div>
+                                    
+                                    <p className="text-sm text-muted-foreground">
+                                        {bio || 'Passionate computer science student with interests in AI and machine learning. Love studying with friends and exploring new technologies.'}
+                                    </p>
+                                    
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <GraduationCap className="h-4 w-4" />
+                                            <span>{school || 'University of California'}</span>
                                         </div>
-                                        <div className="w-full bg-muted rounded-full h-2">
-                                            <div 
-                                                className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
-                                                style={{ width: `${uploadProgress}%` }}
-                                            />
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <MapPin className="h-4 w-4" />
+                                            <span>{location || 'San Francisco, CA'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Calendar className="h-4 w-4" />
+                                            <span>Born {birthday || '5/14/2002'}</span>
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Form Fields */}
-                        <div className="grid gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="displayName" className="text-sm font-medium">Display Name</Label>
-                                <Input 
-                                    id="displayName" 
-                                    value={displayName}
-                                    onChange={(e) => setDisplayName(e.target.value)}
-                                    placeholder="Your Name"
-                                    disabled={isSaving}
-                                    className="bg-background/50 border-border/50 focus:border-primary/50"
-                                />
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="school" className="text-sm font-medium flex items-center gap-2">
-                                        <GraduationCap className="size-4 text-primary" />
-                                        School
-                                    </Label>
-                                    <Select onValueChange={setSchool} value={school} disabled={isSaving}>
-                                        <SelectTrigger id="school" className="bg-background/50 border-border/50 focus:border-primary/50">
-                                            <SelectValue placeholder="Select your university" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {universities.map(uni => (
-                                                <SelectItem key={uni} value={uni}>{uni}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Academic Stats Card */}
+                        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg">Academic Stats</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center">
+                                        <div className="text-3xl font-bold text-primary">{gpa || '3.8'}</div>
+                                        <div className="text-sm text-muted-foreground">GPA</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-3xl font-bold text-primary">{credits || '89'}</div>
+                                        <div className="text-sm text-muted-foreground">Credits</div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Right Column - Personal Information Form */}
+                    <div className="lg:col-span-2">
+                        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="size-5 text-primary" />
+                                    Personal Information
+                                </CardTitle>
+                                <CardDescription>
+                                    Update your personal details and contact information
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="firstName">First Name</Label>
+                                        <Input 
+                                            id="firstName" 
+                                            value={firstName}
+                                            onChange={(e) => setFirstName(e.target.value)}
+                                            placeholder="John"
+                                            disabled={isSaving}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="lastName">Last Name</Label>
+                                        <Input 
+                                            id="lastName" 
+                                            value={lastName}
+                                            onChange={(e) => setLastName(e.target.value)}
+                                            placeholder="Doe"
+                                            disabled={isSaving}
+                                        />
+                                    </div>
+                                </div>
+                                
                                 <div className="space-y-2">
-                                    <Label htmlFor="graduationYear" className="text-sm font-medium flex items-center gap-2">
-                                        <Calendar className="size-4 text-primary" />
-                                        Graduation Year
-                                    </Label>
-                                    <Input
-                                        id="graduationYear"
-                                        type="number"
-                                        placeholder="2025"
-                                        value={graduationYear}
-                                        onChange={(e) => setGraduationYear(e.target.value)}
-                                        min="2020"
-                                        max="2035"
-                                        disabled={isSaving}
-                                        className="bg-background/50 border-border/50 focus:border-primary/50"
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input 
+                                        id="email" 
+                                        value={user?.email || ""} 
+                                        disabled 
+                                        className="bg-muted/30 text-muted-foreground"
                                     />
                                 </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <Label htmlFor="major" className="text-sm font-medium">Major</Label>
-                                <Input
-                                    id="major"
-                                    type="text"
-                                    placeholder="Computer Science"
-                                    value={major}
-                                    onChange={(e) => setMajor(e.target.value)}
-                                    disabled={isSaving}
-                                    className="bg-background/50 border-border/50 focus:border-primary/50"
-                                />
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-                                <Input 
-                                    id="email" 
-                                    value={user?.email || ""} 
-                                    disabled 
-                                    className="bg-muted/30 border-border/50 text-muted-foreground"
-                                />
-                                <p className="text-xs text-muted-foreground">Your email address cannot be changed.</p>
-                            </div>
-                        </div>
-
-                        {/* Save Button */}
-                        <div className="pt-4 border-t border-border/50">
-                            <Button 
-                                onClick={handleSave} 
-                                disabled={isSaving}
-                                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0 font-medium"
-                            >
-                                {isSaving ? (
-                                    <>
-                                        <Loader2 className="animate-spin mr-2" /> 
-                                        Saving...
-                                    </>
-                                ) : (
-                                    'Save Changes'
-                                )}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Notification Settings */}
-                <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Bell className="size-5 text-primary" />
-                            Notification Settings
-                        </CardTitle>
-                        <CardDescription>
-                            Customize what notifications you receive
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {notificationSettings.map((type, index) => (
-                                <div 
-                                    key={type.id} 
-                                    onClick={() => toggleNotificationSetting(type.id)}
-                                    className="flex items-center justify-between p-5 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 hover:from-primary/5 hover:to-primary/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-sm border border-transparent hover:border-primary/20 cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
-                                            {type.icon}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-base">{type.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{type.description}</p>
-                                        </div>
-                                    </div>
-                                    <Badge variant={type.enabled ? "default" : "secondary"} className="px-3 py-1 text-xs font-medium">
-                                        {type.enabled ? "Enabled" : "Disabled"}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Subscription Management */}
-                <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <CreditCard className="size-5 text-primary" />
-                            Subscription Management
-                        </CardTitle>
-                        <CardDescription>
-                            Manage your CourseConnect subscription and billing
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {/* Current Subscription Status */}
-                            <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-800">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-green-500">
-                                            <CreditCard className="size-4 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-base">Free Plan</h3>
-                                            <p className="text-sm text-muted-foreground">Access to basic features</p>
-                                        </div>
-                                    </div>
-                                    <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">
-                                        Active
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            {/* Subscription Actions */}
-                            <div className="grid gap-3">
-                                <Button 
-                                    className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0 font-medium"
-                                    onClick={() => {
-                                        window.location.href = '/pricing';
-                                    }}
-                                >
-                                    <CreditCard className="mr-2 h-4 w-4" />
-                                    Upgrade to Scholar
-                                </Button>
                                 
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button 
-                                            variant="outline" 
-                                            className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 hover:border-red-300 dark:hover:border-red-700"
-                                        >
-                                            <AlertTriangle className="mr-2 h-4 w-4" />
-                                            Cancel Subscription
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Are you sure you want to cancel your subscription? You'll lose access to Scholar features 
-                                                and will be moved back to the free plan. This action cannot be undone.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                                            <AlertDialogAction 
-                                                className="bg-red-600 hover:bg-red-700 text-white"
-                                                onClick={async () => {
-                                                    try {
-                                                        // Call API to cancel subscription
-                                                        const response = await fetch('/api/stripe/cancel-subscription', {
-                                                            method: 'POST',
-                                                            headers: {
-                                                                'Content-Type': 'application/json',
-                                                            },
-                                                            body: JSON.stringify({
-                                                                userId: user?.uid
-                                                            })
-                                                        });
-
-                                                        if (response.ok) {
-                                                            toast({
-                                                                title: "Subscription Cancelled",
-                                                                description: "Your subscription has been cancelled. You'll retain access until the end of your billing period.",
-                                                            });
-                                                        } else {
-                                                            throw new Error('Failed to cancel subscription');
-                                                        }
-                                                    } catch (error) {
-                                                        console.error('Error cancelling subscription:', error);
-                                                        toast({
-                                                            variant: "destructive",
-                                                            title: "Cancellation Failed",
-                                                            description: "Unable to cancel subscription. Please contact support.",
-                                                        });
-                                                    }
-                                                }}
-                                            >
-                                                Cancel Subscription
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                                <div className="space-y-2">
+                                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                                    <Input 
+                                        id="phoneNumber" 
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        placeholder="+1 (555) 123-4567"
+                                        disabled={isSaving}
+                                    />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label htmlFor="location">Location</Label>
+                                    <Input 
+                                        id="location" 
+                                        value={location}
+                                        onChange={(e) => setLocation(e.target.value)}
+                                        placeholder="San Francisco, CA"
+                                        disabled={isSaving}
+                                    />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label htmlFor="birthday">Birthday</Label>
+                                    <Input 
+                                        id="birthday" 
+                                        value={birthday}
+                                        onChange={(e) => setBirthday(e.target.value)}
+                                        placeholder="05/15/2002"
+                                        disabled={isSaving}
+                                    />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label htmlFor="bio">Bio</Label>
+                                    <textarea 
+                                        id="bio"
+                                        value={bio}
+                                        onChange={(e) => setBio(e.target.value)}
+                                        placeholder="Passionate computer science student with interests in AI and machine learning. Love studying with friends and exploring new technologies."
+                                        disabled={isSaving}
+                                        className="w-full min-h-[100px] px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                </div>
+                                
+                                <div className="pt-4 border-t">
+                                    <Button 
+                                        onClick={handleSave} 
+                                        disabled={isSaving}
+                                        className="w-full"
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="animate-spin mr-2" /> 
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            'Save Changes'
+                                        )}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );

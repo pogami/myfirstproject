@@ -14,7 +14,6 @@ import { z } from 'zod';
 import { searchCurrentInformation, needsCurrentInformation, formatSearchResultsForAI } from './web-search-service';
 import { extractUrlsFromText, scrapeMultiplePages, formatScrapedContentForAI } from './web-scraping-service';
 import { shouldAutoSearch, performAutoSearch, enhancedWebBrowsing, shouldUsePuppeteer } from './enhanced-web-browsing-service';
-import { OllamaModelManager } from '@/lib/ollama-model-manager';
 
 // Initialize OpenAI client
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({
@@ -966,109 +965,6 @@ For mathematical expressions, use LaTeX formatting:
   }
 }
 
-/**
- * Try Ollama (Best local model for privacy and performance)
- */
-async function tryOllama(input: StudyAssistanceInput): Promise<AIResponse> {
-  try {
-    // Smart model selection - automatically picks best available model
-    const selectedModel = OllamaModelManager.getBestGeneralModel();
-    const optimalParams = OllamaModelManager.getOptimalParameters(selectedModel);
-    
-    console.log('🔍 OLLAMA SERVICE DEBUG:');
-    console.log('Question:', input.question);
-    console.log('Context provided:', input.context);
-    console.log('Context length:', input.context?.length || 0);
-    console.log('File context exists:', !!input.fileContext);
-    
-    // Build comprehensive context
-    const conversationContext = input.conversationHistory && input.conversationHistory.length > 0 
-      ? `\n\nPrevious conversation:\n${input.conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}`
-      : '';
-
-    const fileContext = input.fileContext 
-      ? `\n\nFile Context: The user has uploaded a file named "${input.fileContext.fileName}" (${input.fileContext.fileType}). ${input.fileContext.fileContent ? `File content: ${input.fileContext.fileContent}` : 'Please reference this file when answering questions.'}`
-      : '';
-    
-    // Enhanced web search integration
-    let currentInfo = '';
-    if (needsCurrentInformation(input.question)) {
-      console.log('Fetching current information for:', input.question);
-      try {
-        const searchResults = await searchCurrentInformation(input.question);
-        currentInfo = formatSearchResultsForAI(searchResults);
-      } catch (error) {
-        console.warn('Failed to fetch current information:', error);
-      }
-    }
-    
-    console.log('📝 FINAL PROMPT DEBUG:');
-    console.log('Document content in context:', input.context?.includes('DOCUMENT CONTEXT') || false);
-    console.log('Prompt length:', input.context?.length || 0 + fileContext.length + currentInfo.length);
-    
-    const enhancedPrompt = `You're a smart, friendly AI helper with strong mathematical capabilities. Just talk naturally like a helpful friend who's really good at teaching mathematics and explaining complex concepts.
-
-IMPORTANT MATH REQUIREMENTS:
-- For mathematical problems, show step-by-step solutions with clear reasoning
-- Always box final answers: \\boxed{answer}
-- Never skip intermediate steps in calculations
-- If solving integrals, derivatives, or complex equations, show the complete process
-- Verify answers when possible
-
-${conversationContext}
-
-${fileContext}
-
-${currentInfo}
-
-${input.context}
-
-Student asked: ${input.question}
-
-Instructions: If the context above includes document content, refer to specific information from that document when answering the student's question. Be natural and conversational while incorporating relevant details from the document. For math problems, provide complete solutions.
-
-Your response:`;
-
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        prompt: enhancedPrompt,
-        stream: false,
-        options: {
-          temperature: 0.8, // More conversational
-          max_tokens: 2000, // Increased for better responses
-          num_ctx: 8192, // Double the context window for documents
-          top_p: 0.95, // Natural variation
-          top_k: 40
-        }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const answer = data.response || 'I apologize, but I could not generate a proper response at this time.';
-
-    console.log('🤖 AI RESPONSE DEBUG:');
-    console.log('Raw AI response:', answer);
-    console.log('Response length:', answer.length);
-
-    return {
-      answer,
-      provider: 'ollama-local'
-    };
-
-  } catch (error) {
-    console.warn('Ollama failed:', error);
-    throw error;
-  }
-}
 
 /**
  * Main function that tries providers in order with automatic fallback
@@ -1077,35 +973,25 @@ export async function provideStudyAssistanceWithFallback(input: StudyAssistanceI
   console.log('AI Service: Starting with input:', input.question);
   
   try {
-    // Try Ollama first (Best local model)
-    console.log('AI Service: Trying Ollama...');
+    // Try Google AI first (Primary)
+    console.log('AI Service: Trying Google AI...');
     try {
-      const result = await tryOllama(input);
-      console.log('AI Service: Ollama succeeded:', result.provider);
+      const result = await tryGoogleAI(input);
+      console.log('AI Service: Google AI succeeded:', result.provider);
       return result;
-    } catch (ollamaError) {
-      console.warn('AI Service: Ollama failed with error:', ollamaError);
+    } catch (googleError) {
+      console.warn('AI Service: Google AI failed with error:', googleError);
       
-      // Try Google AI as first fallback
-      console.log('AI Service: Trying Google AI...');
+      // Try OpenAI as fallback
+      console.log('AI Service: Trying OpenAI...');
       try {
-        const result = await tryGoogleAI(input);
-        console.log('AI Service: Google AI succeeded:', result.provider);
+        const result = await tryOpenAI(input);
+        console.log('AI Service: OpenAI succeeded:', result.provider);
         return result;
-      } catch (googleError) {
-        console.warn('AI Service: Google AI failed with error:', googleError);
-        
-        // Try OpenAI as final fallback
-        console.log('AI Service: Trying OpenAI...');
-        try {
-          const result = await tryOpenAI(input);
-          console.log('AI Service: OpenAI succeeded:', result.provider);
-          return result;
-        } catch (openaiError) {
-          console.warn('AI Service: OpenAI failed with error:', openaiError);
-          console.log('AI Service: All APIs failed, using enhanced fallback');
-          return getEnhancedFallback(input);
-        }
+      } catch (openaiError) {
+        console.warn('AI Service: OpenAI failed with error:', openaiError);
+        console.log('AI Service: All APIs failed, using enhanced fallback');
+        return getEnhancedFallback(input);
       }
     }
   } catch (error) {

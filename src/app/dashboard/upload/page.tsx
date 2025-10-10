@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Sparkles, CheckCircle, ArrowRight } from "lucide-react";
-import EnhancedSyllabusUpload from "@/components/syllabus-upload";
+import InteractiveSyllabusDemo from "@/components/interactive-syllabus-demo";
 import { HowItWorksSlideshow } from "@/components/how-it-works-slideshow";
 
 const features = [
@@ -54,7 +54,7 @@ export default function EnhancedSyllabusUploadPage() {
               </div>
               <h3 className="font-semibold text-sm sm:text-base">Upload File</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Drag and drop your syllabus PDF or text file
+                Drag and drop your course syllabus (PDF, DOCX, TXT)
               </p>
             </div>
             <div className="text-center space-y-2 sm:space-y-3">
@@ -137,7 +137,7 @@ export default function EnhancedSyllabusUploadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-8">
-            <EnhancedSyllabusUpload />
+            <InteractiveSyllabusDemo />
           </CardContent>
         </Card>
 
