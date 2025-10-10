@@ -97,11 +97,17 @@ export function GuestUsernamePopup({ isOpen, onClose, onUsernameSet }: GuestUser
   // Handle username input change
   const handleUsernameChange = (value: string) => {
     setUsername(value);
-    setError('');
-    setIsValid(null);
-    
-    if (value.trim()) {
-      const validation = validateUsername(value);
+    // Don't show validation errors while typing - only clear them
+    if (error) {
+      setError('');
+      setIsValid(null);
+    }
+  };
+
+  // Handle username input blur (when user stops typing)
+  const handleUsernameBlur = () => {
+    if (username.trim()) {
+      const validation = validateUsername(username);
       setIsValid(validation.isValid);
       if (!validation.isValid) {
         setError(validation.error);
@@ -164,35 +170,26 @@ export function GuestUsernamePopup({ isOpen, onClose, onUsernameSet }: GuestUser
               placeholder="Enter your username"
               value={username}
               onChange={(e) => handleUsernameChange(e.target.value)}
+              onBlur={handleUsernameBlur}
               disabled={isChecking}
               className="w-full"
               maxLength={20}
             />
             
-            {/* Validation indicator */}
-            {username.trim() && (
+            {/* Validation indicator - only show after blur or submit */}
+            {error && (
               <div className="flex items-center gap-2 text-sm">
-                {isValid === true && (
-                  <>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-green-600">Username is available</span>
-                  </>
-                )}
-                {isValid === false && (
-                  <>
-                    <XCircle className="h-4 w-4 text-red-500" />
-                    <span className="text-red-600">{error}</span>
-                  </>
-                )}
+                <XCircle className="h-4 w-4 text-red-500" />
+                <span className="text-red-600">{error}</span>
+              </div>
+            )}
+            {isValid === true && !error && (
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-green-600">Username is available</span>
               </div>
             )}
             
-            {/* Error message */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
           </div>
           
           <div className="flex gap-2 justify-end">

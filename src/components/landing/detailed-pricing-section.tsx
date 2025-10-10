@@ -385,7 +385,7 @@ export function DetailedPricingSection() {
               <Button
                 variant="outline"
                 className="bg-white text-blue-600 hover:bg-gray-100 border-white font-semibold px-6 py-2 rounded-lg"
-                onClick={() => window.open('mailto:support@courseconnectai.com')}
+                onClick={() => window.open('mailto:courseconnect.noreply@gmail.com')}
               >
                 Contact Support
               </Button>

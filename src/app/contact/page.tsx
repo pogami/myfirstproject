@@ -21,7 +21,7 @@ const contactMethods = [
     icon: <Mail className="h-6 w-6 text-primary" />,
     title: "Email Support",
     description: "Get help via email",
-    contact: "support@courseconnect.com",
+    contact: "courseconnect.noreply@gmail.com",
     response: "Within 24 hours"
   },
   {

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
+import { filterContent, generateFilterResponse } from '@/lib/content-filter';
 
 export const runtime = 'nodejs';
 
@@ -86,13 +88,7 @@ async function searchWebWithSources(query: string): Promise<{ content: string; s
   }
 }
 
-// Simple model manager without complex imports
-class SimpleModelManager {
-  static getBestGeneralModel(): string {
-    // Return the available model
-    return 'gemma2:2b';
-  }
-}
+// Removed Ollama - now using Gemini + OpenAI fallback
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +109,36 @@ export async function POST(request: NextRequest) {
 
     // Clean @ mentions from the question if present
     const cleanedQuestion = question.replace(/@ai\s*/gi, '').trim();
+
+    // Check if it's a general academic question (not CourseConnect support)
+    const isGeneralQuestion = /^(what is|how do|explain|solve|calculate|define|tell me about|help me with).*(math|science|homework|biology|chemistry|physics|history|english|literature|essay|assignment|quiz|test|exam)/i.test(cleanedQuestion);
+    
+    if (isGeneralQuestion) {
+      return NextResponse.json({
+        success: true,
+        answer: "I'm CourseConnect's support assistant. I can only help with questions about our platform. For academic help, try our AI tutoring features! Please sign up here: [Get Started](https://courseconnectai.com/dashboard)",
+        provider: 'support-filter',
+        shouldRespond: true,
+        timestamp: new Date().toISOString(),
+        sources: [],
+        crisisResources: []
+      });
+    }
+
+    // Content filtering for safety
+    const filterResult = filterContent(cleanedQuestion);
+    if (!filterResult.isSafe) {
+      console.log(`Content filtered: ${filterResult.category} (confidence: ${filterResult.confidence})`);
+      return NextResponse.json({
+        success: true,
+        answer: generateFilterResponse(filterResult),
+        provider: 'safety-filter',
+        shouldRespond: true,
+        timestamp: new Date().toISOString(),
+        sources: [],
+        crisisResources: filterResult.crisisResources
+      });
+    }
 
     // Detect math/physics style questions to force direct solving behavior
     const isMathQuestion = /(?:\\int|\\sum|\\frac|∫|√|=|≥|≤|≠|≈|\^|\bx\b|\by\b|\bdx\b|\bdy\b|\bsolve\b|\bequation\b|\bderivative\b|\bintegral\b|\bfactor\b|\bquadratic\b|\bpolynomial\b|\bsimplify\b|\bmatrix\b|\blimit\b|\btheta\b|\bsin\b|\bcos\b|\btan\b)/i.test(cleanedQuestion);
@@ -160,12 +186,25 @@ export async function POST(request: NextRequest) {
       ? `\n\nPrevious chat:\n${conversationHistory.map((msg: any) => `${msg.role === 'assistant' ? 'AI' : 'User'}: ${msg.content}`).join('\n')}\n\n`
       : '';
 
-    const prompt = `You're CourseConnect AI, a friendly and helpful study buddy! Respond naturally like you're chatting with a friend. Be conversational, engaging, and helpful.
+    const prompt = `You're CourseConnect AI SUPPORT ASSISTANT. You ONLY help with CourseConnect platform questions.
 
-Style rules (critical):
-- Avoid emojis unless a single subtle emoji genuinely adds clarity.
-- Never use more than one emoji in a response.
-- Prefer clear writing over hype; avoid over-enthusiastic tone.
+IMPORTANT: You ONLY respond to questions about:
+- CourseConnect features, pricing, signup
+- Platform navigation and help
+- Technical support issues
+- Account/billing questions
+
+DO NOT respond to:
+- General academic questions (math, science, homework)
+- General knowledge questions
+- Non-CourseConnect related topics
+
+If someone asks a general question, say: "I'm CourseConnect's support assistant. I can only help with questions about our platform. For academic help, try our AI tutoring features! Please sign up here: [Get Started](https://courseconnectai.com/dashboard)"
+
+Style rules:
+- Respond in 1-2 sentences max
+- Be helpful but concise
+- If it's a crisis/safety issue, provide immediate help resources
 
 If the user's question is mathematical or an equation, strictly follow these rules:
 - Do NOT ask for confirmation. Provide the solution immediately.
@@ -184,52 +223,27 @@ ${convoContext}User: ${cleanedQuestion}
 
 CourseConnect AI:`;
 
-    // Try Ollama first with smart model selection
+    // Use Gemini + OpenAI fallback (no more Ollama)
     let aiResponse: string;
     let selectedModel: string;
     
     try {
-      // Use simple model manager
-      selectedModel = SimpleModelManager.getBestGeneralModel();
+      console.log('Using Gemini + OpenAI fallback system');
       
-      console.log(`Using Ollama model: ${selectedModel}`);
-      
-      // Add timeout to prevent slow responses
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Ollama timeout')), 15000); // 15 second timeout
+      // Use the dual AI service with Gemini first, OpenAI fallback
+      const aiResult = await provideStudyAssistanceWithFallback({
+        question: cleanedQuestion,
+        context: context || 'General Chat',
+        conversationHistory: conversationHistory || []
       });
       
-      const ollamaPromise = fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          prompt: prompt,
-          stream: false,
-          options: {
-            temperature: isMathQuestion ? 0.3 : 0.7, // More deterministic for math
-            num_tokens: isMathQuestion ? 700 : 500, // Allow a few more tokens for steps
-            num_ctx: 2048, // Smaller context window, faster processing
-            top_p: 0.9, // Slightly less sampling, faster
-            top_k: 20, // Reduce choices, faster generation
-            num_batch: 1, // Process in smaller batches
-            num_thread: 4 // Use fewer threads for faster response
-          }
-        })
-      });
-
-      const ollamaResponse = await Promise.race([ollamaPromise, timeoutPromise]) as Response;
+      aiResponse = aiResult.answer;
+      selectedModel = aiResult.provider;
       
-      if (ollamaResponse.ok) {
-        const ollamaResult = await ollamaResponse.json();
-        aiResponse = ollamaResult.response;
-      } else {
-        throw new Error('Ollama not available or failed');
-      }
+      console.log(`AI response from ${selectedModel}: ${aiResponse.substring(0, 100)}...`);
+      
     } catch (error) {
-      console.log('Ollama failed, using intelligent fallback response');
+      console.log('AI service failed, using intelligent fallback response');
       
       // Intelligent fallback that can handle current events if search succeeded
       const lowerQuestion = cleanedQuestion.toLowerCase();
@@ -250,6 +264,7 @@ CourseConnect AI:`;
       } else {
         aiResponse = "That's an interesting question! I'd normally chat about this with you, but I'm having some technical issues right now. Want to talk about academics, ask about homework, or try asking something else? I'm here to help once we get this sorted out!";
       }
+      selectedModel = 'fallback';
     }
 
     // Final sanitation: limit emoji usage just in case a provider ignores style rules

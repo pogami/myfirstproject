@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Zap, Brain, Users, BookOpen, MessageSquare, Shield, Star, Plus } from 'lucide-react';
+import { Check, X, Star, Plus } from 'lucide-react';
 import Image from 'next/image';
 
 const educationPlatforms = [
@@ -53,98 +53,13 @@ const educationPlatforms = [
       'Free Tier': false,
       'Campus Integration': false
     },
-    price: '$19.95/mo',
+    price: '$39.95/mo',
     color: 'from-blue-600 to-blue-800'
   },
   {
     name: '+ More',
     logo: null,
     description: 'Other education platforms',
-    features: {
-      'Academic Context': false,
-      'Study Groups': false,
-      'Syllabus Analysis': false,
-      'Real-time Chat': false,
-      'File Upload': false,
-      'Free Tier': false,
-      'Campus Integration': false
-    },
-    price: 'Varies',
-    color: 'from-gray-400 to-gray-600',
-    isMore: true
-  }
-];
-
-const aiPlatforms = [
-  {
-    name: 'CourseConnect AI',
-    logo: '/courseconnect-logo-profile.svg',
-    description: 'Academic-focused AI with study groups',
-    features: {
-      'Academic Context': true,
-      'Study Groups': true,
-      'Syllabus Analysis': true,
-      'Real-time Chat': true,
-      'File Upload': true,
-      'Free Tier': true,
-      'Campus Integration': true
-    },
-    price: '$4.99/mo',
-    highlight: true,
-    color: 'from-blue-500 to-purple-600'
-  },
-  {
-    name: 'ChatGPT',
-    logo: '🤖',
-    description: 'General-purpose AI assistant',
-    features: {
-      'Academic Context': false,
-      'Study Groups': false,
-      'Syllabus Analysis': false,
-      'Real-time Chat': true,
-      'File Upload': true,
-      'Free Tier': true,
-      'Campus Integration': false
-    },
-    price: '$20/mo',
-    color: 'from-green-500 to-emerald-600'
-  },
-  {
-    name: 'Gemini',
-    logo: '💎',
-    description: 'Google\'s multimodal AI',
-    features: {
-      'Academic Context': false,
-      'Study Groups': false,
-      'Syllabus Analysis': false,
-      'Real-time Chat': true,
-      'File Upload': true,
-      'Free Tier': true,
-      'Campus Integration': false
-    },
-    price: 'Free',
-    color: 'from-blue-500 to-cyan-600'
-  },
-  {
-    name: 'Claude',
-    logo: '🧠',
-    description: 'Anthropic\'s AI assistant',
-    features: {
-      'Academic Context': false,
-      'Study Groups': false,
-      'Syllabus Analysis': false,
-      'Real-time Chat': true,
-      'File Upload': true,
-      'Free Tier': true,
-      'Campus Integration': false
-    },
-    price: '$20/mo',
-    color: 'from-orange-500 to-red-600'
-  },
-  {
-    name: '+ More',
-    logo: null,
-    description: 'Other AI platforms',
     features: {
       'Academic Context': false,
       'Study Groups': false,
@@ -188,23 +103,21 @@ const PlatformCard = ({ platform, features }: { platform: any, features: string[
     )}
     
     <CardHeader className="text-center pb-4">
-      <div className={`mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br ${platform.color} flex items-center justify-center mb-3 shadow-lg overflow-hidden`}>
+      <div className="mx-auto w-20 h-20 flex items-center justify-center mb-3">
         {platform.logo && platform.logo.startsWith('/') ? (
-          <div className="w-12 h-12 flex items-center justify-center bg-white/90 rounded-lg p-1">
-            <Image 
-              src={platform.logo} 
-              alt={platform.name}
-              width={40}
-              height={40}
-              className="w-10 h-10 object-contain"
-            />
-          </div>
+          <Image 
+            src={platform.logo} 
+            alt={platform.name}
+            width={80}
+            height={80}
+            className="w-20 h-20 object-contain"
+          />
         ) : platform.isMore ? (
-          <div className="w-12 h-12 flex items-center justify-center">
-            <Plus className="w-8 h-8 text-white" />
+          <div className="w-20 h-20 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-2xl">
+            <Plus className="w-10 h-10 text-gray-600 dark:text-gray-300" />
           </div>
         ) : (
-          <span className="text-2xl">{platform.logo}</span>
+          <span className="text-5xl">{platform.logo}</span>
         )}
       </div>
       <CardTitle className="text-lg">{platform.name}</CardTitle>
@@ -251,7 +164,7 @@ const PlatformCard = ({ platform, features }: { platform: any, features: string[
   </Card>
 );
 
-export function AIComparisonSection() {
+export function EducationComparisonSection() {
   return (
     <section className="py-16 bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-7xl mx-auto px-6">
@@ -262,37 +175,18 @@ export function AIComparisonSection() {
             Platform Comparison
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            CourseConnect AI vs Other Platforms
+            CourseConnect AI vs Other Education Platforms
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            See how CourseConnect AI compares to other education and AI platforms. 
-            Built specifically for students with academic-focused features.
+            See how CourseConnect AI compares to traditional education platforms. 
+            Built specifically for students with academic-focused features and AI-powered study groups.
           </p>
         </div>
 
         {/* Education Platforms Section */}
         <div className="mb-16">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold mb-2">vs. Other Education Platforms</h3>
-            <p className="text-muted-foreground">Compare CourseConnect AI with traditional education platforms</p>
-          </div>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {educationPlatforms.map((platform) => (
-              <PlatformCard key={platform.name} platform={platform} features={features} />
-            ))}
-          </div>
-        </div>
-
-        {/* AI Platforms Section */}
-        <div className="mb-16">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold mb-2">vs. Other AI Platforms</h3>
-            <p className="text-muted-foreground">Compare CourseConnect AI with general-purpose AI assistants</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {aiPlatforms.map((platform) => (
               <PlatformCard key={platform.name} platform={platform} features={features} />
             ))}
           </div>
@@ -304,7 +198,7 @@ export function AIComparisonSection() {
             <CardContent className="p-8">
               <div className="flex justify-center mb-4">
                 <div className="p-3 rounded-xl bg-primary/10">
-                  <Zap className="w-8 h-8 text-primary" />
+                  <Star className="w-8 h-8 text-primary" />
                 </div>
               </div>
               <h3 className="text-xl font-bold mb-2">Ready to Experience CourseConnect AI?</h3>
@@ -313,11 +207,11 @@ export function AIComparisonSection() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 px-4 py-2">
-                  <Shield className="w-4 h-4 mr-2" />
+                  <Star className="w-4 h-4 mr-2" />
                   Affordable Pricing
                 </Badge>
                 <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-4 py-2">
-                  <Users className="w-4 h-4 mr-2" />
+                  <Check className="w-4 h-4 mr-2" />
                   2,500+ Students
                 </Badge>
                 <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 px-4 py-2">

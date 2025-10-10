@@ -170,9 +170,23 @@ export function PersonalizedAITutor({
                   </Badge>
                 ))}
                 {userProfile.learningPreferences.preferredSubjects.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{userProfile.learningPreferences.preferredSubjects.length - 3} more
-                  </Badge>
+                  <div className="relative group">
+                    <Badge variant="outline" className="text-xs cursor-pointer hover:bg-muted">
+                      +{userProfile.learningPreferences.preferredSubjects.length - 3} more
+                    </Badge>
+                    <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[300px] max-w-[90vw] sm:max-w-[400px]"
+                         role="tooltip" aria-label="All preferred subjects">
+                      <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Preferred Subjects</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {userProfile.learningPreferences.preferredSubjects.map((subject, index) => (
+                          <div key={index} className="text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded-md text-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            {subject}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-700"></div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

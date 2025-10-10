@@ -618,16 +618,17 @@ export default function InteractiveSyllabusDemo() {
                               <Badge variant="outline" className="text-xs cursor-pointer hover:bg-muted">
                                 +{extractedData.topics.length - 3} more
                               </Badge>
-                              <div className="absolute bottom-full left-0 mb-2 p-3 bg-popover border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 max-w-[500px] max-h-[300px] overflow-y-auto">
-                                <div className="text-sm font-medium mb-2 text-center">All Topics</div>
+                              <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
+                                   role="tooltip" aria-label="All topics">
+                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Topics</div>
                                 <div className="grid grid-cols-2 gap-2">
                                   {extractedData.topics.map((topic, index) => (
-                                    <div key={index} className="text-xs p-2 bg-muted/50 rounded-md text-center">
+                                    <div key={index} className="text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded-md text-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                                       {topic}
                                     </div>
                                   ))}
                                 </div>
-                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border"></div>
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-700"></div>
                               </div>
                             </div>
                           )}
@@ -649,21 +650,22 @@ export default function InteractiveSyllabusDemo() {
                               <Badge variant="outline" className="text-xs cursor-pointer hover:bg-muted">
                                 +{extractedData.assignments.length - 3} more
                               </Badge>
-                              <div className="absolute bottom-full left-0 mb-2 p-4 bg-popover border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 max-w-[600px] max-h-[200px] overflow-y-auto">
-                                <div className="text-sm font-medium mb-3 text-center">All Assignments</div>
-                                <div className="grid grid-cols-2 gap-3">
+                              <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
+                                   role="tooltip" aria-label="All assignments">
+                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Assignments</div>
+                                <div className="grid grid-cols-1 gap-2">
                                   {extractedData.assignments.map((assignment, index) => (
-                                    <div key={index} className="text-xs p-3 bg-muted/50 rounded-md border-l-2 border-primary/30">
-                                      <div className="font-medium mb-1">{assignment.name}</div>
+                                    <div key={index} className="text-xs p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                      <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">{assignment.name}</div>
                                       {assignment.dueDate && (
-                                        <div className="text-muted-foreground text-xs">
+                                        <div className="text-gray-600 dark:text-gray-400 text-xs">
                                           Due: {formatDate(assignment.dueDate)}
                                         </div>
                                       )}
                                     </div>
                                   ))}
                                 </div>
-                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border"></div>
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-700"></div>
                               </div>
                             </div>
                           )}
@@ -690,21 +692,22 @@ export default function InteractiveSyllabusDemo() {
                               <div className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
                                 +{extractedData.exams.length - 2} more exams
                               </div>
-                              <div className="absolute bottom-full left-0 mb-2 p-3 bg-popover border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 max-w-[500px] max-h-[300px] overflow-y-auto">
-                                <div className="text-sm font-medium mb-2 text-center">All Exams</div>
+                              <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
+                                   role="tooltip" aria-label="All exams">
+                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Exams</div>
                                 <div className="grid grid-cols-1 gap-2">
                                   {extractedData.exams.map((exam, index) => (
-                                    <div key={index} className="text-xs p-2 bg-muted/50 rounded-md">
-                                      <div className="font-medium">{exam.name}</div>
+                                    <div key={index} className="text-xs p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                      <div className="font-medium text-gray-900 dark:text-gray-100">{exam.name}</div>
                                       {exam.date && (
-                                        <div className="text-muted-foreground text-xs mt-1">
+                                        <div className="text-gray-600 dark:text-gray-400 text-xs mt-1">
                                           {formatDate(exam.date)}
                                         </div>
                                       )}
                                     </div>
                                   ))}
                                 </div>
-                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border"></div>
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-700"></div>
                               </div>
                             </div>
                           )}
@@ -723,19 +726,28 @@ export default function InteractiveSyllabusDemo() {
                       <Sparkles className="size-8 text-primary" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Ready to Start?</h3>
+                  <h3 className="text-xl font-bold mb-2">Looks Good?</h3>
                   <p className="text-muted-foreground mb-6">
-                    Sign up now and your syllabus will be saved. Our AI will know your course context 
-                    and provide personalized help with assignments, exam prep, and study strategies.
+                    Confirm this syllabus to save it to your dashboard, or choose to upload another if something looks off.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button onClick={handleSignUp} size="lg" className="bg-gradient-to-r from-primary to-primary/90">
-                      <User className="size-4 mr-2" />
-                      Sign Up & Save Syllabus
+                      <CheckCircle className="size-4 mr-2" />
+                      Confirm & Save
                     </Button>
-                    <Button variant="outline" onClick={removeFile} size="lg" className="!bg-transparent !border-gray-300 !text-gray-700 hover:!bg-gray-50 hover:!text-gray-900 hover:!border-gray-300 dark:!border-gray-600 dark:!text-gray-300 dark:hover:!bg-gray-800 dark:hover:!text-gray-100 dark:hover:!border-gray-600">
-                      Try Another Syllabus
+                    <Button 
+                      variant="outline" 
+                      onClick={removeFile} 
+                      size="lg" 
+                      className="!bg-transparent !border-gray-300 !text-gray-700 hover:!bg-gray-50 hover:!text-gray-900 hover:!border-gray-300 dark:!border-gray-600 dark:!text-gray-300 dark:hover:!bg-gray-800 dark:hover:!text-gray-100 dark:hover:!border-gray-600"
+                    >
+                      Re-upload Syllabus
                     </Button>
+                  </div>
+                  <div className="mt-3 flex items-center gap-3 max-w-md mx-auto">
+                    <div className="h-px bg-muted-foreground/30 flex-1" />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">Upload another syllabus</span>
+                    <div className="h-px bg-muted-foreground/30 flex-1" />
                   </div>
                   
                   {/* Security Message */}

@@ -117,7 +117,7 @@ Examples:
 - About: https://courseconnectai.com/about
 - Sign Up: https://courseconnectai.com/dashboard
 
-Be friendly, concise, and helpful. Give short answers (2-3 sentences max). If unsure, suggest contacting support@courseconnectai.com.`,
+Be friendly, concise, and helpful. Give short answers (2-3 sentences max). If unsure, suggest contacting courseconnect.noreply@gmail.com.`,
           conversationHistory: messages.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'assistant',
             content: msg.content

@@ -12,7 +12,7 @@ import { TestimonialsSection } from '@/components/landing/testimonials-section';
 import { CTASection } from '@/components/landing/cta-section';
 import { Footer } from '@/components/landing/footer';
 import { AISupportWidget } from '@/components/ai-support-widget';
-import { AIComparisonSection } from '@/components/landing/ai-comparison-section';
+import { EducationComparisonSection } from '@/components/landing/education-comparison-section';
 
 export default function HomePage() {
   return (
@@ -24,7 +24,7 @@ export default function HomePage() {
         
         {/* PricingSection removed from home page */}
         <SocialProofSection />
-        <AIComparisonSection />
+        <EducationComparisonSection />
         {/* Mobile sections removed as requested */}
         {/* DetailedPricingSection removed from home page */}
         <TestimonialsSection />

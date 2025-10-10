@@ -12,6 +12,7 @@ export function HeroSection() {
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
       {/* Background Visual Layer (image fallback) */}
+      {/* Background Visual Layer (image fallback) */}
       <div
         className="absolute inset-0 pointer-events-none select-none opacity-20 dark:opacity-25 bg-center bg-cover"
         style={{ backgroundImage: "url('/screenshots/desktop-dashboard.png')" }}
@@ -31,24 +32,13 @@ export function HeroSection() {
             transition={{ duration: 0.6 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6"
           >
-            <StaticText 
-              text="Connect with " 
-              className="text-gray-900 dark:text-white"
-            />
+            <div className="text-gray-900 dark:text-white">
+              Struggling in Class?
+            </div>
             <TypewriterText 
-              text="Classmates" 
+              text="We've Got Your Back" 
               className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
               delay={500}
-            />
-            <br />
-            <StaticText 
-              text="Get " 
-              className="text-gray-900 dark:text-white"
-            />
-            <TypewriterText 
-              text="AI Tutoring" 
-              className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
-              delay={2000}
             />
           </motion.h1>
 
@@ -59,7 +49,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed"
           >
-            Upload your syllabus, find classmates taking the same course, and get instant AI help with homework, assignments, and exam prep.
+            Upload your syllabus, get AI tutoring that knows your assignments and exam dates, and connect with classmates taking the same course. No more confusion—just real help.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -134,16 +124,6 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="mt-16 relative"
         >
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Try CourseConnect AI Right Now
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Upload your syllabus to see how AI extracts professor info, exam dates, topics, and assignments. 
-              No signup required for the demo!
-            </p>
-          </div>
-
           <div className="relative max-w-4xl mx-auto">
             <InteractiveSyllabusDemo />
           </div>
