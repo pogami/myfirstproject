@@ -24,7 +24,7 @@ const features = [
   {
     icon: Users,
     title: 'AI-Powered Tutoring',
-    description: 'Get instant help with homework, assignments, and exam prep. Our local AI processes your questions and provides detailed explanations.',
+    description: 'Get instant help with homework, assignments, and exam prep. CourseConnect AI provides detailed explanations tailored to your course.',
     color: 'from-purple-500 to-pink-500'
   },
   {
@@ -42,7 +42,7 @@ const features = [
   {
     icon: Shield,
     title: 'Privacy-First',
-    description: 'Your data stays on your device. We use local AI processing with Ollama, so your academic information never leaves your computer.',
+    description: 'Your academic information is protected with enterprise-grade security. CourseConnect AI is privacy-focused and keeps your data secure.',
     color: 'from-indigo-500 to-blue-500'
   },
   {

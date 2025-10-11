@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, Sparkles, CheckCircle, ArrowRight, Calendar, User, GraduationCap, BookOpen, Clock, Shield, File, AlertCircle, Info, Zap, Users, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useChatStore } from '@/hooks/use-chat-store';
 
 interface ExtractedData {
   courseName?: string;
@@ -21,7 +22,12 @@ interface ExtractedData {
   exams?: Array<{ name: string; date?: string; daysUntil?: number }>;
 }
 
-export default function InteractiveSyllabusDemo() {
+interface InteractiveSyllabusDemoProps {
+  className?: string;
+  redirectToSignup?: boolean; // New prop to control redirect behavior
+}
+
+export default function InteractiveSyllabusDemo({ className, redirectToSignup = true }: InteractiveSyllabusDemoProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
@@ -33,6 +39,7 @@ export default function InteractiveSyllabusDemo() {
   const [recentActivity, setRecentActivity] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { addChat, setCurrentTab } = useChatStore();
 
   // Mock recent activity data
   useEffect(() => {
@@ -187,17 +194,39 @@ export default function InteractiveSyllabusDemo() {
       if (file.type === 'text/plain') {
         text = await file.text();
         } else if (file.type === 'application/pdf') {
+          // PDF processing provides helpful guidance instead of text extraction
+          console.log('PDF file detected - providing conversion guidance...');
+          
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          const response = await fetch('/api/pdf-extract', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          // PDF processing always returns helpful guidance, not text
+          if (result.alternatives) {
+            const alternativesText = result.alternatives.map((alt: string, i: number) => `${i + 1}. ${alt}`).join('\n');
+            const errorMessage = `${result.error}\n\nAlternatives:\n${alternativesText}${result.note ? `\n\n${result.note}` : ''}`;
+            throw new Error(errorMessage);
+          } else {
+            throw new Error(result.error || 'PDF processing is currently being enhanced. Please try converting to TXT or DOCX format.');
+          }
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
           try {
-            setProcessingStep('Reading PDF content...');
+            setProcessingStep('Reading DOCX content...');
             setProgress(20);
             
-            // Use server-side PDF processing to avoid client-side pdfjs-dist issues
-            console.log('Processing PDF via server-side API...');
+            // Use server-side DOCX processing
+            console.log('Processing DOCX via server-side API...');
             
             const formData = new FormData();
             formData.append('file', file);
             
-            const response = await fetch('/api/pdf-extract', {
+            const response = await fetch('/api/docx-extract', {
               method: 'POST',
               body: formData
             });
@@ -210,39 +239,23 @@ export default function InteractiveSyllabusDemo() {
             const result = await response.json();
             
             if (!result.success) {
-              // Handle PDF processing limitations gracefully
+              // Handle DOCX processing limitations gracefully
               if (result.alternatives) {
                 const alternativesText = result.alternatives.map((alt: string, i: number) => `${i + 1}. ${alt}`).join('\n');
                 const errorMessage = `${result.error}\n\nAlternatives:\n${alternativesText}${result.note ? `\n\n${result.note}` : ''}`;
                 throw new Error(errorMessage);
               } else {
-                throw new Error(result.error || 'PDF processing failed');
+                throw new Error(result.error || 'DOCX processing failed');
               }
             }
             
             text = result.text;
-            console.log('PDF extraction successful via server-side API:', {
+            console.log('DOCX extraction successful via server-side API:', {
               textLength: text.length,
-              pages: result.metadata?.pages,
               fileName: result.metadata?.fileName
             });
             setProgress(50);
             
-          } catch (pdfError: any) {
-            console.error('PDF extraction error:', pdfError);
-            throw new Error(`Failed to extract text from PDF: ${pdfError.message}. Please try a TXT or DOCX file instead.`);
-          }
-        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-          try {
-            setProcessingStep('Reading DOCX content...');
-            setProgress(20);
-            
-            // Direct mammoth import to avoid DocumentProcessorClient pdfjs-dist issues
-            const mammoth = await import('mammoth');
-            const arrayBuffer = await file.arrayBuffer();
-            const result = await mammoth.extractRawText({ arrayBuffer });
-            text = result.value.trim();
-            setProgress(50);
           } catch (docxError: any) {
             console.error('DOCX extraction error:', docxError);
             throw new Error(`Failed to extract text from DOCX: ${docxError.message}. Please try a TXT or PDF file instead.`);
@@ -251,10 +264,13 @@ export default function InteractiveSyllabusDemo() {
         throw new Error('Unsupported file format');
       }
 
-      if (!text || text.trim().length === 0) {
+      // Only validate text content for TXT and DOCX files (PDF will throw errors with guidance)
+      if ((file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') && (!text || text.trim().length === 0)) {
         throw new Error('No text content found in the file. Please try a different file.');
       }
 
+      // Process TXT and DOCX files with AI (PDF will have already thrown errors with guidance)
+      if (file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       // Step 2: Validate syllabus content (with bypass option for testing)
       setProcessingStep('Validating syllabus content...');
       setProgress(60);
@@ -316,6 +332,10 @@ export default function InteractiveSyllabusDemo() {
       // Update processing time
       const endTime = Date.now();
       setProcessingTime(Math.round((endTime - startTime) / 1000));
+        
+        // Save to sessionStorage for demo flow
+        sessionStorage.setItem('demoSyllabusData', JSON.stringify(extractedData));
+        sessionStorage.setItem('demoSyllabusText', text);
       
       // Dispatch real activity event for live pill
       const activityEvent = new CustomEvent('syllabus-uploaded', {
@@ -327,6 +347,9 @@ export default function InteractiveSyllabusDemo() {
         }
       });
       window.dispatchEvent(activityEvent);
+        
+        console.log('TXT syllabus processing completed:', extractedData);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to process syllabus. Please try again.');
       console.error('Processing error:', err);
@@ -335,7 +358,7 @@ export default function InteractiveSyllabusDemo() {
     }
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     // Save extracted data to session storage for signup flow
     if (extractedData) {
       sessionStorage.setItem('cc-course-context-card', JSON.stringify({
@@ -347,8 +370,66 @@ export default function InteractiveSyllabusDemo() {
       }));
     }
     
-    // Navigate to signup
+    // Only navigate to signup if redirectToSignup is true (homepage users)
+    if (redirectToSignup) {
     router.push('/signup');
+    } else {
+      // For authenticated users on upload page, create a course-specific chat
+      if (extractedData) {
+        const courseName = extractedData.courseName || 'Unknown Course';
+        const courseCode = extractedData.courseCode || 'UNKNOWN';
+        const chatTitle = `${courseCode} - ${courseName}`;
+        
+        // Create course data for the chat
+        const courseData = {
+          courseName: extractedData.courseName || 'Unknown Course',
+          courseCode: extractedData.courseCode || 'UNKNOWN',
+          professor: extractedData.professor || 'Unknown Professor',
+          university: extractedData.university || 'Unknown University',
+          semester: extractedData.semester || 'Unknown Semester',
+          year: extractedData.year || 'Unknown Year',
+          department: extractedData.department || 'Unknown Department',
+          topics: extractedData.topics || [],
+          assignments: extractedData.assignments || [],
+          exams: extractedData.exams || []
+        };
+        
+        // Create welcome message for the course chat
+        const welcomeMessage = {
+          id: `welcome-${Date.now()}`,
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: `Welcome to your ${courseName} course chat! I'm your AI tutor with full context about your syllabus. I can help you with:\n\n• Course topics and concepts\n• Assignment deadlines and requirements\n• Exam preparation\n• Study strategies\n• Any questions about the course material\n\nWhat would you like to know about ${courseName}?`,
+          timestamp: Date.now()
+        };
+        
+        try {
+          // Create a unique chat ID for each syllabus upload
+          const uniqueChatId = `${courseCode}-${courseName}-${Date.now()}`;
+          
+          console.log('Creating course chat with ID:', uniqueChatId);
+          
+          // Create the course chat with unique ID and wait for it to complete
+          const chatCreated = await addChat(chatTitle, welcomeMessage, uniqueChatId, 'class', courseData);
+          
+          console.log('Chat creation result:', chatCreated);
+          
+          // Wait a moment to ensure the chat is properly added to the store
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Navigate to the chat page with the new chat
+          console.log('Navigating to chat:', uniqueChatId);
+          router.push(`/dashboard/chat?chatId=${encodeURIComponent(uniqueChatId)}`);
+        } catch (error) {
+          console.error('Failed to create course chat:', error);
+          // Fallback to dashboard if chat creation fails
+          router.push('/dashboard');
+        }
+      } else {
+        // Fallback to dashboard if no extracted data
+        router.push('/dashboard');
+      }
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -429,17 +510,17 @@ export default function InteractiveSyllabusDemo() {
               </p>
               
                   <div className="flex flex-wrap justify-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <span className="text-sm font-medium text-amber-700 dark:text-amber-400">PDF Syllabus</span>
-                      <span className="text-xs text-amber-600 dark:text-amber-500">(convert to TXT/DOCX)</span>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400">PDF Syllabus</span>
+                      <span className="text-xs text-green-600 dark:text-green-500">(fully supported)</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                       <span className="text-sm font-medium text-green-700 dark:text-green-400">DOCX Syllabus</span>
-                      <span className="text-xs text-green-600 dark:text-green-500">(recommended)</span>
+                      <span className="text-xs text-green-600 dark:text-green-500">(fully supported)</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <span className="text-sm font-medium text-blue-700 dark:text-blue-400">TXT Syllabus</span>
-                      <span className="text-xs text-blue-600 dark:text-blue-500">(recommended)</span>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400">TXT Syllabus</span>
+                      <span className="text-xs text-green-600 dark:text-green-500">(fully supported)</span>
                     </div>
                   </div>
               
@@ -450,10 +531,10 @@ export default function InteractiveSyllabusDemo() {
                 </div>
               </div>
               
-                  <div className="mt-3 p-3 bg-amber-50/50 dark:bg-amber-900/10 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-                    <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+        <div className="mt-3 p-3 bg-green-50/50 dark:bg-green-900/10 rounded-lg border border-green-200/50 dark:border-green-800/50">
+          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
                       <Info className="size-4" />
-                      <span className="font-medium">PDF processing temporarily unavailable - please use TXT or DOCX files</span>
+            <span className="font-medium">TXT and DOCX files work perfectly! PDF processing provides helpful conversion guidance.</span>
                     </div>
                   </div>
             </div>
@@ -569,18 +650,44 @@ export default function InteractiveSyllabusDemo() {
                     <div>
                       <p className="text-sm text-muted-foreground">Course Name</p>
                       <p className="font-medium">{extractedData.courseName || 'Not found'}</p>
+                      {!extractedData.courseName && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          This syllabus may not contain a clear course name
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Course Code</p>
-                      <p className="font-medium">{extractedData.courseCode || 'Not found'}</p>
+                      <p className={`font-medium ${redirectToSignup ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                        {extractedData.courseCode || 'Not found'}
+                      </p>
+                      {!extractedData.courseCode && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          This syllabus may not contain a course code
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Professor</p>
-                      <p className="font-medium">{extractedData.professor || 'Not found'}</p>
+                      <p className={`font-medium ${redirectToSignup ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                        {extractedData.professor || 'Not found'}
+                      </p>
+                      {!extractedData.professor && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          This syllabus may not contain professor information
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">University</p>
-                      <p className="font-medium">{extractedData.university || 'Not found'}</p>
+                      <p className={`font-medium ${redirectToSignup ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                        {extractedData.university || 'Not found'}
+                      </p>
+                      {!extractedData.university && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          This syllabus may not contain university information
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Semester & Year</p>
@@ -590,6 +697,11 @@ export default function InteractiveSyllabusDemo() {
                           : 'Not found'
                         }
                       </p>
+                      {(!extractedData.semester || !extractedData.year) && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          This syllabus may not contain semester/year details
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -641,7 +753,7 @@ export default function InteractiveSyllabusDemo() {
                       {extractedData.assignments && extractedData.assignments.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {extractedData.assignments.slice(0, 3).map((assignment, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
+                            <Badge key={index} variant="outline" className={`text-xs ${redirectToSignup ? 'blur-sm select-none pointer-events-none' : ''}`}>
                               {assignment.name}
                             </Badge>
                           ))}
@@ -678,7 +790,7 @@ export default function InteractiveSyllabusDemo() {
                       {extractedData.exams && extractedData.exams.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {extractedData.exams.slice(0, 2).map((exam, index) => (
-                            <div key={index} className="text-xs">
+                            <div key={index} className={`text-xs ${redirectToSignup ? 'blur-sm select-none pointer-events-none' : ''}`}>
                               <span className="font-medium">{exam.name}</span>
                               {exam.date && (
                                 <span className="text-muted-foreground ml-2">
@@ -719,48 +831,148 @@ export default function InteractiveSyllabusDemo() {
               </div>
 
               {/* Call to Action */}
-              <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                <CardContent className="p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <div className="p-3 rounded-xl bg-primary/10">
-                      <Sparkles className="size-8 text-primary" />
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Looks Good?</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Confirm this syllabus to save it to your dashboard, or choose to upload another if something looks off.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button onClick={handleSignUp} size="lg" className="bg-gradient-to-r from-primary to-primary/90">
-                      <CheckCircle className="size-4 mr-2" />
-                      Confirm & Save
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={removeFile} 
-                      size="lg" 
-                      className="!bg-transparent !border-gray-300 !text-gray-700 hover:!bg-gray-50 hover:!text-gray-900 hover:!border-gray-300 dark:!border-gray-600 dark:!text-gray-300 dark:hover:!bg-gray-800 dark:hover:!text-gray-100 dark:hover:!border-gray-600"
-                    >
-                      Re-upload Syllabus
-                    </Button>
-                  </div>
-                  <div className="mt-3 flex items-center gap-3 max-w-md mx-auto">
-                    <div className="h-px bg-muted-foreground/30 flex-1" />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">Upload another syllabus</span>
-                    <div className="h-px bg-muted-foreground/30 flex-1" />
-                  </div>
-                  
-                  {/* Security Message */}
-                  <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
-                      <Shield className="size-4" />
-                      <p className="text-sm font-medium">
-                        Your syllabus is secured safely and is only used to better match you with other students.
+              {redirectToSignup ? (
+                // HOMEPAGE - Conversion-optimized design
+                <div className="space-y-4">
+                  <Card className="border-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-pink-950/30 relative overflow-hidden shadow-2xl">
+                    {/* Animated Background Elements */}
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+                    
+                    <CardContent className="p-10 text-center relative">
+                      {/* Icon */}
+                      <div className="flex justify-center mb-5">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 blur-2xl opacity-60 rounded-full" />
+                          <div className="relative p-5 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-xl">
+                            <Sparkles className="size-10 text-white animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Headline */}
+                      <h3 className="text-4xl md:text-5xl font-black mb-4 leading-tight">
+                        <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                          Analysis Complete!
+                        </span>
+                        <br />
+                        <span className="text-gray-900 dark:text-white text-3xl md:text-4xl">
+                          Ready to Ace Your Course?
+                        </span>
+                      </h3>
+                      
+                      {/* Value Proposition */}
+                      <p className="text-gray-700 dark:text-gray-300 mb-4 text-lg max-w-2xl mx-auto leading-relaxed">
+                        Sign up now to unlock your <span className="font-bold text-purple-600 dark:text-purple-400">personalized AI tutor</span> for <span className="font-bold text-blue-600 dark:text-blue-400">{extractedData.courseName || 'your course'}</span>
                       </p>
+                      
+                      {/* Benefits */}
+                      <div className="flex flex-wrap justify-center gap-3 mb-6">
+                        <span className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full text-sm font-medium shadow-md">
+                          <span className="text-green-500">✓</span>
+                          Instant AI Answers
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full text-sm font-medium shadow-md">
+                          <span className="text-blue-500">✓</span>
+                          Study Plans
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full text-sm font-medium shadow-md">
+                          <span className="text-purple-500">✓</span>
+                          Exam Prep
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full text-sm font-medium shadow-md">
+                          <span className="text-pink-500">✓</span>
+                          24/7 Support
+                        </span>
+                      </div>
+                      
+                      {/* CTA Buttons */}
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
+                        <Button 
+                          onClick={handleSignUp} 
+                          size="lg" 
+                          className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white font-black text-xl px-10 py-7 shadow-2xl transform hover:scale-105 transition-all border-0 relative overflow-hidden group rounded-2xl"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="relative z-10 flex items-center gap-3">
+                            <Sparkles className="size-6" />
+                            Get Started Free
+                            <ArrowRight className="size-6" />
+                          </span>
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          onClick={removeFile} 
+                          size="lg" 
+                          className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold px-8 py-7 text-lg rounded-2xl"
+                        >
+                          Try Another Syllabus
+                        </Button>
+                      </div>
+                      
+                      
+                      {/* Divider */}
+                      <div className="flex items-center gap-3 max-w-md mx-auto mt-6">
+                        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent flex-1" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">or upload another</span>
+                        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent flex-1" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                // UPLOAD PAGE - Clean and professional
+                <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="p-3 rounded-xl bg-primary/10">
+                        <CheckCircle className="size-8 text-primary" />
+                      </div>
                     </div>
+                    <h3 className="text-xl font-bold mb-2">Looks Good?</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Confirm this syllabus to save it to your dashboard, or choose to upload another if something looks off.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <Button 
+                        onClick={handleSignUp} 
+                        size="lg" 
+                        className="bg-gradient-to-r from-primary to-primary/90 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all"
+                      >
+                        <CheckCircle className="size-4 mr-2" />
+                        <span>Confirm & Save</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={removeFile} 
+                        size="lg" 
+                        className="!bg-transparent !border-gray-300 !text-gray-700 hover:!bg-gray-50 hover:!text-gray-900 hover:!border-gray-300 dark:!border-gray-600 dark:!text-gray-300 dark:hover:!bg-gray-800 dark:hover:!text-gray-100 dark:hover:!border-gray-600"
+                      >
+                        Re-upload Syllabus
+                      </Button>
+                    </div>
+                    <div className="mt-3 flex items-center gap-3 max-w-md mx-auto">
+                      <div className="h-px bg-muted-foreground/30 flex-1" />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Upload another syllabus</span>
+                      <div className="h-px bg-muted-foreground/30 flex-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              
+              {/* Security Message for Upload Page */}
+              {!redirectToSignup && (
+                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
+                    <Shield className="size-4" />
+                    <p className="text-sm font-medium">
+                      Your syllabus is secured safely and is only used to better match you with other students.
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

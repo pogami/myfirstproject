@@ -49,9 +49,24 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
   }
 
   return (
-    <div className={`text-sm ${className}`}>
+    <div className={`bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm text-sm ${className}`}>
       <ReactMarkdown
         components={{
+          a({ node, href, children, ...props }) {
+            // Custom link styling - blue, underlined, opens in new tab
+            return (
+              <a 
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium transition-colors cursor-pointer"
+                title={href}
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';

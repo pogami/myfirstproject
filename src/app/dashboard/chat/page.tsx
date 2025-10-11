@@ -197,15 +197,27 @@ export default function ChatPage() {
     // Handle URL parameters for specific chat tabs
     useEffect(() => {
         const tabParam = searchParams.get('tab');
-        if (tabParam) {
-            if (chats[tabParam]) {
-                setCurrentTab(tabParam);
-                try { localStorage.setItem('cc-active-tab', tabParam); } catch {}
+        const chatIdParam = searchParams.get('chatId');
+        const targetChatId = chatIdParam || tabParam;
+        
+        if (targetChatId) {
+            console.log('URL parameter found:', { tabParam, chatIdParam, targetChatId });
+            if (chats[targetChatId]) {
+                console.log('Chat exists, switching to:', targetChatId);
+                setCurrentTab(targetChatId);
+                try { localStorage.setItem('cc-active-tab', targetChatId); } catch {}
             } else {
+                console.log('Chat not found, waiting for it to be created:', targetChatId);
                 const start = Date.now();
                 const interval = setInterval(() => {
-                    if (chats[tabParam] || Date.now() - start > 3000) {
-                        if (chats[tabParam]) setCurrentTab(tabParam);
+                    if (chats[targetChatId] || Date.now() - start > 5000) {
+                        if (chats[targetChatId]) {
+                            console.log('Chat created, switching to:', targetChatId);
+                            setCurrentTab(targetChatId);
+                            try { localStorage.setItem('cc-active-tab', targetChatId); } catch {}
+                        } else {
+                            console.log('Chat creation timeout, staying on current tab');
+                        }
                         clearInterval(interval);
                     }
                 }, 150);
@@ -413,14 +425,25 @@ export default function ChatPage() {
 
         const messageText = inputValue.trim();
         const currentChat = chats[currentTab || 'private-general-chat'];
-        const isPublicChat = currentChat?.chatType === 'public' || currentChat?.chatType === 'class';
+        const isPublicChat = currentChat?.chatType === 'public';
         const isClassChat = currentChat?.chatType === 'class';
 
         // Determine if this message mentions AI
         const hasAIMention = messageText.includes('@ai') || messageText.includes('@AI');
         
         // For public chats, only call AI if explicitly mentioned
-        const shouldCallAIFinal = isPublicChat ? hasAIMention : shouldCallAI;
+        // For class chats (syllabus-based), always call AI
+        // For private chats, use shouldCallAI setting
+        const shouldCallAIFinal = isClassChat ? true : (isPublicChat ? hasAIMention : shouldCallAI);
+
+        console.log('Chat type detection:', {
+            chatType: currentChat?.chatType,
+            isClassChat,
+            isPublicChat,
+            hasAIMention,
+            shouldCallAIFinal,
+            message: messageText.substring(0, 50)
+        });
 
         const userMessage = {
             id: generateMessageId(),
@@ -457,24 +480,40 @@ export default function ChatPage() {
                 // Get AI response via API call with enhanced error handling
                 let aiResponse;
                 try {
-                    console.log('Making API call to /api/chat...');
+                    // Determine if this is a class chat and use appropriate endpoint
+                    const apiEndpoint = isClassChat ? '/api/chat/class' : '/api/chat';
+                    console.log(`Making API call to ${apiEndpoint}...`, { isClassChat, hasCourseData: !!currentChat?.courseData });
                     
-                    const response = await fetch('/api/chat', {
+                    const requestBody: any = {
+                        question: messageText,
+                        context: currentChat?.title || 'General Chat',
+                        conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
+                            role: msg.sender === 'user' ? 'user' : 'assistant',
+                            content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+                        })) || [],
+                        shouldCallAI: shouldCallAIFinal,
+                        isPublicChat: isPublicChat // Only true for community chat, not class chats
+                    };
+
+                    // Add course data for class chats
+                    if (isClassChat && currentChat?.courseData) {
+                        requestBody.courseData = currentChat.courseData;
+                        requestBody.chatId = currentTab;
+                        requestBody.metadata = currentChat.metadata; // Send metadata for persistent memory
+                        console.log('Including course data:', {
+                            courseName: currentChat.courseData.courseName,
+                            courseCode: currentChat.courseData.courseCode,
+                            hasMetadata: !!currentChat.metadata
+                        });
+                    }
+                    
+                    const response = await fetch(apiEndpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'User-Agent': 'CourseConnect-Client/1.0',
                         },
-                        body: JSON.stringify({
-                            question: messageText,
-                            context: currentChat?.title || 'General Chat',
-                            conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
-                                role: msg.sender === 'user' ? 'user' : 'assistant',
-                                content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
-                            })) || [],
-                            shouldCallAI: shouldCallAIFinal,
-                            isPublicChat
-                        }),
+                        body: JSON.stringify(requestBody),
                         // Add timeout for better device compatibility
                         signal: AbortSignal.timeout(35000) // 35 second timeout
                     });
@@ -493,8 +532,33 @@ export default function ChatPage() {
                         provider: data.provider, 
                         answerLength: data.answer?.length || 0,
                         sourcesCount: data.sources?.length || 0,
-                        sources: data.sources
+                        sources: data.sources,
+                        metadata: data.metadata
                     });
+                    
+                    // Track conversation metadata for class chats
+                    if (isClassChat && data.metadata && currentTab) {
+                        const currentMetadata = currentChat.metadata || {};
+                        
+                        // Update topics covered
+                        const existingTopics = currentMetadata.topicsCovered || [];
+                        const newTopics = data.metadata.topicsCovered || [];
+                        const mergedTopics = Array.from(new Set([...existingTopics, ...newTopics]));
+                        
+                        // Update complexity level
+                        const updatedMetadata = {
+                            ...currentMetadata,
+                            topicsCovered: mergedTopics,
+                            questionComplexityLevel: data.metadata.questionComplexity || currentMetadata.questionComplexityLevel,
+                            // Add struggling topics if confusion detected
+                            strugglingWith: data.metadata.isConfused && newTopics.length > 0
+                                ? Array.from(new Set([...(currentMetadata.strugglingWith || []), ...newTopics]))
+                                : currentMetadata.strugglingWith
+                        };
+                        
+                        // Update chat metadata in store (this would need to be persisted to Firebase in production)
+                        console.log('Updated conversation metadata:', updatedMetadata);
+                    }
                     
                     aiResponse = data;
                 } catch (apiError) {
@@ -536,7 +600,7 @@ export default function ChatPage() {
                 } else if (typeof aiResponse === 'string') {
                     responseText = aiResponse;
                 }
-
+                
                 const aiMessage = {
                     id: generateMessageId(),
                     text: responseText || 'I apologize, but I couldn\'t generate a response.',
@@ -862,8 +926,25 @@ export default function ChatPage() {
                                                     return a.title.localeCompare(b.title);
                                                 });
 
-                                            // Combine permanent chats with other chats
-                                            const allChats = [...permanentChats, ...otherChats];
+                                            // Get local class chats that aren't in pusher chats yet
+                                            const localClassChats = Object.values(chats)
+                                                .filter(chat => 
+                                                    chat.chatType === 'class' && 
+                                                    !otherChats.some(pusherChat => pusherChat.chatId === chat.id) &&
+                                                    chat.id !== 'private-general-chat' && 
+                                                    chat.id !== 'public-general-chat'
+                                                )
+                                                .map(chat => ({
+                                                    chatId: chat.id,
+                                                    title: chat.title,
+                                                    userCount: 1,
+                                                    isActive: true,
+                                                    isPermanent: false
+                                                }))
+                                                .sort((a, b) => a.title.localeCompare(b.title));
+
+                                            // Combine permanent chats with other chats and local class chats
+                                            const allChats = [...permanentChats, ...otherChats, ...localClassChats];
 
                                             return allChats.map(chat => {
                                                 const isPublic = chat.chatId === 'public-general-chat';
@@ -878,13 +959,13 @@ export default function ChatPage() {
                                                             setCurrentTab(chat.chatId); 
                                                             try { localStorage.setItem('cc-active-tab', chat.chatId); } catch {} 
                                                         }}
-                                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 hover:bg-muted/50 ${
+                                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 border-0 outline-none [&>*]:bg-transparent [&_*]:bg-transparent ${
                                                             isActive 
-                                                                ? 'bg-primary/10 border border-primary/20 text-primary' 
-                                                                : 'hover:bg-muted/30'
+                                                                ? 'bg-primary !bg-primary text-primary-foreground shadow-md' 
+                                                                : 'bg-transparent hover:bg-muted/50'
                                                         }`}
                                                     >
-                                                        <div className="flex-shrink-0">
+                                                        <div className="flex-shrink-0 bg-transparent">
                                                             {isPrivate ? (
                                                                 <MessageSquare className="h-4 w-4" />
                                                             ) : isPublic ? (
@@ -893,31 +974,47 @@ export default function ChatPage() {
                                                                 <BookOpen className="h-4 w-4" />
                                                             )}
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-medium truncate">
+                                                        <div className="flex-1 min-w-0 bg-transparent">
+                                                            <div className="flex items-center gap-2 bg-transparent">
+                                                                <span className="font-medium truncate bg-transparent">
                                                                     {chat.title}
                                                                 </span>
                                                                 {isPublic && (
-                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                                                    <span className={`inline-flex items-center text-[10px] px-1 py-0.5 font-semibold ${
+                                                                        isActive 
+                                                                            ? 'text-emerald-200' 
+                                                                            : 'text-emerald-600 dark:text-emerald-400'
+                                                                    }`}>
                                                                         Live
                                                                     </span>
                                                                 )}
                                                                 {isPrivate && (
-                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                                                                    <span className={`inline-flex items-center text-[10px] px-1 py-0.5 font-semibold ${
+                                                                        isActive 
+                                                                            ? 'text-blue-200' 
+                                                                            : 'text-blue-600 dark:text-blue-400'
+                                                                    }`}>
                                                                         AI
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className="text-xs text-muted-foreground truncate">
+                                                            <div className={`text-xs truncate bg-transparent ${
+                                                                isActive 
+                                                                    ? 'text-primary-foreground/80' 
+                                                                    : 'text-muted-foreground'
+                                                            }`}>
                                                                 {isPrivate ? (
                                                                     'AI Assistant • Private'
                                                                 ) : isPublic ? (
                                                                     <>
-                                                                        <div className="font-medium text-muted-foreground/80 mb-0.5">
+                                                                        <div className={`font-medium mb-0.5 bg-transparent ${
+                                                                            isActive 
+                                                                                ? 'text-primary-foreground/70' 
+                                                                                : 'text-muted-foreground/80'
+                                                                        }`}>
                                                                             Connect with students • Share knowledge • Study together
                                                                         </div>
-                                                                        <div>
+                                                                        <div className="bg-transparent">
                                                                             {chat.userCount} user{chat.userCount !== 1 ? 's' : ''} online
                                                                             {pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage && (
                                                                                 <span className="ml-2">
@@ -965,7 +1062,11 @@ export default function ChatPage() {
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
-                                        {currentTab === 'public-general-chat' ? 'Community' : 'General Chat'}
+                                        {currentTab === 'public-general-chat' 
+                                            ? 'Community' 
+                                            : currentTab === 'private-general-chat' 
+                                            ? 'General Chat' 
+                                            : (currentTab && chats[currentTab]?.title) || 'Chat'}
                                         <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
                                             All Users
@@ -1041,7 +1142,7 @@ export default function ChatPage() {
                                                 
                                                 return (
                                                 <div key={`msg-${message.id || `fallback-${index}-${message.timestamp}`}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
-                                                    <div className={`flex gap-3 max-w-[85%] min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                    <div className={`flex gap-3 ${message.sender === 'user' ? 'max-w-[70%]' : 'max-w-[90%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         <Avatar className="w-8 h-8 flex-shrink-0">
                                                             {message.sender === 'user' && !isGuest && user?.photoURL ? (
                                                                 <AvatarImage src={user.photoURL} />
@@ -1110,10 +1211,10 @@ export default function ChatPage() {
                                                                     </div>
                                                                     {message.timestamp && <MessageTimestamp timestamp={message.timestamp} />}
                                                                 </div>
-                                                                <BotResponse 
-                                                                    content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
+                        <BotResponse 
+                            content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
                                                                     className="text-sm ai-response leading-relaxed max-w-full overflow-hidden"
-                                                                    sources={message.sources}
+                            sources={message.sources}
                                                                 />
                                                             </div>
                                                         )}
@@ -1127,22 +1228,22 @@ export default function ChatPage() {
                                             
                                             {/* AI Thinking Animation */}
                                             {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (
-                                                <div className="flex items-start gap-3 w-full max-w-full animate-in slide-in-from-bottom-2 duration-300">
-                                                    <Avatar className="w-8 h-8 flex-shrink-0">
-                                                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
-                                                            <CourseConnectLogo className="w-4 h-4" />
-                                                        </div>
-                                                    </Avatar>
+            <div className="flex items-start gap-3 w-full max-w-[90%] animate-in slide-in-from-bottom-2 duration-300">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
+                        <CourseConnectLogo className="w-4 h-4" />
+                    </div>
+                </Avatar>
                                                     <div className="text-left min-w-0">
                                                         <div className="text-xs text-muted-foreground mb-1">
                                                             CourseConnect AI
-                                                        </div>
-                                                        <div className="text-sm font-medium">
-                                                            <RippleText text="thinking..." className="text-primary" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                    </div>
+                                                        <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
+                                                            <RippleText text="thinking..." className="text-primary text-sm" />
+                    </div>
+                </div>
+            </div>
+        )}
 
                                             {/* Real-time typing indicator - compact design */}
                                             {pusherTypingUsers.length > 0 && (

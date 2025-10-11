@@ -55,6 +55,30 @@ export type Chat = {
     chatType?: 'private' | 'public' | 'class';
     classGroupId?: string;
     members?: string[];
+    courseData?: {
+        courseName?: string;
+        courseCode?: string;
+        professor?: string;
+        university?: string;
+        semester?: string;
+        year?: string;
+        department?: string;
+        topics?: string[];
+        assignments?: Array<{ name: string; dueDate?: string; description?: string }>;
+        exams?: Array<{ name: string; date?: string; daysUntil?: number }>;
+    };
+    // Conversation metadata for AI intelligence
+    metadata?: {
+        topicsCovered?: string[]; // Topics student has discussed
+        strugglingWith?: string[]; // Topics student seems confused about
+        quizzesGenerated?: Array<{
+            topic: string;
+            questions: Array<{ question: string; answer: string }>;
+            timestamp: number;
+        }>;
+        lastStudyPlanDate?: number;
+        questionComplexityLevel?: 'basic' | 'intermediate' | 'advanced';
+    };
 };
 
 interface ChatState {
@@ -69,7 +93,7 @@ interface ChatState {
   trialStartDate: number | null; // When the trial started (timestamp)
   trialDaysLeft: number; // Days remaining in trial
   // Real-time messaging handled by Pusher (no longer using Socket.IO)
-  addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class') => Promise<void>;
+  addChat: (chatName: string, initialMessage: Message, customChatId?: string, chatType?: 'private' | 'public' | 'class', courseData?: Chat['courseData']) => Promise<void>;
   addMessage: (chatId: string, message: Message, replaceLast?: boolean) => Promise<void>;
   addUserJoinMessage: (chatId: string, userName: string, userId: string) => Promise<void>;
   joinPublicGeneralChat: () => Promise<void>;
@@ -256,7 +280,7 @@ export const useChatStore = create<ChatState>()(
         return unsubscribe;
       },
 
-      addChat: async (chatName, initialMessage, customChatId?: string, chatType: 'private' | 'public' | 'class' = 'private') => {
+      addChat: async (chatName, initialMessage, customChatId?: string, chatType: 'private' | 'public' | 'class' = 'private', courseData?: Chat['courseData']) => {
         const chatId = customChatId || getChatId(chatName);
         const { isGuest } = get();
         
@@ -267,7 +291,8 @@ export const useChatStore = create<ChatState>()(
           createdAt: Date.now(),
           updatedAt: Date.now(),
           chatType,
-          members: chatType !== 'private' ? [] : undefined
+          members: chatType !== 'private' ? [] : undefined,
+          courseData
         };
 
         console.log('addChat called:', { chatName, chatId, customChatId, isGuest });
@@ -296,7 +321,9 @@ export const useChatStore = create<ChatState>()(
                         title: chatName,
                         messages: [safeInitialMessage],
                         createdAt: Date.now(),
-                        updatedAt: Date.now()
+                        updatedAt: Date.now(),
+                        chatType,
+                        courseData
                     }
                 },
                 currentTab: chatId
@@ -329,7 +356,9 @@ export const useChatStore = create<ChatState>()(
                         title: chatName,
                         messages: [safeInitialMessage],
                         createdAt: Date.now(),
-                        updatedAt: Date.now()
+                        updatedAt: Date.now(),
+                        chatType,
+                        courseData
                     }
                 },
                 currentTab: chatId
@@ -683,44 +712,147 @@ export const useChatStore = create<ChatState>()(
         }
       },
       
-      clearGuestData: () => set({ chats: {}, currentTab: undefined }),
+      clearGuestData: () => {
+        // Clear all local storage data
+        try {
+          localStorage.removeItem('cc-chat-store');
+          localStorage.removeItem('cc-active-tab');
+          localStorage.removeItem('cc-course-context-card');
+          console.log('✅ Cleared all guest data from localStorage');
+        } catch (error) {
+          console.warn('Failed to clear localStorage:', error);
+        }
+        
+        // Reset store state
+        set({ chats: {}, currentTab: undefined });
+      },
+      
+      // Reset Community chat to clean state
+      resetCommunityChat: () => {
+        const welcomeMessage = {
+          id: `welcome-${Date.now()}`,
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`,
+          timestamp: Date.now()
+        };
+        
+        set((state) => ({
+          chats: {
+            ...state.chats,
+            'public-general-chat': {
+              id: 'public-general-chat',
+              title: 'Community',
+              messages: [welcomeMessage],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              chatType: 'public',
+              members: []
+            }
+          }
+        }));
+        
+        console.log('✅ Community chat reset to clean state');
+      },
+      
+      // Complete reset of all chats (both local and Firestore)
+      resetAllChats: async () => {
+        const { isGuest } = get();
+        
+        if (isGuest) {
+          // For guest users, clear all local storage
+          get().clearGuestData();
+          console.log('✅ All guest chats reset');
+        } else {
+          // For logged-in users, reset each chat in Firestore
+          const chats = get().chats;
+          const resetPromises = Object.keys(chats).map(async (chatId) => {
+            try {
+              await get().resetChat(chatId);
+            } catch (error) {
+              console.warn(`Failed to reset chat ${chatId}:`, error);
+            }
+          });
+          
+          await Promise.all(resetPromises);
+          console.log('✅ All chats reset in Firestore');
+        }
+      },
       
       resetChat: async (chatId) => {
         const { isGuest } = get();
         const chat = get().chats[chatId];
         if (!chat) return;
 
-        // Clear all messages and add new welcome message
-        const newWelcomeMessage = chatId === 'public-general-chat' ? {
-          sender: 'bot' as const,
-          name: 'CourseConnect AI',
-          text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`
-        } : {
-          sender: 'bot' as const,
-          name: 'CourseConnect AI',
-          text: `Welcome to General Chat! 👋 I'm your personal AI assistant, ready to help with any academic questions. I can help with study support, homework, academic guidance, and any subject. Simply type your question below and I'll provide detailed responses. Ready to learn? Ask me anything! 🚀`
-        };
+        // Clear all messages and add new welcome message based on chat type
+        let newWelcomeMessage;
+        
+        if (chatId === 'public-general-chat') {
+          newWelcomeMessage = {
+            id: `welcome-${Date.now()}`,
+            sender: 'bot' as const,
+            name: 'CourseConnect AI',
+            text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`,
+            timestamp: Date.now()
+          };
+        } else if (chat.chatType === 'class' && chat.courseData) {
+          // Course-specific chat reset
+          const courseName = chat.courseData.courseName || 'this course';
+          const professor = chat.courseData.professor || 'your professor';
+          newWelcomeMessage = {
+            id: `welcome-${Date.now()}`,
+            sender: 'bot' as const,
+            name: 'CourseConnect AI',
+            text: `Welcome back to your ${courseName} course chat! I'm your AI tutor with full context about your syllabus. I can help you with:\n\n• Course topics and concepts\n• Assignment deadlines and requirements\n• Exam preparation\n• Study strategies\n• Any questions about the course material\n\nWhat would you like to know about ${courseName}?`,
+            timestamp: Date.now()
+          };
+        } else {
+          // General private chat reset
+          newWelcomeMessage = {
+            id: `welcome-${Date.now()}`,
+            sender: 'bot' as const,
+            name: 'CourseConnect AI',
+            text: `Welcome to General Chat! 👋 I'm your personal AI assistant, ready to help with any academic questions. I can help with study support, homework, academic guidance, and any subject. Simply type your question below and I'll provide detailed responses. Ready to learn? Ask me anything! 🚀`,
+            timestamp: Date.now()
+          };
+        }
+        
         const resetMessages = [newWelcomeMessage];
 
-        // Update local state
+        // Update local state immediately
         set((state) => ({
           chats: {
             ...state.chats,
             [chatId]: {
               ...state.chats[chatId],
-              messages: resetMessages
+              messages: resetMessages,
+              updatedAt: Date.now() // Update timestamp to ensure persistence
             }
           }
         }));
 
-        // Update Firestore if user is logged in
+        // Update Firestore if user is logged in - CRITICAL for persistence across reloads
         if (!isGuest) {
           const chatDocRef = doc(db as Firestore, 'chats', chatId);
           try {
-            await updateDoc(chatDocRef, { messages: resetMessages });
+            // Completely replace the chat document with only the welcome message
+            await setDoc(chatDocRef, {
+              title: chat.title,
+              messages: resetMessages,
+              createdAt: chat.createdAt || Date.now(),
+              updatedAt: Date.now(),
+              chatType: chat.chatType,
+              courseData: chat.courseData,
+              members: chat.members || []
+            }, { merge: false }); // merge: false ensures complete replacement
+            
+            console.log(`✅ Chat ${chatId} reset successfully in Firestore with only welcome message`);
           } catch (error) {
             console.warn("Failed to reset chat in firestore:", error);
+            // Even if Firestore fails, local state is already updated
           }
+        } else {
+          console.log(`✅ Chat ${chatId} reset successfully in local storage`);
         }
       },
 

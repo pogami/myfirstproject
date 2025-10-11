@@ -133,15 +133,42 @@ export default function EnhancedSyllabusUpload() {
             const courseTitle = data.courseInfo.title || 'New Course';
             const chatId = `course-${Date.now()}`;
             
-            await addChat(chatId, courseTitle, [
+            // Extract course data for the chat
+            const courseData = {
+                courseName: data.courseInfo.title,
+                courseCode: data.courseInfo.courseCode,
+                professor: data.courseInfo.instructor,
+                university: data.courseInfo.university,
+                semester: data.courseInfo.semester,
+                year: data.courseInfo.year,
+                department: data.courseInfo.department,
+                topics: data.schedule?.map(item => item.description).filter(Boolean) || [],
+                assignments: data.assignments?.map(assignment => ({
+                    name: assignment.name,
+                    dueDate: assignment.dueDate
+                })) || [],
+                exams: data.assignments?.filter(assignment => 
+                    assignment.type === 'exam' || assignment.type === 'quiz'
+                ).map(exam => ({
+                    name: exam.name,
+                    date: exam.dueDate,
+                    daysUntil: exam.dueDate ? Math.ceil((new Date(exam.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : undefined
+                })) || []
+            };
+            
+            await addChat(
+                courseTitle,
                 {
                     id: `welcome-${Date.now()}`,
                     text: `Welcome to ${courseTitle}! Your syllabus has been successfully parsed and analyzed.`,
                     sender: 'bot',
                     name: 'CourseConnect AI',
                     timestamp: Date.now()
-                }
-            ]);
+                },
+                chatId,
+                'class',
+                courseData
+            );
 
             setCurrentTab(chatId);
 
@@ -150,8 +177,8 @@ export default function EnhancedSyllabusUpload() {
                 description: `Your course "${courseTitle}" has been set up with all parsed information.`,
             });
 
-            // Navigate to the chat
-            router.push('/dashboard/chat');
+            // Navigate to the chat with chatId parameter
+            router.push(`/dashboard/chat?chatId=${encodeURIComponent(chatId)}`);
 
         } catch (error) {
             console.error('Error creating course:', error);

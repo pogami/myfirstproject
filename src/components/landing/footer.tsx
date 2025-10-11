@@ -147,7 +147,7 @@ export function Footer() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="text-xl font-bold">CourseConnect AI</span>
+              <span className="text-xl font-bold">CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span></span>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
               The AI-powered study platform that connects students with classmates and provides personalized tutoring to help you ace your courses.
@@ -247,7 +247,7 @@ export function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">
               <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
-                Stay updated with CourseConnect AI
+                Stay updated with CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Get the latest updates, features, and study tips delivered to your inbox.
@@ -277,7 +277,7 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between">
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            © 2025 CourseConnect AI. All rights reserved.
+            © 2025 CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>. All rights reserved.
           </p>
           <div className="flex items-center space-x-6 mt-4 md:mt-0">
             <Button

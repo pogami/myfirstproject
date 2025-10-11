@@ -81,37 +81,6 @@ export function HeroSection() {
           {/* Logo strip removed */}
 
           {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto"
-          >
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                2,500+
-              </div>
-              <div className="text-gray-600 dark:text-gray-400">
-                Active Students
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                150+
-              </div>
-              <div className="text-gray-600 dark:text-gray-400">
-                Universities
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-green-600 dark:text-green-400 mb-2">
-                87%
-              </div>
-              <div className="text-gray-600 dark:text-gray-400">
-                Satisfaction Rate
-              </div>
-            </div>
-          </motion.div>
         </div>
 
         {/* Live demo teaser removed */}

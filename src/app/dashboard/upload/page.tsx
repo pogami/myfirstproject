@@ -137,7 +137,7 @@ export default function EnhancedSyllabusUploadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-8">
-            <InteractiveSyllabusDemo />
+            <InteractiveSyllabusDemo redirectToSignup={false} />
           </CardContent>
         </Card>
 

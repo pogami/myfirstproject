@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Bot, User, AlertTriangle, MessageCircle, Info, Upload, ChevronDown, ChevronUp, Copy, Check, BookOpen, Loader2, X, Download, RotateCcw, Trash2, MoreVertical } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -924,6 +925,18 @@ export default function ChatInterface() {
             console.log('Document context exists:', !!documentContext);
             console.log('Context preview:', fullContext.substring(0, 300) + '...');
             
+            // Determine if this is a course chat and should use class chat API
+            const isCourseChat = currentTab?.startsWith('course-') || chats[currentTab!]?.chatType === 'class';
+            const courseData = chats[currentTab!]?.courseData;
+            
+            console.log('Chat Type Detection:', {
+                currentTab,
+                isCourseChat,
+                chatType: chats[currentTab!]?.chatType,
+                hasCourseData: !!courseData,
+                courseName: courseData?.courseName
+            });
+            
             // Determine if AI should respond based on chat type and @ai mention
             const isPublicChat = currentTab?.includes('public');
             const hasAIMention = messageToProcess.toLowerCase().includes('@ai');
@@ -936,8 +949,11 @@ export default function ChatInterface() {
                 messageToProcess
             });
             
-            // Call the chat API directly to get sources
-            const response = await fetch('/api/chat', {
+            // Choose the appropriate API endpoint
+            const apiEndpoint = isCourseChat ? '/api/chat/class' : '/api/chat';
+            
+            // Call the appropriate chat API
+            const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -948,7 +964,9 @@ export default function ChatInterface() {
                     conversationHistory: conversationHistory,
                     shouldCallAI: shouldCallAI,
                     isPublicChat: isPublicChat,
-                    hasAIMention: hasAIMention
+                    hasAIMention: hasAIMention,
+                    courseData: isCourseChat ? courseData : undefined,
+                    chatId: currentTab
                 })
             });
             
@@ -1099,15 +1117,33 @@ export default function ChatInterface() {
                     {hasChats ? (
                     <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-grow flex flex-col min-h-0">
                         <TabsList className="grid w-full rounded-xl sm:rounded-2xl bg-muted/30 p-0.5 sm:p-1 overflow-x-auto" style={{gridTemplateColumns: `repeat(${Object.keys(chats).length}, minmax(0, 1fr))`}}>
-                            {Object.keys(chats).map(key => (
-                                <TabsTrigger 
-                                    key={key} 
-                                    value={key}
-                                    className="rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-                                >
-                                    <span className="truncate">{chats[key].title}</span>
-                                </TabsTrigger>
-                            ))}
+                            {Object.keys(chats).map(key => {
+                                const chat = chats[key];
+                                const isClassChat = chat.chatType === 'class';
+                                const courseData = chat.courseData;
+                                
+                                return (
+                                    <TabsTrigger 
+                                        key={key} 
+                                        value={key}
+                                        className="rounded-lg sm:rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-200 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 flex flex-col items-center gap-1"
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            <span className="truncate">{chat.title}</span>
+                                            {isClassChat && (
+                                                <Badge variant="secondary" className="text-xs px-1 py-0 h-4 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                                    Course
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        {isClassChat && courseData && (
+                                            <div className="text-xs text-muted-foreground truncate">
+                                                {courseData.professor && `Prof. ${courseData.professor}`}
+                                            </div>
+                                        )}
+                                    </TabsTrigger>
+                                );
+                            })}
                         </TabsList>
                         {currentChat && currentTab && (
                              <TabsContent key={currentTab} value={currentTab} className="flex-grow mt-3 sm:mt-4 flex flex-col min-h-0">

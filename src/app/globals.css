@@ -1190,3 +1190,27 @@ body {
   animation: gradient-x 3s ease infinite;
 }
 
+/* Blur protection for sensitive data on homepage */
+.blur-sm.select-none.pointer-events-none {
+  filter: blur(4px);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent context menu on blurred elements */
+.blur-sm.select-none.pointer-events-none::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: auto;
+}
+

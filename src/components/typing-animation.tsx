@@ -44,3 +44,5 @@ export function TypingAnimation({ text, speed = 30, className = "" }: TypingAnim
   );
 }
 
+
+

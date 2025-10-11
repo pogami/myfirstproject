@@ -4,11 +4,11 @@ import { Navigation } from '@/components/landing/navigation';
 import { HeroSection } from '@/components/landing/hero-section';
 import { FeaturesSection } from '@/components/landing/features-section';
 // Removed PricingSection from home page
-import { SocialProofSection } from '@/components/landing/social-proof-section';
+// SocialProofSection removed from home page
 // MobileAppSection removed from home page
 // Mobile previews removed
 // Removed DetailedPricingSection from home page
-import { TestimonialsSection } from '@/components/landing/testimonials-section';
+// TestimonialsSection removed from home page
 import { CTASection } from '@/components/landing/cta-section';
 import { Footer } from '@/components/landing/footer';
 import { AISupportWidget } from '@/components/ai-support-widget';
@@ -23,11 +23,11 @@ export default function HomePage() {
         <FeaturesSection />
         
         {/* PricingSection removed from home page */}
-        <SocialProofSection />
+        {/* SocialProofSection removed from home page */}
         <EducationComparisonSection />
         {/* Mobile sections removed as requested */}
         {/* DetailedPricingSection removed from home page */}
-        <TestimonialsSection />
+        {/* TestimonialsSection removed from home page */}
         <CTASection />
       </main>
       <Footer />

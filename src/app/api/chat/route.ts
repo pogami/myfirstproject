@@ -55,7 +55,7 @@ async function searchWebWithSources(query: string): Promise<{ content: string; s
     if (query.toLowerCase().includes('trump') && query.toLowerCase().includes('tylenol')) {
       console.log('🔍 Searching for Trump Tylenol news specifically...');
       content = `Recent news indicates that former President Trump has made controversial statements about Tylenol (acetaminophen) and pregnancy. Medical experts have strongly disputed these claims, stating there is no reliable scientific evidence linking acetaminophen use during pregnancy to autism. Major medical organizations continue to recommend acetaminophen as safe for pain relief during pregnancy when used as directed.`;
-      sources.push({
+    sources.push({
         title: 'Medical Expert Analysis',
         url: 'https://www.medicalnewstoday.com/articles/acetaminophen-pregnancy-safety',
         snippet: 'Medical experts dispute claims about acetaminophen and autism...'
@@ -252,7 +252,7 @@ CourseConnect AI:`;
         // We have current info from search, provide a smart response
         if (lowerQuestion.includes('trump') && lowerQuestion.includes('tylenol')) {
           aiResponse = `${currentInfo}\n\nYeah, that's been a big topic lately! The science on this is pretty clear though - the claims made don't hold up to medical evidence. What specific aspect of this story are you curious about?`;
-        } else {
+    } else {
           aiResponse = `Based on what I found: ${currentInfo.substring(0, 300)}...\n\nThat's the latest info I could find on this topic. Want to dive deeper into any specific aspect?`;
         }
       } else if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {

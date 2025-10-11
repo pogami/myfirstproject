@@ -39,7 +39,7 @@ export function Navigation() {
         <div className={`flex items-center ${isScrolled ? 'justify-center pt-6' : 'h-16'}`}>
           {isScrolled ? (
             /* Scrolled state - Floating capsule header */
-            <div className="flex items-center bg-black/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg border border-white/10 dark:border-gray-700/20 rounded-full px-8 py-4 gap-12">
+            <div className="flex items-center bg-white/30 dark:bg-gray-900/30 backdrop-blur-2xl shadow-2xl border border-white/20 dark:border-white/10 rounded-full px-8 py-4 gap-12">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200">
                 <img 
@@ -47,8 +47,8 @@ export function Navigation() {
                   alt="CourseConnect Logo" 
                   className="w-6 h-6"
                 />
-                <span className="text-lg font-bold text-white">
-                  CourseConnect AI
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                  CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>
                 </span>
               </Link>
 
@@ -58,7 +58,7 @@ export function Navigation() {
                   <a
                     key={item.name}
                     href={item.href}
-                    className="text-gray-300 hover:text-white transition-colors duration-200 font-medium"
+                    className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium"
                   >
                     {item.name}
                   </a>
@@ -69,7 +69,7 @@ export function Navigation() {
               <div className="hidden md:flex items-center gap-4">
                 <Button
                   variant="ghost"
-                  className="text-gray-300 hover:text-white text-sm px-3 py-2 h-8"
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-3 py-2 h-8"
                   onClick={toggleTheme}
                   aria-label="Toggle theme"
                 >
@@ -77,7 +77,7 @@ export function Navigation() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="text-gray-300 hover:text-white text-sm px-4 py-2 h-8"
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-4 py-2 h-8"
                   onClick={() => window.location.href = '/login'}
                 >
                   Sign In
@@ -101,7 +101,7 @@ export function Navigation() {
                   className="w-8 h-8"
                 />
                 <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  CourseConnect AI
+                  CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>
                 </span>
               </Link>
 
