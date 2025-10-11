@@ -959,13 +959,14 @@ export default function ChatPage() {
                                                             setCurrentTab(chat.chatId); 
                                                             try { localStorage.setItem('cc-active-tab', chat.chatId); } catch {} 
                                                         }}
-                                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 border-0 outline-none [&>*]:bg-transparent [&_*]:bg-transparent ${
+                                                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all duration-200 !bg-transparent ${
                                                             isActive 
-                                                                ? 'bg-primary !bg-primary text-primary-foreground shadow-md' 
-                                                                : 'bg-transparent hover:bg-muted/50'
+                                                                ? 'border-2 border-dotted border-blue-500 dark:border-blue-400' 
+                                                                : 'border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-700'
                                                         }`}
+                                                        style={{ background: 'transparent !important' }}
                                                     >
-                                                        <div className="flex-shrink-0 bg-transparent">
+                                                        <div className="flex-shrink-0">
                                                             {isPrivate ? (
                                                                 <MessageSquare className="h-4 w-4" />
                                                             ) : isPublic ? (
@@ -974,47 +975,31 @@ export default function ChatPage() {
                                                                 <BookOpen className="h-4 w-4" />
                                                             )}
                                                         </div>
-                                                        <div className="flex-1 min-w-0 bg-transparent">
-                                                            <div className="flex items-center gap-2 bg-transparent">
-                                                                <span className="font-medium truncate bg-transparent">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium truncate">
                                                                     {chat.title}
                                                                 </span>
                                                                 {isPublic && (
-                                                                    <span className={`inline-flex items-center text-[10px] px-1 py-0.5 font-semibold ${
-                                                                        isActive 
-                                                                            ? 'text-emerald-200' 
-                                                                            : 'text-emerald-600 dark:text-emerald-400'
-                                                                    }`}>
+                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-emerald-600 dark:text-emerald-400">
                                                                         Live
                                                                     </span>
                                                                 )}
                                                                 {isPrivate && (
-                                                                    <span className={`inline-flex items-center text-[10px] px-1 py-0.5 font-semibold ${
-                                                                        isActive 
-                                                                            ? 'text-blue-200' 
-                                                                            : 'text-blue-600 dark:text-blue-400'
-                                                                    }`}>
+                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-blue-600 dark:text-blue-400">
                                                                         AI
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className={`text-xs truncate bg-transparent ${
-                                                                isActive 
-                                                                    ? 'text-primary-foreground/80' 
-                                                                    : 'text-muted-foreground'
-                                                            }`}>
+                                                            <div className="text-xs truncate text-muted-foreground">
                                                                 {isPrivate ? (
                                                                     'AI Assistant • Private'
                                                                 ) : isPublic ? (
                                                                     <>
-                                                                        <div className={`font-medium mb-0.5 bg-transparent ${
-                                                                            isActive 
-                                                                                ? 'text-primary-foreground/70' 
-                                                                                : 'text-muted-foreground/80'
-                                                                        }`}>
+                                                                        <div className="font-medium mb-0.5 text-muted-foreground/80">
                                                                             Connect with students • Share knowledge • Study together
                                                                         </div>
-                                                                        <div className="bg-transparent">
+                                                                        <div>
                                                                             {chat.userCount} user{chat.userCount !== 1 ? 's' : ''} online
                                                                             {pusherAvailableChats.find((c: any) => c.chatId === chat.chatId)?.lastMessage && (
                                                                                 <span className="ml-2">
