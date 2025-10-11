@@ -308,7 +308,7 @@ export function EnhancedChatInput({
               isDark ? "text-white placeholder-white/60" : "text-gray-900 placeholder-gray-400",
               (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
             )}
-            style={{ fontSize: '16px' }}
+            style={{ fontSize: '16px', color: isDark ? '#ffffff' : '#111827' }}
           />
           {/* Cursor Effect */}
           <div className={cn(

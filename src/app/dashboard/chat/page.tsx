@@ -952,6 +952,36 @@ export default function ChatPage() {
                                                 const unread = unreadById[chat.chatId] ?? 0;
                                                 const isActive = currentTab === chat.chatId;
                                                 
+                                                // Determine category and color for class chats
+                                                const getCategory = (title: string) => {
+                                                    const lowerTitle = title.toLowerCase();
+                                                    if (lowerTitle.includes('music') || lowerTitle.includes('mua')) return { name: 'Music', color: 'purple' };
+                                                    if (lowerTitle.includes('math') || lowerTitle.includes('calculus') || lowerTitle.includes('algebra') || lowerTitle.includes('geometry')) return { name: 'Math', color: 'blue' };
+                                                    if (lowerTitle.includes('english') || lowerTitle.includes('literature') || lowerTitle.includes('writing') || lowerTitle.includes('eng')) return { name: 'English', color: 'pink' };
+                                                    if (lowerTitle.includes('science') || lowerTitle.includes('biology') || lowerTitle.includes('chemistry') || lowerTitle.includes('physics')) return { name: 'Science', color: 'green' };
+                                                    if (lowerTitle.includes('history') || lowerTitle.includes('social') || lowerTitle.includes('hist')) return { name: 'History', color: 'amber' };
+                                                    if (lowerTitle.includes('art') || lowerTitle.includes('design') || lowerTitle.includes('drawing')) return { name: 'Art', color: 'rose' };
+                                                    if (lowerTitle.includes('computer') || lowerTitle.includes('coding') || lowerTitle.includes('programming') || lowerTitle.includes('cs')) return { name: 'CS', color: 'cyan' };
+                                                    return { name: 'Class', color: 'slate' };
+                                                };
+                                                
+                                                const isClassChat = !isPublic && !isPrivate;
+                                                const category = isClassChat ? getCategory(chat.title) : null;
+                                                
+                                                const getCategoryColorClasses = (color: string) => {
+                                                    const colors: Record<string, string> = {
+                                                        purple: 'text-purple-600 dark:text-purple-400',
+                                                        blue: 'text-blue-600 dark:text-blue-400',
+                                                        pink: 'text-pink-600 dark:text-pink-400',
+                                                        green: 'text-green-600 dark:text-green-400',
+                                                        amber: 'text-amber-600 dark:text-amber-400',
+                                                        rose: 'text-rose-600 dark:text-rose-400',
+                                                        cyan: 'text-cyan-600 dark:text-cyan-400',
+                                                        slate: 'text-slate-600 dark:text-slate-400'
+                                                    };
+                                                    return colors[color] || colors.slate;
+                                                };
+                                                
                                                 return (
                                                     <button
                                                         key={chat.chatId}
@@ -990,6 +1020,11 @@ export default function ChatPage() {
                                                                         AI
                                                                     </span>
                                                                 )}
+                                                                {category && (
+                                                                    <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${getCategoryColorClasses(category.color)}`}>
+                                                                        {category.name}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <div className="text-xs truncate text-muted-foreground">
                                                                 {isPrivate ? (
@@ -1026,7 +1061,7 @@ export default function ChatPage() {
                                                         </div>
                                                         {unread > 0 && (
                                                             <div className="flex-shrink-0">
-                                                                <span className="inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white font-medium">
+                                                                <span className="inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 dark:bg-red-500 text-white font-bold shadow-md">
                                                                     {unread > 9 ? '9+' : unread}
                                                                 </span>
                                                             </div>
