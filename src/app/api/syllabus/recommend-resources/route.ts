@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchRealWeb } from '@/app/api/chat/working-web-search';
+// Web search temporarily disabled for deployment
+// import { searchRealWeb } from '@/app/api/chat/working-web-search';
 
 export interface ResourceRecommendation {
   id: string;
@@ -56,92 +57,12 @@ async function generateResourceRecommendations(
 
   const recommendations: ResourceRecommendation[] = [];
 
-  // 1. Search for textbooks and books
-  if (topics.length > 0) {
-    const textbookQuery = `${topics.join(' ')} textbook book ${difficulty} level`;
-    console.log('🔍 Searching for textbooks:', textbookQuery);
-    
-    try {
-      const textbookResults = await searchRealWeb(textbookQuery);
-      if (textbookResults.sources) {
-        textbookResults.sources.forEach((source, index) => {
-          recommendations.push({
-            id: `textbook-${Date.now()}-${index}`,
-            title: source.title,
-            type: 'textbook',
-            url: source.url,
-            description: source.snippet || 'Textbook resource',
-            relevance: calculateRelevance(source, topics, skills),
-            difficulty: difficulty as any,
-            topics: topics.filter(topic => 
-              source.title.toLowerCase().includes(topic.toLowerCase())
-            ),
-            cost: 'paid'
-          });
-        });
-      }
-    } catch (error) {
-      console.error('Textbook search error:', error);
-    }
-  }
+  // 1. Search for textbooks and books (web search temporarily disabled)
+  // Will be re-enabled once proper web search is configured
+  console.log('📚 Web search temporarily disabled, using curated resources');
 
-  // 2. Search for online courses and tutorials
-  if (topics.length > 0) {
-    const courseQuery = `${topics.join(' ')} online course tutorial ${difficulty}`;
-    console.log('🔍 Searching for courses:', courseQuery);
-    
-    try {
-      const courseResults = await searchRealWeb(courseQuery);
-      if (courseResults.sources) {
-        courseResults.sources.forEach((source, index) => {
-          recommendations.push({
-            id: `course-${Date.now()}-${index}`,
-            title: source.title,
-            type: 'video',
-            url: source.url,
-            description: source.snippet || 'Online course resource',
-            relevance: calculateRelevance(source, topics, skills),
-            difficulty: difficulty as any,
-            topics: topics.filter(topic => 
-              source.title.toLowerCase().includes(topic.toLowerCase())
-            ),
-            cost: 'free'
-          });
-        });
-      }
-    } catch (error) {
-      console.error('Course search error:', error);
-    }
-  }
-
-  // 3. Search for practice platforms and tools
-  if (skills.length > 0) {
-    const practiceQuery = `${skills.join(' ')} practice exercises problems ${difficulty}`;
-    console.log('🔍 Searching for practice:', practiceQuery);
-    
-    try {
-      const practiceResults = await searchRealWeb(practiceQuery);
-      if (practiceResults.sources) {
-        practiceResults.sources.forEach((source, index) => {
-          recommendations.push({
-            id: `practice-${Date.now()}-${index}`,
-            title: source.title,
-            type: 'practice',
-            url: source.url,
-            description: source.snippet || 'Practice resource',
-            relevance: calculateRelevance(source, topics, skills),
-            difficulty: difficulty as any,
-            topics: topics.filter(topic => 
-              source.title.toLowerCase().includes(topic.toLowerCase())
-            ),
-            cost: 'free'
-          });
-        });
-      }
-    } catch (error) {
-      console.error('Practice search error:', error);
-    }
-  }
+  // 2. Online courses and tutorials (web search temporarily disabled)
+  // 3. Practice platforms (web search temporarily disabled)
 
   // 4. Add curated tool recommendations based on skills
   const toolRecommendations = getToolRecommendations(skills, topics);

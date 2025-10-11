@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Authentication required to access full syllabus data' 
-        },
-        { status: 401 }
-      );
-    }
-
     const { syllabusId } = await request.json();
 
     if (!syllabusId) {
