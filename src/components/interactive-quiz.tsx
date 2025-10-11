@@ -18,9 +18,10 @@ interface InteractiveQuizProps {
   questions: QuizQuestion[];
   topic: string;
   onComplete?: (score: number, total: number) => void;
+  onQuizComplete?: (results: { score: number; total: number; wrongQuestions: string[]; topic: string }) => void;
 }
 
-export function InteractiveQuiz({ questions, topic, onComplete }: InteractiveQuizProps) {
+export function InteractiveQuiz({ questions, topic, onComplete, onQuizComplete }: InteractiveQuizProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [showFeedback, setShowFeedback] = useState(false);
@@ -63,9 +64,28 @@ export function InteractiveQuiz({ questions, topic, onComplete }: InteractiveQui
       setSelectedAnswer("");
       setShowFeedback(false);
     } else {
+      const finalScore = score + (isCorrect ? 1 : 0);
       setIsComplete(true);
+      
+      // Identify wrong questions
+      const finalResults = [...questionResults];
+      finalResults[currentQuestion] = isCorrect ? 'correct' : 'incorrect';
+      const wrongQuestions = questions
+        .filter((_, idx) => finalResults[idx] === 'incorrect')
+        .map(q => q.question);
+      
       if (onComplete) {
-        onComplete(score + (isCorrect ? 1 : 0), questions.length);
+        onComplete(finalScore, questions.length);
+      }
+      
+      // Send results to AI for immediate feedback
+      if (onQuizComplete) {
+        onQuizComplete({
+          score: finalScore,
+          total: questions.length,
+          wrongQuestions,
+          topic
+        });
       }
     }
   };
@@ -174,24 +194,27 @@ export function InteractiveQuiz({ questions, topic, onComplete }: InteractiveQui
                     const isAnswered = showFeedback;
                     const isCorrectOption = letter === question.answer.toUpperCase();
                     
+                    // Remove letter prefix if it exists in the option (e.g., "A) Atoms" -> "Atoms")
+                    const cleanOption = option.replace(/^[A-D]\)\s*/, '');
+                    
                     let buttonClass = "w-full text-left p-4 rounded-lg border-2 transition-all ";
                     let textClass = "";
                     
                     if (isAnswered) {
                       if (isCorrectOption) {
-                        buttonClass += "bg-green-50 border-green-500 dark:bg-green-950/50 dark:border-green-500";
-                        textClass = "text-green-900 dark:text-green-100";
+                        buttonClass += "!bg-green-100 border-green-500 dark:!bg-green-900/40 dark:border-green-500";
+                        textClass = "text-green-800 dark:text-green-200";
                       } else if (isSelected && !isCorrect) {
-                        buttonClass += "bg-red-50 border-red-500 dark:bg-red-950/50 dark:border-red-500";
-                        textClass = "text-red-900 dark:text-red-100";
+                        buttonClass += "!bg-red-100 border-red-500 dark:!bg-red-900/40 dark:border-red-500";
+                        textClass = "text-red-800 dark:text-red-200";
                       } else {
-                        buttonClass += "border-gray-200 opacity-50";
+                        buttonClass += "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-50";
                         textClass = "text-gray-500 dark:text-gray-400";
                       }
                     } else {
                       buttonClass += isSelected 
-                        ? "bg-primary/10 border-primary" 
-                        : "border-gray-200 hover:border-primary/50 hover:bg-muted/50";
+                        ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500 dark:border-blue-500" 
+                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10";
                     }
                     
                     return (
@@ -200,15 +223,16 @@ export function InteractiveQuiz({ questions, topic, onComplete }: InteractiveQui
                         onClick={() => handleAnswerSelect(letter)}
                         disabled={showFeedback}
                         className={buttonClass}
+                        style={{ backgroundColor: isAnswered && isCorrectOption ? 'rgb(220 252 231)' : isAnswered && isSelected && !isCorrect ? 'rgb(254 226 226)' : undefined }}
                       >
                         <div className={`flex items-center gap-3 ${textClass}`}>
                           <span className="font-bold">{letter}.</span>
-                          <span className="flex-1">{option}</span>
+                          <span className="flex-1">{cleanOption}</span>
                           {isAnswered && isCorrectOption && (
-                            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" />
                           )}
                           {isAnswered && isSelected && !isCorrect && (
-                            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                            <XCircle className="w-5 h-5 text-red-700 dark:text-red-400" />
                           )}
                         </div>
                       </button>

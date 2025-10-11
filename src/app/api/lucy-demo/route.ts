@@ -17,7 +17,10 @@ export async function POST(request: NextRequest) {
     // Use ONLY Google Gemini - no web search, no other services
     console.log('🤖 Using ONLY Google Gemini 1.5 Flash...');
     
-    const apiKey = 'AIzaSyDjMZmrQsdSf8B8csnWvZSvT-_zGgiTg14';
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Google AI API key not configured' }, { status: 500 });
+    }
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-1.5-flash'

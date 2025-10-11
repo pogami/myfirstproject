@@ -92,7 +92,7 @@ async function searchWebWithSources(query: string): Promise<{ content: string; s
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, context, conversationHistory, shouldCallAI = true, isPublicChat = false, hasAIMention = false } = await request.json();
+    const { question, context, conversationHistory, shouldCallAI = true, isPublicChat = false, hasAIMention = false, allSyllabi } = await request.json();
     
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -186,25 +186,43 @@ export async function POST(request: NextRequest) {
       ? `\n\nPrevious chat:\n${conversationHistory.map((msg: any) => `${msg.role === 'assistant' ? 'AI' : 'User'}: ${msg.content}`).join('\n')}\n\n`
       : '';
 
-    const prompt = `You're CourseConnect AI SUPPORT ASSISTANT. You ONLY help with CourseConnect platform questions.
+    // Build syllabi context if available (General Chat with all courses)
+    let syllabiContext = '';
+    if (allSyllabi && allSyllabi.length > 0) {
+      syllabiContext = `\n\nYou have access to ALL of the student's course syllabi:\n\n`;
+      allSyllabi.forEach((syllabus: any, index: number) => {
+        syllabiContext += `📚 Course ${index + 1}: ${syllabus.courseName || 'Unknown'}${syllabus.courseCode ? ` (${syllabus.courseCode})` : ''}\n`;
+        if (syllabus.professor) syllabiContext += `   Professor: ${syllabus.professor}\n`;
+        if (syllabus.description) syllabiContext += `   Description: ${syllabus.description}\n`;
+        if (syllabus.topics && syllabus.topics.length > 0) {
+          syllabiContext += `   Topics: ${syllabus.topics.slice(0, 5).join(', ')}${syllabus.topics.length > 5 ? '...' : ''}\n`;
+        }
+        if (syllabus.exams && syllabus.exams.length > 0) {
+          syllabiContext += `   Exams: ${syllabus.exams.map((e: any) => e.name).join(', ')}\n`;
+        }
+        if (syllabus.assignments && syllabus.assignments.length > 0) {
+          syllabiContext += `   Assignments: ${syllabus.assignments.length} total\n`;
+        }
+        syllabiContext += '\n';
+      });
+      syllabiContext += `\nYou can help with ANY of these courses! The student can ask about any topic, assignment, or exam from any of their classes.\n\n`;
+    }
 
-IMPORTANT: You ONLY respond to questions about:
-- CourseConnect features, pricing, signup
-- Platform navigation and help
-- Technical support issues
-- Account/billing questions
+    const prompt = `You're CourseConnect AI - an all-in-one academic assistant${allSyllabi && allSyllabi.length > 0 ? ` with full access to the student's course syllabi` : ''}.
 
-DO NOT respond to:
-- General academic questions (math, science, homework)
-- General knowledge questions
-- Non-CourseConnect related topics
+${syllabiContext}
 
-If someone asks a general question, say: "I'm CourseConnect's support assistant. I can only help with questions about our platform. For academic help, try our AI tutoring features! Please sign up here: [Get Started](https://courseconnectai.com/dashboard)"
+You help with:
+- Academic questions (math, science, homework, any subject)
+- Course-specific help (assignments, exams, topics)
+- Study strategies and explanations
+- General knowledge and learning
 
 Style rules:
-- Respond in 1-2 sentences max
-- Be helpful but concise
-- If it's a crisis/safety issue, provide immediate help resources
+- Be conversational and helpful
+- Provide clear, detailed explanations
+- If you know about their courses, reference them naturally
+- Be encouraging and supportive
 
 If the user's question is mathematical or an equation, strictly follow these rules:
 - Do NOT ask for confirmation. Provide the solution immediately.
@@ -231,9 +249,15 @@ CourseConnect AI:`;
       console.log('Using Gemini + OpenAI fallback system');
       
       // Use the dual AI service with Gemini first, OpenAI fallback
+      // If we have syllabi context, include it in the context parameter
+      let enrichedContext = context || 'General Chat';
+      if (syllabiContext) {
+        enrichedContext = `${context || 'General Chat'}${syllabiContext}`;
+      }
+      
       const aiResult = await provideStudyAssistanceWithFallback({
         question: cleanedQuestion,
-        context: context || 'General Chat',
+        context: enrichedContext,
         conversationHistory: conversationHistory || []
       });
       

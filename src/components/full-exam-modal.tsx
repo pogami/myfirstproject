@@ -23,6 +23,7 @@ interface FullExamModalProps {
   topic: string;
   timeLimit?: number; // in minutes
   onComplete?: (score: number, total: number) => void;
+  onExamComplete?: (results: { score: number; total: number; wrongQuestions: string[]; topic: string }) => void;
 }
 
 export function FullExamModal({ 
@@ -31,7 +32,8 @@ export function FullExamModal({
   questions, 
   topic, 
   timeLimit = 30,
-  onComplete 
+  onComplete,
+  onExamComplete 
 }: FullExamModalProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -70,15 +72,32 @@ export function FullExamModal({
     setIsSubmitted(true);
     setShowReview(true);
     
-    // Calculate score
+    // Calculate score and identify wrong questions
+    const wrongQuestions: string[] = [];
     const score = questions.reduce((acc, question, index) => {
       const userAnswer = answers[index]?.toLowerCase().trim();
       const correctAnswer = question.answer.toLowerCase().trim();
-      return acc + (userAnswer === correctAnswer ? 1 : 0);
+      const isCorrect = userAnswer === correctAnswer;
+      
+      if (!isCorrect) {
+        wrongQuestions.push(question.question);
+      }
+      
+      return acc + (isCorrect ? 1 : 0);
     }, 0);
     
     if (onComplete) {
       onComplete(score, questions.length);
+    }
+    
+    // Send results to AI for immediate feedback
+    if (onExamComplete) {
+      onExamComplete({
+        score,
+        total: questions.length,
+        wrongQuestions,
+        topic
+      });
     }
   };
 

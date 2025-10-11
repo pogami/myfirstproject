@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { SourceIcon } from './source-icon';
 import { InteractiveQuiz } from './interactive-quiz';
 import { FullExamModal } from './full-exam-modal';
+import { AIFeedback } from './ai-feedback';
 
 // Detect if content looks like data points (array of {x, y})
 function looksLikeGraph(content: string): boolean {
@@ -163,9 +164,12 @@ interface BotResponseProps {
     url: string;
     snippet: string;
   }[];
+  onSendMessage?: (message: string) => void;
+  messageId?: string;
+  onFeedback?: (feedback: { rating: 'positive' | 'negative'; comment?: string; messageId: string }) => void;
 }
 
-export default function BotResponse({ content, className = "", sources }: BotResponseProps) {
+export default function BotResponse({ content, className = "", sources, onSendMessage, messageId, onFeedback }: BotResponseProps) {
   const isGraph = useMemo(() => looksLikeGraph(content), [content]);
   const quizData = useMemo(() => extractQuizData(content), [content]);
   const [isCopied, setIsCopied] = useState(false);
@@ -188,7 +192,7 @@ export default function BotResponse({ content, className = "", sources }: BotRes
     // Remove the QUIZ_DATA line from content
     const cleanContent = content.replace(/QUIZ_DATA:[^\n]+/, '').trim();
     return (
-      <div className={className}>
+      <div className={`relative ${className}`}>
         {cleanContent && (
           <div className="relative bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group shadow-sm mb-4">
             {breakIntoParagraphs(cleanContent).map((paragraph, i) => (
@@ -196,11 +200,34 @@ export default function BotResponse({ content, className = "", sources }: BotRes
                 {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
               </div>
             ))}
+            
+            {/* AI Feedback for text portion */}
+            {messageId && onFeedback && (
+              <div className="absolute bottom-2 right-2 z-10">
+                <AIFeedback messageId={messageId} aiContent={content} onFeedback={onFeedback} />
+              </div>
+            )}
           </div>
         )}
         <InteractiveQuiz
           questions={quizData.data.questions}
           topic={quizData.data.topic || 'Quiz'}
+          onQuizComplete={(results) => {
+            if (onSendMessage) {
+              const { score, total, wrongQuestions, topic } = results;
+              const percentage = Math.round((score / total) * 100);
+              let message = `I just completed the ${topic} quiz! I got ${score}/${total} (${percentage}%).`;
+              
+              if (wrongQuestions.length > 0) {
+                message += `\n\nQuestions I got wrong:\n${wrongQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+                message += `\n\nCan you help me understand these topics better so I can ace them next time?`;
+              } else {
+                message += ` Perfect score! 🎉`;
+              }
+              
+              onSendMessage(message);
+            }
+          }}
         />
       </div>
     );
@@ -211,7 +238,7 @@ export default function BotResponse({ content, className = "", sources }: BotRes
     // Remove the EXAM_DATA line from content
     const cleanContent = content.replace(/EXAM_DATA:[^\n]+/, '').trim();
     return (
-      <div className={className}>
+      <div className={`relative ${className}`}>
         {cleanContent && (
           <div className="relative bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group shadow-sm mb-4">
             {breakIntoParagraphs(cleanContent).map((paragraph, i) => (
@@ -219,6 +246,13 @@ export default function BotResponse({ content, className = "", sources }: BotRes
                 {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
               </div>
             ))}
+            
+            {/* AI Feedback for text portion */}
+            {messageId && onFeedback && (
+              <div className="absolute bottom-2 right-2 z-10">
+                <AIFeedback messageId={messageId} aiContent={content} onFeedback={onFeedback} />
+              </div>
+            )}
           </div>
         )}
         <Button onClick={() => setShowExamModal(true)} className="w-full" size="lg">
@@ -230,6 +264,22 @@ export default function BotResponse({ content, className = "", sources }: BotRes
           questions={quizData.data.questions}
           topic={quizData.data.topic || 'Practice Exam'}
           timeLimit={quizData.data.timeLimit || 30}
+          onExamComplete={(results) => {
+            if (onSendMessage) {
+              const { score, total, wrongQuestions, topic } = results;
+              const percentage = Math.round((score / total) * 100);
+              let message = `I just completed the ${topic} practice exam! I got ${score}/${total} (${percentage}%).`;
+              
+              if (wrongQuestions.length > 0) {
+                message += `\n\nQuestions I got wrong:\n${wrongQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+                message += `\n\nCan you help me understand these topics better so I can ace the real exam?`;
+              } else {
+                message += ` Perfect score! 🎉`;
+              }
+              
+              onSendMessage(message);
+            }
+          }}
         />
       </div>
     );
@@ -292,6 +342,13 @@ export default function BotResponse({ content, className = "", sources }: BotRes
           />
         </div>
       </button>
+
+      {/* AI Feedback */}
+      {messageId && onFeedback && (
+        <div className="absolute bottom-2 right-2 z-10">
+          <AIFeedback messageId={messageId} aiContent={content} onFeedback={onFeedback} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1214,10 +1214,10 @@ body {
   pointer-events: auto;
 }
 
-/* Force transparent backgrounds on chat sidebar buttons */
-button.rounded-lg > *,
-button.rounded-lg > * > *,
-button.rounded-lg > * > * > * {
+/* Force transparent backgrounds on chat sidebar buttons ONLY (not quiz buttons) */
+.chat-sidebar button.rounded-lg > *,
+.chat-sidebar button.rounded-lg > * > *,
+.chat-sidebar button.rounded-lg > * > * > * {
   background: transparent !important;
   background-color: transparent !important;
 }

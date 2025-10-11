@@ -133,13 +133,16 @@ export default function ChatPage() {
         });
     }, [pusherConnected, pusherActiveUsers, pusherTypingUsers, pusherIsAiThinking, currentTab]);
 
-    // Immediate fallback to set currentTab if undefined
+    // Track if we're in a reset operation
+    const isResettingRef = useRef(false);
+    
+    // Immediate fallback to set currentTab if undefined (only on initial load, not during reset)
     useEffect(() => {
-        if (!currentTab && !isStoreLoading) {
+        if (!currentTab && !isStoreLoading && Object.keys(chats).length > 0 && !isResettingRef.current) {
             console.log('Immediate fallback: Setting currentTab to public-general-chat');
             setCurrentTab('public-general-chat');
         }
-    }, [currentTab, isStoreLoading, setCurrentTab]);
+    }, [currentTab, isStoreLoading, setCurrentTab, chats]);
 
     const copyToClipboard = async (text: string, messageId: string) => {
         try {
@@ -194,14 +197,19 @@ export default function ChatPage() {
         initializeGeneralChats();
     }, [initializeGeneralChats]);
 
-    // Handle URL parameters for specific chat tabs
+    // Handle URL parameters for specific chat tabs (only on initial load)
+    const urlProcessedRef = useRef(false);
     useEffect(() => {
+        // Only process URL parameters once on initial load
+        if (urlProcessedRef.current) return;
+        
         const tabParam = searchParams.get('tab');
         const chatIdParam = searchParams.get('chatId');
         const targetChatId = chatIdParam || tabParam;
         
-        if (targetChatId) {
-            console.log('URL parameter found:', { tabParam, chatIdParam, targetChatId });
+        if (targetChatId && !isStoreLoading) {
+            urlProcessedRef.current = true;
+            console.log('URL parameter found (initial load):', { tabParam, chatIdParam, targetChatId });
             if (chats[targetChatId]) {
                 console.log('Chat exists, switching to:', targetChatId);
                 setCurrentTab(targetChatId);
@@ -223,8 +231,11 @@ export default function ChatPage() {
                 }, 150);
                 return () => clearInterval(interval);
             }
+        } else if (!targetChatId && !isStoreLoading) {
+            // No URL parameter, mark as processed
+            urlProcessedRef.current = true;
         }
-    }, [searchParams, chats, setCurrentTab]);
+    }, [searchParams, chats, setCurrentTab, isStoreLoading]);
 
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
@@ -507,6 +518,25 @@ export default function ChatPage() {
                         });
                     }
                     
+                    // For General Chat: Include ALL syllabi from all class chats
+                    if (currentTab === 'private-general-chat') {
+                        const allClassChats = Object.values(chats).filter(chat => chat.chatType === 'class' && chat.courseData);
+                        if (allClassChats.length > 0) {
+                            requestBody.allSyllabi = allClassChats.map(chat => ({
+                                courseName: chat.courseData?.courseName || chat.title,
+                                courseCode: chat.courseData?.courseCode,
+                                professor: chat.courseData?.professor,
+                                description: chat.courseData?.description,
+                                topics: chat.courseData?.topics,
+                                exams: chat.courseData?.exams,
+                                assignments: chat.courseData?.assignments,
+                                gradingPolicy: chat.courseData?.gradingPolicy,
+                                officeHours: chat.courseData?.officeHours
+                            }));
+                            console.log('General Chat: Including ALL syllabi from', allClassChats.length, 'class chats');
+                        }
+                    }
+                    
                     const response = await fetch(apiEndpoint, {
                         method: 'POST',
                         headers: {
@@ -769,13 +799,62 @@ export default function ChatPage() {
         // Close dialog immediately
         setShowResetDialog(false);
         
+        const chatToReset = currentTab || 'private-general-chat';
+        
         try {
-            await resetChat(currentTab || 'private-general-chat');
+            // Set flag to prevent any navigation during reset
+            isResettingRef.current = true;
+            
+            // Store current tab to ensure it doesn't change
+            const preservedTab = chatToReset;
+            
+            console.log('🔄 RESET CHAT STARTED:', chatToReset);
+            console.log('🔄 Messages before reset:', chats[chatToReset]?.messages?.length || 0);
+            console.log('🔄 Setting reset flag to prevent navigation');
+            
+            // Force set currentTab BEFORE reset to lock it in place
+            setCurrentTab(preservedTab);
+            
+            await resetChat(chatToReset);
+            
+            console.log('🔄 RESET CHAT COMPLETED');
+            console.log('🔄 Messages after reset:', chats[chatToReset]?.messages?.length || 0);
+            
+            // Force currentTab again after reset
+            setCurrentTab(preservedTab);
+            
+            // Save to localStorage explicitly multiple times to ensure it sticks
+            try {
+                localStorage.setItem('cc-active-tab', preservedTab);
+                console.log('🔄 Saved active tab to localStorage:', preservedTab);
+            } catch {}
+            
+            // Wait for state to settle, then clear the flag
+            setTimeout(() => {
+                isResettingRef.current = false;
+                console.log('🔄 Reset flag cleared');
+                
+                // Final check - if somehow tab changed, force it back
+                if (currentTab !== preservedTab) {
+                    console.log('🔄 Final tab restore to:', preservedTab);
+                    setCurrentTab(preservedTab);
+                }
+            }, 1000);
+            
             toast({
                 title: "Chat Reset",
                 description: "Chat has been reset to its initial state.",
             });
+            
+            // Scroll to top to show welcome message
+            setTimeout(() => {
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 100);
         } catch (error) {
+            isResettingRef.current = false;
+            console.error('❌ Reset chat error:', error);
             toast({
                 variant: "destructive",
                 title: "Reset Failed",
@@ -885,7 +964,7 @@ export default function ChatPage() {
                 {/* Chat Interface with Sidebar */}
                 <div className="w-full flex-1 flex gap-4">
                     {/* Chat Sidebar */}
-                    <div className="w-64 flex-shrink-0">
+                    <div className="w-64 flex-shrink-0 chat-sidebar">
                         <Card className="h-full flex flex-col">
                             <CardHeader className="pb-3">
                                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -970,14 +1049,14 @@ export default function ChatPage() {
                                                 
                                                 const getCategoryColorClasses = (color: string) => {
                                                     const colors: Record<string, string> = {
-                                                        purple: 'text-purple-600 dark:text-purple-400',
-                                                        blue: 'text-blue-600 dark:text-blue-400',
-                                                        pink: 'text-pink-600 dark:text-pink-400',
-                                                        green: 'text-green-600 dark:text-green-400',
-                                                        amber: 'text-amber-600 dark:text-amber-400',
-                                                        rose: 'text-rose-600 dark:text-rose-400',
-                                                        cyan: 'text-cyan-600 dark:text-cyan-400',
-                                                        slate: 'text-slate-600 dark:text-slate-400'
+                                                        purple: 'bg-purple-500/20 text-purple-700 dark:bg-purple-500/30 dark:text-purple-300 border border-purple-500/30',
+                                                        blue: 'bg-blue-500/20 text-blue-700 dark:bg-blue-500/30 dark:text-blue-300 border border-blue-500/30',
+                                                        pink: 'bg-pink-500/20 text-pink-700 dark:bg-pink-500/30 dark:text-pink-300 border border-pink-500/30',
+                                                        green: 'bg-green-500/20 text-green-700 dark:bg-green-500/30 dark:text-green-300 border border-green-500/30',
+                                                        amber: 'bg-amber-500/20 text-amber-700 dark:bg-amber-500/30 dark:text-amber-300 border border-amber-500/30',
+                                                        rose: 'bg-rose-500/20 text-rose-700 dark:bg-rose-500/30 dark:text-rose-300 border border-rose-500/30',
+                                                        cyan: 'bg-cyan-500/20 text-cyan-700 dark:bg-cyan-500/30 dark:text-cyan-300 border border-cyan-500/30',
+                                                        slate: 'bg-slate-500/20 text-slate-700 dark:bg-slate-500/30 dark:text-slate-300 border border-slate-500/30'
                                                     };
                                                     return colors[color] || colors.slate;
                                                 };
@@ -1011,17 +1090,17 @@ export default function ChatPage() {
                                                                     {chat.title}
                                                                 </span>
                                                                 {isPublic && (
-                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                    <span className="inline-flex items-center text-[10px] px-2 py-1 rounded-md font-semibold bg-emerald-500/20 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300 border border-emerald-500/30">
                                                                         Live
                                                                     </span>
                                                                 )}
                                                                 {isPrivate && (
-                                                                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-blue-600 dark:text-blue-400">
+                                                                    <span className="inline-flex items-center text-[10px] px-2 py-1 rounded-md font-semibold bg-blue-500/20 text-blue-700 dark:bg-blue-500/30 dark:text-blue-300 border border-blue-500/30">
                                                                         AI
                                                                     </span>
                                                                 )}
                                                                 {category && (
-                                                                    <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${getCategoryColorClasses(category.color)}`}>
+                                                                    <span className={`inline-flex items-center text-[10px] px-2 py-1 rounded-md font-semibold ${getCategoryColorClasses(category.color)}`}>
                                                                         {category.name}
                                                                     </span>
                                                                 )}
@@ -1061,7 +1140,7 @@ export default function ChatPage() {
                                                         </div>
                                                         {unread > 0 && (
                                                             <div className="flex-shrink-0">
-                                                                <span className="inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 dark:bg-red-500 text-white font-bold shadow-md">
+                                                                <span className="inline-flex items-center justify-center text-[10px] min-w-[18px] h-[18px] px-1 rounded-full bg-white text-red-600 font-extrabold shadow-lg border-2 border-red-600 dark:bg-red-500 dark:text-white dark:border-red-500">
                                                                     {unread > 9 ? '9+' : unread}
                                                                 </span>
                                                             </div>
@@ -1235,6 +1314,103 @@ export default function ChatPage() {
                             content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
                                                                     className="text-sm ai-response leading-relaxed max-w-full overflow-hidden"
                             sources={message.sources}
+                            messageId={message.id}
+                            onSendMessage={async (msg) => {
+                              // Automatically send quiz results to AI (without showing in input field)
+                              const currentChat = chats[currentTab || 'private-general-chat'];
+                              const isClassChat = currentChat?.chatType === 'class';
+                              
+                              // Add user message immediately
+                              const userMessage = {
+                                id: generateMessageId(),
+                                text: msg,
+                                sender: 'user' as const,
+                                name: user?.displayName || 'Anonymous',
+                                userId: user?.uid || 'guest',
+                                timestamp: Date.now()
+                              };
+                              
+                              await addMessage(currentTab || 'private-general-chat', userMessage);
+                              setIsLoading(true);
+                              
+                              try {
+                                // Get AI response
+                                const apiEndpoint = isClassChat ? '/api/chat/class' : '/api/chat';
+                                const requestBody: any = {
+                                  question: msg,
+                                  context: currentChat?.title || 'General Chat',
+                                  conversationHistory: currentChat?.messages?.slice(-10).map(m => ({
+                                    role: m.sender === 'user' ? 'user' : 'assistant',
+                                    content: typeof m.text === 'string' ? m.text : JSON.stringify(m.text)
+                                  })) || [],
+                                  shouldCallAI: true,
+                                  isPublicChat: false
+                                };
+                                
+                                if (isClassChat && currentChat?.courseData) {
+                                  requestBody.courseData = currentChat.courseData;
+                                  requestBody.chatId = currentTab;
+                                  requestBody.metadata = currentChat.metadata;
+                                }
+                                
+                                const response = await fetch(apiEndpoint, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify(requestBody),
+                                  signal: AbortSignal.timeout(35000)
+                                });
+                                
+                                const data = await response.json();
+                                
+                                if (data.response) {
+                                  const aiMessage = {
+                                    id: generateMessageId(),
+                                    text: data.response,
+                                    sender: 'bot' as const,
+                                    name: 'CourseConnect AI',
+                                    timestamp: Date.now()
+                                  };
+                                  
+                                  await addMessage(currentTab || 'private-general-chat', aiMessage);
+                                  
+                                  // Update metadata if provided
+                                  if (data.metadata && currentTab) {
+                                    updateChatMetadata(currentTab, data.metadata);
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Failed to get AI response:', error);
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to get AI response. Please try again.",
+                                  variant: "destructive"
+                                });
+                              } finally {
+                                setIsLoading(false);
+                              }
+                            }}
+                            onFeedback={(feedback) => {
+                              // Store feedback in localStorage
+                              console.log('📊 Feedback callback triggered:', feedback);
+                              try {
+                                const existingFeedback = JSON.parse(localStorage.getItem('cc-ai-feedback') || '[]');
+                                console.log('📊 Existing feedback:', existingFeedback);
+                                const newFeedback = {
+                                  ...feedback,
+                                  chatId: currentTab,
+                                  timestamp: Date.now()
+                                };
+                                existingFeedback.push(newFeedback);
+                                localStorage.setItem('cc-ai-feedback', JSON.stringify(existingFeedback));
+                                console.log('📊 Feedback saved successfully! Total count:', existingFeedback.length);
+                                console.log('📊 Saved feedback data:', newFeedback);
+                                
+                                // Trigger custom event for real-time updates
+                                window.dispatchEvent(new CustomEvent('feedbackAdded', { detail: newFeedback }));
+                              } catch (e) {
+                                console.error('❌ Failed to save feedback:', e);
+                              }
+                            }}
                                                                 />
                                                             </div>
                                                         )}
@@ -1374,6 +1550,8 @@ export default function ChatPage() {
                 </div>
             </DialogContent>
         </Dialog>
+
+        {/* Feedback Viewer removed - for developer use only, access via /dashboard/feedback */}
         </>
     );
 }

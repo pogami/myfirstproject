@@ -166,7 +166,8 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
             }
           },
           // Style other markdown elements
-          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+          // Use div instead of p to avoid hydration errors with nested block elements
+          p: ({ children }) => <div className="mb-2 last:mb-0">{children}</div>,
           h1: ({ children }) => <h1 className="text-xl font-bold mb-2">{children}</h1>,
           h2: ({ children }) => <h2 className="text-lg font-semibold mb-2">{children}</h2>,
           h3: ({ children }) => <h3 className="text-base font-semibold mb-2">{children}</h3>,

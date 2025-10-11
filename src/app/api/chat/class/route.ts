@@ -208,7 +208,22 @@ The student is struggling with this concept.
 - Be extra patient and encouraging`;
       }
       
+      // Get current date for context awareness
+      const today = new Date();
+      const currentDate = today.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+
+      // Categorize exams as upcoming or past
+      const upcomingExams = exams?.filter(e => calculateDaysUntil(e.date || '') >= 0) || [];
+      const pastExams = exams?.filter(e => calculateDaysUntil(e.date || '') < 0) || [];
+
       courseContext = `\n\nCOURSE CONTEXT - You are the AI assistant for ${courseName}${courseCode ? ` (${courseCode})` : ''}:
+
+📅 TODAY'S DATE: ${currentDate}
 
 ${professor ? `👨‍🏫 Professor: ${professor}` : ''}
 ${university ? `🏫 University: ${university}` : ''}
@@ -218,14 +233,22 @@ ${semester && year ? `📅 Semester: ${semester} ${year}` : ''}
 ${topics && topics.length > 0 ? topics.map(topic => `- ${topic}`).join('\n') : 'No topics listed'}
 
 📝 Assignments (${assignments?.length || 0} assignments):
-${assignments && assignments.length > 0 ? assignments.map(assignment => 
-  `- ${assignment.name}${assignment.dueDate ? ` (Due: ${assignment.dueDate})` : ''}${assignment.description ? ` - ${assignment.description}` : ''}`
-).join('\n') : 'No assignments listed'}
+${assignments && assignments.length > 0 ? assignments.map(assignment => {
+  const daysUntil = assignment.dueDate ? calculateDaysUntil(assignment.dueDate) : null;
+  const isPast = daysUntil !== null && daysUntil < 0;
+  return `- ${assignment.name}${assignment.dueDate ? ` (Due: ${assignment.dueDate})` : ''}${isPast ? ' [PAST DUE]' : ''}${assignment.description ? ` - ${assignment.description}` : ''}`;
+}).join('\n') : 'No assignments listed'}
 
-📅 Exams (${exams?.length || 0} exams):
-${exams && exams.length > 0 ? exams.map(exam => 
-  `- ${exam.name}${exam.date ? ` (Date: ${exam.date})` : ''}`
-).join('\n') : 'No exams listed'}
+📅 Upcoming Exams (${upcomingExams.length} exams):
+${upcomingExams.length > 0 ? upcomingExams.map(exam => {
+  const daysUntil = calculateDaysUntil(exam.date || '');
+  return `- ${exam.name}${exam.date ? ` (Date: ${exam.date}, ${daysUntil} days from now)` : ''}`;
+}).join('\n') : 'No upcoming exams'}
+
+📋 Past Exams (${pastExams.length} exams):
+${pastExams.length > 0 ? pastExams.map(exam => 
+  `- ${exam.name}${exam.date ? ` (Was on: ${exam.date})` : ''} [COMPLETED]`
+).join('\n') : 'No past exams yet'}
 ${deadlineContext}
 
 You have access to this course's syllabus information and can help with:
@@ -276,6 +299,22 @@ Response guidelines:
 - Connect topics to real-world applications when it makes sense
 - When discussing the course, ALWAYS use the actual syllabus details provided, not generic information
 - NO formal formatting - just natural paragraphs and conversational flow
+
+CRITICAL - DATE AWARENESS:
+- You know TODAY'S DATE (provided above)
+- For PAST exams/assignments: Ask how they did! Be encouraging and supportive. Say things like "How did that exam go?" or "How are you feeling about how it went?"
+- For UPCOMING exams/assignments: Remind them and help them prepare. Say "You have X days until the exam - let's make sure you're ready!"
+- NEVER say an exam is "coming up" if it already happened - check the dates!
+- Show you care about their progress by asking about past deadlines
+
+CRITICAL - QUIZ RESULTS FEEDBACK:
+- When student shares quiz results, immediately acknowledge their effort and score
+- For scores: Be encouraging regardless of score! Focus on growth and learning
+- If they got questions wrong: Address EACH wrong question topic specifically with helpful explanations
+- Structure your response like: "Great job on the quiz! I see you got X/Y. Let's tackle those questions you missed..."
+- Then for each wrong question, explain the concept clearly and ask if they have follow-up questions
+- Make them feel supported and motivated to improve
+- Show enthusiasm about helping them master the material
 
 ${convoContext}Student: ${cleanedQuestion}
 

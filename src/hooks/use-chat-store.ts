@@ -808,11 +808,17 @@ export const useChatStore = create<ChatState>()(
           };
         } else {
           // General private chat reset
+          // Count how many class chats exist to personalize the message
+          const classChats = Object.values(get().chats).filter(c => c.chatType === 'class');
+          const syllabusText = classChats.length > 0 
+            ? ` I have access to all ${classChats.length} of your course ${classChats.length === 1 ? 'syllabus' : 'syllabi'}, so I can help with any of your classes!`
+            : '';
+          
           newWelcomeMessage = {
             id: `welcome-${Date.now()}`,
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to General Chat! 👋 I'm your personal AI assistant, ready to help with any academic questions. I can help with study support, homework, academic guidance, and any subject. Simply type your question below and I'll provide detailed responses. Ready to learn? Ask me anything! 🚀`,
+            text: `Welcome to General Chat! 👋 I'm your all-in-one AI assistant for ALL your courses.${syllabusText}\n\nI can help with:\n• Any question from any of your classes\n• Homework, assignments, and exam prep\n• Study strategies and explanations\n• Connecting concepts across your courses\n\nJust ask me anything about any of your classes! 🚀`,
             timestamp: Date.now()
           };
         }
@@ -820,19 +826,48 @@ export const useChatStore = create<ChatState>()(
         const resetMessages = [newWelcomeMessage];
 
         // Update local state immediately
-        set((state) => ({
+        const newState = {
           chats: {
-            ...state.chats,
+            ...get().chats,
             [chatId]: {
-              ...state.chats[chatId],
+              ...get().chats[chatId],
               messages: resetMessages,
               updatedAt: Date.now() // Update timestamp to ensure persistence
             }
           }
-        }));
+        };
+        
+        set(newState);
+        
+        // Force persist to save immediately
+        if (typeof window !== 'undefined' && window.localStorage) {
+          try {
+            const persistedState = {
+              chats: newState.chats,
+              currentTab: get().currentTab,
+              isGuest: get().isGuest,
+              isDemoMode: get().isDemoMode,
+              trialActivated: get().trialActivated,
+              trialStartDate: get().trialStartDate,
+              trialDaysLeft: get().trialDaysLeft
+            };
+            window.localStorage.setItem('chat-storage', JSON.stringify({ state: persistedState, version: 0 }));
+            console.log(`✅ Forced persist to localStorage after reset for chat: ${chatId}`);
+          } catch (e) {
+            console.error('Failed to force persist:', e);
+          }
+        }
 
         // Update Firestore if user is logged in - CRITICAL for persistence across reloads
         if (!isGuest) {
+          // First, unsubscribe from Firestore listener to prevent it from overriding our reset
+          const anyState = get() as any;
+          if (anyState._chatSubscriptions && anyState._chatSubscriptions[chatId]) {
+            console.log(`📌 Temporarily unsubscribing from ${chatId} during reset`);
+            anyState._chatSubscriptions[chatId]();
+            delete anyState._chatSubscriptions[chatId];
+          }
+          
           const chatDocRef = doc(db as Firestore, 'chats', chatId);
           try {
             // Completely replace the chat document with only the welcome message
@@ -847,12 +882,30 @@ export const useChatStore = create<ChatState>()(
             }, { merge: false }); // merge: false ensures complete replacement
             
             console.log(`✅ Chat ${chatId} reset successfully in Firestore with only welcome message`);
+            
+            // Update join time to NOW so only future messages appear
+            const joinTimeKey = `chat-join-time-${chatId}`;
+            const resetTime = Date.now();
+            localStorage.setItem(joinTimeKey, resetTime.toString());
+            console.log(`✅ Updated join time for ${chatId} to ${resetTime}`);
+            
+            // Wait a moment, then re-subscribe to Firestore
+            setTimeout(async () => {
+              console.log(`📌 Re-subscribing to ${chatId} after reset`);
+              await get().subscribeToChat(chatId);
+            }, 500);
+            
           } catch (error) {
             console.warn("Failed to reset chat in firestore:", error);
             // Even if Firestore fails, local state is already updated
           }
         } else {
           console.log(`✅ Chat ${chatId} reset successfully in local storage`);
+          // For guest users, also update join time
+          const joinTimeKey = `chat-join-time-${chatId}`;
+          const resetTime = Date.now();
+          localStorage.setItem(joinTimeKey, resetTime.toString());
+          console.log(`✅ Updated join time for ${chatId} to ${resetTime}`);
         }
       },
 
