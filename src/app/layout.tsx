@@ -33,13 +33,31 @@ export const metadata: Metadata = {
     site: "@courseconnectai",
   },
   icons: {
-    icon: '/officialogo.png',
+    icon: [
+      { url: '/officialogo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/officialogo.png', sizes: '16x16', type: 'image/png' },
+      { url: '/officialogo.png', sizes: '48x48', type: 'image/png' }
+    ],
     shortcut: '/officialogo.png',
     apple: [
-      { url: '/officialogo.png', sizes: '180x180' },
-      { url: '/officialogo.png', sizes: '152x152' },
-      { url: '/officialogo.png', sizes: '120x120' },
-      { url: '/officialogo.png', sizes: '76x76' }
+      { url: '/officialogo.png', sizes: '180x180', type: 'image/png' },
+      { url: '/officialogo.png', sizes: '152x152', type: 'image/png' },
+      { url: '/officialogo.png', sizes: '120x120', type: 'image/png' },
+      { url: '/officialogo.png', sizes: '76x76', type: 'image/png' }
+    ],
+    other: [
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '192x192',
+        url: '/officialogo.png',
+      },
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '512x512',
+        url: '/officialogo.png',
+      }
     ]
   }
 };
@@ -91,8 +109,12 @@ export default function RootLayout({
         <meta property="al:android:app_name" content="CourseConnect AI" />
         <meta property="og:determiner" content="the" />
         
-        {/* Favicon and Icons */}
-        <link rel="icon" href="/officialogo.png" type="image/png" />
+        {/* Favicon and Icons - Multiple sizes for better visibility */}
+        <link rel="icon" href="/officialogo.png" type="image/png" sizes="48x48" />
+        <link rel="icon" href="/officialogo.png" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/officialogo.png" type="image/png" sizes="16x16" />
+        <link rel="icon" href="/officialogo.png" type="image/png" sizes="64x64" />
+        <link rel="icon" href="/officialogo.png" type="image/png" sizes="128x128" />
         <link rel="shortcut icon" href="/officialogo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/officialogo.png" sizes="180x180" />
         <link rel="apple-touch-icon" href="/officialogo.png" sizes="152x152" />

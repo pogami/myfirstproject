@@ -140,11 +140,26 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
 
     } catch (error: any)
     {
-      console.error(error);
+      console.error('Account creation error:', error);
+      
+      let errorMessage = 'Something went wrong. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'An account with this email already exists.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
-        title: "Authentication Failed",
-        description: error.code === 'auth/email-already-in-use' ? 'An account with this email already exists.' : error.message,
+        title: "Account Creation Failed",
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
