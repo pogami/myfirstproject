@@ -70,9 +70,9 @@ export default function EnhancedSyllabusUploadPage() {
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <span className="text-base sm:text-lg font-bold text-primary">3</span>
               </div>
-              <h3 className="font-semibold text-sm sm:text-base">Join Groups</h3>
+              <h3 className="font-semibold text-sm sm:text-base">Study Groups <span className="text-xs text-muted-foreground">(Coming Soon)</span></h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Automatically join study groups and start collaborating
+                Connect with classmates and collaborate together
               </p>
             </div>
           </div>
@@ -121,25 +121,31 @@ export default function EnhancedSyllabusUploadPage() {
           ))}
         </div>
 
-        {/* Upload Component - Mobile Optimized */}
-        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl transition-all duration-500 mx-4 sm:mx-0">
-          <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
-            <div className="flex justify-center mb-3 sm:mb-4">
-              <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                <FileText className="size-6 sm:size-8 text-primary" />
+        {/* Upload Component */}
+        <div className="mx-4 sm:mx-0">
+          <InteractiveSyllabusDemo redirectToSignup={false} />
+        </div>
+
+        {/* Bottom Info Section - Centers the upload area */}
+        <div className="mt-12 mb-16 text-center space-y-6 px-4 sm:px-0">
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-lg font-semibold mb-4 text-muted-foreground">What happens after upload?</h3>
+            <div className="grid gap-4 sm:grid-cols-3 text-sm">
+              <div className="space-y-2">
+                <div className="text-3xl">⚡</div>
+                <p className="text-muted-foreground">Instant AI analysis of your course content</p>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl">💬</div>
+                <p className="text-muted-foreground">Create a dedicated chat for your class</p>
+              </div>
+              <div className="space-y-2">
+                <div className="text-3xl">🎯</div>
+                <p className="text-muted-foreground">Get personalized study assistance</p>
               </div>
             </div>
-            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Ready to Get Started?
-            </CardTitle>
-            <CardDescription className="text-base sm:text-lg">
-              Upload your syllabus file and let our AI do the rest
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-8">
-            <InteractiveSyllabusDemo redirectToSignup={false} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Slideshow */}
         {showSlideshow && (

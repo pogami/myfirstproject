@@ -6,7 +6,7 @@ import { ArrowRight, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TypewriterText, StaticText } from '@/components/saas-typography';
 import InteractiveSyllabusDemo from '@/components/interactive-syllabus-demo';
-import LiveActivityPill from '@/components/live-activity-pill';
+import BetaBadge from '@/components/beta-badge';
 
 export function HeroSection() {
   return (
@@ -22,8 +22,8 @@ export function HeroSection() {
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div className="text-center">
-          {/* Live Activity Pill */}
-          <LiveActivityPill />
+          {/* Beta Badge */}
+          <BetaBadge />
 
           {/* Main Headline */}
           <motion.h1
@@ -49,7 +49,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed"
           >
-            Upload your syllabus, get AI tutoring that knows your assignments and exam dates, and connect with classmates taking the same course. No more confusion—just real help.
+            Upload your syllabus and get AI tutoring that knows your assignments and exam dates. No more confusion—just real help when you need it.
           </motion.p>
 
           {/* CTA Buttons */}

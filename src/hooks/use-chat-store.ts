@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Firestore, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase/client';
 import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 // Socket.IO removed - using Pusher for real-time messaging
@@ -55,6 +55,7 @@ export type Chat = {
     chatType?: 'private' | 'public' | 'class';
     classGroupId?: string;
     members?: string[];
+    disabled?: boolean; // For coming soon features
     courseData?: {
         courseName?: string;
         courseCode?: string;
@@ -139,9 +140,51 @@ export const useChatStore = create<ChatState>()(
       initializeAuthListener: () => {
         console.log("initializeAuthListener called");
         
+        // Migrate old chats to add chatType if missing - ENHANCED VERSION
+        const migrateOldChats = () => {
+          const currentChats = get().chats;
+          let needsUpdate = false;
+          const updatedChats = { ...currentChats };
+          
+          Object.keys(updatedChats).forEach(chatId => {
+            const chat = updatedChats[chatId];
+            if (!chat.chatType) {
+              console.log('🔧 Migrating old chat:', chatId, 'hasCourseData:', !!chat.courseData);
+              // Determine chatType based on chat ID and courseData
+              if (chatId === 'public-general-chat') {
+                chat.chatType = 'public';
+              } else if (chatId.includes('private-general-chat')) {
+                chat.chatType = 'private';
+              } else if (chat.courseData) {
+                chat.chatType = 'class'; // CRITICAL: Class chats have courseData
+              } else {
+                chat.chatType = 'private';
+              }
+              needsUpdate = true;
+              console.log('✅ Migrated chat to chatType:', chat.chatType);
+            }
+          });
+          
+          if (needsUpdate) {
+            console.log('✅ Migrated', Object.keys(updatedChats).filter(id => !currentChats[id]?.chatType).length, 'chats, updating store');
+            set({ chats: updatedChats });
+          } else {
+            console.log('✅ All chats already have chatType, no migration needed');
+          }
+        };
+        
+        // Run migration immediately
+        migrateOldChats();
+        
+        // ALSO run migration after a short delay to catch any timing issues
+        setTimeout(() => {
+          console.log('🔄 Running delayed migration check...');
+          migrateOldChats();
+        }, 1000);
+        
         // Initialize general chats immediately for real-time functionality
-        const initializeGeneralChats = () => {
-          console.log("initializeGeneralChats called");
+        const initializeGeneralChats = (userId?: string) => {
+          console.log("initializeGeneralChats called with userId:", userId);
           set((state) => {
             console.log("Setting up chats in store, current state:", { 
               chatsCount: Object.keys(state.chats).length,
@@ -151,24 +194,39 @@ export const useChatStore = create<ChatState>()(
             
             const newState = { ...state };
             
-            // Create public-general-chat if it doesn't exist
+            // Create public-general-chat if it doesn't exist (DISABLED - Coming Soon)
             if (!newState.chats['public-general-chat']) {
-              console.log("Creating public-general-chat");
+              console.log("Creating public-general-chat (disabled)");
+              
+              // Check if user is developer (replace with your actual user ID)
+              const isDeveloper = typeof window !== 'undefined' && 
+                (window.location.hostname === 'localhost' || 
+                 localStorage.getItem('dev-mode') === 'true');
+              
               newState.chats['public-general-chat'] = {
                 id: 'public-general-chat',
                 title: 'Community',
-                messages: [],
+                messages: [{
+                  sender: 'bot' as const,
+                  name: 'CourseConnect AI',
+                  text: isDeveloper 
+                    ? '👨‍💻 **Developer Mode: Community Chat Active**\n\nYou have developer access to Community Chat for testing. Regular users will see the "Coming Soon" message.\n\nThis chat is shared across all users for real-time collaboration testing.'
+                    : '🚧 **Community Chat Coming Soon!**\n\nWe\'re building an amazing community space! While we finish up, here\'s what you can do:\n\n✅ **Use General Chat** - Get AI help with all your courses\n✅ **Upload Your Syllabus** - Unlock course-specific AI tutoring\n✅ **Report Issues** - Found a bug? Click your profile icon → "Report Issue"\n\nStay tuned for updates! 🎓',
+                  timestamp: Date.now()
+                }],
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
-                chatType: 'public'
+                chatType: 'public',
+                disabled: !isDeveloper
               } as Chat;
             }
             
-            // Create private-general-chat if it doesn't exist
-            if (!newState.chats['private-general-chat']) {
-              console.log("Creating private-general-chat");
-              newState.chats['private-general-chat'] = {
-                id: 'private-general-chat',
+            // Create private-general-chat with user-specific ID
+            const privateGeneralChatId = userId ? `private-general-chat-${userId}` : 'private-general-chat-guest';
+            if (!newState.chats[privateGeneralChatId]) {
+              console.log("Creating private general chat:", privateGeneralChatId);
+              newState.chats[privateGeneralChatId] = {
+                id: privateGeneralChatId,
                 title: 'General',
                 messages: [],
                 createdAt: Date.now(),
@@ -182,15 +240,15 @@ export const useChatStore = create<ChatState>()(
           });
         };
         
-        // Initialize chats immediately
-        initializeGeneralChats();
+        // Initialize chats immediately with guest mode
+        initializeGeneralChats(undefined); // Guest mode
         
         // Immediately set loading to false, enable guest mode, and set default currentTab for real-time chat
-        console.log("Setting isStoreLoading to false, isGuest to true, and currentTab to public-general-chat");
+        console.log("Setting isStoreLoading to false, isGuest to true, and currentTab to private-general-chat-guest");
         set({ 
           isStoreLoading: false, 
           isGuest: true,
-          currentTab: 'public-general-chat' // Set default tab immediately
+          currentTab: 'private-general-chat-guest' // Set default tab to private guest chat
         });
         
         console.log("Store initialization complete, new state:", {
@@ -199,13 +257,36 @@ export const useChatStore = create<ChatState>()(
           currentTab: 'public-general-chat'
         });
         
-        // Subscribe to Firestore for message persistence
-        console.log("Setting up Firestore subscriptions for message persistence");
+        // Initialize default chats with clean state (one-time per version)
+        const CHAT_VERSION = 'v2.2'; // Changed to v2.2 to force clean reset with join times
+        const lastInitVersion = localStorage.getItem('chat-init-version');
+        
+        // CRITICAL: Set join times BEFORE subscribing to Firestore to prevent old messages from loading
+        const currentTime = Date.now();
+        if (!localStorage.getItem('chat-join-time-public-general-chat')) {
+          localStorage.setItem('chat-join-time-public-general-chat', currentTime.toString());
+          console.log('⏰ Set default join time for Community Chat');
+        }
+        if (!localStorage.getItem('chat-join-time-private-general-chat-guest')) {
+          localStorage.setItem('chat-join-time-private-general-chat-guest', currentTime.toString());
+          console.log('⏰ Set default join time for Guest General Chat');
+        }
+        
+        if (lastInitVersion !== CHAT_VERSION) {
+          console.log('🔄 Initializing default chats with clean state (v2.2)...');
+          get().initializeDefaultChats().then(() => {
+            localStorage.setItem('chat-init-version', CHAT_VERSION);
+            console.log('✅ Default chats initialized with v2.2');
+          });
+        }
+
+        // Subscribe to Firestore for message persistence (guest mode)
+        console.log("Setting up Firestore subscriptions for message persistence (guest)");
         try {
-          // Subscribe to both general chats for message history
+          // Subscribe to public chat (disabled) and guest private chat
           get().subscribeToChat('public-general-chat');
-          get().subscribeToChat('private-general-chat');
-          console.log("Firestore subscriptions established");
+          get().subscribeToChat('private-general-chat-guest');
+          console.log("Firestore subscriptions established for guest");
         } catch (error) {
           console.warn("Failed to establish Firestore subscriptions:", error);
         }
@@ -225,6 +306,24 @@ export const useChatStore = create<ChatState>()(
               // User is signed in.
               console.log("User signed in, loading chats...");
               set({ isGuest: false, isStoreLoading: false }); // Keep loading false for real-time chat
+              
+              // Create user-specific private general chat
+              const privateGeneralChatId = `private-general-chat-${user.uid}`;
+              initializeGeneralChats(user.uid);
+              
+              // Set join time for user-specific chat BEFORE subscribing
+              const userChatJoinTimeKey = `chat-join-time-${privateGeneralChatId}`;
+              if (!localStorage.getItem(userChatJoinTimeKey)) {
+                localStorage.setItem(userChatJoinTimeKey, Date.now().toString());
+                console.log(`⏰ Set default join time for ${privateGeneralChatId}`);
+              }
+              
+              // Switch to user-specific chat
+              set({ currentTab: privateGeneralChatId });
+              
+              // Subscribe to user-specific chat
+              get().subscribeToChat(privateGeneralChatId);
+              console.log(`✅ Switched to user-specific chat: ${privateGeneralChatId}`);
               
               try {
                 const userDocRef = doc(db as Firestore, 'users', user.uid);
@@ -295,7 +394,7 @@ export const useChatStore = create<ChatState>()(
           courseData
         };
 
-        console.log('addChat called:', { chatName, chatId, customChatId, isGuest });
+        console.log('addChat called:', { chatName, chatId, customChatId, chatType, isGuest, courseData: !!courseData });
 
         // Ensure initial message text is always a string
         const safeInitialMessage = {
@@ -313,21 +412,48 @@ export const useChatStore = create<ChatState>()(
 
         if (isGuest) {
             // For guest users, just add to local state
+            const newChatData = {
+                id: chatId,
+                title: chatName,
+                messages: [safeInitialMessage],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                chatType: chatType || (courseData ? 'class' : 'private'), // FAILSAFE: Ensure chatType is set
+                courseData
+            };
+            
             set((state) => ({
                 chats: {
                     ...state.chats,
-                    [chatId]: {
-                        id: chatId,
-                        title: chatName,
-                        messages: [safeInitialMessage],
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                        chatType,
-                        courseData
-                    }
+                    [chatId]: newChatData
                 },
                 currentTab: chatId
             }));
+            
+            // Verify the chat was added correctly
+            const addedChat = get().chats[chatId];
+            console.log('✅ Guest chat added:', {
+              chatId,
+              providedChatType: chatType,
+              finalChatType: addedChat?.chatType,
+              hasCourseData: !!addedChat?.courseData,
+              fullChat: addedChat
+            });
+            
+            // DOUBLE CHECK: If chatType is STILL undefined, fix it immediately
+            if (!addedChat?.chatType) {
+              console.error('⚠️ ChatType missing after add! Fixing...');
+              set((state) => ({
+                chats: {
+                  ...state.chats,
+                  [chatId]: {
+                    ...state.chats[chatId],
+                    chatType: courseData ? 'class' : 'private'
+                  }
+                }
+              }));
+            }
+            
             return;
         }
 
@@ -346,24 +472,49 @@ export const useChatStore = create<ChatState>()(
         console.log('User authenticated, persisting chat to Firestore:', user.uid);
 
         // Optimistically update local state first
+        const newChatData = {
+            id: chatId,
+            title: chatName,
+            messages: [safeInitialMessage],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            chatType: chatType || (courseData ? 'class' : 'private'), // FAILSAFE: Ensure chatType is set
+            courseData
+        };
+        
         set((state) => {
-            console.log('Adding chat to local state:', { chatId, chatName });
+            console.log('Adding chat to local state:', { chatId, chatName, chatType: newChatData.chatType });
             return {
                 chats: {
                     ...state.chats,
-                    [chatId]: {
-                        id: chatId,
-                        title: chatName,
-                        messages: [safeInitialMessage],
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                        chatType,
-                        courseData
-                    }
+                    [chatId]: newChatData
                 },
                 currentTab: chatId
             };
         });
+        
+        // Verify the chat was added correctly
+        const addedChat = get().chats[chatId];
+        console.log('✅ Logged-in user chat added:', {
+          chatId,
+          providedChatType: chatType,
+          finalChatType: addedChat?.chatType,
+          hasCourseData: !!addedChat?.courseData
+        });
+        
+        // DOUBLE CHECK: If chatType is STILL undefined, fix it immediately
+        if (!addedChat?.chatType) {
+          console.error('⚠️ ChatType missing after add! Fixing...');
+          set((state) => ({
+            chats: {
+              ...state.chats,
+              [chatId]: {
+                ...state.chats[chatId],
+                chatType: courseData ? 'class' : 'private'
+              }
+            }
+          }));
+        }
 
         // Try to persist to Firestore (but don't fail if offline)
         try {
@@ -562,7 +713,7 @@ export const useChatStore = create<ChatState>()(
                 messages: [{
                   sender: 'bot',
                   name: 'CourseConnect AI',
-                  text: 'Welcome to Community Chat! Connect with students, share knowledge, and study together. Type @ai to ask the AI in this room.',
+                  text: 'Welcome to Community Chat! 🚧 Student collaboration features coming soon. For now, type @ai to get help from our AI tutor.',
                   timestamp: Date.now()
                 }],
                 chatType: 'public',
@@ -727,16 +878,24 @@ export const useChatStore = create<ChatState>()(
         set({ chats: {}, currentTab: undefined });
       },
       
-      // Reset Community chat to clean state
-      resetCommunityChat: () => {
+      // Reset Community chat to clean state (both local and Firestore)
+      resetCommunityChat: async () => {
+        // Check if developer
+        const isDeveloper = typeof window !== 'undefined' && 
+          (window.location.hostname === 'localhost' || 
+           localStorage.getItem('dev-mode') === 'true');
+
         const welcomeMessage = {
           id: `welcome-${Date.now()}`,
           sender: 'bot' as const,
           name: 'CourseConnect AI',
-          text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`,
+          text: isDeveloper 
+            ? '👨‍💻 **Developer Mode: Community Chat Active**\n\nYou have developer access to Community Chat for testing. Regular users will see the "Coming Soon" message.\n\nThis chat is shared across all users for real-time collaboration testing.'
+            : '🚧 **Community Chat Coming Soon!**\n\nWe\'re building an amazing community space! While we finish up, here\'s what you can do:\n\n✅ **Use General Chat** - Get AI help with all your courses\n✅ **Upload Your Syllabus** - Unlock course-specific AI tutoring\n✅ **Report Issues** - Found a bug? Click your profile icon → "Report Issue"\n\nStay tuned for updates! 🎓',
           timestamp: Date.now()
         };
         
+        // Update local state
         set((state) => ({
           chats: {
             ...state.chats,
@@ -747,12 +906,163 @@ export const useChatStore = create<ChatState>()(
               createdAt: Date.now(),
               updatedAt: Date.now(),
               chatType: 'public',
+              disabled: !isDeveloper,
               members: []
             }
           }
         }));
         
+        // Clear from Firestore - DELETE then recreate to ensure clean state
+        try {
+          const db = getFirestore();
+          const chatDocRef = doc(db, 'chats', 'public-general-chat');
+          
+          // First, delete the document completely
+          try {
+            await deleteDoc(chatDocRef);
+            console.log('🗑️ Deleted old Community Chat document');
+          } catch (e) {
+            console.log('No existing Community Chat document to delete');
+          }
+          
+          // Wait a moment for deletion to propagate
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Then create fresh document
+          await setDoc(chatDocRef, {
+            title: 'Community',
+            messages: [welcomeMessage],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            chatType: 'public',
+            disabled: !isDeveloper
+          });
+          console.log('✅ Community chat reset in Firestore with clean state');
+        } catch (error) {
+          console.warn('Failed to reset Community chat in Firestore:', error);
+        }
+        
         console.log('✅ Community chat reset to clean state');
+      },
+
+      // Reset General chat to clean state (both local and Firestore)
+      resetGeneralChat: async () => {
+        const welcomeMessage = {
+          id: `welcome-${Date.now()}`,
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: `Welcome to your personal AI tutor! I'm here to help you with any questions about your courses. Upload a syllabus to get started, or ask me anything!`,
+          timestamp: Date.now()
+        };
+        
+        // Update local state
+        set((state) => ({
+          chats: {
+            ...state.chats,
+            'private-general-chat': {
+              id: 'private-general-chat',
+              title: 'General',
+              messages: [welcomeMessage],
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              chatType: 'private',
+              members: []
+            }
+          }
+        }));
+        
+        // Clear from Firestore
+        try {
+          const db = getFirestore();
+          const chatDocRef = doc(db, 'chats', 'private-general-chat');
+          await setDoc(chatDocRef, {
+            title: 'General',
+            messages: [welcomeMessage],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            chatType: 'private'
+          });
+          console.log('✅ General chat reset in Firestore');
+        } catch (error) {
+          console.warn('Failed to reset General chat in Firestore:', error);
+        }
+        
+        console.log('✅ General chat reset to clean state');
+      },
+
+      // Initialize default chats with clean state (clears old messages from Firestore)
+      initializeDefaultChats: async () => {
+        // Check if developer
+        const isDeveloper = typeof window !== 'undefined' && 
+          (window.location.hostname === 'localhost' || 
+           localStorage.getItem('dev-mode') === 'true');
+
+        const resetTime = Date.now();
+        
+        const communityWelcome = {
+          id: `welcome-${resetTime}`,
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: isDeveloper 
+            ? '👨‍💻 **Developer Mode: Community Chat Active**\n\nYou have developer access to Community Chat for testing. Regular users will see the "Coming Soon" message.\n\nThis chat is shared across all users for real-time collaboration testing.'
+            : '🚧 **Community Chat Coming Soon!**\n\nWe\'re building an amazing community space! While we finish up, here\'s what you can do:\n\n✅ **Use General Chat** - Get AI help with all your courses\n✅ **Upload Your Syllabus** - Unlock course-specific AI tutoring\n✅ **Report Issues** - Found a bug? Click your profile icon → "Report Issue"\n\nStay tuned for updates! 🎓',
+          timestamp: resetTime
+        };
+
+        const guestWelcome = {
+          id: `welcome-${resetTime + 1}`,
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: `Welcome to your personal AI tutor! I'm here to help you with any questions about your courses. Upload a syllabus to get started, or ask me anything!`,
+          timestamp: resetTime
+        };
+
+        try {
+          const db = getFirestore();
+          
+          // Reset Community Chat in Firestore
+          const communityDocRef = doc(db, 'chats', 'public-general-chat');
+          
+          // First, delete the document to clear all old data
+          try {
+            await deleteDoc(communityDocRef);
+            console.log('🗑️ Deleted old Community Chat document');
+          } catch (e) {
+            console.log('No existing Community Chat document to delete');
+          }
+          
+          // Then create fresh document
+          await setDoc(communityDocRef, {
+            title: 'Community',
+            messages: [communityWelcome],
+            createdAt: resetTime,
+            updatedAt: resetTime,
+            chatType: 'public',
+            disabled: !isDeveloper
+          });
+          
+          // Update join time for Community Chat to NOW (so old messages won't show)
+          localStorage.setItem('chat-join-time-public-general-chat', resetTime.toString());
+          console.log(`✅ Set join time for Community Chat to ${resetTime}`);
+          
+          // Reset Guest General Chat in Firestore
+          const guestGeneralDocRef = doc(db, 'chats', 'private-general-chat-guest');
+          await setDoc(guestGeneralDocRef, {
+            title: 'General',
+            messages: [guestWelcome],
+            createdAt: resetTime,
+            updatedAt: resetTime,
+            chatType: 'private'
+          });
+          
+          // Update join time for Guest General Chat to NOW
+          localStorage.setItem('chat-join-time-private-general-chat-guest', resetTime.toString());
+          console.log(`✅ Set join time for Guest General Chat to ${resetTime}`);
+          
+          console.log('✅ Default chats initialized in Firestore with clean state');
+        } catch (error) {
+          console.warn('Failed to initialize default chats in Firestore:', error);
+        }
       },
       
       // Complete reset of all chats (both local and Firestore)
@@ -792,7 +1102,7 @@ export const useChatStore = create<ChatState>()(
             id: `welcome-${Date.now()}`,
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`,
+            text: `Welcome to Community Chat! 🚧 Student collaboration features are coming soon. For now, type @ai to get personalized AI tutoring help!`,
             timestamp: Date.now()
           };
         } else if (chat.chatType === 'class' && chat.courseData) {
@@ -858,8 +1168,11 @@ export const useChatStore = create<ChatState>()(
           }
         }
 
-        // Update Firestore if user is logged in - CRITICAL for persistence across reloads
-        if (!isGuest) {
+        // Update Firestore - CRITICAL for persistence across reloads
+        // Always reset public/private general chats in Firestore, even for guests
+        const shouldUpdateFirestore = !isGuest || chatId === 'public-general-chat' || chatId === 'private-general-chat';
+        
+        if (shouldUpdateFirestore) {
           // First, unsubscribe from Firestore listener to prevent it from overriding our reset
           const anyState = get() as any;
           if (anyState._chatSubscriptions && anyState._chatSubscriptions[chatId]) {
@@ -1023,7 +1336,7 @@ export const useChatStore = create<ChatState>()(
           const publicGeneralMessage = {
             sender: 'bot' as const,
             name: 'CourseConnect AI',
-            text: `Welcome to Community Chat! 👥 Connect with fellow students, share knowledge, and study together. Chat with students, form study groups, share resources, or get AI help by typing @ai. Just start typing to join the conversation!`,
+            text: `Welcome to Community Chat! 🚧 Student collaboration features are coming soon. For now, type @ai to get personalized AI tutoring help!`,
             timestamp: Date.now()
           };
           

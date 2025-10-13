@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
 import { filterContent, generateFilterResponse } from '@/lib/content-filter';
+import { createAIResponseNotification } from '@/lib/notifications/server';
 
 export const runtime = 'nodejs';
 
@@ -92,7 +93,18 @@ async function searchWebWithSources(query: string): Promise<{ content: string; s
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, context, conversationHistory, shouldCallAI = true, isPublicChat = false, hasAIMention = false, allSyllabi } = await request.json();
+    const { 
+      question, 
+      context, 
+      conversationHistory, 
+      shouldCallAI = true, 
+      isPublicChat = false, 
+      hasAIMention = false, 
+      allSyllabi,
+      userId,
+      chatId,
+      chatTitle 
+    } = await request.json();
     
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -309,6 +321,22 @@ CourseConnect AI:`;
       answerLength: aiResponse?.length || 0,
       timestamp: new Date().toISOString()
     });
+
+    // Create notification for AI response (only if user is authenticated and not in public chat)
+    if (userId && chatId && !isPublicChat) {
+      try {
+        await createAIResponseNotification(
+          userId,
+          aiResponse,
+          chatId,
+          chatTitle || context
+        );
+        console.log(`✅ Notification created for user ${userId} in ${chatTitle || context}`);
+      } catch (error) {
+        console.error('Failed to create notification:', error);
+        // Don't fail the request if notification creation fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

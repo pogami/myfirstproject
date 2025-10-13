@@ -41,9 +41,9 @@ export function CTASection() {
           <div className="flex flex-col items-center gap-4 mb-8 max-w-2xl mx-auto">
             <div className="flex items-center gap-3">
               <img 
-                src="/courseconnect-favicon.svg" 
+                src="/officialogo.png" 
                 alt="CourseConnect Logo" 
-                className="h-8 w-8 md:h-10 md:w-10"
+                className="h-16 w-auto md:h-20 md:w-auto"
               />
               <span className="text-xl md:text-2xl text-white font-bold">
                 CourseConnect AI

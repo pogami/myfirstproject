@@ -9,7 +9,7 @@ import Image from 'next/image';
 const educationPlatforms = [
   {
     name: 'CourseConnect AI',
-    logo: '/courseconnect-logo-profile.svg',
+    logo: '/officialogo.png',
     description: 'Academic-focused AI with study groups',
     features: {
       'Academic Context': true,
@@ -103,18 +103,18 @@ const PlatformCard = ({ platform, features }: { platform: any, features: string[
     )}
     
     <CardHeader className="text-center pb-4">
-      <div className="mx-auto w-20 h-20 flex items-center justify-center mb-3">
+      <div className="mx-auto w-24 h-24 flex items-center justify-center mb-3">
         {platform.logo && platform.logo.startsWith('/') ? (
           <Image 
             src={platform.logo} 
             alt={platform.name}
-            width={80}
-            height={80}
-            className="w-20 h-20 object-contain"
+            width={96}
+            height={96}
+            className="w-24 h-24 object-contain"
           />
         ) : platform.isMore ? (
-          <div className="w-20 h-20 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-2xl">
-            <Plus className="w-10 h-10 text-gray-600 dark:text-gray-300" />
+          <div className="w-24 h-24 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-2xl">
+            <Plus className="w-12 h-12 text-gray-600 dark:text-gray-300" />
           </div>
         ) : (
           <span className="text-5xl">{platform.logo}</span>

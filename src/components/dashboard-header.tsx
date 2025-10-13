@@ -22,9 +22,11 @@ import { auth, db } from "@/lib/firebase/client-simple";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { Skeleton } from "./ui/skeleton";
-import { User as UserIcon, Settings as SettingsIcon, LogOut, Bell, Shield } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { User as UserIcon, Settings as SettingsIcon, LogOut, Bell, Shield, BookOpen } from "lucide-react";
+import { toast } from "sonner";
 import { useChatStore } from "@/hooks/use-chat-store";
+import { OnboardingTutorial } from "@/components/onboarding-tutorial";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface DashboardHeaderProps {
     user: User | null;
@@ -34,13 +36,29 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const [activeUsers, setActiveUsers] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const router = useRouter();
-  const { toast } = useToast();
   const { clearGuestData } = useChatStore();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Show onboarding for new users
+  useEffect(() => {
+    if (user && isClient) {
+      const hasSeenOnboarding = localStorage.getItem('onboarding-completed');
+      const justSignedUp = sessionStorage.getItem('justSignedUp');
+      
+      if (!hasSeenOnboarding || justSignedUp) {
+        // Delay to let the dashboard load
+        setTimeout(() => {
+          setShowOnboarding(true);
+          sessionStorage.removeItem('justSignedUp');
+        }, 1000);
+      }
+    }
+  }, [user, isClient]);
 
   useEffect(() => {
     const checkGuestStatus = async () => {
@@ -99,8 +117,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
       console.log('Guest user logout');
       localStorage.removeItem('guestUser');
       clearGuestData();
-      toast({
-        title: "Logged out successfully",
+      toast.success("Logged out successfully", {
         description: "You have been signed out of your guest account.",
       });
       localStorage.removeItem('isLoggingOut');
@@ -113,8 +130,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
 
     try {
       console.log('Starting Firebase logout process');
-      toast({
-        title: "Logging out...",
+      toast.loading("Logging out...", {
         description: "You are being signed out of your account.",
       });
 
@@ -135,8 +151,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
       localStorage.removeItem('showOnboarding');
       localStorage.removeItem('isLoggingOut');
       
-      toast({
-        title: "Logged out successfully",
+      toast.dismiss();
+      toast.success("Logged out successfully 👋", {
         description: "You have been signed out of your account.",
       });
       
@@ -157,9 +173,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     } catch (error) {
       console.error('Logout error:', error);
       localStorage.removeItem('isLoggingOut');
-      toast({
-        variant: "destructive",
-        title: "Logout failed",
+      toast.dismiss();
+      toast.error("Logout failed", {
         description: "There was an error signing you out. Please try again.",
       });
       
@@ -180,7 +195,8 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   }
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-center gap-2">
+      <NotificationBell />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full shadow-lg border-2 border-background/20 hover:shadow-xl transition-all duration-200 min-h-[40px] min-w-[40px] sm:min-h-[48px] sm:min-w-[48px] hover:bg-transparent">
@@ -252,6 +268,14 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                   <span className="text-sm sm:text-base">Notifications</span>
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setShowOnboarding(true)}
+                className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors"
+              >
+                <BookOpen className="size-4 mr-2 sm:mr-3 text-primary flex-shrink-0" />
+                <span className="text-sm sm:text-base">Tutorial</span>
+                <Badge className="ml-auto bg-blue-500 text-white text-xs">Tips</Badge>
+              </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/50" />
               <DropdownMenuItem 
                 onClick={handleLogout} 
@@ -271,6 +295,11 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      <OnboardingTutorial 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
     </div>
   );
 }

@@ -12,12 +12,15 @@ import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOp
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
+import { FeatureDisabled } from "@/components/feature-disabled";
 import { auth } from "@/lib/firebase/client";
 import { Auth } from 'firebase/auth';
 
 // Type assertion for auth
 const typedAuth = auth as Auth;
-import { usePusherChat } from "@/hooks/use-pusher-chat";
+// Pusher removed - real-time features coming soon
+// import { usePusherChat } from "@/hooks/use-pusher-chat";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { OnlineUsersIndicator } from "@/components/online-users-indicator";
 
@@ -43,6 +46,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -78,8 +82,10 @@ export default function ChatPage() {
         startTyping,
         stopTyping
     } = useChatStore();
+    const { isFeatureEnabled } = useFeatureFlags();
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isMessagesLoading, setIsMessagesLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [isGuest, setIsGuest] = useState(false);
     const [forceLoad, setForceLoad] = useState(false);
@@ -93,27 +99,40 @@ export default function ChatPage() {
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
     const { toast } = useToast();
 
-    // Pusher integration
-    const {
-        isConnected: pusherConnected,
-        activeUsers: pusherActiveUsers,
-        typingUsers: pusherTypingUsers,
-        isAiThinking: pusherIsAiThinking,
-        availableChats: pusherAvailableChats,
-        sendMessage: pusherSendMessage,
-        startTyping: pusherStartTyping,
-        stopTyping: pusherStopTyping,
-        joinChat,
-        leaveChat
-    } = usePusherChat({
-        chatId: currentTab || 'public-general-chat',
-        userId: user?.uid || 'guest',
-        userName: user?.displayName || user?.email || getGuestDisplayName(),
-        userPhotoURL: !isGuest ? user?.photoURL : undefined,
-        enabled: true // Always enable Pusher for real-time messaging
-    });
+    // Pusher integration disabled - real-time features coming soon
+    const pusherConnected = false;
+    const pusherActiveUsers: any[] = [];
+    const pusherTypingUsers: any[] = [];
+    const pusherIsAiThinking = false;
+    const pusherAvailableChats: any[] = [];
+    const pusherSendMessage = () => {};
+    const pusherStartTyping = () => {};
+    const pusherStopTyping = () => {};
+    const joinChat = () => {};
+    const leaveChat = () => {};
 
     // Debug user state changes
+    // Force sidebar re-render ONLY when chat count changes (not on every message)
+    const chatCount = Object.keys(chats).length;
+    const prevChatCountRef = useRef(chatCount);
+    
+    useEffect(() => {
+        if (chatCount !== prevChatCountRef.current) {
+            prevChatCountRef.current = chatCount;
+            setForceLoad(prev => !prev);
+        }
+    }, [chatCount]);
+
+    // Loading state for messages
+    useEffect(() => {
+        // Show skeleton loading when chat changes
+        setIsMessagesLoading(true);
+        const timer = setTimeout(() => {
+            setIsMessagesLoading(false);
+        }, 500); // Short delay for smooth loading
+        return () => clearTimeout(timer);
+    }, [currentTab]);
+
     useEffect(() => {
         console.log('User state changed:', { 
             user: user ? { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL } : null,
@@ -122,16 +141,16 @@ export default function ChatPage() {
         });
     }, [user]);
 
-    // Debug Pusher state
-    useEffect(() => {
-        console.log('Pusher state changed:', {
-            isConnected: pusherConnected,
-            activeUsers: pusherActiveUsers.length,
-            typingUsers: pusherTypingUsers.length,
-            isAiThinking: pusherIsAiThinking,
-            currentTab
-        });
-    }, [pusherConnected, pusherActiveUsers, pusherTypingUsers, pusherIsAiThinking, currentTab]);
+    // Debug Pusher state - disabled (real-time features coming soon)
+    // useEffect(() => {
+    //     console.log('Pusher state changed:', {
+    //         isConnected: pusherConnected,
+    //         activeUsers: pusherActiveUsers.length,
+    //         typingUsers: pusherTypingUsers.length,
+    //         isAiThinking: pusherIsAiThinking,
+    //         currentTab
+    //     });
+    // }, [pusherConnected, pusherActiveUsers, pusherTypingUsers, pusherIsAiThinking, currentTab]);
 
     // Track if we're in a reset operation
     const isResettingRef = useRef(false);
@@ -439,6 +458,62 @@ export default function ChatPage() {
         const isPublicChat = currentChat?.chatType === 'public';
         const isClassChat = currentChat?.chatType === 'class';
 
+        // Check if AI chat is disabled
+        if (!isFeatureEnabled('aiChat') && shouldCallAI) {
+            const userMessage = {
+                id: generateMessageId(),
+                text: messageText,
+                sender: 'user' as const,
+                name: user?.displayName || 'Anonymous',
+                userId: user?.uid || 'guest',
+                timestamp: Date.now(),
+            };
+            
+            const botMessage = {
+                id: `system-${Date.now()}`,
+                text: "⚠️ **AI Chat is Currently Unavailable**\n\nOur AI assistant is temporarily disabled for maintenance. We're working to bring it back online as soon as possible.\n\nPlease check back later. Thank you for your patience! 🛠️",
+                sender: 'bot' as const,
+                name: 'System',
+                timestamp: Date.now(),
+            };
+            
+            addMessage(currentTab || 'private-general-chat', userMessage);
+            setTimeout(() => {
+                addMessage(currentTab || 'private-general-chat', botMessage);
+            }, 300);
+            
+            setInputValue('');
+            return;
+        }
+
+        // Check if community chat is disabled
+        if (!isFeatureEnabled('communityChat') && isPublicChat) {
+            const userMessage = {
+                id: generateMessageId(),
+                text: messageText,
+                sender: 'user' as const,
+                name: user?.displayName || 'Anonymous',
+                userId: user?.uid || 'guest',
+                timestamp: Date.now(),
+            };
+            
+            const botMessage = {
+                id: `system-${Date.now()}`,
+                text: "⚠️ **Community Chat is Currently Unavailable**\n\nCommunity chat is temporarily disabled for maintenance. We're working to restore it as soon as possible.\n\nPlease try again later. Thank you for your understanding! 🛠️",
+                sender: 'bot' as const,
+                name: 'System',
+                timestamp: Date.now(),
+            };
+            
+            addMessage(currentTab || 'private-general-chat', userMessage);
+            setTimeout(() => {
+                addMessage(currentTab || 'private-general-chat', botMessage);
+            }, 300);
+            
+            setInputValue('');
+            return;
+        }
+
         // Determine if this message mentions AI
         const hasAIMention = messageText.includes('@ai') || messageText.includes('@AI');
         
@@ -495,6 +570,9 @@ export default function ChatPage() {
                     const apiEndpoint = isClassChat ? '/api/chat/class' : '/api/chat';
                     console.log(`Making API call to ${apiEndpoint}...`, { isClassChat, hasCourseData: !!currentChat?.courseData });
                     
+                    // Get userId from logged-in user (notifications only work for authenticated users)
+                    const effectiveUserId = user?.uid;
+                    
                     const requestBody: any = {
                         question: messageText,
                         context: currentChat?.title || 'General Chat',
@@ -503,7 +581,10 @@ export default function ChatPage() {
                             content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
                         })) || [],
                         shouldCallAI: shouldCallAIFinal,
-                        isPublicChat: isPublicChat // Only true for community chat, not class chats
+                        isPublicChat: isPublicChat, // Only true for community chat, not class chats
+                        userId: effectiveUserId, // Add userId for notification (works for both guest and logged-in users)
+                        chatId: currentTab, // Add chatId for notification
+                        chatTitle: currentChat?.title // Add chatTitle for notification
                     };
 
                     // Add course data for class chats
@@ -595,7 +676,7 @@ export default function ChatPage() {
                     console.warn("API call failed, using enhanced fallback:", apiError);
                     
                     // Enhanced fallback based on error type
-                    let fallbackMessage = "Hey! I'm CourseConnect AI, your friendly study buddy! I'm having a small technical hiccup right now, but I'm still here to help! I can assist with:\n\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat's on your mind? What would you like to talk about or get help with?";
+                    let fallbackMessage = "I'm having some trouble connecting right now, but don't worry! 🤔\n\n**Here's what you can do:**\n\n📚 Review your syllabus and course materials in the sidebar\n📝 Check your upcoming assignments and exam dates\n🔍 Browse through your course topics\n⏰ Try asking me again in a moment\n\nI'll be back up and running soon!";
                     
                     if (apiError instanceof Error) {
                         if (apiError.name === 'TimeoutError' || apiError.message.includes('timeout')) {
@@ -905,7 +986,7 @@ export default function ChatPage() {
     console.log('ChatPage - classChats:', classChats);
     console.log('ChatPage - generalChat:', generalChat);
     console.log('ChatPage - isLoading:', isLoading, 'lastMessageSender:', generalChat?.messages?.at(-1)?.sender);
-    console.log('ChatPage - Pusher state:', { isConnected: pusherConnected, activeUsers: pusherActiveUsers.length, typingUsers: pusherTypingUsers.length, isAiThinking: pusherIsAiThinking });
+    // console.log('ChatPage - Pusher state:', { isConnected: pusherConnected, activeUsers: pusherActiveUsers.length, typingUsers: pusherTypingUsers.length, isAiThinking: pusherIsAiThinking });
 
     // Show loading state while chat store is initializing (but not if force loaded)
     if (isStoreLoading && !forceLoad) {
@@ -945,7 +1026,7 @@ export default function ChatPage() {
                         <div>
                             <h1 className="text-3xl font-bold mb-2">{currentTab === 'public-general-chat' ? 'Community' : 'Class Chat'}</h1>
                             <p className="text-muted-foreground">
-                                Join class discussions, ask questions, and collaborate with classmates
+                                Get AI help with your coursework (Student collaboration coming soon)
                             </p>
                         </div>
                         {/* Real-time status indicator */}
@@ -987,10 +1068,17 @@ export default function ChatPage() {
                                                 },
                                                 {
                                                     chatId: 'public-general-chat',
-                                                    title: 'Community',
-                                                    userCount: pusherAvailableChats.find(c => c.chatId === 'public-general-chat')?.userCount || 0,
+                                                    title: (typeof window !== 'undefined' && 
+                                                           (window.location.hostname === 'localhost' || 
+                                                            localStorage.getItem('dev-mode') === 'true'))
+                                                           ? 'Community (Dev Mode)' 
+                                                           : 'Community (Coming Soon)',
+                                                    userCount: 0,
                                                     isActive: true,
-                                                    isPermanent: true
+                                                    isPermanent: true,
+                                                    disabled: !(typeof window !== 'undefined' && 
+                                                               (window.location.hostname === 'localhost' || 
+                                                                localStorage.getItem('dev-mode') === 'true'))
                                                 }
                                             ];
 
@@ -1007,12 +1095,17 @@ export default function ChatPage() {
 
                                             // Get local class chats that aren't in pusher chats yet
                                             const localClassChats = Object.values(chats)
-                                                .filter(chat => 
-                                                    chat.chatType === 'class' && 
-                                                    !otherChats.some(pusherChat => pusherChat.chatId === chat.id) &&
-                                                    chat.id !== 'private-general-chat' && 
-                                                    chat.id !== 'public-general-chat'
-                                                )
+                                                .filter(chat => {
+                                                    // Show if it has courseData (it's a class chat) OR if chatType is 'class'
+                                                    const isClass = chat.chatType === 'class' || !!chat.courseData;
+                                                    const notInPusher = !otherChats.some(pusherChat => pusherChat.chatId === chat.id);
+                                                    const notGeneralChat = chat.id !== 'private-general-chat' && 
+                                                                          chat.id !== 'public-general-chat' &&
+                                                                          chat.id !== 'private-general-chat-guest' &&
+                                                                          !chat.id.includes('private-general-chat-');
+                                                    
+                                                    return isClass && notInPusher && notGeneralChat;
+                                                })
                                                 .map(chat => ({
                                                     chatId: chat.id,
                                                     title: chat.title,
@@ -1021,6 +1114,7 @@ export default function ChatPage() {
                                                     isPermanent: false
                                                 }))
                                                 .sort((a, b) => a.title.localeCompare(b.title));
+
 
                                             // Combine permanent chats with other chats and local class chats
                                             const allChats = [...permanentChats, ...otherChats, ...localClassChats];
@@ -1182,11 +1276,13 @@ export default function ChatPage() {
                                                     <Download className="h-4 w-4 mr-2" />
                                                     Export Chat
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => setShowResetDialog(true)}>
-                                                    <RotateCcw className="h-4 w-4 mr-2" />
-                                                    Reset Chat
-                                                </DropdownMenuItem>
-                                                {currentTab !== 'private-general-chat' && currentTab !== 'public-general-chat' && (
+                                                {!currentChat?.disabled && (
+                                                    <DropdownMenuItem onClick={() => setShowResetDialog(true)}>
+                                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                                        Reset Chat
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {currentTab !== 'private-general-chat' && currentTab !== 'private-general-chat-guest' && !currentTab?.startsWith('private-general-chat-') && currentTab !== 'public-general-chat' && (
                                                     <>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
@@ -1203,6 +1299,43 @@ export default function ChatPage() {
                     {/* New chat modal removed: chats are created via Upload Syllabus only */}
                                     <ScrollArea className="h-[calc(100vh-200px)] px-4" ref={scrollAreaRef}>
                                         <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
+                                            {/* Skeleton Loading */}
+                                            {isMessagesLoading ? (
+                                                <div className="space-y-6 py-4">
+                                                    {/* Bot Message Skeleton */}
+                                                    <div className="flex gap-3 items-start">
+                                                        <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                                                        <div className="flex-1 space-y-2">
+                                                            <Skeleton className="h-4 w-24" />
+                                                            <div className="space-y-2">
+                                                                <Skeleton className="h-4 w-full" />
+                                                                <Skeleton className="h-4 w-[90%]" />
+                                                                <Skeleton className="h-4 w-[80%]" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {/* User Message Skeleton */}
+                                                    <div className="flex gap-3 items-start justify-end">
+                                                        <div className="flex-1 space-y-2 flex flex-col items-end">
+                                                            <Skeleton className="h-4 w-24" />
+                                                            <Skeleton className="h-16 w-[60%]" />
+                                                        </div>
+                                                        <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                                                    </div>
+                                                    {/* Bot Message Skeleton */}
+                                                    <div className="flex gap-3 items-start">
+                                                        <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                                                        <div className="flex-1 space-y-2">
+                                                            <Skeleton className="h-4 w-24" />
+                                                            <div className="space-y-2">
+                                                                <Skeleton className="h-4 w-full" />
+                                                                <Skeleton className="h-4 w-[95%]" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
                                             {/* Welcome Card - only show for first message and if it's a welcome message */}
                                             {generalChat?.messages?.length === 1 && 
                                              generalChat.messages[0]?.sender === 'bot' && 
@@ -1336,6 +1469,10 @@ export default function ChatPage() {
                               try {
                                 // Get AI response
                                 const apiEndpoint = isClassChat ? '/api/chat/class' : '/api/chat';
+                                
+                                // Get userId from logged-in user (notifications only work for authenticated users)
+                                const effectiveUserId = user?.uid;
+                                
                                 const requestBody: any = {
                                   question: msg,
                                   context: currentChat?.title || 'General Chat',
@@ -1344,7 +1481,10 @@ export default function ChatPage() {
                                     content: typeof m.text === 'string' ? m.text : JSON.stringify(m.text)
                                   })) || [],
                                   shouldCallAI: true,
-                                  isPublicChat: false
+                                  isPublicChat: false,
+                                  userId: effectiveUserId, // Add userId for notification
+                                  chatId: currentTab, // Add chatId for notification
+                                  chatTitle: currentChat?.title // Add chatTitle for notification
                                 };
                                 
                                 if (isClassChat && currentChat?.courseData) {
@@ -1418,6 +1558,8 @@ export default function ChatPage() {
                                                             </div>
                                             );
                                             })}
+                                            </>
+                                            )}
                                             
                                             {/* Scroll target for auto-scroll */}
                                             <div ref={messagesEndRef} />
@@ -1479,11 +1621,18 @@ export default function ChatPage() {
                                             }}
                                             onSend={handleSendMessage}
                                             onFileUpload={handleFileUpload}
-                                        placeholder="Ask AI anything or chat with classmates"
-                                            disabled={false}
+                                            placeholder={
+                                                currentChat?.chatType === 'class' 
+                                                    ? `Ask anything about ${currentChat?.title || 'this course'}...`
+                                                    : currentTab === 'private-general-chat'
+                                                    ? 'Ask anything about your courses...'
+                                                    : 'Chat with classmates or @ai for help...'
+                                            }
+                                            disabled={currentChat?.disabled || false}
                                             className="w-full"
                                             isPublicChat={currentTab === 'public-general-chat'}
                                             isClassChat={false}
+                                            placeholder={currentChat?.disabled ? "🚧 Community Chat coming soon! Use General Chat for AI help." : undefined}
                                         />
                                     </div>
                                 </CardContent>
@@ -1551,7 +1700,7 @@ export default function ChatPage() {
             </DialogContent>
         </Dialog>
 
-        {/* Feedback Viewer removed - for developer use only, access via /dashboard/feedback */}
+        {/* Admin dashboard available at /dashboard/admin - for developers only */}
         </>
     );
 }

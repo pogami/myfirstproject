@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Check, X, Star, Zap, Crown, Users } from 'lucide-react';
+import { CCLogo } from '@/components/icons/cc-logo';
 
 const plans = [
   {
@@ -161,9 +162,15 @@ export function PricingSection() {
 
               {/* Plan Header */}
               <div className="text-center mb-8">
-                <div className={`w-16 h-16 bg-gradient-to-br ${plan.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                  <plan.icon className="h-8 w-8 text-white" />
-                </div>
+                {plan.name === 'Scholar' ? (
+                  <div className="mx-auto mb-4 flex items-center justify-center">
+                    <CCLogo className="h-16 w-auto" />
+                  </div>
+                ) : (
+                  <div className={`w-16 h-16 bg-gradient-to-br ${plan.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                    <plan.icon className="h-8 w-8 text-white" />
+                  </div>
+                )}
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                   {plan.name}
                 </h3>

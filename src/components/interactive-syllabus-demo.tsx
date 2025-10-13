@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, Sparkles, CheckCircle, ArrowRight, Calendar, User, GraduationCap, BookOpen, Clock, Shield, File, AlertCircle, Info, Zap, Users, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/hooks/use-chat-store';
+import { toast } from 'sonner';
 
 interface ExtractedData {
   courseName?: string;
@@ -20,6 +21,15 @@ interface ExtractedData {
   topics?: string[];
   assignments?: Array<{ name: string; dueDate?: string }>;
   exams?: Array<{ name: string; date?: string; daysUntil?: number }>;
+}
+
+interface UploadedSyllabus {
+  id: string;
+  fileName: string;
+  courseName: string;
+  courseCode: string;
+  uploadDate: string;
+  chatId: string;
 }
 
 interface InteractiveSyllabusDemoProps {
@@ -37,9 +47,38 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   const [processingTime, setProcessingTime] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const [recentActivity, setRecentActivity] = useState<string[]>([]);
+  const [uploadedSyllabi, setUploadedSyllabi] = useState<UploadedSyllabus[]>([]);
+  const [isClient, setIsClient] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { addChat, setCurrentTab } = useChatStore();
+
+  // Set client flag after mount to avoid hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Load uploaded syllabi from localStorage
+  useEffect(() => {
+    if (!isClient) return; // Wait for client-side hydration
+    
+    console.log('🔍 Attempting to load uploaded syllabi...');
+    try {
+      const saved = localStorage.getItem('uploaded-syllabi');
+      console.log('📦 Raw localStorage data:', saved);
+      
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Parsed syllabi count:', parsed.length);
+        console.log('📋 Syllabi data:', parsed);
+        setUploadedSyllabi(parsed);
+      } else {
+        console.log('⚠️ No syllabi found in localStorage');
+      }
+    } catch (error) {
+      console.error('❌ Failed to load uploaded syllabi:', error);
+    }
+  }, [isClient]);
 
   // Mock recent activity data
   useEffect(() => {
@@ -171,6 +210,22 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteSyllabus = (syllabusId: string) => {
+    if (typeof window === 'undefined') return;
+    
+    // Remove from state
+    setUploadedSyllabi(prev => prev.filter(s => s.id !== syllabusId));
+    
+    // Update localStorage
+    const updated = uploadedSyllabi.filter(s => s.id !== syllabusId);
+    try {
+      localStorage.setItem('uploaded-syllabi', JSON.stringify(updated));
+      console.log('Syllabus removed:', syllabusId);
+    } catch (error) {
+      console.error('Error removing syllabus from localStorage:', error);
     }
   };
 
@@ -359,6 +414,10 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   };
 
   const handleSignUp = async () => {
+    console.log('🚀 handleSignUp called!');
+    console.log('🔍 redirectToSignup:', redirectToSignup);
+    console.log('📋 extractedData:', extractedData);
+    
     // Save extracted data to session storage for signup flow
     if (extractedData) {
       sessionStorage.setItem('cc-course-context-card', JSON.stringify({
@@ -372,8 +431,10 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
     
     // Only navigate to signup if redirectToSignup is true (homepage users)
     if (redirectToSignup) {
-    router.push('/signup');
+      console.log('📤 Redirecting to signup...');
+      router.push('/signup');
     } else {
+      console.log('✅ Authenticated user - creating chat...');
       // For authenticated users on upload page, create a course-specific chat
       if (extractedData) {
         const courseName = extractedData.courseName || 'Unknown Course';
@@ -414,6 +475,86 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
           
           console.log('Chat creation result:', chatCreated);
           
+          // Save to uploaded syllabi list
+          console.log('💾 Saving syllabus to localStorage...');
+          console.log('📁 File name:', file?.name);
+          console.log('📚 Course name:', extractedData.courseName);
+          console.log('🆔 Chat ID:', uniqueChatId);
+          
+          const uploadedSyllabus: UploadedSyllabus = {
+            id: uniqueChatId,
+            fileName: file?.name || 'Syllabus',
+            courseName: extractedData.courseName || 'Unknown Course',
+            courseCode: extractedData.courseCode || 'UNKNOWN',
+            uploadDate: new Date().toISOString(),
+            chatId: uniqueChatId
+          };
+          
+          console.log('📝 Syllabus object:', uploadedSyllabus);
+          console.log('📚 Current syllabi in state:', uploadedSyllabi);
+          
+          const updatedList = [...uploadedSyllabi, uploadedSyllabus];
+          console.log('📦 Updated list:', updatedList);
+          
+          setUploadedSyllabi(updatedList);
+          localStorage.setItem('uploaded-syllabi', JSON.stringify(updatedList));
+          
+          // Verify it was saved
+          const verification = localStorage.getItem('uploaded-syllabi');
+          console.log('✅ Verified localStorage content:', verification);
+          console.log('✅ Successfully saved syllabus!');
+          
+          // Show success toast
+          toast.success('Your syllabus has been uploaded successfully!', {
+            description: `${courseName} is now ready for AI tutoring`,
+            duration: 5000,
+          });
+          
+          // Check for upcoming exams and assignments
+          if (courseData.exams && courseData.exams.length > 0) {
+            courseData.exams.forEach((exam: any) => {
+              if (exam.date) {
+                const examDate = new Date(exam.date);
+                const today = new Date();
+                const daysUntil = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                if (daysUntil === 1) {
+                  toast.error(`Exam Alert!`, {
+                    description: `Your ${courseCode} ${exam.name} is tomorrow at 2:00 PM. Don't forget to bring your calculator!`,
+                    duration: 7000,
+                  });
+                } else if (daysUntil >= 0 && daysUntil <= 3) {
+                  toast.warning(`Exam in ${daysUntil} days!`, {
+                    description: `${courseCode} ${exam.name} on ${exam.date}`,
+                    duration: 6000,
+                  });
+                }
+              }
+            });
+          }
+          
+          if (courseData.assignments && courseData.assignments.length > 0) {
+            courseData.assignments.forEach((assignment: any) => {
+              if (assignment.dueDate) {
+                const dueDate = new Date(assignment.dueDate);
+                const today = new Date();
+                const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                if (daysUntil === 2) {
+                  toast.warning('Assignment Due Soon', {
+                    description: `Your ${courseCode} ${assignment.name} is due in 2 days (${assignment.dueDate}).`,
+                    duration: 6000,
+                  });
+                } else if (daysUntil >= 0 && daysUntil <= 3) {
+                  toast.warning(`Assignment due in ${daysUntil} days`, {
+                    description: `${courseCode} ${assignment.name} - ${assignment.dueDate}`,
+                    duration: 5000,
+                  });
+                }
+              }
+            });
+          }
+          
           // Wait a moment to ensure the chat is properly added to the store
           await new Promise(resolve => setTimeout(resolve, 100));
           
@@ -446,27 +587,91 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
-        <CardHeader className="text-center pb-4">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-              <FileText className="size-8 text-primary" />
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* 
+        Uploaded Syllabi List - ONLY SHOWS ON /dashboard/upload PAGE
+        - NOT on home page (where redirectToSignup=true by default)
+        - Only if user has previously uploaded syllabi and refreshed
+      */}
+      {!redirectToSignup && isClient && uploadedSyllabi.length > 0 && (
+        <Card className="border-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              Your Uploaded Syllabi
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Click to view or remove uploaded courses</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3">
+              {uploadedSyllabi.map((syllabus) => (
+                <div 
+                  key={syllabus.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors bg-card"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{syllabus.courseName}</h4>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <span>{syllabus.courseCode}</span>
+                        <span>•</span>
+                        <span>{new Date(syllabus.uploadDate).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => router.push(`/dashboard/chat?chatId=${encodeURIComponent(syllabus.chatId)}`)}
+                    >
+                      View Chat
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20"
+                      onClick={() => handleDeleteSyllabus(syllabus.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Try CourseConnect AI Right Now
-          </CardTitle>
-          <p className="text-muted-foreground">
-            Upload your syllabus to see how AI extracts key information and creates study groups
-          </p>
-        </CardHeader>
+          </CardContent>
+        </Card>
+      )}
+      
+      <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
+        {redirectToSignup ? (
+          <CardHeader className="text-center pb-4">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                <FileText className="size-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Try CourseConnect AI Right Now
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Upload your syllabus to see how AI extracts key information and creates study groups
+            </p>
+          </CardHeader>
+        ) : (
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl font-semibold">Upload Syllabus</CardTitle>
+          </CardHeader>
+        )}
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pb-8">
 
           {!file && !extractedData && (
             <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ${
+              className={`border-2 border-dashed rounded-xl py-16 px-8 text-center cursor-pointer transition-all duration-300 ${
                 isDragOver 
                   ? 'border-purple-500 dark:border-purple-400 bg-purple-100/80 dark:bg-purple-900/30 shadow-lg scale-[1.02]' 
                   : 'border-purple-300 dark:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-950/20'
@@ -484,13 +689,13 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 accept=".pdf,.doc,.docx,.txt" 
               />
               
-              <div className='flex justify-center mb-4'>
-                <div className={`p-4 rounded-xl transition-all duration-300 ${
+              <div className='flex justify-center mb-6'>
+                <div className={`p-6 rounded-2xl transition-all duration-300 ${
                   isDragOver 
                     ? 'bg-gradient-to-br from-purple-200 to-purple-100 dark:from-purple-800/40 dark:to-purple-700/20 scale-110' 
                     : 'bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/20 dark:to-purple-800/10'
                 }`}>
-                  <Upload className={`size-12 transition-all duration-300 ${
+                  <Upload className={`size-16 transition-all duration-300 ${
                     isDragOver 
                       ? 'text-purple-700 dark:text-purple-300 scale-110' 
                       : 'text-purple-600 dark:text-purple-400'
@@ -498,45 +703,16 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 </div>
               </div>
               
-              <h3 className={`text-xl font-semibold mb-2 transition-all duration-300 ${
+              <h3 className={`text-xl font-semibold mb-3 transition-all duration-300 ${
                 isDragOver 
                   ? 'text-purple-700 dark:text-purple-300 scale-105' 
                   : 'text-foreground'
               }`}>
-                {isDragOver ? 'Perfect! Release to upload' : 'Drop your course syllabus here or click to upload'}
+                {isDragOver ? 'Drop to upload' : 'Drop syllabus or click to browse'}
               </h3>
-              <p className="text-muted-foreground mb-4">
-                Upload your course syllabus (PDF, DOCX, TXT). AI will extract professor info, topics, exam dates, and assignments.
+              <p className="text-base text-muted-foreground">
+                PDF, DOCX, or TXT • Max 10MB
               </p>
-              
-                  <div className="flex flex-wrap justify-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">PDF Syllabus</span>
-                      <span className="text-xs text-green-600 dark:text-green-500">(fully supported)</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">DOCX Syllabus</span>
-                      <span className="text-xs text-green-600 dark:text-green-500">(fully supported)</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">TXT Syllabus</span>
-                      <span className="text-xs text-green-600 dark:text-green-500">(fully supported)</span>
-                    </div>
-                  </div>
-              
-              <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
-                  <Info className="size-4" />
-                  <span className="font-medium">Max file size: 10MB</span>
-                </div>
-              </div>
-              
-        <div className="mt-3 p-3 bg-green-50/50 dark:bg-green-900/10 rounded-lg border border-green-200/50 dark:border-green-800/50">
-          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-                      <Info className="size-4" />
-            <span className="font-medium">TXT and DOCX files work perfectly! PDF processing provides helpful conversion guidance.</span>
-                    </div>
-                  </div>
             </div>
           )}
 
@@ -651,7 +827,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                       <p className="text-sm text-muted-foreground">Course Name</p>
                       <p className="font-medium">{extractedData.courseName || 'Not found'}</p>
                       {!extractedData.courseName && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           This syllabus may not contain a clear course name
                         </p>
                       )}
@@ -662,7 +838,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                         {extractedData.courseCode || 'Not found'}
                       </p>
                       {!extractedData.courseCode && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           This syllabus may not contain a course code
                         </p>
                       )}
@@ -673,7 +849,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                         {extractedData.professor || 'Not found'}
                       </p>
                       {!extractedData.professor && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           This syllabus may not contain professor information
                         </p>
                       )}
@@ -684,7 +860,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                         {extractedData.university || 'Not found'}
                       </p>
                       {!extractedData.university && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           This syllabus may not contain university information
                         </p>
                       )}
@@ -698,7 +874,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                         }
                       </p>
                       {(!extractedData.semester || !extractedData.year) && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           This syllabus may not contain semester/year details
                         </p>
                       )}
@@ -732,9 +908,9 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                               </Badge>
                               <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
                                    role="tooltip" aria-label="All topics">
-                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Topics</div>
+                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">Additional Topics</div>
                                 <div className="grid grid-cols-2 gap-2">
-                                  {extractedData.topics.map((topic, index) => (
+                                  {extractedData.topics.slice(3).map((topic, index) => (
                                     <div key={index} className="text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded-md text-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                                       {topic}
                                     </div>
@@ -764,9 +940,9 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                               </Badge>
                               <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
                                    role="tooltip" aria-label="All assignments">
-                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Assignments</div>
+                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">Additional Assignments</div>
                                 <div className="grid grid-cols-1 gap-2">
-                                  {extractedData.assignments.map((assignment, index) => (
+                                  {extractedData.assignments.slice(3).map((assignment, index) => (
                                     <div key={index} className="text-xs p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                                       <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">{assignment.name}</div>
                                       {assignment.dueDate && (
@@ -800,15 +976,16 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                             </div>
                           ))}
                           {extractedData.exams.length > 2 && (
-                            <div className="relative group">
-                              <div className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                            <div className={`relative ${redirectToSignup ? '' : 'group'}`}>
+                              <div className={`text-xs text-muted-foreground ${redirectToSignup ? 'blur-sm select-none cursor-not-allowed' : 'cursor-pointer hover:text-foreground'}`}>
                                 +{extractedData.exams.length - 2} more exams
                               </div>
-                              <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
-                                   role="tooltip" aria-label="All exams">
-                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">All Exams</div>
+                              {!redirectToSignup && (
+                                <div className="absolute bottom-full left-0 mb-2 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[400px] max-w-[90vw] sm:max-w-[500px]"
+                                     role="tooltip" aria-label="All exams">
+                                <div className="text-sm font-semibold mb-3 text-center text-gray-900 dark:text-gray-100">Additional Exams</div>
                                 <div className="grid grid-cols-1 gap-2">
-                                  {extractedData.exams.map((exam, index) => (
+                                  {extractedData.exams.slice(2).map((exam, index) => (
                                     <div key={index} className="text-xs p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                                       <div className="font-medium text-gray-900 dark:text-gray-100">{exam.name}</div>
                                       {exam.date && (
@@ -821,6 +998,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                                 </div>
                                 <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-700"></div>
                               </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -907,16 +1085,8 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                           size="lg" 
                           className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold px-8 py-7 text-lg rounded-2xl"
                         >
-                          Try Another Syllabus
+                          Upload Another
                         </Button>
-                      </div>
-                      
-                      
-                      {/* Divider */}
-                      <div className="flex items-center gap-3 max-w-md mx-auto mt-6">
-                        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent flex-1" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">or upload another</span>
-                        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent flex-1" />
                       </div>
                     </CardContent>
                   </Card>

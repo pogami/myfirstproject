@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, FileText } from "lucide-react";
+import { GlobalCommandMenu } from "@/components/global-command-menu";
 import {
   SidebarProvider,
   Sidebar,
@@ -36,6 +37,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { OnboardingSlideshow } from "@/components/onboarding-slideshow";
 import { ClientThemeToggle } from "@/components/client-theme-toggle";
+import { NotificationToastListener } from "@/components/notification-toast-listener";
+import { toast } from "sonner";
 
 function AnnouncementBanner() {
   const [isVisible, setIsVisible] = useState(true);
@@ -54,20 +57,27 @@ function AnnouncementBanner() {
   }
 
   return (
-    <div className="bg-primary text-primary-foreground">
+    <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white shadow-lg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
-            <Megaphone className="h-5 w-5" />
-            <p className="font-medium">
-              <span className="hidden md:inline">Welcome to CourseConnect! We're excited to have you.</span>
-              <span className="md:hidden">Welcome to CourseConnect!</span>
-            </p>
+            <div className="bg-white/20 rounded-full p-2 backdrop-blur-sm">
+              <Megaphone className="h-4 w-4" />
+            </div>
+            <div className="flex flex-col">
+              <p className="font-semibold text-sm">
+                <span className="hidden md:inline">Welcome to CourseConnect! 🎓</span>
+                <span className="md:hidden">Welcome! 🎓</span>
+              </p>
+              <p className="text-xs text-white/90 hidden sm:block">
+                Your AI-powered learning companion is ready to help you succeed
+              </p>
+            </div>
           </div>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 hover:bg-transparent"
+            className="h-8 w-8 hover:bg-white/20 text-white"
             onClick={() => setIsVisible(false)}
           >
             <X className="h-4 w-4" />
@@ -95,12 +105,12 @@ export default function DashboardLayout({
   const [showOnboarding, setShowOnboarding] = useState(false);
   
   useEffect(() => {
-    // Reduced timeout to 1 second for faster loading
+    // Increased timeout to 5 seconds to allow Firebase auth to propagate
     const authTimeout = setTimeout(() => {
       console.warn('Dashboard: Auth initialization timeout, proceeding without auth');
       setLoading(false);
       setError(new Error('Auth timeout'));
-    }, 1000); // 1 second timeout
+    }, 5000); // 5 second timeout
 
     // Check for guest user first (faster than Firebase auth)
     const guestUserData = localStorage.getItem('guestUser');
@@ -213,6 +223,13 @@ export default function DashboardLayout({
   useEffect(() => {
     // If user is not logged in and not loading, check if they're a guest
     if (!loading && !user) {
+      // Check if user just logged in (give it 2 more seconds to load)
+      const justLoggedIn = sessionStorage.getItem('justLoggedIn');
+      if (justLoggedIn === 'true') {
+        console.log("User just logged in, waiting for auth to load...");
+        return; // Don't redirect yet
+      }
+      
       const storedGuest = localStorage.getItem('guestUser');
       if (!storedGuest) {
         // No user and no guest, redirect to login
@@ -221,6 +238,9 @@ export default function DashboardLayout({
       } else {
         console.log("Guest user found in localStorage:", storedGuest);
       }
+    } else if (user) {
+      // Clear the flag once user is loaded
+      sessionStorage.removeItem('justLoggedIn');
     }
   }, [user, loading, router, pathname]);
 
@@ -231,6 +251,25 @@ export default function DashboardLayout({
       if (shouldShowOnboarding === 'true') {
         setShowOnboarding(true);
         localStorage.removeItem('showOnboarding');
+      }
+    }
+  }, [user, loading]);
+
+  // Show welcome toast for new users
+  useEffect(() => {
+    if (!loading && user) {
+      const justSignedUp = sessionStorage.getItem('justSignedUp');
+      if (justSignedUp === 'true') {
+        // Clear the flag immediately
+        sessionStorage.removeItem('justSignedUp');
+        
+        // Show welcome toast after a short delay (so page loads first)
+        setTimeout(() => {
+          toast.success('🎉 Welcome to CourseConnect!', {
+            description: 'Your AI-powered learning companion is ready to help you ace your courses! Upload your syllabus to get started.',
+            duration: 5000,
+          });
+        }, 500);
       }
     }
   }, [user, loading]);
@@ -493,6 +532,12 @@ export default function DashboardLayout({
           onClose={() => setShowOnboarding(false)}
           onComplete={() => setShowOnboarding(false)}
         />
+        
+        {/* Global Command Menu (⌘K) */}
+        <GlobalCommandMenu />
+        
+        {/* Notification Toast Listener */}
+        <NotificationToastListener />
         
       </SidebarProvider>
   );

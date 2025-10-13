@@ -70,9 +70,9 @@ export function EnhancedChatInput({
     if (placeholder) return placeholder;
     
     if (isClassChat && isPublicChat) {
-      return isMobile ? "Type @ai to call AI" : "Message classmates or type @ai to call AI";
+      return isMobile ? "Type @ai to call AI" : "Type @ai to call AI (Classmate chat coming soon)";
     } else if (isPublicChat) {
-      return isMobile ? "Type @ai to call AI" : "Chat with others or type @ai to call AI";
+      return isMobile ? "Type @ai to call AI" : "Type @ai to call AI (Community chat coming soon)";
     } else {
       return isMobile ? "Ask anything" : "Ask CourseConnect AI anything";
     }

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigation } from '@/components/landing/navigation';
 import { HeroSection } from '@/components/landing/hero-section';
+import { ModernFeaturesShowcase } from '@/components/landing/modern-features-showcase';
 import { FeaturesSection } from '@/components/landing/features-section';
 // Removed PricingSection from home page
 // SocialProofSection removed from home page

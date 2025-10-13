@@ -38,7 +38,7 @@ export function useNotifications(user: User | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Listen to real-time notifications
+  // Listen to real-time notifications (only for authenticated users)
   useEffect(() => {
     if (!user) {
       setNotifications([]);
@@ -47,13 +47,15 @@ export function useNotifications(user: User | null) {
       return;
     }
 
+    const userId = user.uid;
+
     setIsLoading(true);
     setError(null);
 
     const notificationsRef = collection(db, 'notifications');
     const q = query(
       notificationsRef,
-      where('userId', '==', user.uid),
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc')
     );
 

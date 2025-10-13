@@ -19,6 +19,8 @@ import { SourceIcon } from './source-icon';
 import { InteractiveQuiz } from './interactive-quiz';
 import { FullExamModal } from './full-exam-modal';
 import { AIFeedback } from './ai-feedback';
+import { useFeatureFlags } from '@/hooks/use-feature-flags';
+import { FeatureDisabled } from './feature-disabled';
 
 // Detect if content looks like data points (array of {x, y})
 function looksLikeGraph(content: string): boolean {
@@ -172,6 +174,7 @@ interface BotResponseProps {
 export default function BotResponse({ content, className = "", sources, onSendMessage, messageId, onFeedback }: BotResponseProps) {
   const isGraph = useMemo(() => looksLikeGraph(content), [content]);
   const quizData = useMemo(() => extractQuizData(content), [content]);
+  const { isFeatureEnabled } = useFeatureFlags();
   const [isCopied, setIsCopied] = useState(false);
   const [showExamModal, setShowExamModal] = useState(false);
 
@@ -209,26 +212,30 @@ export default function BotResponse({ content, className = "", sources, onSendMe
             )}
           </div>
         )}
-        <InteractiveQuiz
-          questions={quizData.data.questions}
-          topic={quizData.data.topic || 'Quiz'}
-          onQuizComplete={(results) => {
-            if (onSendMessage) {
-              const { score, total, wrongQuestions, topic } = results;
-              const percentage = Math.round((score / total) * 100);
-              let message = `I just completed the ${topic} quiz! I got ${score}/${total} (${percentage}%).`;
-              
-              if (wrongQuestions.length > 0) {
-                message += `\n\nQuestions I got wrong:\n${wrongQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
-                message += `\n\nCan you help me understand these topics better so I can ace them next time?`;
-              } else {
-                message += ` Perfect score! 🎉`;
+        {isFeatureEnabled('interactiveQuizzes') ? (
+          <InteractiveQuiz
+            questions={quizData.data.questions}
+            topic={quizData.data.topic || 'Quiz'}
+            onQuizComplete={(results) => {
+              if (onSendMessage) {
+                const { score, total, wrongQuestions, topic } = results;
+                const percentage = Math.round((score / total) * 100);
+                let message = `I just completed the ${topic} quiz! I got ${score}/${total} (${percentage}%).`;
+                
+                if (wrongQuestions.length > 0) {
+                  message += `\n\nQuestions I got wrong:\n${wrongQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+                  message += `\n\nCan you help me understand these topics better so I can ace them next time?`;
+                } else {
+                  message += ` Perfect score! 🎉`;
+                }
+                
+                onSendMessage(message);
               }
-              
-              onSendMessage(message);
-            }
-          }}
-        />
+            }}
+          />
+        ) : (
+          <FeatureDisabled featureName="Interactive Quizzes" />
+        )}
       </div>
     );
   }
@@ -255,25 +262,27 @@ export default function BotResponse({ content, className = "", sources, onSendMe
             )}
           </div>
         )}
-        <Button onClick={() => setShowExamModal(true)} className="w-full" size="lg">
-          🎯 Start Practice Exam ({quizData.data.questions.length} Questions)
-        </Button>
-        <FullExamModal
-          isOpen={showExamModal}
-          onClose={() => setShowExamModal(false)}
-          questions={quizData.data.questions}
-          topic={quizData.data.topic || 'Practice Exam'}
-          timeLimit={quizData.data.timeLimit || 30}
-          onExamComplete={(results) => {
-            if (onSendMessage) {
-              const { score, total, wrongQuestions, topic } = results;
-              const percentage = Math.round((score / total) * 100);
-              let message = `I just completed the ${topic} practice exam! I got ${score}/${total} (${percentage}%).`;
-              
-              if (wrongQuestions.length > 0) {
-                message += `\n\nQuestions I got wrong:\n${wrongQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
-                message += `\n\nCan you help me understand these topics better so I can ace the real exam?`;
-              } else {
+        {isFeatureEnabled('fullExams') ? (
+          <>
+            <Button onClick={() => setShowExamModal(true)} className="w-full" size="lg">
+              🎯 Start Practice Exam ({quizData.data.questions.length} Questions)
+            </Button>
+            <FullExamModal
+              isOpen={showExamModal}
+              onClose={() => setShowExamModal(false)}
+              questions={quizData.data.questions}
+              topic={quizData.data.topic || 'Practice Exam'}
+              timeLimit={quizData.data.timeLimit || 30}
+              onExamComplete={(results) => {
+                if (onSendMessage) {
+                  const { score, total, wrongQuestions, topic } = results;
+                  const percentage = Math.round((score / total) * 100);
+                  let message = `I just completed the ${topic} practice exam! I got ${score}/${total} (${percentage}%).`;
+                  
+                  if (wrongQuestions.length > 0) {
+                    message += `\n\nQuestions I got wrong:\n${wrongQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`;
+                    message += `\n\nCan you help me understand these topics better so I can ace the real exam?`;
+                  } else {
                 message += ` Perfect score! 🎉`;
               }
               
@@ -281,6 +290,10 @@ export default function BotResponse({ content, className = "", sources, onSendMe
             }
           }}
         />
+          </>
+        ) : (
+          <FeatureDisabled featureName="Practice Exams" />
+        )}
       </div>
     );
   }

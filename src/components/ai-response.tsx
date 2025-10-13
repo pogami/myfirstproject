@@ -8,6 +8,9 @@ import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from 'next-themes';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 interface AIResponseProps {
   content: string;
@@ -51,6 +54,8 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
   return (
     <div className={`bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm text-sm ${className}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
         components={{
           a({ node, href, children, ...props }) {
             // Custom link styling - blue, underlined, opens in new tab

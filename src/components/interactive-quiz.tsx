@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, XCircle, Award, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface QuizQuestion {
   question: string;
@@ -65,7 +66,26 @@ export function InteractiveQuiz({ questions, topic, onComplete, onQuizComplete }
       setShowFeedback(false);
     } else {
       const finalScore = score + (isCorrect ? 1 : 0);
+      const percentage = Math.round((finalScore / questions.length) * 100);
       setIsComplete(true);
+      
+      // Show completion toast based on score
+      if (percentage >= 80) {
+        toast.success("You've completed a quiz! Keep up the great work! 🎉", {
+          description: `Perfect score on ${topic}: ${finalScore}/${questions.length} (${percentage}%)`,
+          duration: 6000,
+        });
+      } else if (percentage >= 60) {
+        toast.success("Quiz completed! Good job! 💪", {
+          description: `${topic}: ${finalScore}/${questions.length} (${percentage}%)`,
+          duration: 5000,
+        });
+      } else {
+        toast.info("Quiz completed! Keep studying! 📚", {
+          description: `${topic}: ${finalScore}/${questions.length} (${percentage}%) - Review the material and try again!`,
+          duration: 5000,
+        });
+      }
       
       // Identify wrong questions
       const finalResults = [...questionResults];

@@ -12,21 +12,21 @@
   "categories": ["education", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/icons/icon-192x192.svg",
+      "src": "/officialogo.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.svg",
+      "src": "/officialogo.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.ico",
+      "src": "/officialogo.png",
       "sizes": "16x16 32x32 48x48",
-      "type": "image/x-icon",
+      "type": "image/png",
       "purpose": "any"
     }
   ],

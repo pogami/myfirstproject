@@ -1,45 +1,45 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster as Sonner } from "@/components/ui/sonner"
 import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
 import { Analytics } from '@vercel/analytics/next';
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "CourseConnect - AI College Platform",
-  description: "Your unified platform for college success with AI-powered study tools",
+  title: "CourseConnect AI - Your AI-Powered Study Companion",
+  description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
   openGraph: {
     type: "website",
-    url: "https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app",
-    title: "CourseConnect - AI College Platform",
-    description: "Your unified platform for college success with AI-powered study tools",
-    siteName: "CourseConnect",
+    url: "https://courseconnectai.com",
+    title: "CourseConnect AI - Your AI-Powered Study Companion",
+    description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
+    siteName: "CourseConnect AI",
     images: [
       {
-        url: "https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7",
+        url: "https://courseconnectai.com/og-images/profile-default.png",
         width: 1200,
         height: 630,
-        alt: "CourseConnect Logo",
+        alt: "CourseConnect AI - AI-Powered Study Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "CourseConnect - AI College Platform",
-    description: "Your unified platform for college success with AI-powered study tools",
-    images: ["https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7"],
+    title: "CourseConnect AI - Your AI-Powered Study Companion",
+    description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
+    images: ["https://courseconnectai.com/og-images/profile-default.png"],
     creator: "@courseconnectai",
     site: "@courseconnectai",
   },
   icons: {
-    icon: '/courseconnect-favicon.svg',
-    shortcut: '/courseconnect-favicon.svg',
+    icon: '/officialogo.png',
+    shortcut: '/officialogo.png',
     apple: [
-      { url: '/courseconnect-favicon.svg', sizes: '180x180', type: 'image/svg+xml' },
-      { url: '/courseconnect-favicon.svg', sizes: '152x152', type: 'image/svg+xml' },
-      { url: '/courseconnect-favicon.svg', sizes: '120x120', type: 'image/svg+xml' },
-      { url: '/courseconnect-favicon.svg', sizes: '76x76', type: 'image/svg+xml' }
+      { url: '/officialogo.png', sizes: '180x180' },
+      { url: '/officialogo.png', sizes: '152x152' },
+      { url: '/officialogo.png', sizes: '120x120' },
+      { url: '/officialogo.png', sizes: '76x76' }
     ]
   }
 };
@@ -57,31 +57,47 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         
         {/* Open Graph Meta Tags - Server Side Rendered */}
-        <meta property="og:title" content="CourseConnect - AI College Platform" />
-        <meta property="og:description" content="Your unified platform for college success with AI-powered study tools" />
-        <meta property="og:url" content="https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app" />
+        <meta property="og:title" content="CourseConnect AI - Your AI-Powered Study Companion" />
+        <meta property="og:description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
+        <meta property="og:url" content="https://courseconnectai.com" />
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="CourseConnect" />
-        <meta property="og:image" content="https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7" />
+        <meta property="og:site_name" content="CourseConnect AI" />
+        <meta property="og:image" content="https://courseconnectai.com/og-images/profile-default.png" />
+        <meta property="og:image:secure_url" content="https://courseconnectai.com/og-images/profile-default.png" />
+        <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="CourseConnect Logo" />
+        <meta property="og:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
+        <meta property="og:locale" content="en_US" />
         
         {/* Twitter Card Meta Tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CourseConnect - AI College Platform" />
-        <meta name="twitter:description" content="Your unified platform for college success with AI-powered study tools" />
-        <meta name="twitter:image" content="https://courseconnect-jhoqnfz8k-pogamis-projects.vercel.app/final-logo.png?v=7" />
+        <meta name="twitter:title" content="CourseConnect AI - Your AI-Powered Study Companion" />
+        <meta name="twitter:description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
+        <meta name="twitter:image" content="https://courseconnectai.com/og-images/profile-default.png" />
+        <meta name="twitter:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta name="twitter:creator" content="@courseconnectai" />
         <meta name="twitter:site" content="@courseconnectai" />
         
+        {/* Additional SEO Meta Tags */}
+        <meta name="description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
+        <meta name="keywords" content="AI tutoring, study platform, syllabus analysis, online learning, college success, personalized study plans, interactive quizzes, CourseConnect" />
+        <meta name="author" content="CourseConnect AI" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://courseconnectai.com" />
+        
+        {/* iMessage and Link Preview Tags */}
+        <meta property="al:ios:app_name" content="CourseConnect AI" />
+        <meta property="al:android:app_name" content="CourseConnect AI" />
+        <meta property="og:determiner" content="the" />
+        
         {/* Favicon and Icons */}
-        <link rel="icon" href="/courseconnect-favicon.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/courseconnect-favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="180x180" />
-        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="152x152" />
-        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="120x120" />
-        <link rel="apple-touch-icon" href="/courseconnect-favicon.svg" sizes="76x76" />
+        <link rel="icon" href="/officialogo.png" type="image/png" />
+        <link rel="shortcut icon" href="/officialogo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/officialogo.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/officialogo.png" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/officialogo.png" sizes="120x120" />
+        <link rel="apple-touch-icon" href="/officialogo.png" sizes="76x76" />
         
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />
@@ -112,7 +128,7 @@ export default function RootLayout({
           <StudyBreakProvider>
             {children}
           </StudyBreakProvider>
-          <Toaster />
+          <Sonner />
           <Analytics />
         </Providers>
       </body>

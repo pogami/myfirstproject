@@ -13,5 +13,6 @@ const firebaseAdminConfig = {
 // Initialize Firebase Admin
 const app = getApps().length === 0 ? initializeApp(firebaseAdminConfig) : getApps()[0];
 export const adminDb = getFirestore(app);
+export const db = adminDb; // Alias for compatibility
 
 

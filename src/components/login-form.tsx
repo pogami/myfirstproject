@@ -16,7 +16,7 @@ import { GoogleLogo } from "@/components/icons/google-logo";
 import { Loader2, User } from "lucide-react";
 import { useAnimatedToast } from "@/hooks/use-animated-toast";
 import { ToastContainer } from "@/components/animated-toast";
-import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
+import { CCLogo } from "@/components/icons/cc-logo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { useChatStore, Chat } from "@/hooks/use-chat-store";
@@ -128,13 +128,11 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         console.error('Guest data migration failed:', error);
       });
       
-      // Check existing verification status
-      checkVerificationStatus(user.uid);
-      
       // For new signups, show onboarding slideshow
       if (isSigningUp) {
         // Store flag to show onboarding
         localStorage.setItem('showOnboarding', 'true');
+        sessionStorage.setItem('justSignedUp', 'true');
       }
       
       // Navigate to dashboard
@@ -197,8 +195,9 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
           description: "Your Google account has been connected. Complete your profile in settings." 
         });
         
-        // Store flag to show onboarding for new users
+        // Store flags to show onboarding and welcome toast for new users
         localStorage.setItem('showOnboarding', 'true');
+        sessionStorage.setItem('justSignedUp', 'true');
       } else {
         toast({ title: "Signed In!", description: "Welcome back." });
       }
@@ -407,7 +406,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
                 <div className="relative rounded-full bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 border-2 border-purple-200/30 dark:border-purple-800/30 backdrop-blur-sm">
-                  <CourseConnectLogo className="h-16 w-16 text-primary drop-shadow-lg" />
+                  <CCLogo className="h-20 w-auto drop-shadow-lg" />
                 </div>
               </div>
             </div>

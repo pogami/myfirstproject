@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { Github, Twitter, Linkedin, Mail, ArrowRight, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/theme-context';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { CCLogo } from '@/components/icons/cc-logo';
 
 const footerLinks = {
   product: [
@@ -37,7 +38,6 @@ export function Footer() {
   const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export function Footer() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/newsletter', {
+      const response = await fetch('/api/newsletter/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,18 +54,13 @@ export function Footer() {
       });
 
       const data = await response.json();
-      console.log('Newsletter API response:', { response: response.ok, data });
 
       if (response.ok) {
-        console.log('Subscription successful, triggering confetti!');
-        toast({
-          title: "Successfully Subscribed!",
-          description: data.emailSent 
-            ? "Check your email for a welcome message!" 
-            : "You're now subscribed! Welcome email sent.",
+        toast.success('🎉 Successfully Subscribed!', {
+          description: 'Check your email for a welcome message!',
+          duration: 5000,
         });
         setEmail('');
-        console.log('Triggering payment-style confetti!');
         
         // Enhanced confetti animation
         const duration = 4500; // Longer duration
@@ -116,17 +111,15 @@ export function Footer() {
           }
         }, 200); // Slightly faster interval for more continuous flow
       } else {
-        toast({
-          variant: "destructive",
-          title: "Subscription Failed",
-          description: data.error || "Please try again later.",
+        toast.error('Subscription Failed', {
+          description: data.error || 'Please try again later.',
+          duration: 4000,
         });
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to subscribe. Please try again.",
+      toast.error('Error', {
+        description: 'Failed to subscribe. Please try again.',
+        duration: 4000,
       });
     } finally {
       setIsSubmitting(false);
@@ -139,14 +132,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 flex items-center justify-center">
-                <img 
-                  src="/courseconnect-favicon.svg" 
-                  alt="CourseConnect Logo" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <CCLogo className="h-12 w-auto" />
               <span className="text-xl font-bold">CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span></span>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">

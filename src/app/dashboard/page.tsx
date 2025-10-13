@@ -16,13 +16,7 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import GeolocationGreeting from "@/components/geolocation-greeting";
-import { NotificationTestPanel } from "@/components/notification-test-panel";
 import dynamic from "next/dynamic";
-
-// Lazy load heavy components
-const Notifications = dynamic(() => import("@/components/notifications"), {
-  loading: () => <div className="w-8 h-8 bg-muted rounded animate-pulse" />
-});
 
 
 
@@ -106,10 +100,6 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Notifications />
           </div>
         </div>
 
@@ -332,6 +322,181 @@ export default function DashboardPage() {
           </Card>
         </div>
 
+        {/* Assignments Table - Real-time from uploaded syllabi */}
+        {Object.values(chats).some(chat => chat.chatType === 'class' && chat.courseData?.assignments && chat.courseData.assignments.length > 0) && (
+          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                </div>
+                All Assignments
+              </CardTitle>
+              <CardDescription>Real-time assignments from your uploaded syllabi</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-semibold text-sm">Course</th>
+                      <th className="text-left p-3 font-semibold text-sm">Assignment</th>
+                      <th className="text-left p-3 font-semibold text-sm">Due Date</th>
+                      <th className="text-left p-3 font-semibold text-sm">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.values(chats)
+                      .filter(chat => chat.chatType === 'class' && chat.courseData?.assignments)
+                      .flatMap(chat => 
+                        (chat.courseData?.assignments || []).map((assignment: any, idx: number) => {
+                          // Calculate days until due
+                          const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
+                          const today = new Date();
+                          const daysUntil = dueDate ? Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                          
+                          // Determine status
+                          let status = 'Not Started';
+                          let statusColor = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+                          
+                          if (daysUntil !== null) {
+                            if (daysUntil < 0) {
+                              status = 'Overdue';
+                              statusColor = 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300';
+                            } else if (daysUntil <= 2) {
+                              status = 'Due Soon';
+                              statusColor = 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300';
+                            } else if (daysUntil <= 7) {
+                              status = 'In Progress';
+                              statusColor = 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
+                            }
+                          }
+                          
+                          return (
+                            <tr key={`${chat.id}-${idx}`} className="border-b hover:bg-muted/30 transition-colors">
+                              <td className="p-3 text-sm font-medium">{chat.courseData?.courseCode || 'Unknown'}</td>
+                              <td className="p-3 text-sm">{assignment.name}</td>
+                              <td className="p-3 text-sm text-muted-foreground">
+                                {assignment.dueDate || 'TBA'}
+                                {daysUntil !== null && daysUntil >= 0 && (
+                                  <span className="ml-2 text-xs">
+                                    ({daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `${daysUntil} days`})
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 text-xs rounded-full ${statusColor} font-medium`}>
+                                  {status}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )
+                      .sort((a, b) => {
+                        // Sort by due date (soonest first)
+                        const dateA = a.props.children[2].props.children[0];
+                        const dateB = b.props.children[2].props.children[0];
+                        if (!dateA || dateA === 'TBA') return 1;
+                        if (!dateB || dateB === 'TBA') return -1;
+                        return new Date(dateA).getTime() - new Date(dateB).getTime();
+                      })}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* View All Button */}
+              <div className="mt-4 text-center">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/dashboard/chat">
+                    View in Class Chats
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Exams Table - Real-time from uploaded syllabi */}
+        {Object.values(chats).some(chat => chat.chatType === 'class' && chat.courseData?.exams && chat.courseData.exams.length > 0) && (
+          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/50">
+                  <GraduationCap className="h-5 w-5 text-purple-600" />
+                </div>
+                Upcoming Exams
+              </CardTitle>
+              <CardDescription>Exam schedule from your courses</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-gray-200 dark:border-gray-800 overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-semibold text-sm">Course</th>
+                      <th className="text-left p-3 font-semibold text-sm">Exam</th>
+                      <th className="text-left p-3 font-semibold text-sm">Date</th>
+                      <th className="text-left p-3 font-semibold text-sm">Time Until</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.values(chats)
+                      .filter(chat => chat.chatType === 'class' && chat.courseData?.exams)
+                      .flatMap(chat => 
+                        (chat.courseData?.exams || []).map((exam: any, idx: number) => {
+                          // Calculate days until exam
+                          const examDate = exam.date ? new Date(exam.date) : null;
+                          const today = new Date();
+                          const daysUntil = examDate ? Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                          
+                          // Determine urgency color
+                          let urgencyColor = 'text-gray-700 dark:text-gray-300';
+                          if (daysUntil !== null) {
+                            if (daysUntil < 0) {
+                              urgencyColor = 'text-gray-500 dark:text-gray-500';
+                            } else if (daysUntil <= 3) {
+                              urgencyColor = 'text-red-600 dark:text-red-400 font-bold';
+                            } else if (daysUntil <= 7) {
+                              urgencyColor = 'text-orange-600 dark:text-orange-400 font-semibold';
+                            } else if (daysUntil <= 14) {
+                              urgencyColor = 'text-yellow-600 dark:text-yellow-400';
+                            }
+                          }
+                          
+                          return (
+                            <tr key={`${chat.id}-exam-${idx}`} className="border-b hover:bg-muted/30 transition-colors">
+                              <td className="p-3 text-sm font-medium">{chat.courseData?.courseCode || 'Unknown'}</td>
+                              <td className="p-3 text-sm">{exam.name}</td>
+                              <td className="p-3 text-sm text-muted-foreground">{exam.date || 'TBA'}</td>
+                              <td className={`p-3 text-sm ${urgencyColor}`}>
+                                {daysUntil !== null ? (
+                                  daysUntil < 0 ? 'Passed' :
+                                  daysUntil === 0 ? '🔴 Today!' :
+                                  daysUntil === 1 ? '⚠️ Tomorrow' :
+                                  daysUntil <= 3 ? `🔴 ${daysUntil} days` :
+                                  daysUntil <= 7 ? `⚠️ ${daysUntil} days` :
+                                  `${daysUntil} days`
+                                ) : 'TBA'}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )
+                      .sort((a, b) => {
+                        // Sort by exam date (soonest first)
+                        const dateA = a.props.children[2].props.children;
+                        const dateB = b.props.children[2].props.children;
+                        if (!dateA || dateA === 'TBA') return 1;
+                        if (!dateB || dateB === 'TBA') return -1;
+                        return new Date(dateA).getTime() - new Date(dateB).getTime();
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Study Groups Section */}
         <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
@@ -380,13 +545,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-
-        {/* Development Test Panel - Only show in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6">
-            <NotificationTestPanel />
-          </div>
-        )}
       </div>
       
       {/* PWA Install Prompt */}

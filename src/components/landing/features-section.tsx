@@ -18,7 +18,7 @@ const features = [
   {
     icon: Upload,
     title: 'Smart Syllabus Matching',
-    description: 'Upload your syllabus and automatically find classmates taking the same course. Our AI extracts course information and matches you with study partners.',
+    description: 'Upload your syllabus and our AI extracts course information. Study partner matching coming soon!',
     color: 'from-blue-500 to-cyan-500'
   },
   {
@@ -36,7 +36,7 @@ const features = [
   {
     icon: MessageCircle,
     title: 'Real-time Chat',
-    description: 'Chat with classmates and AI tutors in real-time. Get instant answers to your questions and participate in group discussions.',
+    description: 'Chat with AI tutors to get instant answers to your questions. Real-time student collaboration coming soon!',
     color: 'from-orange-500 to-red-500'
   },
   {

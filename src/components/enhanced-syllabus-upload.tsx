@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, X, Users, Bot, Brain, CheckCircle, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -18,6 +18,8 @@ import { AISyllabusParser } from "@/lib/syllabus-parser/ai-parser";
 import { ParsedSyllabus, ParsingResult } from "@/types/syllabus-parsing";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
+import { FeatureDisabled } from "./feature-disabled";
 
 const encouragingMessages = [
     "Get ready! The AI is analyzing your syllabus...",
@@ -28,6 +30,7 @@ const encouragingMessages = [
 ];
 
 export default function EnhancedSyllabusUpload() {
+    const { isFeatureEnabled } = useFeatureFlags();
     const [file, setFile] = useState<File | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -35,10 +38,24 @@ export default function EnhancedSyllabusUpload() {
     const [parsingResult, setParsingResult] = useState<ParsingResult | null>(null);
     const [showReview, setShowReview] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { toast } = useToast();
     const router = useRouter();
     const { addChat, setCurrentTab } = useChatStore();
     const [user] = useAuthState(auth);
+
+    // Check if syllabus parser is disabled
+    if (!isFeatureEnabled('syllabusParser')) {
+        return (
+            <Card className="w-full max-w-2xl mx-auto">
+                <CardHeader>
+                    <CardTitle>Upload Syllabus</CardTitle>
+                    <CardDescription>AI-powered syllabus analysis</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FeatureDisabled featureName="Syllabus Parser" />
+                </CardContent>
+            </Card>
+        );
+    }
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
@@ -115,10 +132,8 @@ export default function EnhancedSyllabusUpload() {
 
         } catch (error) {
             console.error('Syllabus processing error:', error);
-            toast({
-                title: "Processing Failed",
+            toast.error("Processing Failed", {
                 description: error instanceof Error ? error.message : "Failed to process syllabus",
-                variant: "destructive"
             });
         } finally {
             setIsAnalyzing(false);
@@ -172,8 +187,7 @@ export default function EnhancedSyllabusUpload() {
 
             setCurrentTab(chatId);
 
-            toast({
-                title: "Course Created Successfully!",
+            toast.success("Course Created Successfully! 📚", {
                 description: `Your course "${courseTitle}" has been set up with all parsed information.`,
             });
 
@@ -182,10 +196,8 @@ export default function EnhancedSyllabusUpload() {
 
         } catch (error) {
             console.error('Error creating course:', error);
-            toast({
-                title: "Error",
+            toast.error("Error", {
                 description: "Failed to create course. Please try again.",
-                variant: "destructive"
             });
         }
     };

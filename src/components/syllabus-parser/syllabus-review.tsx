@@ -339,7 +339,7 @@ export function SyllabusReview({ result, onSave, onCancel }: SyllabusReviewProps
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="ghost" onClick={onCancel}>
           <X className="w-4 h-4 mr-2" />
           Cancel
         </Button>

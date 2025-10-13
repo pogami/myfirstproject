@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
 import { filterContent, generateFilterResponse } from '@/lib/content-filter';
+import { createAIResponseNotification } from '@/lib/notifications/server';
 import {
   generateDeadlineContext,
   detectQuestionComplexity,
@@ -31,7 +32,8 @@ export async function POST(request: NextRequest) {
       shouldCallAI = true, 
       courseData,
       chatId,
-      metadata 
+      metadata,
+      userId 
     } = await request.json();
     
     if (!question) {
@@ -457,7 +459,7 @@ ${courseData.professor ? `👨‍🏫 **Professor**: ${courseData.professor}` : 
 
 This course will help you develop important skills and knowledge. What aspect interests you most?`;
           } else {
-            aiResponse = "I'd love to tell you about this course! I'm having a small technical hiccup accessing the course details right now, but I'm here to help with any questions you have. What would you like to know?";
+            aiResponse = "I'm having some trouble right now, but don't worry! 🤔\n\n**Here's what you can do:**\n\n📚 Check your syllabus details in the sidebar\n📝 Review upcoming assignments and exam dates\n🔍 Browse through your course topics\n⏰ Try asking me again in a moment\n\nI'll be back soon!";
           }
         } else if (lowerQuestion.includes('assignment') || lowerQuestion.includes('homework')) {
           const assignmentCount = courseData?.assignments?.length || 0;
@@ -516,6 +518,26 @@ What would you like to dive into? What's challenging you right now?`;
       questionComplexity,
       timestamp: new Date().toISOString()
     });
+
+    // Create notification for AI response (only if user is authenticated)
+    if (userId && chatId) {
+      try {
+        const chatTitle = courseData 
+          ? `${courseData.courseName} (${courseData.courseCode})`
+          : context;
+        
+        await createAIResponseNotification(
+          userId,
+          aiResponse,
+          chatId,
+          chatTitle
+        );
+        console.log(`✅ Notification created for user ${userId} in ${chatTitle}`);
+      } catch (error) {
+        console.error('Failed to create notification:', error);
+        // Don't fail the request if notification creation fails
+      }
+    }
 
     return NextResponse.json({
       success: true,
