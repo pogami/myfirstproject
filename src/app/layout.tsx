@@ -18,14 +18,14 @@ export const metadata: Metadata = {
     images: [
       {
         url: "https://courseconnectai.com/pageicon.png",
-        width: 1200,
-        height: 630,
+        width: 400,
+        height: 400,
         alt: "CourseConnect AI - AI-Powered Study Platform",
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "CourseConnect AI - Your AI-Powered Study Companion",
     description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
     images: ["https://courseconnectai.com/pageicon.png"],
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
     site: "@courseconnectai",
   },
   other: {
-    'og:image:width': '1200',
-    'og:image:height': '630',
+    'og:image:width': '400',
+    'og:image:height': '400',
     'og:image:type': 'image/png',
     'og:image:alt': 'CourseConnect AI - AI-Powered Study Platform',
     'twitter:image:alt': 'CourseConnect AI - AI-Powered Study Platform',

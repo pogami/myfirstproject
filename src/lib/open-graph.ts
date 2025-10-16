@@ -10,8 +10,8 @@ import { Metadata } from 'next';
 // Base configuration
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.courseconnectai.com';
 const DEFAULT_IMAGE = 'https://courseconnectai.com/pageicon.png';
-const DEFAULT_IMAGE_WIDTH = 1027;
-const DEFAULT_IMAGE_HEIGHT = 893;
+const DEFAULT_IMAGE_WIDTH = 400;
+const DEFAULT_IMAGE_HEIGHT = 400;
 
 // Types for different page types
 export interface CourseData {
