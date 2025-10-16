@@ -10,8 +10,6 @@ import { CCLogo } from '@/components/icons/cc-logo';
 
 const navigation = [
   { name: 'Features', href: '/features' },
-  { name: 'Pricing', href: '/pricing' },
-  { name: 'Testimonials', href: '#testimonials' },
   { name: 'About', href: '/about' },
 ];
 

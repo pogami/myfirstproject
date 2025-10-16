@@ -118,7 +118,7 @@ export function PersonalizedAITutor({
               Smart study plans and reminders
             </div>
           </div>
-          <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+          <Button className="w-full bg-amber-600 hover:bg-amber-600/90 text-white">
             Upgrade to Advanced AI Scholar - Only $5/month
           </Button>
         </CardContent>

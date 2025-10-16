@@ -27,7 +27,15 @@ const MIN_SEARCH_INTERVAL = 1000; // 1 second between searches (very generous)
 
 export async function searchCurrentInformation(query: string): Promise<WebSearchResponse> {
   try {
-    console.log('🔍 Starting real-time web search for:', query);
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      console.log('⚠️ Invalid query provided to searchCurrentInformation');
+      return {
+        success: false,
+        results: [],
+        error: 'Invalid query provided'
+      };
+    }
+    console.log('🔍 Web search:', query);
     
     // Check rate limits
     const now = Date.now();
@@ -74,7 +82,7 @@ export async function searchCurrentInformation(query: string): Promise<WebSearch
                 date: new Date().toISOString()
               });
             });
-            console.log('✅ Google Custom Search completed, found', results.length, 'results');
+        console.log('✅ Google search completed');
             lastSearchTime = Date.now();
           }
         }
@@ -163,7 +171,7 @@ export async function searchCurrentInformation(query: string): Promise<WebSearch
               let match;
               while ((match = pattern.exec(html)) !== null && resultCount < 3) {
                 const url = match[1];
-                const title = match[2].trim();
+                const title = match[2] ? match[2].trim() : '';
                 
                 // Skip DuckDuckGo internal links and validate results
                 if (!url.includes('duckduckgo.com') && 

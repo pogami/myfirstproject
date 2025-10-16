@@ -22,7 +22,7 @@ export function TestChatButton() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm CourseConnect's AI assistant. I can help you with questions about our platform, features, pricing, or anything else. How can I assist you today?",
+      content: "Hi! I'm CourseConnect's AI assistant. I can help you with questions about our platform, features, or anything else. How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -83,7 +83,7 @@ Key information:
 
 IMPORTANT: When providing links, always use https://courseconnectai.com as the base domain.
 Examples:
-- Pricing: https://courseconnectai.com/pricing
+- Features: https://courseconnectai.com/features
 - About: https://courseconnectai.com/about
 - Sign Up: https://courseconnectai.com/dashboard
 

@@ -104,14 +104,14 @@ export default function GeolocationGreeting({
   if (isLoading) {
     return (
       <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mb-1 sm:mb-2 leading-tight">
-        Welcome back, {displayName}!
+        Ready to study, {displayName}?
       </h1>
     );
   }
 
   return (
     <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mb-1 sm:mb-2 leading-tight">
-      {greeting}, {displayName}!
+      Ready to study, {displayName}?
     </h1>
   );
 }

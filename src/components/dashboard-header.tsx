@@ -37,6 +37,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const [isClient, setIsClient] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
   const router = useRouter();
   const { clearGuestData } = useChatStore();
 
@@ -66,6 +67,19 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
         // Check if it's a guest user from localStorage
         if (user.isGuest || user.isAnonymous) {
           setIsGuest(true);
+          
+          // Load profile picture from localStorage for guest users
+          try {
+            const guestData = localStorage.getItem('guestUser');
+            if (guestData) {
+              const parsed = JSON.parse(guestData);
+              if (parsed.profilePicture) {
+                setUserProfilePicture(parsed.profilePicture);
+              }
+            }
+          } catch (error) {
+            console.error("Error loading guest profile picture:", error);
+          }
           return;
         }
         
@@ -75,6 +89,10 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             setIsGuest(userData.isGuest || false);
+            // Set profile picture from Firestore if available
+            if (userData.profilePicture) {
+              setUserProfilePicture(userData.profilePicture);
+            }
           }
         } catch (error) {
           console.error("Error checking guest status:", error);
@@ -84,6 +102,22 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
 
     checkGuestStatus();
   }, [user]);
+
+  // Listen for profile picture changes
+  useEffect(() => {
+    const handleProfilePictureChange = (event: CustomEvent) => {
+      const { profilePicture } = event.detail;
+      if (profilePicture) {
+        setUserProfilePicture(profilePicture);
+      }
+    };
+
+    window.addEventListener('profilePictureChanged', handleProfilePictureChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('profilePictureChanged', handleProfilePictureChange as EventListener);
+    };
+  }, []);
 
   // Removed realtime database presence tracking
   useEffect(() => {
@@ -203,7 +237,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                 <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                     {user ? (
                         <>
-                            <AvatarImage src={user.photoURL || ''} data-ai-hint="student avatar" alt={user.displayName || 'Student'} />
+                            <AvatarImage src={userProfilePicture || user.photoURL || ''} data-ai-hint="student avatar" alt={user.displayName || 'Student'} />
                             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm sm:text-base">
                                 {getInitials(user.displayName || user.email)}
                             </AvatarFallback>
@@ -220,7 +254,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
               <DropdownMenuLabel className="px-3 sm:px-4 py-2 sm:py-3">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'Student'} />
+                    <AvatarImage src={userProfilePicture || user.photoURL || ''} alt={user.displayName || 'Student'} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-xs sm:text-sm">
                       {getInitials(user.displayName || user.email)}
                     </AvatarFallback>
@@ -241,45 +275,45 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
               <DropdownMenuSeparator className="bg-border/50" />
               {isGuest && (
                 <>
-              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+              <DropdownMenuItem asChild className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/15 hover:text-primary hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-primary/20 transition-all duration-150">
                 <Link href="/login?state=signup" className="flex items-center gap-2 sm:gap-3">
-                  <Shield className="size-4 text-primary flex-shrink-0" />
+                  <Shield className="size-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
                   <span className="text-sm sm:text-base">Create Account</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/50" />
                 </>
               )}
-              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+              <DropdownMenuItem asChild className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/15 hover:text-primary hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-primary/20 transition-all duration-150">
                 <Link href="/dashboard/profile" className="flex items-center gap-2 sm:gap-3">
-                  <UserIcon className="size-4 text-primary flex-shrink-0" />
+                  <UserIcon className="size-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
                   <span className="text-sm sm:text-base">Profile</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+              <DropdownMenuItem asChild className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/15 hover:text-primary hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-primary/20 transition-all duration-150">
                 <Link href="/dashboard/settings" className="flex items-center gap-2 sm:gap-3">
-                  <SettingsIcon className="size-4 text-primary flex-shrink-0" />
+                  <SettingsIcon className="size-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
                   <span className="text-sm sm:text-base">Settings</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors">
+              <DropdownMenuItem asChild className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/15 hover:text-primary hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-primary/20 transition-all duration-150">
                 <Link href="/dashboard/notifications" className="flex items-center gap-2 sm:gap-3">
-                  <Bell className="size-4 text-primary flex-shrink-0" />
+                  <Bell className="size-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
                   <span className="text-sm sm:text-base">Notifications</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setShowOnboarding(true)}
-                className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-primary/10 transition-colors"
+                className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/15 hover:text-primary hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-primary/20 transition-all duration-150"
               >
-                <BookOpen className="size-4 mr-2 sm:mr-3 text-primary flex-shrink-0" />
+                <BookOpen className="size-4 mr-2 sm:mr-3 text-muted-foreground group-hover:text-primary flex-shrink-0" />
                 <span className="text-sm sm:text-base">Tutorial</span>
                 <Badge className="ml-auto bg-blue-500 text-white text-xs">Tips</Badge>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/50" />
               <DropdownMenuItem 
                 onClick={handleLogout} 
-                className="px-3 sm:px-4 py-2 sm:py-3 hover:bg-destructive/10 transition-colors text-destructive focus:text-destructive"
+                className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-destructive/15 hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-destructive/20 transition-all text-destructive focus:text-destructive"
               >
                 <LogOut className="size-4 mr-2 sm:mr-3 flex-shrink-0" />
                 <span className="text-sm sm:text-base">Logout</span>

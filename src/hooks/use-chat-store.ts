@@ -148,6 +148,8 @@ export const useChatStore = create<ChatState>()(
           
           Object.keys(updatedChats).forEach(chatId => {
             const chat = updatedChats[chatId];
+            
+            // Migrate missing chatType
             if (!chat.chatType) {
               console.log('🔧 Migrating old chat:', chatId, 'hasCourseData:', !!chat.courseData);
               // Determine chatType based on chat ID and courseData
@@ -162,6 +164,17 @@ export const useChatStore = create<ChatState>()(
               }
               needsUpdate = true;
               console.log('✅ Migrated chat to chatType:', chat.chatType);
+            }
+            
+            // FIX: If chatType is 'private' but it's clearly a class chat, fix it
+            if (chat.chatType === 'private' && chatId.length > 20 && !chatId.includes('general-chat')) {
+              // Check if the title contains course-like patterns
+              const titlePattern = /^[A-Z]{2,4}\s*\d{4}|Calculus|Physics|Chemistry|Biology|English|History|Algebra|General|Literature/i;
+              if (titlePattern.test(chat.title)) {
+                console.log(`🔧 AUTO-FIX: Chat "${chat.title}" (${chatId}) should be 'class', not 'private'`);
+                chat.chatType = 'class';
+                needsUpdate = true;
+              }
             }
           });
           
@@ -339,7 +352,23 @@ export const useChatStore = create<ChatState>()(
                          const chatDocSnap = await getDoc(chatDocRef);
                          if (chatDocSnap.exists()) {
                              const chatData = chatDocSnap.data() as Omit<Chat, 'id'>;
-                             chatsToLoad[chatId] = { ...chatData, id: chatId };
+                             
+                             // SAFETY CHECK: Ensure chatType is set (for backward compatibility)
+                             let chatType = chatData.chatType;
+                             if (!chatType) {
+                               if (chatId === 'public-general-chat') {
+                                 chatType = 'public';
+                               } else if (chatId.includes('private-general-chat')) {
+                                 chatType = 'private';
+                               } else if (chatData.courseData) {
+                                 chatType = 'class';
+                               } else {
+                                 chatType = 'private';
+                               }
+                               console.log(`⚠️ Chat ${chatId} missing chatType on init, inferred as: ${chatType}`);
+                             }
+                             
+                             chatsToLoad[chatId] = { ...chatData, id: chatId, chatType };
                          }
                     }
                     // Merge with existing local chats to preserve any guest chats
@@ -526,8 +555,11 @@ export const useChatStore = create<ChatState>()(
                     title: chatName,
                     messages: [safeInitialMessage],
                     createdAt: Date.now(),
-                    updatedAt: Date.now()
+                    updatedAt: Date.now(),
+                    chatType: chatType || (courseData ? 'class' : 'private'),
+                    courseData: courseData || undefined
                 };
+                console.log('💾 Saving chat to Firestore:', { chatId, chatType: newChat.chatType, hasCourseData: !!newChat.courseData });
                 await setDoc(chatDocRef, newChat);
             }
             
@@ -799,12 +831,28 @@ export const useChatStore = create<ChatState>()(
               
               console.log(`Received ${allMessages.length} total messages, showing ${filteredMessages.length} for ${chatId}`);
               
+              // SAFETY CHECK: Ensure chatType is set (for backward compatibility with old chats)
+              let chatType = data.chatType;
+              if (!chatType) {
+                if (chatId === 'public-general-chat') {
+                  chatType = 'public';
+                } else if (chatId.includes('private-general-chat')) {
+                  chatType = 'private';
+                } else if (data.courseData) {
+                  chatType = 'class';
+                } else {
+                  chatType = 'private';
+                }
+                console.log(`⚠️ Chat ${chatId} missing chatType, inferred as: ${chatType}`);
+              }
+              
               set((state) => ({
                 chats: {
                   ...state.chats,
                   [chatId]: {
                     id: chatId,
                     ...data,
+                    chatType,
                     messages: filteredMessages
                   }
                 }

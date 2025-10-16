@@ -12,6 +12,13 @@ export interface WebPageContent {
   summary: string;
   timestamp: string;
   wordCount: number;
+  publicationDate?: string;
+  metadata?: {
+    datePublished?: string;
+    dateModified?: string;
+    author?: string;
+    description?: string;
+  };
 }
 
 export interface WebScrapingResult {
@@ -43,6 +50,65 @@ function extractTextFromHTML(html: string): string {
   text = text.replace(/\s+/g, ' ').trim();
   
   return text;
+}
+
+/**
+ * Extract metadata from HTML
+ */
+function extractMetadata(html: string) {
+  const metadata: any = {};
+  
+  // Extract meta tags
+  const metaTags = html.match(/<meta[^>]*>/gi) || [];
+  
+  for (const tag of metaTags) {
+    // Extract property and content
+    const propertyMatch = tag.match(/property=["']([^"']*)["']/i);
+    const nameMatch = tag.match(/name=["']([^"']*)["']/i);
+    const contentMatch = tag.match(/content=["']([^"']*)["']/i);
+    
+    if (contentMatch) {
+      const content = contentMatch[1];
+      const property = propertyMatch?.[1] || nameMatch?.[1];
+      
+      if (property) {
+        switch (property.toLowerCase()) {
+          case 'article:published_time':
+          case 'datepublished':
+          case 'pubdate':
+            metadata.datePublished = content;
+            break;
+          case 'article:modified_time':
+          case 'datemodified':
+          case 'lastmod':
+            metadata.dateModified = content;
+            break;
+          case 'author':
+          case 'article:author':
+            metadata.author = content;
+            break;
+          case 'description':
+            metadata.description = content;
+            break;
+        }
+      }
+    }
+  }
+  
+  // Extract from JSON-LD structured data
+  const jsonLdMatch = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (jsonLdMatch) {
+    try {
+      const jsonLd = JSON.parse(jsonLdMatch[1]);
+      if (jsonLd.datePublished) metadata.datePublished = jsonLd.datePublished;
+      if (jsonLd.dateModified) metadata.dateModified = jsonLd.dateModified;
+      if (jsonLd.author?.name) metadata.author = jsonLd.author.name;
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+  }
+  
+  return metadata;
 }
 
 /**
@@ -156,13 +222,18 @@ export async function scrapeWebPage(url: string): Promise<WebScrapingResult> {
     // Generate summary
     const summary = generateSummary(textContent);
     
+    // Extract metadata
+    const metadata = extractMetadata(html);
+    
     const result: WebPageContent = {
       title: title,
       content: textContent,
       url: url,
       summary: summary,
       timestamp: new Date().toISOString(),
-      wordCount: textContent.split(/\s+/).length
+      wordCount: textContent.split(/\s+/).length,
+      publicationDate: metadata.datePublished,
+      metadata: metadata
     };
     
     console.log('✅ Successfully scraped page:', {
@@ -202,6 +273,9 @@ export async function scrapeWebPage(url: string): Promise<WebScrapingResult> {
  * Check if a message contains URLs
  */
 export function extractUrlsFromText(text: string): string[] {
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
   const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/gi;
   const urls = text.match(urlRegex) || [];
   

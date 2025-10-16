@@ -8,17 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
-import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe } from "lucide-react";
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe, FileText } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { FeatureDisabled } from "@/components/feature-disabled";
-import { auth } from "@/lib/firebase/client";
-import { Auth } from 'firebase/auth';
-
-// Type assertion for auth
-const typedAuth = auth as Auth;
+import { auth, db } from "@/lib/firebase/client-simple";
+import { doc, getDoc } from "firebase/firestore";
 // Pusher removed - real-time features coming soon
 // import { usePusherChat } from "@/hooks/use-pusher-chat";
 import { TypingIndicator } from "@/components/typing-indicator";
@@ -43,6 +40,7 @@ const getGuestDisplayName = (): string => {
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -84,10 +82,24 @@ export default function ChatPage() {
     } = useChatStore();
     const { isFeatureEnabled } = useFeatureFlags();
     const [inputValue, setInputValue] = useState("");
+    const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(false);
+    // Animated analyzing steps for AI response while processing images/files
+    const analyzingSteps = ["Analyzing...", "Extracting...", "Preparing response..."];
+    const [analyzingStepIndex, setAnalyzingStepIndex] = useState(0);
+
+    useEffect(() => {
+        if (!isLoading) return;
+        setAnalyzingStepIndex(0);
+        const interval = setInterval(() => {
+            setAnalyzingStepIndex((prev) => (prev + 1) % analyzingSteps.length);
+        }, 900);
+        return () => clearInterval(interval);
+    }, [isLoading]);
     const [isMessagesLoading, setIsMessagesLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [isGuest, setIsGuest] = useState(false);
+    const [userProfilePicture, setUserProfilePicture] = useState<string>("");
     const [forceLoad, setForceLoad] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -304,12 +316,43 @@ export default function ChatPage() {
     // Safely handle auth state
     useEffect(() => {
         try {
-            if (typedAuth && typeof typedAuth.onAuthStateChanged === 'function') {
-                const unsubscribe = typedAuth.onAuthStateChanged(
-                    (user: any) => {
+            if (auth && typeof auth.onAuthStateChanged === 'function') {
+                const unsubscribe = auth.onAuthStateChanged(
+                    async (user: any) => {
                         setUser(user);
                         // Check if user is guest/anonymous
                         setIsGuest(user?.isAnonymous || user?.isGuest || false);
+                        
+                        // Load profile picture from Firestore for authenticated users
+                        if (user && !user.isGuest && !user.isAnonymous) {
+                            try {
+                                const userDocRef = doc(db, "users", user.uid);
+                                const userDocSnap = await getDoc(userDocRef);
+                                if (userDocSnap.exists()) {
+                                    const userData = userDocSnap.data();
+                                    if (userData.profilePicture) {
+                                        setUserProfilePicture(userData.profilePicture);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error("Error loading profile picture:", error);
+                            }
+                        } else if (user && (user.isGuest || user.isAnonymous)) {
+                            // Load profile picture from localStorage for guest users
+                            try {
+                                const guestData = localStorage.getItem('guestUser');
+                                if (guestData) {
+                                    const parsed = JSON.parse(guestData);
+                                    if (parsed.profilePicture) {
+                                        setUserProfilePicture(parsed.profilePicture);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error("Error loading guest profile picture:", error);
+                            }
+                        } else {
+                            setUserProfilePicture("");
+                        }
                     },
                     (error: any) => {
                         console.warn("Auth state error in chat page:", error);
@@ -327,6 +370,22 @@ export default function ChatPage() {
             setUser(null);
             setIsGuest(false);
         }
+    }, []);
+
+    // Listen for profile picture changes
+    useEffect(() => {
+        const handleProfilePictureChange = (event: CustomEvent) => {
+            const { profilePicture } = event.detail;
+            if (profilePicture) {
+                setUserProfilePicture(profilePicture);
+            }
+        };
+
+        window.addEventListener('profilePictureChanged', handleProfilePictureChange as EventListener);
+        
+        return () => {
+            window.removeEventListener('profilePictureChanged', handleProfilePictureChange as EventListener);
+        };
     }, []);
 
     // Get current chat
@@ -574,13 +633,13 @@ export default function ChatPage() {
                     const effectiveUserId = user?.uid;
                     
                     const requestBody: any = {
-                        question: messageText,
-                        context: currentChat?.title || 'General Chat',
-                        conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
-                            role: msg.sender === 'user' ? 'user' : 'assistant',
-                            content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
-                        })) || [],
-                        shouldCallAI: shouldCallAIFinal,
+                            question: messageText,
+                            context: currentChat?.title || 'General Chat',
+                            conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
+                                role: msg.sender === 'user' ? 'user' : 'assistant',
+                                content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+                            })) || [],
+                            shouldCallAI: shouldCallAIFinal,
                         isPublicChat: isPublicChat, // Only true for community chat, not class chats
                         userId: effectiveUserId, // Add userId for notification (works for both guest and logged-in users)
                         chatId: currentTab, // Add chatId for notification
@@ -822,14 +881,18 @@ export default function ChatPage() {
     });
 
     const handleFileUpload = async (file: File) => {
-        // Show loading state
-        setIsLoading(true);
-
         try {
-            // Create a message indicating file upload with file preview
+            // Check if the file is an image
+            const isImage = file.type.startsWith('image/');
+            const fileUrl = URL.createObjectURL(file);
+            
+            // Get the user's message text (if any)
+            const userText = inputValue.trim();
+
+            // Create message with both image and text
             const uploadMessage = {
                 id: generateMessageId(),
-                text: `📎 **File Uploaded: ${file.name}**\n\n**File Details:**\n• Size: ${(file.size / 1024 / 1024).toFixed(2)} MB\n• Type: ${file.type}\n• Status: Processing...`,
+                text: userText, // Include user's typed message
                 sender: 'user' as const,
                 name: user?.displayName || 'Anonymous',
                 timestamp: Date.now(),
@@ -837,15 +900,84 @@ export default function ChatPage() {
                     name: file.name,
                     size: file.size,
                     type: file.type,
-                    url: URL.createObjectURL(file)
+                    url: fileUrl
                 }
             };
 
-            // Add upload message
+            // Clear input field
+            setInputValue('');
+
+            // Add upload message immediately (non-blocking)
             await addMessage(currentTab || 'private-general-chat', uploadMessage);
 
-            // Use smart document analysis
+            // Handle image files with GPT-4o Vision
+            if (isImage) {
+                // Show loading state only for AI analysis
+                setIsLoading(true);
+                
+                // Convert image to base64
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const base64Image = e.target?.result as string;
+                        const base64Data = base64Image.split(',')[1]; // Remove data:image/...;base64, prefix
+
+                        console.log('🖼️ Analyzing image...');
+
+                        // Use user's text as prompt if provided, otherwise use default
+                        const analysisPrompt = userText || 'Solve this problem or explain what is shown. Use LaTeX for all math.';
+
+                        // Call vision API
+                        const response = await fetch('/api/chat/vision', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: analysisPrompt,
+                                image: base64Data,
+                                mimeType: file.type,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Vision API request failed');
+                        }
+
+                        const data = await response.json();
+                        console.log('✅ Analysis complete!');
+
+                        // Add AI response message
+                        const analysisMessage = {
+                            id: generateMessageId(),
+                            text: data.response,
+                            sender: 'bot' as const,
+                            name: 'CourseConnect AI',
+                            timestamp: Date.now()
+                        };
+                        await addMessage(currentTab || 'private-general-chat', analysisMessage);
+
+                    } catch (error) {
+                        console.error('🚨 Analysis error:', error);
+                        const errorMessage = {
+                            id: generateMessageId(),
+                            text: `❌ **Analysis Failed**\n\nSorry, I couldn't analyze this image. Please try again.`,
+                            sender: 'bot' as const,
+                            name: 'CourseConnect AI',
+                            timestamp: Date.now()
+                        };
+                        await addMessage(currentTab || 'private-general-chat', errorMessage);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Use smart document analysis for non-image files
+                setIsLoading(true);
             await analyzeDocument(file);
+                setIsLoading(false);
+            }
 
         } catch (error) {
             console.error('File upload error:', error);
@@ -854,7 +986,6 @@ export default function ChatPage() {
                 description: "There was an error uploading your file. Please try again.",
                 variant: "destructive",
             });
-        } finally {
             setIsLoading(false);
         }
     };
@@ -996,14 +1127,6 @@ export default function ChatPage() {
                     <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-primary mx-auto mb-4"></div>
                     <h2 className="text-lg font-semibold mb-2">Loading Chat</h2>
                     <p className="text-sm text-muted-foreground mb-4">Please wait while we prepare your chat</p>
-                    <div className="text-xs text-muted-foreground">
-                        Taking too long? <button 
-                            className="text-primary hover:underline" 
-                            onClick={() => setForceLoad(true)}
-                        >
-                            Click here to continue
-                        </button>
-                    </div>
                 </div>
             </div>
         );
@@ -1065,21 +1188,22 @@ export default function ChatPage() {
                                                     userCount: 1, // Always show as available
                                                     isActive: true,
                                                     isPermanent: true
-                                                },
-                                                {
-                                                    chatId: 'public-general-chat',
-                                                    title: (typeof window !== 'undefined' && 
-                                                           (window.location.hostname === 'localhost' || 
-                                                            localStorage.getItem('dev-mode') === 'true'))
-                                                           ? 'Community (Dev Mode)' 
-                                                           : 'Community (Coming Soon)',
-                                                    userCount: 0,
-                                                    isActive: true,
-                                                    isPermanent: true,
-                                                    disabled: !(typeof window !== 'undefined' && 
-                                                               (window.location.hostname === 'localhost' || 
-                                                                localStorage.getItem('dev-mode') === 'true'))
                                                 }
+                                                // Community chat hidden
+                                                // {
+                                                //     chatId: 'public-general-chat',
+                                                //     title: (typeof window !== 'undefined' && 
+                                                //            (window.location.hostname === 'localhost' || 
+                                                //             localStorage.getItem('dev-mode') === 'true'))
+                                                //            ? 'Community (Dev Mode)' 
+                                                //            : 'Community (Coming Soon)',
+                                                //     userCount: 0,
+                                                //     isActive: true,
+                                                //     isPermanent: true,
+                                                //     disabled: !(typeof window !== 'undefined' && 
+                                                //                (window.location.hostname === 'localhost' || 
+                                                //                 localStorage.getItem('dev-mode') === 'true'))
+                                                // }
                                             ];
 
                                             // Get other active chats from pusher
@@ -1094,6 +1218,14 @@ export default function ChatPage() {
                                                 });
 
                                             // Get local class chats that aren't in pusher chats yet
+                                            console.log('🔍 SIDEBAR: All chats:', Object.keys(chats));
+                                            console.log('🔍 SIDEBAR: Chats with details:', Object.entries(chats).map(([id, chat]) => ({
+                                                id,
+                                                title: chat.title,
+                                                chatType: chat.chatType,
+                                                hasCourseData: !!chat.courseData
+                                            })));
+                                            
                                             const localClassChats = Object.values(chats)
                                                 .filter(chat => {
                                                     // Show if it has courseData (it's a class chat) OR if chatType is 'class'
@@ -1103,6 +1235,13 @@ export default function ChatPage() {
                                                                           chat.id !== 'public-general-chat' &&
                                                                           chat.id !== 'private-general-chat-guest' &&
                                                                           !chat.id.includes('private-general-chat-');
+                                                    
+                                                    console.log(`🔍 SIDEBAR: Chat "${chat.title}" (${chat.id}):`);
+                                                    console.log(`  chatType: "${chat.chatType}", hasCourseData: ${!!chat.courseData}`);
+                                                    console.log(`  ✓ isClass: ${isClass}`);
+                                                    console.log(`  ✓ notInPusher: ${notInPusher}`);
+                                                    console.log(`  ✓ notGeneralChat: ${notGeneralChat}`);
+                                                    console.log(`  ➡️ SHOULD SHOW: ${isClass && notInPusher && notGeneralChat}`);
                                                     
                                                     return isClass && notInPusher && notGeneralChat;
                                                 })
@@ -1114,6 +1253,8 @@ export default function ChatPage() {
                                                     isPermanent: false
                                                 }))
                                                 .sort((a, b) => a.title.localeCompare(b.title));
+                                            
+                                            console.log('🔍 SIDEBAR: Local class chats filtered:', localClassChats);
 
 
                                             // Combine permanent chats with other chats and local class chats
@@ -1134,7 +1275,7 @@ export default function ChatPage() {
                                                     if (lowerTitle.includes('science') || lowerTitle.includes('biology') || lowerTitle.includes('chemistry') || lowerTitle.includes('physics')) return { name: 'Science', color: 'green' };
                                                     if (lowerTitle.includes('history') || lowerTitle.includes('social') || lowerTitle.includes('hist')) return { name: 'History', color: 'amber' };
                                                     if (lowerTitle.includes('art') || lowerTitle.includes('design') || lowerTitle.includes('drawing')) return { name: 'Art', color: 'rose' };
-                                                    if (lowerTitle.includes('computer') || lowerTitle.includes('coding') || lowerTitle.includes('programming') || lowerTitle.includes('cs')) return { name: 'CS', color: 'cyan' };
+                                                    if (lowerTitle.includes('computer') || lowerTitle.includes('coding') || lowerTitle.includes('programming') || lowerTitle.includes('cs')) return { name: 'Tech', color: 'cyan' };
                                                     return { name: 'Class', color: 'slate' };
                                                 };
                                                 
@@ -1277,10 +1418,10 @@ export default function ChatPage() {
                                                     Export Chat
                                                 </DropdownMenuItem>
                                                 {!currentChat?.disabled && (
-                                                    <DropdownMenuItem onClick={() => setShowResetDialog(true)}>
-                                                        <RotateCcw className="h-4 w-4 mr-2" />
-                                                        Reset Chat
-                                                    </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setShowResetDialog(true)}>
+                                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                                    Reset Chat
+                                                </DropdownMenuItem>
                                                 )}
                                                 {currentTab !== 'private-general-chat' && currentTab !== 'private-general-chat-guest' && !currentTab?.startsWith('private-general-chat-') && currentTab !== 'public-general-chat' && (
                                                     <>
@@ -1357,11 +1498,39 @@ export default function ChatPage() {
                                             )}
                                             
                                             {generalChat?.messages?.map((message, index) => {
+                                                const messageKey = message.id || `fallback-${index}-${message.timestamp}`;
+                                                if (deletedMessageIds.has(messageKey)) {
+                                                    return (
+                                                        <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
+                                                            <div className={`flex gap-3 ${message.sender === 'user' ? 'max-w-[70%]' : 'max-w-[90%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                                {message.sender === 'bot' ? (
+                                                                    <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                                                                ) : (
+                                                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                                                        {message.sender === 'user' && !isGuest && userProfilePicture ? (
+                                                                            <AvatarImage src={userProfilePicture} />
+                                                                        ) : null}
+                                                                        <AvatarFallback className="text-xs">
+                                                                            {message.sender === 'user' ? (
+                                                                                isGuest ? 'G' : (user?.displayName?.[0] || user?.email?.[0] || 'U')
+                                                                            ) : null}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                )}
+                                                                <div className={`${message.sender === 'user' ? 'text-right' : 'text-left'} min-w-0`}>
+                                                                    <div className="bg-muted/30 border border-border/50 rounded-2xl px-3 py-2 text-xs italic text-muted-foreground">
+                                                                        You deleted this message
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
                                                 // Handle system messages (join notifications)
                                                 if (message.sender === 'system') {
                                                     return (
                                                         <JoinMessage 
-                                                            key={`join-${message.id || `fallback-${index}-${message.timestamp}`}`}
+                                                            key={`join-${messageKey}`}
                                                             message={message}
                                                         />
                                                     );
@@ -1373,21 +1542,25 @@ export default function ChatPage() {
                                                 }
                                                 
                                                 return (
-                                                <div key={`msg-${message.id || `fallback-${index}-${message.timestamp}`}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
+                                                <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
                                                     <div className={`flex gap-3 ${message.sender === 'user' ? 'max-w-[70%]' : 'max-w-[90%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                        <Avatar className="w-8 h-8 flex-shrink-0">
-                                                            {message.sender === 'user' && !isGuest && user?.photoURL ? (
-                                                                <AvatarImage src={user.photoURL} />
-                                                            ) : null}
-                                                            <AvatarFallback className="text-xs">
-                                                                {message.sender === 'user' ? (
-                                                                    isGuest ? 'G' : (user?.displayName?.[0] || user?.email?.[0] || 'U')
-                                                                ) : (
-                                                                    <CourseConnectLogo className="w-4 h-4" />
-                                                                )}
-                                                            </AvatarFallback>
-                                                        </Avatar>
+                                                        {message.sender === 'bot' ? (
+                                                            <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                                                        ) : (
+                                                            <Avatar className="w-8 h-8 flex-shrink-0">
+                                                                {message.sender === 'user' && !isGuest && userProfilePicture ? (
+                                                                    <AvatarImage src={userProfilePicture} />
+                                                                ) : null}
+                                                                <AvatarFallback className="text-xs">
+                                                                    {message.sender === 'user' ? (
+                                                                        isGuest ? 'G' : (user?.displayName?.[0] || user?.email?.[0] || 'U')
+                                                                    ) : null}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                        )}
                                                         {message.sender === 'user' ? (
+                                                            <ContextMenu>
+                                                            <ContextMenuTrigger asChild>
                                                             <div className="text-right min-w-0 group">
                                                                 <div className="flex items-center justify-end gap-2 mb-1">
                                                                     <MessageTimestamp timestamp={message.timestamp} />
@@ -1395,26 +1568,47 @@ export default function ChatPage() {
                                                                         {message.name}
                                                                     </div>
                                                                 </div>
-                                                                <div className="relative inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble">
-                                                                    <ExpandableUserMessage 
-                                                                        content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                        className="text-primary-foreground"
-                                                                    />
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="ghost"
-                                                                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-60 hover:opacity-100 transition-opacity duration-200 hover:bg-transparent text-muted-foreground"
-                                                                        onClick={() => copyToClipboard(typeof message.text === 'string' ? message.text : JSON.stringify(message.text), message.id || `msg-${index}`)}
-                                                                    >
-                                                                        {copiedMessageId === (message.id || `msg-${index}`) ? (
-                                                                            <Check className="h-3 w-3 text-green-500" />
-                                                                        ) : (
-                                                                            <img src="/copy-icon.svg" alt="Copy" className="h-3 w-3" />
-                                                                        )}
-                                                                    </Button>
+                                                                {/* Show file preview and/or text bubble */}
+                                                                <div className="flex flex-col items-end gap-2">
+                                                                    {/* Show file(s) preview if exists */}
+                                                                    {((message as any).files || (message as any).file) && (
+                                                                        <div className="grid grid-cols-2 gap-2 max-w-sm">
+                                                                            {/* Support old single-file shape */}
+                                                                            {((message as any).files || [(message as any).file]).filter(Boolean).map((f: any, idx: number) => (
+                                                                                <div key={idx} className="relative rounded-xl overflow-hidden shadow-md border border-primary/20">
+                                                                                    {f.type?.startsWith('image/') ? (
+                                                                                        <img src={f.url} alt={f.name} className="w-full h-32 object-cover" />
+                                                                                    ) : (
+                                                                                        <div className="px-3 py-2 flex items-center gap-2 text-xs bg-primary/10">
+                                                                                            <FileText className="h-4 w-4 text-primary" />
+                                                                                            <span className="font-medium truncate">{f.name}</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    {/* Show text bubble if text exists */}
+                                                                    {message.text && message.text.trim() && (
+                                                                        <div className="relative inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble shadow-md">
+                                                                            <ExpandableUserMessage 
+                                                                                content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                                                                                className="text-primary-foreground"
+                                                                            />
+                                                                            {/* Remove copy button on user messages; use context menu instead */}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
+                                                            </ContextMenuTrigger>
+                                                            <ContextMenuContent>
+                                                                <ContextMenuItem onClick={() => copyToClipboard(typeof message.text === 'string' ? message.text : JSON.stringify(message.text), messageKey)}>Copy</ContextMenuItem>
+                                                                <ContextMenuItem onClick={() => setDeletedMessageIds(prev => new Set(prev).add(messageKey))}>Delete</ContextMenuItem>
+                                                            </ContextMenuContent>
+                                                            </ContextMenu>
                                                         ) : (
+                                                            <ContextMenu>
+                                                            <ContextMenuTrigger asChild>
                                                             <div className="text-left min-w-0 group">
                                                                 <div className="flex items-center gap-2 mb-1">
                                                                     <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1553,6 +1747,11 @@ export default function ChatPage() {
                             }}
                                                                 />
                                                             </div>
+                                                            </ContextMenuTrigger>
+                                                            <ContextMenuContent>
+                                                                <ContextMenuItem onClick={() => copyToClipboard(typeof message.text === 'string' ? message.text : JSON.stringify(message.text), messageKey)}>Copy</ContextMenuItem>
+                                                            </ContextMenuContent>
+                                                            </ContextMenu>
                                                         )}
                                                                 </div>
                                                             </div>
@@ -1567,18 +1766,14 @@ export default function ChatPage() {
                                             {/* AI Thinking Animation */}
                                             {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (
             <div className="flex items-start gap-3 w-full max-w-[90%] animate-in slide-in-from-bottom-2 duration-300">
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
-                        <CourseConnectLogo className="w-4 h-4" />
+                <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                <div className="text-left min-w-0">
+                  <div className="text-xs text-muted-foreground mb-1">CourseConnect AI</div>
+                  <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" /> {analyzingSteps[analyzingStepIndex]}
                     </div>
-                </Avatar>
-                                                    <div className="text-left min-w-0">
-                                                        <div className="text-xs text-muted-foreground mb-1">
-                                                            CourseConnect AI
-                                    </div>
-                                                        <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
-                                                            <RippleText text="thinking..." className="text-primary text-sm" />
-                    </div>
+                  </div>
                 </div>
             </div>
         )}
@@ -1621,8 +1816,63 @@ export default function ChatPage() {
                                             }}
                                             onSend={handleSendMessage}
                                             onFileUpload={handleFileUpload}
+                                            onFileProcessed={async (payload: any) => {
+                                                // payload: { files: File[], text: string }
+                                                const files: File[] = payload?.files || [];
+                                                const userText = (payload?.text || inputValue || '').trim();
+                                                if (files.length === 0) return;
+
+                                                // Build one user message with a grid of attachments
+                                                const attachments = await Promise.all(files.map(async (f) => ({
+                                                    name: f.name,
+                                                    size: f.size,
+                                                    type: f.type,
+                                                    url: URL.createObjectURL(f)
+                                                })));
+
+                                                const uploadMessage = {
+                                                    id: generateMessageId(),
+                                                    text: userText,
+                                                    sender: 'user' as const,
+                                                    name: user?.displayName || 'Anonymous',
+                                                    timestamp: Date.now(),
+                                                    files: attachments
+                                                };
+
+                                                setInputValue('');
+                                                await addMessage(currentTab || 'private-general-chat', uploadMessage);
+
+                                                // If the first file is an image, trigger vision analysis (uses existing flow)
+                                                const first = files[0];
+                                                if (first && first.type.startsWith('image/')) {
+                                                    setIsLoading(true);
+                                                    const reader = new FileReader();
+                                                    reader.onload = async (e) => {
+                                                        try {
+                                                            const base64Image = e.target?.result as string;
+                                                            const base64Data = base64Image.split(',')[1];
+                                                            const analysisPrompt = userText || 'Describe this image and extract relevant info.';
+                                                            await fetch('/api/chat/vision', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ message: analysisPrompt, image: base64Data, mimeType: first.type })
+                                                            }).then(res => res.json()).then(async (data) => {
+                                                                const aiText = data?.answer || data?.response || 'I analyzed the attachments.';
+                                                                await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: aiText, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
+                                                            }).catch(async () => {
+                                                                await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: 'Failed to analyze the image.', sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
+                                                            }).finally(() => setIsLoading(false));
+                                                        } catch {
+                                                            setIsLoading(false);
+                                                        }
+                                                    };
+                                                    reader.readAsDataURL(first);
+                                                }
+                                            }}
                                             placeholder={
-                                                currentChat?.chatType === 'class' 
+                                                currentChat?.disabled 
+                                                    ? "🚧 Community Chat coming soon! Use General Chat for AI help."
+                                                    : currentChat?.chatType === 'class' 
                                                     ? `Ask anything about ${currentChat?.title || 'this course'}...`
                                                     : currentTab === 'private-general-chat'
                                                     ? 'Ask anything about your courses...'
@@ -1632,7 +1882,6 @@ export default function ChatPage() {
                                             className="w-full"
                                             isPublicChat={currentTab === 'public-general-chat'}
                                             isClassChat={false}
-                                            placeholder={currentChat?.disabled ? "🚧 Community Chat coming soon! Use General Chat for AI help." : undefined}
                                         />
                                     </div>
                                 </CardContent>

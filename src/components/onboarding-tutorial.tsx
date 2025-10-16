@@ -40,14 +40,14 @@ interface OnboardingTutorialProps {
 
 const onboardingSteps = [
   {
-    icon: Sparkles,
+    icon: () => null,
     title: "Welcome to CourseConnect!",
     description: "Your AI-powered study companion",
     content: (
       <div className="space-y-3">
         <div className="flex items-center justify-center">
-          <div className="p-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-            <Sparkles className="h-10 w-10 text-white" />
+          <div className="p-0 rounded-full">
+            <img src="/pageicon.png" alt="CourseConnect" className="h-14 w-14 rounded-full object-contain" />
           </div>
         </div>
         <p className="text-center text-sm text-muted-foreground">
@@ -74,6 +74,20 @@ const onboardingSteps = [
             <p className="text-xs font-medium">Track Progress</p>
           </div>
         </div>
+      </div>
+    ),
+  },
+  {
+    icon: GraduationCap,
+    title: "Profile edits",
+    description: "Edit Major, GPA, Credits, and more",
+    content: (
+      <div className="space-y-3 text-sm">
+        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+          <li>Major is now editable on the dashboard profile page</li>
+          <li>GPA limited to 0–4.0; Credits limited to 0–130</li>
+          <li>Guest placeholders: e.g., “Sign up to save your university”</li>
+        </ul>
       </div>
     ),
   },
@@ -366,9 +380,7 @@ export function OnboardingTutorial({ isOpen, onClose }: OnboardingTutorialProps)
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-primary/10 rounded-lg">
-              {React.createElement(onboardingSteps[currentStep].icon, {
-                className: "h-5 w-5 text-primary"
-              })}
+              <img src="/pageicon.png" alt="icon" className="h-5 w-5 rounded" />
             </div>
             <div>
               <DialogTitle className="text-lg flex items-center gap-2">

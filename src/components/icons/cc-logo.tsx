@@ -5,7 +5,7 @@ interface CCLogoProps {
 export function CCLogo({ className = "h-10 w-auto" }: CCLogoProps) {
   return (
     <img 
-      src="/officialogo.png"
+      src="/pageicon.png"
       alt="CourseConnect Logo"
       className={className}
     />

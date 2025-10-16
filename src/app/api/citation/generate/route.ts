@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Return a fallback citation instead of error
     const fallbackCitation = {
       inText: '("Source")',
-      worksCited: '"Source." Unknown Publisher, ' + new Date().toLocaleDateString() + '.',
+      worksCited: '"Source." Unknown Publisher, n.d.',
       sourceType: 'website',
       confidence: 20
     };

@@ -11,45 +11,47 @@ import {
   Shield,
   Zap,
   Clock,
-  TrendingUp
+  TrendingUp,
+  FileText,
+  Calendar
 } from 'lucide-react';
 
 const features = [
   {
     icon: Upload,
     title: 'Smart Syllabus Matching',
-    description: 'Upload your syllabus and our AI extracts course information. Study partner matching coming soon!',
+    description: 'Upload your syllabus and our AI extracts course information, assignments, and due dates automatically.',
     color: 'from-blue-500 to-cyan-500'
   },
   {
-    icon: Users,
+    icon: MessageCircle,
     title: 'AI-Powered Tutoring',
     description: 'Get instant help with homework, assignments, and exam prep. CourseConnect AI provides detailed explanations tailored to your course.',
     color: 'from-purple-500 to-pink-500'
   },
   {
-    icon: Users,
-    title: 'Study Groups',
-    description: 'Join or create study groups with students from your class. Collaborate on assignments and share study materials.',
+    icon: FileText,
+    title: 'Smart Flashcards',
+    description: 'Generate personalized flashcards from your course content. Study with AI-powered quizzes and track your progress.',
     color: 'from-green-500 to-emerald-500'
   },
   {
-    icon: MessageCircle,
-    title: 'Real-time Chat',
-    description: 'Chat with AI tutors to get instant answers to your questions. Real-time student collaboration coming soon!',
+    icon: Calendar,
+    title: 'Assignment Reminders',
+    description: 'Never miss a deadline! Get automatic reminders for assignments and exams based on your uploaded syllabus.',
     color: 'from-orange-500 to-red-500'
-  },
-  {
-    icon: Shield,
-    title: 'Privacy-First',
-    description: 'Your academic information is protected with enterprise-grade security. CourseConnect AI is privacy-focused and keeps your data secure.',
-    color: 'from-indigo-500 to-blue-500'
   },
   {
     icon: TrendingUp,
     title: 'Study Analytics',
     description: 'Track your study progress, see which topics you need to focus on, and get personalized recommendations for improvement.',
     color: 'from-pink-500 to-rose-500'
+  },
+  {
+    icon: Users,
+    title: 'Study Groups (Coming Soon)',
+    description: 'Join or create study groups with students from your class. Collaborate on assignments and share study materials.',
+    color: 'from-indigo-500 to-blue-500'
   }
 ];
 
@@ -188,7 +190,7 @@ export function FeaturesSection() {
             Ready to transform your learning experience?
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of students who are already using CourseConnect AI to excel in their studies.
+            Start your AI-powered learning journey today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 

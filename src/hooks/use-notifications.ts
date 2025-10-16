@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { auth, db } from '@/lib/firebase/client';
+import { auth, db } from '@/lib/firebase/client-simple';
 import { 
   collection, 
   query, 
@@ -40,13 +40,107 @@ export function useNotifications(user: User | null) {
 
   // Listen to real-time notifications (only for authenticated users)
   useEffect(() => {
-    if (!user) {
+    // Special case: Show test user notifications even when not logged in
+    const isTestMode = window.location.pathname === '/test-notifications' || window.location.pathname.includes('test-notifications');
+    
+    if (!user && !isTestMode) {
       setNotifications([]);
       setUnreadCount(0);
       setIsLoading(false);
       return;
     }
 
+    // Handle test user notifications
+    if (isTestMode) {
+      const testUserId = 'test-user-123';
+      
+      const unsubscribe = onSnapshot(
+        query(
+          collection(db, 'notifications'),
+          where('userId', '==', testUserId),
+          orderBy('createdAt', 'desc')
+        ),
+        (snapshot) => {
+          const testNotifications: Notification[] = [];
+          let unread = 0;
+          
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            testNotifications.push({
+              id: doc.id,
+              ...data,
+            } as Notification);
+            
+            if (!data.isRead) {
+              unread++;
+            }
+          });
+          
+          setNotifications(testNotifications);
+          setUnreadCount(unread);
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error('Error loading test notifications:', error);
+          setError(error.message);
+          setIsLoading(false);
+        }
+      );
+      
+      return unsubscribe;
+    }
+
+    // Handle guest users - read from localStorage
+    if (user.isGuest) {
+      console.log('🔔 Loading guest notifications from localStorage');
+      try {
+        const guestNotifications = localStorage.getItem('guest-notifications');
+        console.log('🔔 Raw guest notifications from localStorage:', guestNotifications);
+        let notifications = [];
+        let unread = 0;
+        
+        if (guestNotifications) {
+          try {
+            notifications = JSON.parse(guestNotifications);
+            unread = notifications.filter((n: any) => !n.isRead).length;
+            console.log('🔔 Parsed guest notifications:', notifications.length, 'total,', unread, 'unread');
+          } catch (error) {
+            console.warn('Error parsing guest notifications:', error);
+          }
+        } else {
+          console.log('🔔 No guest notifications found in localStorage');
+        }
+        
+        setNotifications(notifications);
+        setUnreadCount(unread);
+        setIsLoading(false);
+        
+        // Set up interval to check for new notifications
+        const interval = setInterval(() => {
+          const updatedNotifications = localStorage.getItem('guest-notifications');
+          if (updatedNotifications) {
+            try {
+              const parsed = JSON.parse(updatedNotifications);
+              const newUnread = parsed.filter((n: any) => !n.isRead).length;
+              setNotifications(parsed);
+              setUnreadCount(newUnread);
+            } catch (error) {
+              console.warn('Error parsing updated guest notifications:', error);
+            }
+          }
+        }, 2000); // Check every 2 seconds
+        
+        return () => clearInterval(interval);
+      } catch (error) {
+        console.error('Error loading guest notifications:', error);
+        setNotifications([]);
+        setUnreadCount(0);
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // Handle authenticated users - read from Firebase
     const userId = user.uid;
 
     setIsLoading(true);
@@ -92,6 +186,28 @@ export function useNotifications(user: User | null) {
   const markAsRead = async (notificationId: string) => {
     if (!user) return;
 
+    // Handle guest users - update localStorage
+    if (user.isGuest) {
+      try {
+        const guestNotifications = localStorage.getItem('guest-notifications');
+        if (guestNotifications) {
+          const notifications = JSON.parse(guestNotifications);
+          const updatedNotifications = notifications.map((n: any) => 
+            n.id === notificationId ? { ...n, isRead: true } : n
+          );
+          localStorage.setItem('guest-notifications', JSON.stringify(updatedNotifications));
+          
+          // Update local state
+          setNotifications(updatedNotifications);
+          setUnreadCount(updatedNotifications.filter((n: any) => !n.isRead).length);
+        }
+      } catch (error) {
+        console.error('Error marking guest notification as read:', error);
+      }
+      return;
+    }
+
+    // Handle authenticated users - update Firebase
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
       await updateDoc(notificationRef, {
@@ -107,6 +223,26 @@ export function useNotifications(user: User | null) {
   const markAllAsRead = async () => {
     if (!user) return;
 
+    // Handle guest users - update localStorage
+    if (user.isGuest) {
+      try {
+        const guestNotifications = localStorage.getItem('guest-notifications');
+        if (guestNotifications) {
+          const notifications = JSON.parse(guestNotifications);
+          const updatedNotifications = notifications.map((n: any) => ({ ...n, isRead: true }));
+          localStorage.setItem('guest-notifications', JSON.stringify(updatedNotifications));
+          
+          // Update local state
+          setNotifications(updatedNotifications);
+          setUnreadCount(0);
+        }
+      } catch (error) {
+        console.error('Error marking all guest notifications as read:', error);
+      }
+      return;
+    }
+
+    // Handle authenticated users - update Firebase
     try {
       const unreadNotifications = notifications.filter(n => !n.isRead);
       const updatePromises = unreadNotifications.map(notification => 

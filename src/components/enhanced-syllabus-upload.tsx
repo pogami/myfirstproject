@@ -39,8 +39,68 @@ export default function EnhancedSyllabusUpload() {
     const [showReview, setShowReview] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
-    const { addChat, setCurrentTab } = useChatStore();
+    const { addChat, setCurrentTab, chats } = useChatStore();
     const [user] = useAuthState(auth);
+
+    // Function to check for duplicate courses
+    const checkForDuplicateCourse = (courseCode: string, courseName: string) => {
+        const existingChats = Object.values(chats).filter(chat => 
+            chat.chatType === 'class' && chat.courseData
+        );
+        
+        // Check for exact course code match
+        const exactMatch = existingChats.find(chat => 
+            chat.courseData?.courseCode?.toLowerCase() === courseCode.toLowerCase()
+        );
+        
+        if (exactMatch) {
+            return exactMatch;
+        }
+        
+        // Check for similar course name (fuzzy matching)
+        const similarMatch = existingChats.find(chat => {
+            const existingName = chat.courseData?.courseName?.toLowerCase() || '';
+            const newName = courseName.toLowerCase();
+            
+            // Check if names are very similar (80% similarity)
+            const similarity = calculateSimilarity(existingName, newName);
+            return similarity > 0.8;
+        });
+        
+        return similarMatch || null;
+    };
+
+    // Helper function to calculate string similarity
+    const calculateSimilarity = (str1: string, str2: string): number => {
+        const longer = str1.length > str2.length ? str1 : str2;
+        const shorter = str1.length > str2.length ? str2 : str1;
+        
+        if (longer.length === 0) return 1.0;
+        
+        const editDistance = levenshteinDistance(longer, shorter);
+        return (longer.length - editDistance) / longer.length;
+    };
+
+    // Helper function to calculate Levenshtein distance
+    const levenshteinDistance = (str1: string, str2: string): number => {
+        const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+        
+        for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+        
+        for (let j = 1; j <= str2.length; j++) {
+            for (let i = 1; i <= str1.length; i++) {
+                const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,
+                    matrix[j - 1][i] + 1,
+                    matrix[j - 1][i - 1] + indicator
+                );
+            }
+        }
+        
+        return matrix[str2.length][str1.length];
+    };
 
     // Check if syllabus parser is disabled
     if (!isFeatureEnabled('syllabusParser')) {
@@ -144,6 +204,26 @@ export default function EnhancedSyllabusUpload() {
         if (!user) return;
 
         try {
+            // Check for duplicate courses before creating chat
+            const courseCode = data.courseInfo.courseCode || 'UNKNOWN';
+            const courseName = data.courseInfo.title || 'New Course';
+            const existingChat = checkForDuplicateCourse(courseCode, courseName);
+            
+            if (existingChat) {
+                // Show Sonar notification warning for duplicate
+                toast.warning('Course Already Exists!', {
+                    description: `You already have a chat for ${courseCode} - ${courseName}. Would you like to go to the existing chat?`,
+                    duration: 8000,
+                    action: {
+                        label: 'Go to Chat',
+                        onClick: () => {
+                            setCurrentTab(existingChat.id);
+                        }
+                    }
+                });
+                return;
+            }
+
             // Create a new chat for this course
             const courseTitle = data.courseInfo.title || 'New Course';
             const chatId = `course-${Date.now()}`;

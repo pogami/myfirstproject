@@ -39,6 +39,7 @@ export default function PlagiarismChecker() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PlagiarismResult | null>(null);
   const [minLength, setMinLength] = useState(50);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const checkPlagiarism = async () => {
     if (!text.trim()) {
@@ -61,6 +62,7 @@ export default function PlagiarismChecker() {
 
     setLoading(true);
     try {
+      console.log('Starting plagiarism check with text:', text.substring(0, 100) + '...');
       const response = await fetch('/api/plagiarism/check', {
         method: 'POST',
         headers: {
@@ -70,9 +72,11 @@ export default function PlagiarismChecker() {
       });
 
       const data = await response.json();
+      console.log('Plagiarism check response:', data);
 
       if (data.success) {
         setResult(data.result);
+        console.log('Plagiarism result set:', data.result);
         toast({
           title: 'Analysis Complete',
           description: 'Plagiarism check completed successfully!'
@@ -254,7 +258,7 @@ export default function PlagiarismChecker() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value="overview" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview" className="flex items-center gap-1">
                   <BarChart3 className="h-3 w-3" />

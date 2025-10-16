@@ -3,44 +3,73 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, MessageSquare, Calendar, Users, Sparkles, CheckCircle, AlertCircle, BookOpen, TrendingUp, Clock, ArrowRight } from "lucide-react";
+import { Bell, MessageSquare, Calendar, Users, Sparkles, CheckCircle, AlertCircle, BookOpen, TrendingUp, Clock, ArrowRight, GraduationCap } from "lucide-react";
 import Notifications from "@/components/notifications";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/use-notifications";
+import { useChatStore } from "@/hooks/use-chat-store";
 import Link from "next/link";
+import { auth } from "@/lib/firebase/client-simple";
+import { formatDistanceToNow } from "date-fns";
 
 export default function NotificationsPage() {
   const { toast } = useToast();
+  const [user, setUser] = useState(auth.currentUser);
+  const { chats } = useChatStore();
+  const { notifications, markAsRead, markAllAsRead, clearAllNotifications } = useNotifications(user);
 
-  const classNotifications = [
-    {
-      id: "bio101",
-      class: "BIO-101",
-      title: "New Study Group Activity",
-      description: "Sarah shared a study guide for Chapter 5",
-      time: "2 minutes ago",
-      type: "study_group",
-      icon: <Users className="size-5 text-blue-500" />
-    },
-    {
-      id: "cs202",
-      class: "CS-202",
-      title: "Assignment Reminder",
-      description: "Data Structures Project due in 3 days",
-      time: "1 hour ago",
-      type: "assignment",
-      icon: <Calendar className="size-5 text-green-500" />
-    },
-    {
-      id: "eng210",
-      class: "ENG-210",
-      title: "New Message",
-      description: "Professor Johnson posted class notes",
-      time: "2 hours ago",
-      type: "message",
-      icon: <MessageSquare className="size-5 text-purple-500" />
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Convert real notifications to display format
+  const classNotifications = notifications.slice(0, 10).map((notification) => {
+    // Get class information from chatId
+    const chat = chats[notification.classId || ''];
+    const courseCode = chat?.courseData?.courseCode || chat?.title || 'Unknown Class';
+    
+    // Determine icon based on notification type
+    let icon;
+    switch (notification.type) {
+      case 'assignment':
+        icon = <GraduationCap className="size-5 text-green-500" />;
+        break;
+      case 'exam':
+        icon = <Calendar className="size-5 text-red-500" />;
+        break;
+      case 'message':
+        icon = <MessageSquare className="size-5 text-purple-500" />;
+        break;
+      case 'study_group':
+        icon = <Users className="size-5 text-blue-500" />;
+        break;
+      case 'reminder':
+        icon = <Clock className="size-5 text-yellow-500" />;
+        break;
+      case 'system':
+        icon = <AlertCircle className="size-5 text-gray-500" />;
+        break;
+      default:
+        icon = <Bell className="size-5 text-primary" />;
     }
-  ];
+
+    return {
+      id: notification.id,
+      class: courseCode,
+      title: notification.title,
+      description: notification.description,
+      time: formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true }),
+      type: notification.type,
+      icon,
+      isRead: notification.isRead,
+      priority: notification.priority
+    };
+  });
 
   const quickActions = [
     {
@@ -72,19 +101,21 @@ export default function NotificationsPage() {
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "read":
+        markAllAsRead();
         toast({
           title: "Notifications Marked as Read",
           description: "All notifications have been marked as read.",
         });
         break;
       case "clear":
+        clearAllNotifications();
         toast({
           title: "Notifications Cleared",
           description: "All notifications have been cleared.",
         });
         break;
       case "classes":
-        window.location.href = "/dashboard/overview";
+        window.location.href = "/dashboard";
         break;
       case "progress":
         window.location.href = "/dashboard/flashcards";
@@ -160,7 +191,14 @@ export default function NotificationsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {classNotifications.map((notification, index) => (
+              {classNotifications.length === 0 ? (
+                <div className="text-center py-12">
+                  <Bell className="size-12 text-muted-foreground/40 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-muted-foreground mb-2">No notifications yet</h3>
+                  <p className="text-sm text-muted-foreground">You'll see updates from your classes here when they're available.</p>
+                </div>
+              ) : (
+                classNotifications.map((notification, index) => (
                 <div 
                   key={notification.id}
                   className="flex items-center gap-4 p-5 rounded-xl bg-gradient-to-r from-muted/20 to-muted/10 hover:from-primary/5 hover:to-primary/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-sm border border-transparent hover:border-primary/20"
@@ -182,30 +220,12 @@ export default function NotificationsPage() {
                     <ArrowRight className="size-4" />
                   </Button>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Main Notifications */}
-        <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-          <CardHeader className="text-center pb-6">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                <Bell className="size-8 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Recent Activity
-            </CardTitle>
-            <CardDescription className="text-lg">
-              Your latest updates and messages
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-8">
-            <Notifications />
-          </CardContent>
-        </Card>
 
         {/* Study Progress Quick View */}
         <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">

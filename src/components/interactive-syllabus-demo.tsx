@@ -51,7 +51,67 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   const [isClient, setIsClient] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { addChat, setCurrentTab } = useChatStore();
+  const { addChat, setCurrentTab, chats } = useChatStore();
+
+  // Function to check for duplicate courses
+  const checkForDuplicateCourse = (courseCode: string, courseName: string) => {
+    const existingChats = Object.values(chats).filter(chat => 
+      chat.chatType === 'class' && chat.courseData
+    );
+    
+    // Check for exact course code match
+    const exactMatch = existingChats.find(chat => 
+      chat.courseData?.courseCode?.toLowerCase() === courseCode.toLowerCase()
+    );
+    
+    if (exactMatch) {
+      return exactMatch;
+    }
+    
+    // Check for similar course name (fuzzy matching)
+    const similarMatch = existingChats.find(chat => {
+      const existingName = chat.courseData?.courseName?.toLowerCase() || '';
+      const newName = courseName.toLowerCase();
+      
+      // Check if names are very similar (80% similarity)
+      const similarity = calculateSimilarity(existingName, newName);
+      return similarity > 0.8;
+    });
+    
+    return similarMatch || null;
+  };
+
+  // Helper function to calculate string similarity
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  };
+
+  // Helper function to calculate Levenshtein distance
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    
+    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+    
+    for (let j = 1; j <= str2.length; j++) {
+      for (let i = 1; i <= str1.length; i++) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,
+          matrix[j - 1][i] + 1,
+          matrix[j - 1][i - 1] + indicator
+        );
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  };
 
   // Set client flag after mount to avoid hydration mismatch
   useEffect(() => {
@@ -465,6 +525,25 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
         };
         
         try {
+          // Check for duplicate courses before creating chat
+          const existingChat = checkForDuplicateCourse(courseCode, courseName);
+          
+          if (existingChat) {
+            // Show Sonar notification warning for duplicate
+            toast.warning('Course Already Exists!', {
+              description: `You already have a chat for ${courseCode} - ${courseName}. Would you like to go to the existing chat?`,
+              duration: 8000,
+              action: {
+                label: 'Go to Chat',
+                onClick: () => {
+                  setCurrentTab(existingChat.id);
+                  router.push(`/dashboard/chat?tab=${existingChat.id}`);
+                }
+              }
+            });
+            return;
+          }
+          
           // Create a unique chat ID for each syllabus upload
           const uniqueChatId = `${courseCode}-${courseName}-${Date.now()}`;
           
@@ -749,17 +828,74 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
 
               {/* Processing Steps */}
               {isProcessing && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Sparkles className="size-5 text-primary animate-pulse" />
-                      <span className="font-medium text-primary">{processingStep}</span>
+                <div className="space-y-6">
+                  {/* Step Animation */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          progress >= 16 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                        }`}>
+                          {progress >= 16 ? <CheckCircle className="w-3 h-3" /> : '1'}
+                        </div>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          progress >= 33 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                        }`}>
+                          {progress >= 33 ? <CheckCircle className="w-3 h-3" /> : '2'}
+                        </div>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          progress >= 50 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                        }`}>
+                          {progress >= 50 ? <CheckCircle className="w-3 h-3" /> : '3'}
+                        </div>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          progress >= 66 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                        }`}>
+                          {progress >= 66 ? <CheckCircle className="w-3 h-3" /> : '4'}
+                        </div>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          progress >= 83 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                        }`}>
+                          {progress >= 83 ? <CheckCircle className="w-3 h-3" /> : '5'}
+                        </div>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                          progress >= 100 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                        }`}>
+                          {progress >= 100 ? <CheckCircle className="w-3 h-3" /> : '6'}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
-                    <Progress value={progress} className="h-2" />
-                    <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                      <span>{progress}% complete</span>
-                      <span>{processingTime}s elapsed</span>
+                    
+                    {/* Current Step Description */}
+                    <div className="text-center space-y-2">
+                      <h3 className="text-lg font-semibold text-primary">
+                        {progress < 16 ? '📁 Validating File' :
+                         progress < 33 ? '📄 Extracting Text' :
+                         progress < 50 ? '🧠 AI Analysis' :
+                         progress < 66 ? '🏗️ Structuring Data' :
+                         progress < 83 ? '✅ Validating Results' :
+                         progress < 100 ? '🎉 Finalizing...' : 'Complete!'}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">{processingStep}</p>
                     </div>
+                  </div>
+                  
+                  {/* Progress Details */}
+                  <div className="flex items-center justify-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                      <span className="font-medium text-primary">{Math.round(progress)}%</span>
+                    </div>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">{processingTime}s elapsed</span>
                   </div>
                 </div>
               )}

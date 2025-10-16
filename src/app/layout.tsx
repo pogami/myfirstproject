@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "CourseConnect AI",
     images: [
       {
-        url: "https://courseconnectai.com/og-images/profile-default.png",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "CourseConnect AI - AI-Powered Study Platform",
@@ -28,36 +28,19 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CourseConnect AI - Your AI-Powered Study Companion",
     description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
-    images: ["https://courseconnectai.com/og-images/profile-default.png"],
+    images: ["/og-image.png"],
     creator: "@courseconnectai",
     site: "@courseconnectai",
   },
   icons: {
     icon: [
-      { url: '/officialogo.png', sizes: '32x32', type: 'image/png' },
-      { url: '/officialogo.png', sizes: '16x16', type: 'image/png' },
-      { url: '/officialogo.png', sizes: '48x48', type: 'image/png' }
+      { url: '/final-logo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/final-logo.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' }
     ],
-    shortcut: '/officialogo.png',
+    shortcut: '/final-logo.png',
     apple: [
-      { url: '/officialogo.png', sizes: '180x180', type: 'image/png' },
-      { url: '/officialogo.png', sizes: '152x152', type: 'image/png' },
-      { url: '/officialogo.png', sizes: '120x120', type: 'image/png' },
-      { url: '/officialogo.png', sizes: '76x76', type: 'image/png' }
-    ],
-    other: [
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '192x192',
-        url: '/officialogo.png',
-      },
-      {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '512x512',
-        url: '/officialogo.png',
-      }
+      { url: '/final-logo.png', sizes: '180x180', type: 'image/png' }
     ]
   }
 };
@@ -80,8 +63,8 @@ export default function RootLayout({
         <meta property="og:url" content="https://courseconnectai.com" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="CourseConnect AI" />
-        <meta property="og:image" content="https://courseconnectai.com/og-images/profile-default.png" />
-        <meta property="og:image:secure_url" content="https://courseconnectai.com/og-images/profile-default.png" />
+        <meta property="og:image" content="/og-image.png" />
+        <meta property="og:image:secure_url" content="/og-image.png" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
@@ -92,7 +75,7 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="CourseConnect AI - Your AI-Powered Study Companion" />
         <meta name="twitter:description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
-        <meta name="twitter:image" content="https://courseconnectai.com/og-images/profile-default.png" />
+        <meta name="twitter:image" content="/og-image.png" />
         <meta name="twitter:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta name="twitter:creator" content="@courseconnectai" />
         <meta name="twitter:site" content="@courseconnectai" />
@@ -110,16 +93,9 @@ export default function RootLayout({
         <meta property="og:determiner" content="the" />
         
         {/* Favicon and Icons - Multiple sizes for better visibility */}
-        <link rel="icon" href="/officialogo.png" type="image/png" sizes="48x48" />
-        <link rel="icon" href="/officialogo.png" type="image/png" sizes="32x32" />
-        <link rel="icon" href="/officialogo.png" type="image/png" sizes="16x16" />
-        <link rel="icon" href="/officialogo.png" type="image/png" sizes="64x64" />
-        <link rel="icon" href="/officialogo.png" type="image/png" sizes="128x128" />
-        <link rel="shortcut icon" href="/officialogo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/officialogo.png" sizes="180x180" />
-        <link rel="apple-touch-icon" href="/officialogo.png" sizes="152x152" />
-        <link rel="apple-touch-icon" href="/officialogo.png" sizes="120x120" />
-        <link rel="apple-touch-icon" href="/officialogo.png" sizes="76x76" />
+        <link rel="icon" href="/favicon-32x32.png?v=2" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/favicon-16x16.png?v=2" type="image/png" sizes="16x16" />
+        <link rel="shortcut icon" href="/favicon-32x32.png?v=2" type="image/png" />
         
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.json" />

@@ -155,8 +155,8 @@ export function Hero({
             </Link>
           </Button>
           <Button size="lg" variant="outline" className="h-14 px-8 text-base font-semibold border-2 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all duration-300" asChild>
-            <Link href="/pricing">
-              View Pricing
+            <Link href="/features">
+              View Features
             </Link>
           </Button>
         </div>

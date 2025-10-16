@@ -18,6 +18,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { User } from 'firebase/auth';
+import { useChatStore } from '@/hooks/use-chat-store';
 
 export interface DashboardStats {
   studyTimeToday: number; // in minutes
@@ -49,6 +50,7 @@ export interface Assignment {
 }
 
 export function useDashboardStats(user: User | null) {
+  const { chats } = useChatStore();
   const [stats, setStats] = useState<DashboardStats>({
     studyTimeToday: 0,
     assignmentsCompleted: 0,
@@ -64,8 +66,8 @@ export function useDashboardStats(user: User | null) {
   // Get today's date string for comparison
   const getTodayString = () => new Date().toDateString();
 
-  // Calculate study streak
-  const calculateStudyStreak = async (userId: string) => {
+  // Calculate website visit streak (not study sessions)
+  const calculateWebsiteStreak = async (userId: string) => {
     try {
       const today = getTodayString();
       let streak = 0;
@@ -77,69 +79,250 @@ export function useDashboardStats(user: User | null) {
         const dayStatsRef = doc(db, 'userStats', userId, 'dailyStats', dateString);
         const dayStatsSnap = await getDoc(dayStatsRef);
         
-        if (dayStatsSnap.exists() && dayStatsSnap.data().studyTime > 0) {
+        if (dayStatsSnap.exists() && dayStatsSnap.data().visitedToday) {
           streak++;
           currentDate.setDate(currentDate.getDate() - 1);
         } else {
           break;
         }
       }
+      
 
       return streak;
     } catch (error) {
-      console.error('Error calculating study streak:', error);
+      console.error('Error calculating website streak:', error);
       return 0;
     }
   };
 
-  // Get upcoming deadlines (next 7 days)
+  // Get upcoming deadlines (next 7 days) from chat data
   const getUpcomingDeadlines = async (userId: string) => {
     try {
-      const assignmentsRef = collection(db, 'assignments');
-      const q = query(
-        assignmentsRef,
-        where('userId', '==', userId),
-        where('completed', '==', false),
-        orderBy('dueDate', 'asc'),
-        limit(20)
-      );
-
-      const snapshot = await getDocs(q);
+      // Get user's chat IDs
+      const userDocRef = doc(db, 'users', userId);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists()) return 0;
+      
+      const userData = userDocSnap.data();
+      const userChatIds = userData.chats || [];
+      
+      let upcomingCount = 0;
       const now = new Date();
       const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-      return snapshot.docs.filter(doc => {
-        const dueDate = doc.data().dueDate.toDate();
-        return dueDate >= now && dueDate <= nextWeek;
-      }).length;
+      
+      for (const chatId of userChatIds) {
+        try {
+          const chatRef = doc(db, 'chats', chatId);
+          const chatSnap = await getDoc(chatRef);
+          
+          if (chatSnap.exists()) {
+            const chatData = chatSnap.data();
+            
+            // Count assignments due this week
+            if (chatData.chatType === 'class' && chatData.courseData?.assignments) {
+              chatData.courseData.assignments.forEach((assignment: any) => {
+                if (assignment.dueDate && assignment.dueDate !== 'null') {
+                  const dueDate = new Date(assignment.dueDate);
+                  if (dueDate >= now && dueDate <= nextWeek) {
+                    upcomingCount++;
+                  }
+                }
+              });
+            }
+            
+            // Count exams due this week
+            if (chatData.chatType === 'class' && chatData.courseData?.exams) {
+              chatData.courseData.exams.forEach((exam: any) => {
+                if (exam.date && exam.date !== 'null') {
+                  const examDate = new Date(exam.date);
+                  if (examDate >= now && examDate <= nextWeek) {
+                    upcomingCount++;
+                  }
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('Error reading chat for deadlines:', chatId, error);
+        }
+      }
+      
+      return upcomingCount;
     } catch (error) {
       console.warn('Firebase offline, returning 0 for upcoming deadlines:', error);
       return 0;
     }
   };
 
-  // Get completed assignments count
+  // Get completed assignments count from actual chat data
   const getCompletedAssignments = async (userId: string) => {
     try {
-      const assignmentsRef = collection(db, 'assignments');
+      // Get all chats for the user
+      const chatsRef = collection(db, 'chats');
       const q = query(
-        assignmentsRef,
+        chatsRef,
         where('userId', '==', userId),
-        where('completed', '==', true)
+        where('chatType', '==', 'class')
       );
 
       const snapshot = await getDocs(q);
-      return snapshot.size;
+      let completedCount = 0;
+
+      snapshot.docs.forEach(doc => {
+        const chatData = doc.data();
+        if (chatData.courseData?.assignments) {
+          chatData.courseData.assignments.forEach((assignment: any) => {
+            if (assignment.status === 'Completed') {
+              completedCount++;
+            }
+          });
+        }
+      });
+
+      return completedCount;
     } catch (error) {
       console.warn('Firebase offline, returning 0 for completed assignments:', error);
       return 0;
     }
   };
 
-  // Update daily study time
-  const updateStudyTime = async (minutes: number) => {
+  // Track website time spent (not study sessions)
+  const updateWebsiteTime = async (minutes: number) => {
     if (!user) return;
 
+    // Handle guest users differently - store in localStorage
+    if (user.isGuest) {
+      try {
+        const today = getTodayString();
+        const dayStatsKey = `guest-stats-${today}`;
+        const existingStats = localStorage.getItem(dayStatsKey);
+        
+        let currentTime = 0;
+        if (existingStats) {
+          try {
+            const stats = JSON.parse(existingStats);
+            currentTime = stats.websiteTime || 0;
+          } catch (error) {
+            console.warn('Error parsing existing guest stats:', error);
+          }
+        }
+        
+        const newTime = currentTime + minutes;
+        console.log('⏰ Guest: Updating website time from', currentTime, 'to', newTime, 'minutes');
+        
+        const updatedStats = {
+          websiteTime: newTime,
+          date: today,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        localStorage.setItem(dayStatsKey, JSON.stringify(updatedStats));
+        console.log('⏰ Guest: Saved to localStorage');
+        
+        // Immediately refresh stats for real-time UI update
+        console.log('⏰ Guest: Refreshing stats immediately');
+        loadGuestStats();
+        return;
+      } catch (error) {
+        console.error('Error updating guest website time:', error);
+        return;
+      }
+    }
+
+    // Handle authenticated users - store in Firebase
+    try {
+      const today = getTodayString();
+      const dayStatsRef = doc(db, 'userStats', user.uid, 'dailyStats', today);
+      const dayStatsSnap = await getDoc(dayStatsRef);
+
+      if (dayStatsSnap.exists()) {
+        const currentTime = dayStatsSnap.data().websiteTime || 0;
+        const newTime = currentTime + minutes;
+        console.log('⏰ Firebase: Updating website time from', currentTime, 'to', newTime, 'minutes');
+        await updateDoc(dayStatsRef, {
+          websiteTime: newTime,
+          lastVisit: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        });
+      } else {
+        console.log('⏰ Firebase: Creating new day stats with', minutes, 'minutes');
+        await setDoc(dayStatsRef, {
+          websiteTime: minutes,
+          date: today,
+          createdAt: serverTimestamp(),
+          lastVisit: serverTimestamp(),
+          lastUpdated: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error('Error updating website time:', error);
+    }
+  };
+
+  // Track daily website visit
+  const trackWebsiteVisit = async () => {
+    if (!user) return;
+
+    // Handle guest users differently - store in localStorage
+    if (user.isGuest) {
+      try {
+        const today = getTodayString();
+        const dayStatsKey = `guest-stats-${today}`;
+        const streakKey = 'guest-streak';
+        
+        // Update visit stats
+        const existingStats = localStorage.getItem(dayStatsKey);
+        let visitCount = 1;
+        if (existingStats) {
+          try {
+            const stats = JSON.parse(existingStats);
+            visitCount = (stats.visitCount || 0) + 1;
+          } catch (error) {
+            console.warn('Error parsing existing guest stats:', error);
+          }
+        }
+        
+        const updatedStats = {
+          visitedToday: true,
+          visitCount: visitCount,
+          websiteTime: 0,
+          date: today,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        localStorage.setItem(dayStatsKey, JSON.stringify(updatedStats));
+        
+        // Update streak
+        const streakData = localStorage.getItem(streakKey);
+        let currentStreak = 1;
+        if (streakData) {
+          try {
+            const streak = JSON.parse(streakData);
+            currentStreak = streak.currentStreak || 1;
+          } catch (error) {
+            console.warn('Error parsing guest streak:', error);
+          }
+        }
+        
+        localStorage.setItem(streakKey, JSON.stringify({
+          currentStreak: currentStreak,
+          lastVisit: today
+        }));
+        
+        console.log('⏰ Guest: Tracked website visit, streak:', currentStreak);
+        
+        // Immediately refresh stats for real-time UI update
+        console.log('⏰ Guest: Refreshing stats after visit tracking');
+        loadGuestStats();
+        return;
+      } catch (error) {
+        console.error('Error tracking guest website visit:', error);
+        return;
+      }
+    }
+
+    // Handle authenticated users - store in Firebase
     try {
       const today = getTodayString();
       const dayStatsRef = doc(db, 'userStats', user.uid, 'dailyStats', today);
@@ -147,19 +330,22 @@ export function useDashboardStats(user: User | null) {
 
       if (dayStatsSnap.exists()) {
         await updateDoc(dayStatsRef, {
-          studyTime: dayStatsSnap.data().studyTime + minutes,
-          lastUpdated: serverTimestamp()
+          visitedToday: true,
+          lastVisit: serverTimestamp(),
+          visitCount: (dayStatsSnap.data().visitCount || 0) + 1
         });
       } else {
         await setDoc(dayStatsRef, {
-          studyTime: minutes,
+          visitedToday: true,
+          websiteTime: 0,
           date: today,
           createdAt: serverTimestamp(),
-          lastUpdated: serverTimestamp()
+          lastVisit: serverTimestamp(),
+          visitCount: 1
         });
       }
     } catch (error) {
-      console.error('Error updating study time:', error);
+      console.error('Error tracking website visit:', error);
     }
   };
 
@@ -203,6 +389,109 @@ export function useDashboardStats(user: User | null) {
     }
   };
 
+  // Load guest user stats from localStorage
+  const loadGuestStats = () => {
+    try {
+      const today = getTodayString();
+      
+      // Get study time from localStorage
+      const dayStats = localStorage.getItem(`guest-stats-${today}`);
+      let studyTimeToday = 0;
+      if (dayStats) {
+        try {
+          const stats = JSON.parse(dayStats);
+          studyTimeToday = stats.websiteTime || 0;
+        } catch (error) {
+          console.warn('Error parsing guest stats:', error);
+        }
+      }
+
+      // Get fresh chats data from the store
+      const currentChats = useChatStore.getState().chats;
+
+      // Get assignments completed from chat store
+      let assignmentsCompleted = 0;
+      Object.values(currentChats).forEach(chat => {
+        if (chat.chatType === 'class' && chat.courseData?.assignments) {
+          chat.courseData.assignments.forEach((assignment: any) => {
+            if (assignment.status === 'Completed') {
+              assignmentsCompleted++;
+            }
+          });
+        }
+      });
+
+      // Get upcoming deadlines from chat store
+      let upcomingDeadlines = 0;
+      const now = new Date();
+      const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      
+      Object.values(currentChats).forEach(chat => {
+        if (chat.chatType === 'class') {
+          // Count assignments due this week
+          if (chat.courseData?.assignments) {
+            chat.courseData.assignments.forEach((assignment: any) => {
+              if (assignment.dueDate && assignment.dueDate !== 'null') {
+                const dueDate = new Date(assignment.dueDate);
+                if (dueDate >= now && dueDate <= nextWeek) {
+                  upcomingDeadlines++;
+                }
+              }
+            });
+          }
+          
+          // Count exams due this week
+          if (chat.courseData?.exams) {
+            chat.courseData.exams.forEach((exam: any) => {
+              if (exam.date && exam.date !== 'null') {
+                const examDate = new Date(exam.date);
+                if (examDate >= now && examDate <= nextWeek) {
+                  upcomingDeadlines++;
+                }
+              }
+            });
+          }
+        }
+      });
+
+      // Get streak from localStorage
+      let studyStreak = 0;
+      const streakData = localStorage.getItem('guest-streak');
+      if (streakData) {
+        try {
+          studyStreak = JSON.parse(streakData).currentStreak || 0;
+        } catch (error) {
+          console.warn('Error parsing guest streak:', error);
+        }
+      }
+
+      const guestStats = {
+        studyTimeToday,
+        assignmentsCompleted,
+        studyStreak,
+        upcomingDeadlines,
+        lastStudyDate: today,
+        totalStudyTime: 0,
+        averageStudyTime: 0
+      };
+
+      setStats(guestStats);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error loading guest stats:', error);
+      setStats({
+        studyTimeToday: 0,
+        assignmentsCompleted: 0,
+        studyStreak: 0,
+        upcomingDeadlines: 0,
+        lastStudyDate: '',
+        totalStudyTime: 0,
+        averageStudyTime: 0
+      });
+      setIsLoading(false);
+    }
+  };
+
   // Load dashboard stats
   useEffect(() => {
     if (!user) {
@@ -219,6 +508,12 @@ export function useDashboardStats(user: User | null) {
       return;
     }
 
+    // Handle guest users differently
+    if (user.isGuest) {
+      loadGuestStats();
+      return;
+    }
+
     const loadStats = async () => {
       setIsLoading(true);
       setError(null);
@@ -226,12 +521,12 @@ export function useDashboardStats(user: User | null) {
       try {
         const today = getTodayString();
         
-        // Get today's study time with offline fallback
+        // Get today's website time with offline fallback
         let studyTimeToday = 0;
         try {
           const dayStatsRef = doc(db, 'userStats', user.uid, 'dailyStats', today);
           const dayStatsSnap = await getDoc(dayStatsRef);
-          studyTimeToday = dayStatsSnap.exists() ? dayStatsSnap.data().studyTime || 0 : 0;
+          studyTimeToday = dayStatsSnap.exists() ? dayStatsSnap.data().websiteTime || 0 : 0;
         } catch (firebaseError) {
           console.warn('Firebase offline, using default values:', firebaseError);
           studyTimeToday = 0;
@@ -246,7 +541,7 @@ export function useDashboardStats(user: User | null) {
           [assignmentsCompleted, upcomingDeadlines, studyStreak] = await Promise.all([
             getCompletedAssignments(user.uid),
             getUpcomingDeadlines(user.uid),
-            calculateStudyStreak(user.uid)
+            calculateWebsiteStreak(user.uid)
           ]);
         } catch (firebaseError) {
           console.warn('Firebase offline, using default values for assignments and streak:', firebaseError);
@@ -256,6 +551,7 @@ export function useDashboardStats(user: User | null) {
           studyStreak = 0;
         }
 
+        
         setStats({
           studyTimeToday,
           assignmentsCompleted,
@@ -285,7 +581,7 @@ export function useDashboardStats(user: User | null) {
 
     loadStats();
 
-    // Listen for real-time updates to today's study time with offline handling
+    // Listen for real-time updates to today's website time with offline handling
     const today = getTodayString();
     const dayStatsRef = doc(db, 'userStats', user.uid, 'dailyStats', today);
     
@@ -299,7 +595,7 @@ export function useDashboardStats(user: User | null) {
             const data = doc.data();
             setStats(prev => ({
               ...prev,
-              studyTimeToday: data.studyTime || 0
+              studyTimeToday: data.websiteTime || 0
             }));
           }
         },
@@ -312,19 +608,118 @@ export function useDashboardStats(user: User | null) {
       console.warn('Failed to set up real-time listener:', error);
     }
 
+    // Listen for real-time assignment changes directly from Firebase
+    let unsubscribeAssignments: (() => void) | undefined;
+    
+    // Set up assignment listeners asynchronously
+    const setupAssignmentListeners = async () => {
+      try {
+        // Get user's chat IDs first
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          const userChatIds = userData.chats || [];
+          
+          if (userChatIds.length > 0) {
+            // Listen to each chat document for changes
+            const unsubscribes: (() => void)[] = [];
+            
+            userChatIds.forEach((chatId: string) => {
+              const chatDocRef = doc(db, 'chats', chatId);
+              const unsubscribe = onSnapshot(chatDocRef, async (chatDoc) => {
+                if (chatDoc.exists()) {
+                  const chatData = chatDoc.data();
+                  
+                  // Only process class chats with assignments
+                  if (chatData.chatType === 'class' && chatData.courseData?.assignments) {
+                    // Recalculate total completed assignments from ALL user chats
+                    let totalCompleted = 0;
+                    
+                    for (const id of userChatIds) {
+                      try {
+                        const chatRef = doc(db, 'chats', id);
+                        const chatSnap = await getDoc(chatRef);
+                        
+                        if (chatSnap.exists()) {
+                          const data = chatSnap.data();
+                          if (data.chatType === 'class' && data.courseData?.assignments) {
+                            data.courseData.assignments.forEach((assignment: any) => {
+                              if (assignment.status === 'Completed') {
+                                totalCompleted++;
+                              }
+                            });
+                          }
+                        }
+                      } catch (error) {
+                        console.warn('Error reading chat:', id, error);
+                      }
+                    }
+                    
+                    setStats(prev => ({
+                      ...prev,
+                      assignmentsCompleted: totalCompleted
+                    }));
+                  }
+                }
+              }, (error) => {
+                console.warn('Firebase offline, chat updates disabled:', error);
+              });
+              
+              unsubscribes.push(unsubscribe);
+            });
+            
+            unsubscribeAssignments = () => {
+              unsubscribes.forEach(unsub => unsub());
+            };
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to set up assignment listener:', error);
+      }
+    };
+    
+    setupAssignmentListeners();
+
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
+      if (unsubscribeAssignments) {
+        unsubscribeAssignments();
+      }
     };
+  }, [user, chats]);
+
+  // Separate useEffect for guest user real-time updates
+  useEffect(() => {
+    if (user && user.isGuest) {
+      loadGuestStats();
+    }
+  }, [chats, user]);
+
+  // Add polling for guest users to update stats in real-time
+  useEffect(() => {
+    if (user && user.isGuest) {
+      const interval = setInterval(() => {
+        loadGuestStats();
+      }, 1000);
+      
+      return () => {
+        clearInterval(interval);
+      };
+    }
   }, [user]);
 
   return {
     stats,
     isLoading,
     error,
-    updateStudyTime,
+    updateWebsiteTime,
+    trackWebsiteVisit,
     startStudySession,
-    endStudySession
+    endStudySession,
+    refreshStats: loadGuestStats // Expose refresh function for manual updates
   };
 }

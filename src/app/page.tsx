@@ -25,7 +25,7 @@ export default function HomePage() {
         
         {/* PricingSection removed from home page */}
         {/* SocialProofSection removed from home page */}
-        <EducationComparisonSection />
+        {/* <EducationComparisonSection /> */}
         {/* Mobile sections removed as requested */}
         {/* DetailedPricingSection removed from home page */}
         {/* TestimonialsSection removed from home page */}

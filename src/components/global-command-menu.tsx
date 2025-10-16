@@ -156,17 +156,9 @@ export function GlobalCommandMenu() {
             <Zap className="mr-2 h-4 w-4" />
             <span>General Chat (AI)</span>
           </CommandItem>
-          <CommandItem onSelect={() => handleSelect(() => router.push('/dashboard/chat?chatId=public-general-chat'))}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            <span>Community Chat</span>
-          </CommandItem>
           <CommandItem onSelect={() => handleSelect(() => router.push('/dashboard/flashcards'))}>
             <FileText className="mr-2 h-4 w-4" />
             <span>Flashcards</span>
-          </CommandItem>
-          <CommandItem onSelect={() => handleSelect(() => router.push('/dashboard/academic-tools'))}>
-            <GraduationCap className="mr-2 h-4 w-4" />
-            <span>Academic Tools</span>
           </CommandItem>
         </CommandGroup>
         

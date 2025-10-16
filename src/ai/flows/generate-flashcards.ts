@@ -29,6 +29,13 @@ const prompt = ai.definePrompt({
 
   The context may include the class name, a history of questions and answers from a class chat, a specific topic, or manually provided text notes. Prioritize the most important concepts.
 
+  **IMPORTANT FORMATTING RULES:**
+  - For mathematical expressions, equations, formulas, or any math content, wrap them in LaTeX delimiters:
+    - Use $...$ for inline math (e.g., $x^2 + y^2 = r^2$)
+    - Use $$...$$ for block math/equations (e.g., $$\\frac{d}{dx}[x^2] = 2x$$)
+  - Include proper LaTeX syntax for fractions, exponents, integrals, Greek letters, etc.
+  - Examples: $\\frac{a}{b}$, $x^2$, $\\sqrt{x}$, $\\int_0^1 f(x)dx$, $\\alpha$, $\\beta$, $\\pi$
+
   {{#if className}}
   The flashcards are for the class: **{{className}}**.
   {{/if}}
@@ -51,8 +58,7 @@ const prompt = ai.definePrompt({
   ---
   {{/if}}
 
-  Analyze all the provided information and generate between 5 and 15 flashcards. Each flashcard should have a clear question and a concise, accurate answer.
-  `,
+  Analyze all the provided information and generate between 5 and 15 flashcards. Each flashcard should have a clear question and a concise, accurate answer. Use LaTeX formatting for any mathematical content.`,
 });
 
 const generateFlashcardsFlow = ai.defineFlow(

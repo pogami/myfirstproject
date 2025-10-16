@@ -64,6 +64,66 @@ export default function SyllabusUpload() {
     const [user] = useAuthState(auth);
     const isGuest = !user;
 
+    // Function to check for duplicate courses
+    const checkForDuplicateCourse = (courseCode: string, courseName: string) => {
+        const existingChats = Object.values(chats).filter(chat => 
+            chat.chatType === 'class' && chat.courseData
+        );
+        
+        // Check for exact course code match
+        const exactMatch = existingChats.find(chat => 
+            chat.courseData?.courseCode?.toLowerCase() === courseCode.toLowerCase()
+        );
+        
+        if (exactMatch) {
+            return exactMatch;
+        }
+        
+        // Check for similar course name (fuzzy matching)
+        const similarMatch = existingChats.find(chat => {
+            const existingName = chat.courseData?.courseName?.toLowerCase() || '';
+            const newName = courseName.toLowerCase();
+            
+            // Check if names are very similar (80% similarity)
+            const similarity = calculateSimilarity(existingName, newName);
+            return similarity > 0.8;
+        });
+        
+        return similarMatch || null;
+    };
+
+    // Helper function to calculate string similarity
+    const calculateSimilarity = (str1: string, str2: string): number => {
+        const longer = str1.length > str2.length ? str1 : str2;
+        const shorter = str1.length > str2.length ? str2 : str1;
+        
+        if (longer.length === 0) return 1.0;
+        
+        const editDistance = levenshteinDistance(longer, shorter);
+        return (longer.length - editDistance) / longer.length;
+    };
+
+    // Helper function to calculate Levenshtein distance
+    const levenshteinDistance = (str1: string, str2: string): number => {
+        const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+        
+        for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+        
+        for (let j = 1; j <= str2.length; j++) {
+            for (let i = 1; i <= str1.length; i++) {
+                const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,
+                    matrix[j - 1][i] + 1,
+                    matrix[j - 1][i - 1] + indicator
+                );
+            }
+        }
+        
+        return matrix[str2.length][str1.length];
+    };
+
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (isAnalyzing) {
@@ -305,6 +365,31 @@ export default function SyllabusUpload() {
 
             // No matching groups found, create new one
             const chatName = `${classCode}: ${className}`;
+            
+            // Check for duplicate courses before creating chat
+            const existingChat = checkForDuplicateCourse(classCode, className);
+            
+            if (existingChat) {
+                // Show Sonar notification warning for duplicate
+                toast({
+                    title: "Course Already Exists!",
+                    description: `You already have a chat for ${classCode} - ${className}. Would you like to go to the existing chat?`,
+                    action: (
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                                router.push(`/dashboard/chat?tab=${existingChat.id}`);
+                            }}
+                        >
+                            Go to Chat
+                        </Button>
+                    )
+                });
+                setIsAnalyzing(false);
+                return;
+            }
+            
             const chatId = generateClassChatId(syllabusData);
             
             await addChat(
@@ -578,24 +663,74 @@ export default function SyllabusUpload() {
                     </div>
                 )}
                 {isAnalyzing && (
-                     <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 space-y-3 sm:space-y-4 relative">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="h-24 w-24 sm:h-32 sm:w-32 bg-primary/10 rounded-full animate-ping"></div>
+                     <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 space-y-4 sm:space-y-6">
+                        {/* Step Animation */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="flex gap-2">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                        parsingProgress.stage === 'uploading' || parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                                    }`}>
+                                        {parsingProgress.stage === 'uploading' || parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '1'}
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                        parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                                    }`}>
+                                        {parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '2'}
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                        parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                                    }`}>
+                                        {parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '3'}
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                        parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                                    }`}>
+                                        {parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '4'}
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                        parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                                    }`}>
+                                        {parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '5'}
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                        parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
+                                    }`}>
+                                        {parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '6'}
+                                    </div>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500 ease-out"
+                                            style={{ width: `${parsingProgress.progress}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
                         </div>
-                        <AnalyzingIcon className="h-20 w-20 sm:h-24 sm:w-24 text-primary mb-3 sm:mb-4 relative" />
-                        <h3 className="text-lg sm:text-xl font-semibold">
-                            {parsingProgress.stage === 'uploading' && 'Validating file...'}
-                            {parsingProgress.stage === 'extracting' && 'Extracting text...'}
-                            {parsingProgress.stage === 'parsing' && 'AI Analysis...'}
-                            {parsingProgress.stage === 'structuring' && 'Structuring data...'}
-                            {parsingProgress.stage === 'validating' && 'Validating results...'}
-                            {parsingProgress.stage === 'complete' && 'Processing complete!'}
+                            
+                            {/* Current Step Description */}
+                            <div className="space-y-2">
+                                <h3 className="text-lg sm:text-xl font-semibold text-primary">
+                                    {parsingProgress.stage === 'uploading' && '📁 Validating File'}
+                                    {parsingProgress.stage === 'extracting' && '📄 Extracting Text'}
+                                    {parsingProgress.stage === 'parsing' && '🧠 AI Analysis'}
+                                    {parsingProgress.stage === 'structuring' && '🏗️ Structuring Data'}
+                                    {parsingProgress.stage === 'validating' && '✅ Validating Results'}
+                                    {parsingProgress.stage === 'complete' && '🎉 Processing Complete!'}
                         </h3>
                         <p className="text-muted-foreground text-sm sm:text-base">{parsingProgress.message}</p>
-                        <Progress value={parsingProgress.progress} className="w-full" />
+                            </div>
+                        </div>
+                        
+                        {/* Progress Details */}
+                        <div className="flex items-center gap-3 text-sm">
                         <div className="flex items-center gap-2">
-                            <p className="text-sm font-bold text-primary">{Math.round(parsingProgress.progress)}%</p>
-                            <span className="text-xs text-muted-foreground">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                <span className="font-medium text-primary">{Math.round(parsingProgress.progress)}%</span>
+                            </div>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">
                                 {parsingProgress.stage === 'uploading' && 'Stage 1/6'}
                                 {parsingProgress.stage === 'extracting' && 'Stage 2/6'}
                                 {parsingProgress.stage === 'parsing' && 'Stage 3/6'}

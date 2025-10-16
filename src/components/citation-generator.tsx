@@ -311,8 +311,8 @@ export default function CitationGenerator() {
                   )}
                 </Button>
               </div>
-              <div className="p-3 bg-gray-50 rounded-md border">
-                <code className="text-sm">{citation.inText}</code>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border">
+                <code className="text-sm text-gray-900 dark:text-gray-100">{citation.inText}</code>
               </div>
             </div>
 
@@ -332,8 +332,8 @@ export default function CitationGenerator() {
                   )}
                 </Button>
               </div>
-              <div className="p-3 bg-gray-50 rounded-md border">
-                <code className="text-sm">{citation.worksCited}</code>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md border">
+                <code className="text-sm text-gray-900 dark:text-gray-100">{citation.worksCited}</code>
               </div>
             </div>
 

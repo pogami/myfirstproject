@@ -13,7 +13,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { safeFirebaseOperation, safeDocumentExists, safeDocumentData } from "@/lib/firebase-error-handler";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings, CreditCard, AlertTriangle, MapPin, Users } from "lucide-react";
+import { Camera, Loader2, User, Mail, GraduationCap, Calendar, Bell, MessageSquare, Settings, CreditCard, AlertTriangle, MapPin, Users, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { universities } from "@/lib/universities";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +50,7 @@ export default function ProfilePage() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadStatus, setUploadStatus] = useState("");
+    const [uploadSuccess, setUploadSuccess] = useState(false);
 
     // Notification settings
     const [notificationSettings, setNotificationSettings] = useState([
@@ -153,6 +154,53 @@ export default function ProfilePage() {
         if (!user) {
             router.push('/login');
             return;
+        }
+        
+        // Check if user is a guest user (from localStorage)
+        let isGuestUser = false;
+        try {
+            const guestData = localStorage.getItem('guestUser');
+            if (guestData) {
+                const parsed = JSON.parse(guestData);
+                isGuestUser = parsed.isGuest === true;
+            }
+        } catch (error) {
+            console.error("Error checking guest status:", error);
+        }
+        
+        console.log("Profile load check - isGuestUser:", isGuestUser, "user.isGuest:", user.isGuest, "user.isAnonymous:", user.isAnonymous);
+        
+        if (isGuestUser || user.isGuest || user.isAnonymous) {
+            // Handle guest user data from localStorage
+            try {
+                const guestData = localStorage.getItem('guestUser');
+                if (guestData) {
+                    const parsed = JSON.parse(guestData);
+                    setDisplayName(parsed.displayName || "");
+                    setProfilePicture(parsed.profilePicture || "");
+                    
+                    // Parse display name
+                    const nameParts = (parsed.displayName || "").split(" ");
+                    setFirstName(nameParts[0] || "");
+                    setLastName(nameParts.slice(1).join(" ") || "");
+                    
+                    // Set other guest data
+                    setSchool(parsed.school || "");
+                    setMajor(parsed.major || "");
+                    setGraduationYear(parsed.graduationYear || "");
+                    setPhoneNumber(parsed.phoneNumber || "");
+                    setLocation(parsed.location || "");
+                    setBirthday(parsed.birthday || "");
+                    setBio(parsed.bio || "");
+                    setGpa(parsed.gpa || "");
+                    setCredits(parsed.credits || "");
+                    setAcademicYear(parsed.academicYear || "");
+                }
+                setIsLoading(false);
+                return;
+            } catch (error) {
+                console.error("Error loading guest data:", error);
+            }
         }
         
         const fetchUserData = async () => {
@@ -297,7 +345,7 @@ export default function ProfilePage() {
         });
     };
 
-    const uploadWithTimeout = async (imageRef: any, file: File, timeoutMs: number = 30000): Promise<void> => {
+    const uploadWithTimeout = async (imageRef: any, file: File, timeoutMs: number = 60000): Promise<void> => {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
                 reject(new Error('Upload timeout - please try again'));
@@ -327,6 +375,7 @@ export default function ProfilePage() {
         setIsUploading(true);
         setUploadProgress(0);
         setUploadStatus("Preparing image...");
+        setUploadSuccess(false);
         
         let compressedFile: File | null = null;
         
@@ -336,6 +385,108 @@ export default function ProfilePage() {
             setProfilePicture(previewURL);
             setUploadProgress(10);
             setUploadStatus("Showing preview...");
+            
+            // Handle guest users differently - use data URL instead of Firebase Storage
+            let isGuestUser = false;
+            try {
+                const guestData = localStorage.getItem('guestUser');
+                if (guestData) {
+                    const parsed = JSON.parse(guestData);
+                    isGuestUser = parsed.isGuest === true;
+                }
+            } catch (error) {
+                console.error("Error checking guest status:", error);
+            }
+            
+            console.log("Upload check - isGuestUser:", isGuestUser, "user.isGuest:", user.isGuest, "user.isAnonymous:", user.isAnonymous);
+            
+            if (isGuestUser || user.isGuest || user.isAnonymous) {
+                console.log("Guest user detected - using data URL approach");
+                
+                try {
+                    // Step 1: Start conversion
+                    setUploadProgress(20);
+                    setUploadStatus("Converting image...");
+                    
+                    // Convert file to data URL with progress simulation
+                    const dataURL = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        
+                        reader.onprogress = (event) => {
+                            if (event.lengthComputable) {
+                                const progress = Math.round((event.loaded / event.total) * 60) + 20; // 20-80%
+                                setUploadProgress(progress);
+                            }
+                        };
+                        
+                        reader.onload = () => {
+                            setUploadProgress(80);
+                            setUploadStatus("Processing...");
+                            resolve(reader.result as string);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    
+                    // Step 2: Save to localStorage
+                    setUploadProgress(90);
+                    setUploadStatus("Saving locally...");
+                    
+                    // Small delay to show the progress
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                    const guestData = localStorage.getItem('guestUser');
+                    let guestUserData = guestData ? JSON.parse(guestData) : {};
+                    guestUserData.profilePicture = dataURL;
+                    localStorage.setItem('guestUser', JSON.stringify(guestUserData));
+                    console.log("Guest profile picture saved to localStorage");
+                    
+                    // Step 3: Complete
+                    setUploadProgress(100);
+                    setUploadStatus("Complete!");
+                    
+                    // Small delay to show completion
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    // Set the profile picture to the data URL (not the preview URL)
+                    setProfilePicture(dataURL);
+                    
+                    // Notify other components that profile picture changed
+                    window.dispatchEvent(new CustomEvent('profilePictureChanged', { 
+                        detail: { profilePicture: dataURL } 
+                    }));
+                    
+                    // Clean up the preview URL
+                    URL.revokeObjectURL(previewURL);
+                    
+                    toast({
+                        title: "Profile Picture Updated",
+                        description: "Your profile picture has been successfully updated.",
+                    });
+                    
+                    // Reset success state after 2 seconds
+                    setTimeout(() => {
+                        setUploadSuccess(false);
+                        setUploadStatus("");
+                    }, 2000);
+                    
+                    setIsUploading(false);
+                    return;
+                } catch (error) {
+                    console.error("Error in guest upload:", error);
+                    toast({
+                        variant: "destructive",
+                        title: "Upload Failed",
+                        description: "Could not save profile picture. Please try again.",
+                    });
+                    setIsUploading(false);
+                    return;
+                }
+            }
+            
+            // For authenticated users, use Firebase Storage
+            setUploadProgress(20);
+            setUploadStatus("Compressing image...");
             
             // Compress the image
             console.log("Compressing image...");
@@ -373,7 +524,7 @@ export default function ProfilePage() {
                         console.log("Trying alternative path:", finalImageRef.fullPath);
                     }
                     
-                    await uploadWithTimeout(finalImageRef, compressedFile, 20000); // 20 second timeout
+                    await uploadWithTimeout(finalImageRef, compressedFile, 60000); // 60 second timeout
                     uploadSuccess = true;
                     console.log("File uploaded successfully");
                 } catch (error) {
@@ -407,14 +558,31 @@ export default function ProfilePage() {
             // Update the local state with the final URL
             setProfilePicture(downloadURL);
             
-            // Update user data in Firestore
-            console.log("Updating Firestore document...");
-            const userDocRef = doc(db, "users", user.uid);
-            await setDoc(userDocRef, {
-                profilePicture: downloadURL,
-            }, { merge: true });
+            // Handle guest users differently
+            if (user.isGuest) {
+                // Save profile picture to localStorage for guest users
+                try {
+                    const guestData = localStorage.getItem('guestUser');
+                    let guestUserData = guestData ? JSON.parse(guestData) : {};
+                    guestUserData.profilePicture = downloadURL;
+                    localStorage.setItem('guestUser', JSON.stringify(guestUserData));
+                    console.log("Guest profile picture saved to localStorage");
+                } catch (error) {
+                    console.error("Error saving guest profile picture:", error);
+                }
+            } else {
+                // Update user data in Firestore for authenticated users
+                console.log("Updating Firestore document...");
+                const userDocRef = doc(db, "users", user.uid);
+                await setDoc(userDocRef, {
+                    profilePicture: downloadURL,
+                }, { merge: true });
+                console.log("Firestore document updated");
+            }
+            
             setUploadProgress(100);
-            console.log("Firestore document updated");
+            setUploadSuccess(true);
+            setUploadStatus("Upload successful!");
 
             // Clean up the preview URL
             URL.revokeObjectURL(previewURL);
@@ -423,6 +591,12 @@ export default function ProfilePage() {
                 title: "Profile Picture Updated",
                 description: "Your profile picture has been successfully updated.",
             });
+
+            // Reset success state after 3 seconds
+            setTimeout(() => {
+                setUploadSuccess(false);
+                setUploadStatus("");
+            }, 3000);
         } catch (error) {
             console.error("Profile picture upload error:", error);
             
@@ -462,6 +636,29 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         if (!user) return;
+        
+        // Validate GPA and Credits before saving
+        const gpaNum = parseFloat(gpa);
+        const creditsNum = parseInt(credits);
+        
+        if (gpa && (gpaNum < 0 || gpaNum > 4)) {
+            toast({
+                variant: "destructive",
+                title: "Invalid GPA",
+                description: "GPA must be between 0.0 and 4.0",
+            });
+            return;
+        }
+        
+        if (credits && (creditsNum < 0 || creditsNum > 130)) {
+            toast({
+                variant: "destructive",
+                title: "Invalid Credits",
+                description: "Credits must be between 0 and 130",
+            });
+            return;
+        }
+        
         setIsSaving(true);
         try {
             // Update displayName in Auth
@@ -694,37 +891,70 @@ export default function ProfilePage() {
                                             }}
                                         >
                                             {isUploading ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                uploadSuccess ? (
+                                                    <Check className="h-4 w-4 text-green-500" />
+                                                ) : (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                )
                                             ) : (
                                                 <Camera className="h-4 w-4"/>
                                             )}
                                         </Button>
                                     </div>
                                     
+                                    {/* Upload Progress Indicator */}
+                                    {isUploading && (
+                                        <div className="mt-4 space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-muted-foreground">{uploadStatus}</span>
+                                                <span className="text-muted-foreground">{uploadProgress}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                                                <div 
+                                                    className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out" 
+                                                    style={{ width: `${uploadProgress}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
                                     <div>
                                         <h2 className="text-xl font-bold">{displayName || 'John Doe'}</h2>
-                                        <p className="text-muted-foreground">{major || 'Computer Science'}</p>
+                                        <p className="text-muted-foreground">{major || 'Major'}</p>
                                         <Badge variant="secondary" className="mt-2 bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
                                             {academicYear || 'Junior'}
                                         </Badge>
                                     </div>
                                     
                                     <p className="text-sm text-muted-foreground">
-                                        {bio || 'Passionate computer science student with interests in AI and machine learning. Love studying with friends and exploring new technologies.'}
+                                        {bio || 'Tell us about yourself! What are your interests, goals, or what you love about your field of study?'}
                                     </p>
                                     
                                     <div className="space-y-2 text-sm">
                                         <div className="flex items-center gap-2 text-muted-foreground">
                                             <GraduationCap className="h-4 w-4" />
-                                            <span>{school || 'University of California'}</span>
+                                            <span>{(() => {
+                                                try {
+                                                    const guestData = localStorage.getItem('guestUser');
+                                                    if (guestData) {
+                                                        const parsed = JSON.parse(guestData);
+                                                        if (parsed.isGuest === true) {
+                                                            return 'Sign up to save your university';
+                                                        }
+                                                    }
+                                                } catch (error) {
+                                                    console.error("Error checking guest status for university:", error);
+                                                }
+                                                return school || 'Enter your university';
+                                            })()}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-muted-foreground">
                                             <MapPin className="h-4 w-4" />
-                                            <span>{location || 'San Francisco, CA'}</span>
+                                            <span>{location || 'Enter your location'}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-muted-foreground">
                                             <Calendar className="h-4 w-4" />
-                                            <span>Born {birthday || '5/14/2002'}</span>
+                                            <span>{birthday || 'Enter your birthday'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -735,15 +965,18 @@ export default function ProfilePage() {
                         <Card className="border-0 bg-gradient-to-br from-card to-card/50 shadow-xl">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-lg">Academic Stats</CardTitle>
+                                <CardDescription className="text-sm text-muted-foreground">
+                                    Enter your GPA and credits below for them to appear here
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="text-center">
-                                        <div className="text-3xl font-bold text-primary">{gpa || '3.8'}</div>
+                                        <div className="text-3xl font-bold text-primary">{gpa || '0'}</div>
                                         <div className="text-sm text-muted-foreground">GPA</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-3xl font-bold text-primary">{credits || '89'}</div>
+                                        <div className="text-3xl font-bold text-primary">{credits || '0'}</div>
                                         <div className="text-sm text-muted-foreground">Credits</div>
                                     </div>
                                 </div>
@@ -810,22 +1043,34 @@ export default function ProfilePage() {
                                 
                                 <div className="space-y-2">
                                     <Label htmlFor="location">Location</Label>
+                                        <Input 
+                                            id="location" 
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                            placeholder="Enter your location"
+                                            disabled={isSaving}
+                                        />
+                                </div>
+                                
+                                {/* Major - editable */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="major">Major</Label>
                                     <Input 
-                                        id="location" 
-                                        value={location}
-                                        onChange={(e) => setLocation(e.target.value)}
-                                        placeholder="San Francisco, CA"
+                                        id="major" 
+                                        value={major}
+                                        onChange={(e) => setMajor(e.target.value.slice(0,60))}
+                                        placeholder="Enter your major"
                                         disabled={isSaving}
                                     />
                                 </div>
-                                
+
                                 <div className="space-y-2">
                                     <Label htmlFor="birthday">Birthday</Label>
                                     <Input 
                                         id="birthday" 
                                         value={birthday}
                                         onChange={(e) => setBirthday(e.target.value)}
-                                        placeholder="05/15/2002"
+                                        placeholder="Enter your birthday"
                                         disabled={isSaving}
                                     />
                                 </div>
@@ -836,10 +1081,71 @@ export default function ProfilePage() {
                                         id="bio"
                                         value={bio}
                                         onChange={(e) => setBio(e.target.value)}
-                                        placeholder="Passionate computer science student with interests in AI and machine learning. Love studying with friends and exploring new technologies."
+                                        placeholder="Enter your bio"
                                         disabled={isSaving}
                                         className="w-full min-h-[100px] px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     />
+                                </div>
+                                
+                                {/* Academic Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Academic Information</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="academicYear">Academic Year</Label>
+                                            <Select value={academicYear} onValueChange={setAcademicYear} disabled={isSaving}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select year" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Freshman">Freshman</SelectItem>
+                                                    <SelectItem value="Sophomore">Sophomore</SelectItem>
+                                                    <SelectItem value="Junior">Junior</SelectItem>
+                                                    <SelectItem value="Senior">Senior</SelectItem>
+                                                    <SelectItem value="Graduate">Graduate</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="gpa">GPA (0.0 - 4.0)</Label>
+                                            <Input 
+                                                id="gpa" 
+                                                type="number"
+                                                min="0"
+                                                max="4"
+                                                step="0.1"
+                                                value={gpa}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    // Only allow values between 0 and 4
+                                                    if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 4)) {
+                                                        setGpa(value);
+                                                    }
+                                                }}
+                                                placeholder="3.8"
+                                                disabled={isSaving}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="credits">Credits Earned (0 - 130)</Label>
+                                            <Input 
+                                                id="credits" 
+                                                type="number"
+                                                min="0"
+                                                max="130"
+                                                value={credits}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    // Only allow values between 0 and 130
+                                                    if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 130)) {
+                                                        setCredits(value);
+                                                    }
+                                                }}
+                                                placeholder="89"
+                                                disabled={isSaving}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div className="pt-4 border-t">

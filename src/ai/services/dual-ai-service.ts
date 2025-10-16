@@ -86,7 +86,7 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
     
     // Check if the question contains URLs to scrape
     let scrapedContent = '';
-    const urls = extractUrlsFromText(input.question);
+    const urls = extractUrlsFromText(input.question || '');
     if (urls.length > 0) {
       console.log('Found URLs to scrape:', urls);
       try {
@@ -376,7 +376,7 @@ async function tryOpenAI(input: StudyAssistanceInput): Promise<AIResponse> {
     
     // Check if the question contains URLs to scrape
     let scrapedContent = '';
-    const urls = extractUrlsFromText(input.question);
+    const urls = extractUrlsFromText(input.question || '');
     if (urls.length > 0) {
       console.log('Found URLs to scrape:', urls);
       try {
@@ -579,7 +579,7 @@ Remember: This is part of an ongoing conversation. Reference previous discussion
  * Enhanced fallback responses for when both AI providers fail
  */
 function getEnhancedFallback(input: StudyAssistanceInput): AIResponse {
-  const lowerQuestion = input.question.toLowerCase();
+  const lowerQuestion = (input.question || '').toLowerCase();
   
   // Enhanced contextual responses based on question content
   if (lowerQuestion.includes('derivative') || lowerQuestion.includes('differentiate') || lowerQuestion.includes('calculus')) {

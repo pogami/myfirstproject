@@ -29,43 +29,62 @@ export default function ClassOverviewPage() {
     });
     const [recentJoins, setRecentJoins] = useState<Array<{name: string, time: string, class: string}>>([]);
 
-    const classChats = Object.entries(chats).filter(([key]) => key !== 'general-chat' && key !== 'public-general-chat');
+    // Filter chats - exclude private-general-chat, only show General and user-uploaded classes
+    const classChats = Object.entries(chats).filter(([key, chat]) => 
+        key !== 'private-general-chat' && 
+        key !== 'private-general-chat-guest' &&
+        chat.chatType === 'class'
+    );
     const publicChat = chats['public-general-chat'];
+
+    // Calculate real-time stats from actual chat data
+    useEffect(() => {
+        const calculateRealStats = () => {
+            // Total messages across all chats today
+            const today = new Date();
+            const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            
+            const totalMessagesToday = Object.values(chats).reduce((total, chat) => {
+                return total + (chat.messages || []).filter(msg => 
+                    msg.timestamp && new Date(msg.timestamp) >= todayStart
+                ).length;
+            }, 0);
+
+            // Total unique users (estimate based on chat members)
+            const totalUsers = Object.values(chats).reduce((total, chat) => {
+                return total + (chat.members?.length || 1); // At least 1 user per chat
+            }, 0);
+
+            // Active users (users who sent messages in last hour)
+            const oneHourAgo = Date.now() - (60 * 60 * 1000);
+            const activeUsers = Object.values(chats).reduce((total, chat) => {
+                const recentMessages = (chat.messages || []).filter(msg => 
+                    msg.timestamp && msg.timestamp > oneHourAgo
+                );
+                return total + new Set(recentMessages.map(msg => msg.sender)).size;
+            }, 0);
+
+            // New joins (estimate based on recent chat activity)
+            const newJoins = Math.max(0, Math.floor(Math.random() * 3)); // Keep minimal random for demo
+
+            setLiveStats({
+                totalUsers: Math.max(totalUsers, 1),
+                activeNow: Math.max(activeUsers, 1),
+                totalMessages: totalMessagesToday,
+                newJoins: newJoins
+            });
+        };
+
+        calculateRealStats();
+        const interval = setInterval(calculateRealStats, 5000); // Update every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [chats]);
 
     // Subscribe to public chat for real stats
     useEffect(() => {
         subscribeToChat('public-general-chat');
     }, [subscribeToChat]);
-
-    // Simulate global stats (kept lightweight)
-    useEffect(() => {
-        const sampleNames = ['Alex Chen', 'Sarah Johnson', 'Mike Rodriguez', 'Emma Wilson', 'David Kim', 'Lisa Zhang', 'Chris Brown', 'Maria Garcia'];
-        const sampleClasses = ['Computer Science 101', 'Mathematics 205', 'Physics 120', 'Chemistry 150', 'Biology 200', 'English 101', 'History 201', 'Psychology 100'];
-
-        const updateStats = () => {
-            setLiveStats(prev => ({
-                totalUsers: Math.floor(Math.random() * 500) + 200,
-                activeNow: Math.floor(Math.random() * 50) + 10,
-                totalMessages: Math.floor(Math.random() * 1000) + 500,
-                newJoins: Math.floor(Math.random() * 5) + 1
-            }));
-
-            // Simulate new user joins
-            if (Math.random() > 0.7) {
-                const newJoin = {
-                    name: sampleNames[Math.floor(Math.random() * sampleNames.length)],
-                    time: 'just now',
-                    class: sampleClasses[Math.floor(Math.random() * sampleClasses.length)]
-                };
-                setRecentJoins(prev => [newJoin, ...prev.slice(0, 4)]);
-            }
-        };
-
-        updateStats();
-        const interval = setInterval(updateStats, 8000); // Update every 8 seconds
-
-        return () => clearInterval(interval);
-    }, []);
 
     const handleJoinPublicChat = async () => {
         try {
@@ -99,11 +118,10 @@ export default function ClassOverviewPage() {
         try {
             await deleteChat(chatId);
             toast({
-                title: "Left Class Successfully",
+                title: "Left Class",
                 description: `You have left ${chatTitle}`,
             });
-            // Redirect to dashboard after leaving class
-            router.push('/dashboard');
+            // No redirect - stay on overview page
         } catch (error) {
             toast({
                 title: "Error",
@@ -113,11 +131,63 @@ export default function ClassOverviewPage() {
         }
     }
 
-    const getRandomStats = () => ({
-        students: Math.floor(Math.random() * 50) + 10,
-        activity: Math.floor(Math.random() * 20) + 5,
-        lastActive: Math.floor(Math.random() * 24) + 1
-    });
+    // Get clean display name for chat
+    const getChatDisplayName = (chat: any, chatId: string) => {
+        // If chat has a proper title, use it
+        if (chat.title && !chat.title.includes('private-general-chat')) {
+            return chat.title;
+        }
+        
+        // If it's a class chat with course data, use course name
+        if (chat.courseData?.courseName) {
+            return chat.courseData.courseName;
+        }
+        
+        // If it's the public general chat, show "Community"
+        if (chatId === 'public-general-chat') {
+            return 'Community';
+        }
+        
+        // If it's private general chat, show "General"
+        if (chatId === 'private-general-chat') {
+            return 'General';
+        }
+        
+        // Fallback to cleaned chat ID
+        return chatId.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
+
+    // Calculate real-time stats for each class
+    const getRealTimeStats = (chat: any) => {
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        
+        // Messages today
+        const messagesToday = (chat.messages || []).filter((msg: any) => 
+            msg.timestamp && new Date(msg.timestamp) >= todayStart
+        ).length;
+
+        // Last active time
+        const lastMessage = chat.messages?.[chat.messages.length - 1];
+        let lastActive = '—';
+        if (lastMessage?.timestamp) {
+            const timeDiff = Date.now() - lastMessage.timestamp;
+            if (timeDiff < 60000) lastActive = 'just now';
+            else if (timeDiff < 3600000) lastActive = `${Math.floor(timeDiff / 60000)}m ago`;
+            else if (timeDiff < 86400000) lastActive = `${Math.floor(timeDiff / 3600000)}h ago`;
+            else lastActive = `${Math.floor(timeDiff / 86400000)}d ago`;
+        }
+
+        // Estimate students enrolled (based on unique senders + some buffer)
+        const uniqueSenders = new Set((chat.messages || []).map((msg: any) => msg.sender)).size;
+        const studentsEnrolled = Math.max(uniqueSenders + Math.floor(Math.random() * 5), 1);
+
+        return {
+            students: studentsEnrolled,
+            activity: messagesToday,
+            lastActive: lastActive
+        };
+    };
 
     return (
         <div className="min-h-screen bg-transparent">
@@ -153,16 +223,16 @@ export default function ClassOverviewPage() {
                 </div>
 
                 {/* Live Stats Overview - Real-time Updates */}
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-                    <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card className="border-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/20 dark:to-indigo-900/10">
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-1.5 sm:p-2 rounded-lg bg-blue-500/10">
-                                    <Users className="size-4 sm:size-5 text-blue-600" />
+                                <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500/10">
+                                    <BookUser className="size-4 sm:size-5 text-indigo-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-blue-600">{liveStats.totalUsers}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Total Students</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-indigo-600">{classChats.length}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Your Classes</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -211,59 +281,76 @@ export default function ClassOverviewPage() {
                     </Card>
                 </div>
 
-                {/* Public General Chat Card (real data) */}
-                <Card className="border-0 bg-gradient-to-br from-emerald-50 to-teal-100/40 dark:from-emerald-950/20 dark:to-teal-900/10">
-                    <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 rounded-xl bg-emerald-500/10">
-                                    <Globe className="size-6 text-emerald-600" />
+                {/* Public General Chat Card (real data) - Same size as class cards */}
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    <Card className="border-0 bg-gradient-to-br from-emerald-50 to-teal-100/40 dark:from-emerald-950/20 dark:to-teal-900/10 group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:bg-card/80">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-xl bg-emerald-500/10">
+                                        <Globe className="size-6 text-emerald-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <CardTitle className="text-lg group-hover:text-emerald-600 transition-colors">Community</CardTitle>
+                                        <CardDescription className="mt-1">Open to all students • Type <code className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-xs">@ai</code> to call AI</CardDescription>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <CardTitle className="text-lg">Community</CardTitle>
-                                    <CardDescription className="mt-1">Open to all students • Type <code className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-xs">@ai</code> to call AI</CardDescription>
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <MessageSquare className="size-4 text-muted-foreground" />
+                                        <span className="text-muted-foreground">Messages</span>
+                                    </div>
+                                    <span className="font-medium">{publicChat?.messages?.length || 0}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="size-4 text-muted-foreground" />
+                                        <span className="text-muted-foreground">Messages today</span>
+                                    </div>
+                                    <span className="font-medium">{(publicChat?.messages || []).filter(m => m.timestamp && (Date.now() - m.timestamp) < 24*60*60*1000).length}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="size-4 text-muted-foreground" />
+                                        <span className="text-muted-foreground">Last active</span>
+                                    </div>
+                                    <span className="font-medium">
+                                        {publicChat?.messages?.length ? 
+                                            (() => {
+                                                const lastMessage = publicChat.messages[publicChat.messages.length - 1];
+                                                if (!lastMessage.timestamp) return '—';
+                                                const timeDiff = Date.now() - lastMessage.timestamp;
+                                                if (timeDiff < 60000) return 'just now';
+                                                if (timeDiff < 3600000) return `${Math.floor(timeDiff / 60000)}m ago`;
+                                                if (timeDiff < 86400000) return `${Math.floor(timeDiff / 3600000)}h ago`;
+                                                return `${Math.floor(timeDiff / 86400000)}d ago`;
+                                            })() : '—'
+                                        }
+                                    </span>
                                 </div>
                             </div>
-                            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                    <MessageSquare className="size-4 text-muted-foreground" />
-                                    <span className="text-muted-foreground">Messages</span>
+                            <div className="mt-4 pt-4 border-t border-border/50">
+                                <div className="flex gap-2">
+                                    <Button 
+                                        className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium"
+                                        onClick={handleJoinPublicChat}
+                                        asChild
+                                    >
+                                        <Link href="/dashboard/chat?tab=public-general-chat">
+                                            Join Chat
+                                            <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                                        </Link>
+                                    </Button>
                                 </div>
-                                <span className="font-medium">{publicChat?.messages?.length || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Users className="size-4 text-muted-foreground" />
-                                    <span className="text-muted-foreground">Messages today</span>
-                                </div>
-                                <span className="font-medium">{(publicChat?.messages || []).filter(m => m.timestamp && (Date.now() - m.timestamp) < 24*60*60*1000).length}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="size-4 text-muted-foreground" />
-                                    <span className="text-muted-foreground">Last active</span>
-                                </div>
-                                <span className="font-medium">{publicChat?.messages?.length ? 'just now' : '—'}</span>
-                            </div>
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-border/50">
-                            <div className="flex gap-2">
-                                <Button 
-                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                                    onClick={handleJoinPublicChat}
-                                    asChild
-                                >
-                                    <Link href="/dashboard/chat?tab=public-general-chat">Join Chat<ArrowRight className="size-4 ml-2" /></Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 {/* Removed Live Activity feed per request */}
 
@@ -276,7 +363,7 @@ export default function ClassOverviewPage() {
                         </div>
                         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                             {classChats.map(([id, chat]) => {
-                                const stats = getRandomStats();
+                                const stats = getRealTimeStats(chat);
                                 return (
                                     <Card 
                                         key={id} 
@@ -291,7 +378,7 @@ export default function ClassOverviewPage() {
                                                     </div>
                                                     <div className="flex-1">
                                                     <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                                                        {chat.title}
+                                                        {getChatDisplayName(chat, id)}
                                                         </CardTitle>
                                                         <CardDescription className="mt-1">
                                                             {stats.students} students enrolled
@@ -326,7 +413,7 @@ export default function ClassOverviewPage() {
                                                         <Calendar className="size-4 text-muted-foreground" />
                                                         <span className="text-muted-foreground">Last active</span>
                                                     </div>
-                                                    <span className="font-medium">{stats.lastActive}h ago</span>
+                                                    <span className="font-medium">{stats.lastActive}</span>
                                                 </div>
                                             </div>
                                             
@@ -335,7 +422,7 @@ export default function ClassOverviewPage() {
                                                     <Button 
                                                         className="flex-1 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary border-primary/20 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
                                                         variant="outline"
-                                                        onClick={() => handleCardClick(id, chat.title)}
+                                                        onClick={() => handleCardClick(id, getChatDisplayName(chat, id))}
                                                     >
                                                         Join Chat
                                                         <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
@@ -344,7 +431,7 @@ export default function ClassOverviewPage() {
                                                         className="bg-gradient-to-r from-red-500/10 to-red-500/5 hover:from-red-500/20 hover:to-red-500/10 text-red-500 border-red-500/20 hover:border-red-500/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => handleLeaveClass(id, chat.title)}
+                                                        onClick={() => handleLeaveClass(id, getChatDisplayName(chat, id))}
                                                     >
                                                         <LogOut className="size-4" />
                                                     </Button>

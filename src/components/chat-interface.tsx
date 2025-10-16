@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Bot, User, AlertTriangle, MessageCircle, Info, Upload, ChevronDown, ChevronUp, Copy, Check, BookOpen, Loader2, X, Download, RotateCcw, Trash2, MoreVertical } from "lucide-react";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -587,8 +588,8 @@ export default function ChatInterface() {
                         <Button 
                             size="sm" 
                             onClick={() => {
-                                // Redirect to pricing page
-                                window.open('/pricing', '_blank');
+                                // Redirect to features page
+                                window.open('/features', '_blank');
                             }}
                         >
                             Upgrade
@@ -1207,6 +1208,13 @@ export default function ChatInterface() {
                                                                 }
                                                             }}
                                                         >
+                                                            {msg.sender === 'bot' ? (
+                                                                <img 
+                                                                    src="/theonlylogo.png" 
+                                                                    alt="CourseConnect AI" 
+                                                                    className="h-12 w-12 sm:h-16 sm:w-16 object-contain flex-shrink-0"
+                                                                />
+                                                            ) : (
                                                             <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background cursor-pointer hover:ring-primary/50 transition-all duration-200">
                                                             {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
                                                                 <AvatarImage 
@@ -1215,13 +1223,6 @@ export default function ChatInterface() {
                                                                 />
                                                             ) : null}
                                                             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                                                                {msg.sender === 'bot' && (
-                                                                    <img 
-                                                                        src="/courseconnect-logo-profile.png" 
-                                                                        alt="AI" 
-                                                                        className="size-6 object-contain"
-                                                                    />
-                                                                )}
                                                                 {msg.sender === 'moderator' && <AlertTriangle className="size-6 text-destructive"/>}
                                                                 {msg.sender === 'user' && (
                                                                     userProfiles[msg.userId || '']?.displayName 
@@ -1230,7 +1231,15 @@ export default function ChatInterface() {
                                                                 )}
                                                             </AvatarFallback>
                                                     </Avatar>
+                                                            )}
                                                         </ProfileHoverCard>
+                                                    ) : (
+                                                        msg.sender === 'bot' ? (
+                                                            <img 
+                                                                src="/theonlylogo.png" 
+                                                                alt="CourseConnect AI" 
+                                                                className="h-12 w-12 sm:h-16 sm:w-16 object-contain flex-shrink-0"
+                                                            />
                                                     ) : (
                                                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
                                                             {msg.sender === 'user' && userProfiles[msg.userId || '']?.photoURL ? (
@@ -1240,13 +1249,6 @@ export default function ChatInterface() {
                                                                 />
                                                             ) : null}
                                                             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                                                                {msg.sender === 'bot' && (
-                                                                    <img 
-                                                                        src="/courseconnect-logo-profile.png" 
-                                                                        alt="AI" 
-                                                                        className="size-6 object-contain"
-                                                                    />
-                                                                )}
                                                                 {msg.sender === 'moderator' && <AlertTriangle className="size-6 text-destructive"/>}
                                                                 {msg.sender === 'user' && (
                                                                     userProfiles[msg.userId || '']?.displayName 
@@ -1255,6 +1257,7 @@ export default function ChatInterface() {
                                                                 )}
                                                             </AvatarFallback>
                                                         </Avatar>
+                                                        )
                                                     );
                                                 })()}
                                                     
@@ -1333,18 +1336,6 @@ export default function ChatInterface() {
                                                                         )}
                                                                     </Button>
                                                                 )}
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    onClick={() => copyMessage(msg.text, index)}
-                                                                    className="h-6 w-6 p-0 hover:bg-transparent"
-                                                                >
-                                                                    {isCopied ? (
-                                                                        <Check className="h-3 w-3 text-green-500" />
-                                                                    ) : (
-                                                                        <Copy className="h-3 w-3" />
-                                                                    )}
-                                                                </Button>
                                                             </div>
                                                         </div>
                                                         )}
@@ -1374,7 +1365,10 @@ export default function ChatInterface() {
                                                         })()}
                                                         
                                                         {/* Message Content */}
-                                                        <div className={msg.sender === 'bot' ? '' : 'px-2 sm:px-3 pb-2 sm:pb-3'}>
+                                                        {msg.sender === 'user' ? (
+                                                            <ContextMenu>
+                                                                <ContextMenuTrigger asChild>
+                                                                    <div className="px-2 sm:px-3 pb-2 sm:pb-3 cursor-context-menu" onContextMenu={(e) => e.preventDefault()}>
                                                             {isLong && isCollapsed ? (
                                                                 <div>
                                                                     <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed opacity-90">
@@ -1408,6 +1402,54 @@ export default function ChatInterface() {
                                                                 </div>
                                                             )}
                                                         </div>
+                                                                </ContextMenuTrigger>
+                                                                <ContextMenuContent>
+                                                                    <ContextMenuItem onClick={() => copyMessage(msg.text, index)}>
+                                                                        <Copy className="h-4 w-4 mr-2" />
+                                                                        Copy Message
+                                                                    </ContextMenuItem>
+                                                                    <ContextMenuItem onClick={() => deleteMessage?.(currentTab!, index)}>
+                                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                                        Delete Message
+                                                                    </ContextMenuItem>
+                                                                </ContextMenuContent>
+                                                            </ContextMenu>
+                                                        ) : (
+                                                            <div className="">
+                                                                {isLong && isCollapsed ? (
+                                                                    <div>
+                                                                        <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed opacity-90">
+                                                                            {getPreviewText(msg.text)}
+                                                                        </p>
+                                                                        <Button
+                                                                            variant="link"
+                                                                            size="sm"
+                                                                            onClick={() => toggleMessageCollapse(index)}
+                                                                            className="h-auto p-0 mt-1 sm:mt-2 text-xs font-medium hover:underline"
+                                                                        >
+                                                                            Show more...
+                                                                        </Button>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div>
+                                                                        <AIResponseRenderer 
+                                                                            content={msg.text}
+                                                                            className="text-xs sm:text-sm leading-relaxed opacity-90 ai-response"
+                                                                            sources={msg.sources}
+                                                                        />
+                                                                        {msg.file && (
+                                                                            <div className="mt-3">
+                                                                                <EnhancedFileDisplay 
+                                                                                    file={msg.file} 
+                                                                                    compact={true}
+                                                                                    className="bg-white/5 border-white/10"
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                         
                                                         {/* Message Footer */}
                                                         {isLong && !isCollapsed && msg.sender !== 'bot' && (
@@ -1436,15 +1478,11 @@ export default function ChatInterface() {
                                         })}
                                         {isSending && currentTab && chats[currentTab].messages.at(-1)?.sender !== 'bot' && (
                                              <div className="flex items-start gap-3 w-full mb-4 animate-in slide-in-from-bottom-2 duration-300">
-                                                <Avatar className="h-10 w-10 border-2 flex-shrink-0 shadow-lg ring-2 ring-background">
-                                                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-primary/80">
-                                                        <img 
-                                                            src="/courseconnect-logo-profile.png" 
-                                                            alt="AI" 
-                                                            className="size-6 object-contain"
-                                                        />
-                                                    </div>
-                                                </Avatar>
+                                                <img 
+                                                    src="/theonlylogo.png" 
+                                                    alt="CourseConnect AI" 
+                                                    className="h-10 w-10 object-contain flex-shrink-0"
+                                                />
                                                 <div className="px-3 pb-3">
                                                     <div className="text-xs text-muted-foreground mb-1">
                                                         CourseConnect AI

@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users } from 'lucide-react';
+import { ArrowRight, Sparkles, Users, BarChart3 } from 'lucide-react';
 
 export function CTASection() {
   return (
@@ -26,7 +26,7 @@ export function CTASection() {
           {/* Badge */}
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4 mr-2" />
-            Join thousands of successful students
+            AI-Powered Study Platform
           </div>
 
           {/* Main Headline */}
@@ -50,7 +50,7 @@ export function CTASection() {
               </span>
             </div>
             <p className="text-xl md:text-2xl text-white/90 leading-relaxed text-center">
-              Join today and get instant access to AI tutoring, study groups, and classmates who share your courses.
+              Upload your syllabus, chat with AI tutors, get assignment reminders, and create flashcards to ace your courses.
             </p>
           </div>
 
@@ -71,21 +71,18 @@ export function CTASection() {
               onClick={() => window.location.href = '/dashboard'}
             >
               <Users className="mr-2 h-5 w-5" />
-              Join Study Group
+              Join Now
             </Button>
           </div>
 
           {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-xl mx-auto">
             <div className="flex items-center justify-center gap-2 text-white/90">
+              <Sparkles className="h-5 w-5" />
               <span className="text-sm">AI-Powered Tutoring</span>
             </div>
             <div className="flex items-center justify-center gap-2 text-white/90">
-              <Users className="h-5 w-5" />
-              <span className="text-sm">Find Classmates</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 text-white/90">
-              <Sparkles className="h-5 w-5" />
+              <BarChart3 className="h-5 w-5" />
               <span className="text-sm">Study Analytics</span>
             </div>
           </div>

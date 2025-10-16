@@ -5,6 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const { text, minLength = 50 } = await request.json();
     
+    console.log('Plagiarism check API called with text length:', text?.length);
+    
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
         { error: 'Text is required for plagiarism check' },
@@ -19,7 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Starting plagiarism check...');
     const result = await checkPlagiarism(text, minLength);
+    console.log('Plagiarism check completed:', result);
 
     return NextResponse.json({ 
       success: true, 

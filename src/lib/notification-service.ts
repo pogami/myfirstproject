@@ -1,4 +1,4 @@
-import { auth, db } from '@/lib/firebase/client';
+import { auth, db } from '@/lib/firebase/client-simple';
 import { 
   collection, 
   addDoc, 
@@ -37,8 +37,13 @@ export class NotificationService {
       updatedAt: serverTimestamp(),
     };
 
-    const docRef = await addDoc(collection(db, 'notifications'), notificationData);
-    return docRef.id;
+    try {
+      const docRef = await addDoc(collection(db, 'notifications'), notificationData);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
   }
 
   static async createSampleNotifications(userId: string) {

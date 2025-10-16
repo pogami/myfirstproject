@@ -12,20 +12,20 @@
   "categories": ["education", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/officialogo.png",
-      "sizes": "192x192",
+      "src": "/final-logo.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/officialogo.png",
+      "src": "/final-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/officialogo.png",
-      "sizes": "16x16 32x32 48x48",
+      "src": "/final-logo.png",
+      "sizes": "256x256 512x512",
       "type": "image/png",
       "purpose": "any"
     }

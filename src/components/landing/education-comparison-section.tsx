@@ -9,7 +9,7 @@ import Image from 'next/image';
 const educationPlatforms = [
   {
     name: 'CourseConnect AI',
-    logo: '/officialogo.png',
+    logo: '/pageicon.png',
     description: 'Academic-focused AI with study groups',
     features: {
       'Academic Context': true,

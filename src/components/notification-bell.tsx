@@ -57,6 +57,10 @@ const getNotificationIcon = (type: Notification['type'], priority: Notification[
 export function NotificationBell() {
   const [user, setUser] = useState(auth.currentUser);
   const [open, setOpen] = useState(false);
+  
+  // Check if we're in test mode
+  const isTestMode = typeof window !== 'undefined' && window.location.pathname.includes('test-notifications');
+  
   const {
     notifications,
     unreadCount,
@@ -65,15 +69,19 @@ export function NotificationBell() {
     markAllAsRead,
     deleteNotification,
     clearAllNotifications,
-  } = useNotifications(user);
+  } = useNotifications(isTestMode ? null : user); // Pass null for test mode
 
-  // Listen for auth state changes
+  // Listen for auth state changes (only if not in test mode)
   useEffect(() => {
+    if (isTestMode) {
+      return;
+    }
+    
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
     });
     return unsubscribe;
-  }, []);
+  }, [isTestMode]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead(notificationId);

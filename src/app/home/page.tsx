@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { Hero } from "@/components/hero";
-import { Pricing } from "@/components/pricing";
+import { Features } from "@/components/features";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/site-footer";
 import { useState, useEffect } from "react";
@@ -66,10 +66,10 @@ export default function LandingPage() {
                 `}
             </style>
             <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-transparent backdrop-blur supports-[backdrop-filter]:bg-transparent light:bg-white/90 light:backdrop-blur-xl light:border-gray-200/50 light:shadow-sm">
-                <div className="container flex h-16 sm:h-20 max-w-6xl mx-auto px-4 sm:px-6 items-center justify-between">
+                <div className="container flex h-64 sm:h-80 max-w-6xl mx-auto px-4 sm:px-6 items-center justify-between">
                     <Link href="/home" className="flex items-center gap-2 sm:gap-3 group">
                         {/* CourseConnect Logo */}
-                        <CourseConnectLogo className="h-6 w-6 sm:h-7 sm:w-7 group-hover:scale-110 transition-all duration-300" />
+                        <CourseConnectLogo className="h-64 w-64 sm:h-80 sm:w-80 group-hover:scale-110 transition-all duration-300" />
                         
                         {/* Enhanced CourseConnect text */}
                         <div className="relative">
@@ -95,7 +95,7 @@ export default function LandingPage() {
                             <Link href="/about">About</Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
-                            <Link href="/pricing">Pricing</Link>
+                            <Link href="/features">Features</Link>
                         </Button>
                         <Button variant="ghost" size="sm" className="h-10 text-sm min-h-[44px]" asChild>
                             <Link href="/login">Sign In</Link>
@@ -912,7 +912,7 @@ export default function LandingPage() {
             </main>
             
             {/* Pricing Section */}
-            <section id="pricing" className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
+            <section id="features" className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12 sm:mb-16">
                         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 sm:mb-6">
@@ -925,7 +925,7 @@ export default function LandingPage() {
                             Choose the plan that works best for you. Start free and upgrade as you need more features.
                         </p>
                     </div>
-                    <Pricing />
+                        <Features />
                 </div>
             </section>
             

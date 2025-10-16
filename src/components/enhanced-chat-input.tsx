@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 
 interface EnhancedChatInputProps {
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onSend: (shouldCallAI?: boolean) => void;
-  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onFileUpload?: (file: File) => void;
   onFileProcessed?: (processedFile: any) => void;
   placeholder?: string;
@@ -44,9 +44,10 @@ export function EnhancedChatInput({
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showAIMention, setShowAIMention] = useState(false);
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
-  const [processingFile, setProcessingFile] = useState<File | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<{ name: string; size: number; type: string; url?: string }[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Detect mobile on mount
@@ -78,7 +79,7 @@ export function EnhancedChatInput({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e);
     
     // Handle typing indicators
@@ -91,7 +92,7 @@ export function EnhancedChatInput({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (onKeyPress) {
       onKeyPress(e);
     }
@@ -102,8 +103,28 @@ export function EnhancedChatInput({
   };
 
   const handleSend = () => {
-    if (value.trim()) {
-      // Check if AI should be called
+    // If there are files selected, send them with the text
+    if (selectedFiles.length > 0) {
+      if (onFileProcessed) {
+        // Send as a single payload so UI can render a grid on one message
+        onFileProcessed({ files: selectedFiles, text: value.trim() });
+      } else {
+        // Fallback: send each file individually
+        selectedFiles.forEach((file) => {
+          setUploadProgress(prev => ({ ...prev, [file.name]: 10 }));
+          setTimeout(() => setUploadProgress(prev => ({ ...prev, [file.name]: 60 })), 100);
+          setTimeout(() => setUploadProgress(prev => ({ ...prev, [file.name]: 100 })), 200);
+          onFileUpload?.(file);
+        });
+      }
+      // Clear selection after dispatch
+      setSelectedFiles([]);
+      setFilePreviews([]);
+      setUploadProgress({});
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+    if (value.trim() && selectedFiles.length === 0) {
+      // No file, just text
       const shouldCallAI = !isPublicChat || value.includes('@ai') || value.includes('@AI');
       onSend(shouldCallAI);
       onTypingStop?.();
@@ -111,16 +132,9 @@ export function EnhancedChatInput({
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB');
-      return;
-    }
-
-    // Check file type
     const allowedTypes = [
       'text/plain',
       'application/pdf',
@@ -132,75 +146,50 @@ export function EnhancedChatInput({
       'image/webp'
     ];
 
-    if (!allowedTypes.includes(file.type)) {
-      alert('Unsupported file type. Please upload PDF, DOCX, TXT, or image files.');
+    // Respect maximum of 3 total chips including already selected
+    const remaining = Math.max(0, 3 - selectedFiles.length);
+    const limited = files.slice(0, remaining);
+
+    const valid: File[] = [];
+    for (const f of limited) { // limit 3 chips total
+      if (f.size > 10 * 1024 * 1024) {
+        alert(`File "${f.name}" must be less than 10MB`);
+        continue;
+      }
+      if (!allowedTypes.includes(f.type)) {
+        alert(`Unsupported type for "${f.name}"`);
+        continue;
+      }
+      valid.push(f);
+    }
+
+    if (valid.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    setIsProcessingFile(true);
-    setProcessingFile(file);
-
-    try {
-      // Extract text from file (simple text extraction for now)
-      const text = await file.text();
-      
-      // Process file with Ollama API
-      const response = await fetch('/api/ollama/process-file', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text,
-          fileName: file.name,
-          analysisType: 'summary'
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        if (result.success) {
-          // Create processed file object
-          const processedFile = {
-            id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            extractedText: text,
-            summary: result.analysis.summary,
-            keyPoints: result.analysis.keyPoints,
-            contentType: 'text',
-            processingTime: Date.now(),
-            confidence: result.analysis.confidence
-          };
-
-          // Call the original onFileUpload if provided
-          if (onFileUpload) {
-            onFileUpload(file);
-          }
-          
-          // Call the new onFileProcessed callback
-          if (onFileProcessed) {
-            onFileProcessed(processedFile);
-          }
-        } else {
-          throw new Error(result.error || 'Failed to process file');
-        }
-      } else {
-        throw new Error('API request failed');
-      }
-    } catch (error) {
-      console.error('Error processing file:', error);
-      alert(`Error processing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsProcessingFile(false);
-      setProcessingFile(null);
-      // Clear the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    const previews = valid.map(f => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+      url: f.type.startsWith('image/') ? URL.createObjectURL(f) : undefined
+    }));
+    setSelectedFiles(prev => [...prev, ...valid]);
+    setFilePreviews(prev => [...prev, ...previews]);
+    inputRef.current?.focus();
+  };
+  
+  const removeFile = (name?: string) => {
+    if (!name) {
+      setSelectedFiles([]);
+      setFilePreviews([]);
+      setUploadProgress({});
+    } else {
+      setSelectedFiles(prev => prev.filter(f => f.name !== name));
+      setFilePreviews(prev => prev.filter(p => p.name !== name));
+      setUploadProgress(prev => { const { [name]: _, ...rest } = prev; return rest; });
     }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const triggerFileInput = () => {
@@ -226,8 +215,10 @@ export function EnhancedChatInput({
 
   const isDark = theme === 'dark';
 
+  const hasPreviews = filePreviews.length > 0;
+
   return (
-    <div className={cn("relative w-full h-10 chat-input-container", className)}>
+    <div className={cn("relative w-full chat-input-container", className)}>
       {/* AI Mention Indicator */}
       {showAIMention && isPublicChat && (
         <div className={cn(
@@ -247,20 +238,9 @@ export function EnhancedChatInput({
         </div>
       )}
 
-      {/* File Processing Indicator */}
-      {isProcessingFile && processingFile && (
-        <div className={cn(
-          "absolute -top-8 left-2 px-2 py-1 rounded text-xs flex items-center gap-1 z-10",
-          isDark ? "bg-blue-900/80 text-blue-200" : "bg-blue-100 text-blue-700"
-        )}>
-          <Brain className="h-3 w-3" />
-          Processing {processingFile.name} with AI...
-        </div>
-      )}
-
       {/* Main Input Container */}
       <div className={cn(
-        "chat-input-container relative flex items-center gap-2 p-3 rounded-full h-12 shadow-lg border border-border/20",
+        "chat-input-container relative flex items-center gap-3 p-2 rounded-full shadow-lg border border-border/20",
         "bg-card/80 backdrop-blur-sm",
         "hover:shadow-xl transition-all duration-200"
       )}
@@ -269,6 +249,8 @@ export function EnhancedChatInput({
         border: '1px solid rgba(255, 255, 255, 0.2)',
         outline: 'none'
       }}>
+        {/* When previews exist, increase min height to fit tiles */}
+        <style>{`.chat-input-container{${hasPreviews ? 'min-height:88px;' : 'min-height:48px;'}}`}</style>
         
         {/* File Upload Icon (Left) */}
         <div
@@ -279,36 +261,72 @@ export function EnhancedChatInput({
             isDark 
               ? "text-white/70 hover:text-white/90" 
               : "text-gray-600 hover:text-gray-800",
-            (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >
-          {isProcessingFile ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="h-4 w-4" />
-          )}
+          <Upload className="h-4 w-4" />
         </div>
+
+        {/* Inline Attachment Chips (inside input) */}
+        {hasPreviews && (
+          <div className="flex items-center gap-3 pr-2">
+            {filePreviews.slice(0, 3).map((f) => (
+              <div key={f.name} className="relative inline-block rounded-lg overflow-hidden border border-border/60 shadow-md bg-background">
+                {f.type.startsWith('image/') ? (
+                  <img src={f.url} alt={f.name} className="h-20 w-20 object-cover bg-white" />
+                ) : f.type === 'application/pdf' ? (
+                  <div className={cn(
+                    "h-20 w-20 flex items-center justify-center bg-muted/40",
+                    isDark ? "bg-gray-800/60" : "bg-gray-100"
+                  )}>
+                    <div className="flex flex-col items-center justify-center p-1 text-center">
+                      <FileText className="h-7 w-7 text-primary mb-0.5" />
+                      <span className="text-[10px] leading-tight line-clamp-2 px-1 max-w-[4.5rem]">{f.name}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={cn(
+                    "h-20 w-20 flex items-center justify-center bg-muted/40",
+                    isDark ? "bg-gray-800/60" : "bg-gray-100"
+                  )}>
+                    <div className="flex flex-col items-center justify-center p-1 text-center">
+                      <FileText className="h-7 w-7 text-primary mb-0.5" />
+                      <span className="text-[10px] leading-tight line-clamp-2 px-1 max-w-[4.5rem]">{f.name}</span>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => removeFile(f.name)}
+                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-white text-black text-xs font-bold flex items-center justify-center shadow ring-1 ring-black/20"
+                  title="Remove"
+                  aria-label={`Remove ${f.name}`}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Input Field */}
         <div className="flex-1 relative min-w-0">
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={value}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={
               isSending ? "AI is responding..." : 
-              isProcessingFile ? `Processing ${processingFile?.name}...` : 
               getPlaceholder()
             }
-            disabled={disabled || isSending || isProcessingFile}
+            disabled={disabled || isSending}
             className={cn(
-              "w-full h-8 bg-transparent text-base border-0 outline-none focus:outline-none placeholder:opacity-60 resize-none",
+              "w-full bg-transparent text-base border-0 outline-none focus:outline-none placeholder:opacity-60 resize-none pr-14",
               isDark ? "text-white placeholder-white/60" : "text-gray-900 placeholder-gray-400",
-              (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
+              (disabled || isSending) && "opacity-50 cursor-not-allowed"
             )}
-            style={{ fontSize: '16px', color: isDark ? '#ffffff' : '#111827' }}
+            rows={1}
+            style={{ fontSize: '16px', color: isDark ? '#ffffff' : '#111827', maxHeight: '120px', overflowY: 'auto' }}
           />
           {/* Cursor Effect */}
           <div className={cn(
@@ -331,7 +349,7 @@ export function EnhancedChatInput({
               : isDark 
                 ? "text-white/70 hover:text-white/90" 
                 : "text-gray-600 hover:text-gray-800",
-            (disabled || isSending || isProcessingFile) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >
           {isVoiceActive ? (
@@ -361,6 +379,7 @@ export function EnhancedChatInput({
           ref={fileInputRef}
           type="file"
           onChange={handleFileUpload}
+          multiple
           accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
           className="hidden"
         />

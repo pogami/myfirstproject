@@ -26,7 +26,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm CourseConnect's AI assistant. I can help you with questions about our platform, features, pricing, or anything else. How can I assist you today?",
+      content: "Hi! I'm CourseConnect's AI assistant. I can help you with questions about our platform, features, or anything else. How can I assist you today?",
       timestamp: new Date()
     }
   ]);
@@ -78,7 +78,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const initialMessage: Message = {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm CourseConnect's AI assistant. I can help you with questions about our platform, features, pricing, or anything else. How can I assist you today?",
+      content: "Hi! I'm CourseConnect's AI assistant. I can help you with questions about our platform, features, or anything else. How can I assist you today?",
       timestamp: new Date()
     };
     setMessages([initialMessage]);

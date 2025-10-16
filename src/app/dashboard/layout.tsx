@@ -18,7 +18,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import DashboardHeader from "@/components/dashboard-header";
-import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
+import { WebsiteTimeTracker } from "@/components/website-time-tracker";
+import Image from "next/image";
 import { auth } from "@/lib/firebase/client-simple";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useEffect, useState } from "react";
@@ -65,11 +66,11 @@ function AnnouncementBanner() {
               <Megaphone className="h-4 w-4" />
             </div>
             <div className="flex flex-col">
-              <p className="font-semibold text-sm">
+              <p className="font-bold text-base tracking-wide">
                 <span className="hidden md:inline">Welcome to CourseConnect! 🎓</span>
                 <span className="md:hidden">Welcome! 🎓</span>
               </p>
-              <p className="text-xs text-white/90 hidden sm:block">
+              <p className="text-sm text-white/95 font-medium hidden sm:block mt-1">
                 Your AI-powered learning companion is ready to help you succeed
               </p>
             </div>
@@ -319,15 +320,19 @@ export default function DashboardLayout({
 
 
   return (
-      <SidebarProvider className="bg-white dark:bg-gray-950 min-h-screen">
+    <SidebarProvider className="bg-white dark:bg-gray-950 min-h-screen">
         <Sidebar className="sm:translate-x-0 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 shadow-xl">
           <SidebarHeader className="group-data-[collapsible=icon]:justify-center p-6 border-b border-gray-100 dark:border-gray-800">
              <Link href="/home" className="flex items-center gap-3 hover:opacity-80 transition-all duration-200">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                  <CourseConnectLogo className="size-6 text-white transition-all group-data-[collapsible=icon]:size-7" />
-                </div>
+                <Image 
+                  src="/pageicon.png?v=4"
+                  alt="CourseConnect Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain transition-all group-data-[collapsible=icon]:size-7" 
+                />
                 <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white transition-all group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-                  CourseConnect
+                  CourseConnect <span className="text-blue-500">AI</span>
                 </span>
              </Link>
           </SidebarHeader>
@@ -433,7 +438,9 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
+              
+              {/* Academic Tools - HIDDEN */}
+              {/* <SidebarMenuItem>
                 <Link 
                   href="/dashboard/academic-tools"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
@@ -451,7 +458,8 @@ export default function DashboardLayout({
                   </div>
                   <span className="font-medium text-sm">Citation & Plagiarism</span>
                 </Link>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
+              
               
               <SidebarMenuItem>
                 <Link 
@@ -473,8 +481,8 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuItem>
               
-              {/* Advanced AI Tab - Only show for Pro users or demo mode */}
-              {(checkUserSubscription() || isDemoMode) && (
+              {/* Advanced AI Tab - HIDDEN */}
+              {/* {(checkUserSubscription() || isDemoMode) && (
                 <SidebarMenuItem>
                   <Link 
                     href="/dashboard/advanced"
@@ -493,7 +501,7 @@ export default function DashboardLayout({
                     <span className="font-medium text-sm">Advanced AI</span>
                   </Link>
                 </SidebarMenuItem>
-              )}
+              )} */}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
@@ -519,8 +527,8 @@ export default function DashboardLayout({
             </div>
           </header>
           
-          <main className="flex-1 p-6 bg-transparent relative min-h-screen">
-            <div className="max-w-7xl mx-auto space-y-6">
+          <main className="flex-1 bg-transparent relative min-h-screen">
+            <div className="max-w-7xl mx-auto p-6 space-y-6">
               {children}
             </div>
           </main>
@@ -538,6 +546,9 @@ export default function DashboardLayout({
         
         {/* Notification Toast Listener */}
         <NotificationToastListener />
+        
+        {/* Website Time Tracker */}
+        <WebsiteTimeTracker />
         
       </SidebarProvider>
   );
