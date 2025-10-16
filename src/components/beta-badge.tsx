@@ -61,16 +61,16 @@ export default function BetaBadge() {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="flex justify-center mb-8"
       >
-        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="inline-flex items-center gap-4 px-6 py-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
           {/* Beta Badge */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-              <span className="text-xs font-medium text-gray-900 dark:text-gray-100 uppercase tracking-wide">
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
                 Beta
               </span>
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-500">v0.1.0</span>
+            <span className="text-sm text-gray-500 dark:text-gray-500">v1.0.0-beta</span>
           </div>
           
           <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
@@ -78,10 +78,10 @@ export default function BetaBadge() {
           {/* Report Button */}
           <button
             onClick={() => setShowReportForm(true)}
-            className="group inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded transition-colors"
+            className="group inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded transition-colors"
           >
-            <Bug className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
-            <span>Report Issue</span>
+            <Bug className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+            <span>Report Issue or Feature</span>
           </button>
         </div>
       </motion.div>
@@ -108,9 +108,13 @@ export default function BetaBadge() {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Bug className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
                       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        Report an Issue
+                        Submit Feedback
                       </h3>
                     </div>
                     <button
@@ -125,13 +129,13 @@ export default function BetaBadge() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Issue Title *
+                        Title *
                       </label>
                       <input
                         type="text"
                         value={bugTitle}
                         onChange={(e) => setBugTitle(e.target.value)}
-                        placeholder="e.g., Chat not loading, AI response error..."
+                        placeholder="e.g., Chat not loading, AI response error, New study group feature..."
                         className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
                         autoFocus
                       />
@@ -144,7 +148,7 @@ export default function BetaBadge() {
                       <textarea
                         value={bugDescription}
                         onChange={(e) => setBugDescription(e.target.value)}
-                        placeholder="What happened? What were you doing when the issue occurred?"
+                        placeholder="What happened? What were you doing when the issue occurred? Or describe the feature you'd like to see..."
                         rows={4}
                         className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm resize-none"
                       />
@@ -165,7 +169,7 @@ export default function BetaBadge() {
                         disabled={!bugTitle.trim() || isSubmitting}
                         className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                       >
-                        {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                        {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                       </Button>
                     </div>
                   </div>
@@ -183,7 +187,7 @@ export default function BetaBadge() {
                   </div>
                   <div className="text-center">
                     <p className="font-bold text-lg text-gray-900 dark:text-white mb-1">
-                      Report Submitted!
+                      Feedback Submitted!
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Thank you for helping us improve CourseConnect

@@ -12,7 +12,7 @@ import { FeaturesSection } from '@/components/landing/features-section';
 // TestimonialsSection removed from home page
 import { CTASection } from '@/components/landing/cta-section';
 import { Footer } from '@/components/landing/footer';
-import { AISupportWidget } from '@/components/ai-support-widget';
+// import { AIBot } from '@/components/ai-bot';
 import { EducationComparisonSection } from '@/components/landing/education-comparison-section';
 
 export default function HomePage() {
@@ -32,7 +32,7 @@ export default function HomePage() {
         <CTASection />
       </main>
       <Footer />
-      <AISupportWidget />
+      {/** AIBot hidden per request */}
     </div>
   );
 }

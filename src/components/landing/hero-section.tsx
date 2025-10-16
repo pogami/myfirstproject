@@ -47,7 +47,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed"
+            className="text-lg md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-md sm:max-w-2xl md:max-w-3xl mx-auto leading-relaxed"
           >
             Upload your syllabus and get AI tutoring that knows your assignments and exam dates. No more confusion—just real help when you need it.
           </motion.p>
@@ -61,7 +61,7 @@ export function HeroSection() {
           >
             <Button
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto mobile-button mobile-full-width"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] w-full sm:w-auto mobile-button mobile-full-width"
               onClick={() => window.location.href = '/login'}
             >
               Get Started Free
@@ -70,7 +70,7 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-4 text-lg font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 w-full sm:w-auto mobile-button mobile-full-width"
+              className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-4 text-lg font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-[1.02] w-full sm:w-auto mobile-button mobile-full-width"
               onClick={() => document.getElementById('live-demo')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <Play className="mr-2 h-5 w-5" />

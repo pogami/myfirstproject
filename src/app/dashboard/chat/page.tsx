@@ -59,7 +59,8 @@ import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { RippleText } from "@/components/ripple-text";
 import { InDepthAnalysis } from "@/components/in-depth-analysis";
 import { JoinMessage } from "@/components/join-message";
-import { WelcomeCard } from "@/components/welcome-card";
+import { createWelcomeNotification, createAIResponseNotification, createStudyEncouragementNotification, createAssignmentReminderNotification, isFirstGuestVisit, markGuestAsVisited } from "@/lib/guest-notifications";
+import { useNotifications } from "@/hooks/use-notifications";
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -81,21 +82,13 @@ export default function ChatPage() {
         stopTyping
     } = useChatStore();
     const { isFeatureEnabled } = useFeatureFlags();
+    const { createNotification } = useNotifications(null as any);
     const [inputValue, setInputValue] = useState("");
     const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(false);
     // Animated analyzing steps for AI response while processing images/files
     const analyzingSteps = ["Analyzing...", "Extracting...", "Preparing response..."];
     const [analyzingStepIndex, setAnalyzingStepIndex] = useState(0);
-
-    useEffect(() => {
-        if (!isLoading) return;
-        setAnalyzingStepIndex(0);
-        const interval = setInterval(() => {
-            setAnalyzingStepIndex((prev) => (prev + 1) % analyzingSteps.length);
-        }, 900);
-        return () => clearInterval(interval);
-    }, [isLoading]);
     const [isMessagesLoading, setIsMessagesLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [isGuest, setIsGuest] = useState(false);
@@ -110,6 +103,83 @@ export default function ChatPage() {
     const [unreadById, setUnreadById] = useState<Record<string, number>>({});
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
     const { toast } = useToast();
+
+    // Auto-create welcome notification for guests on first visit
+    useEffect(() => {
+        if (isGuest && isFirstGuestVisit()) {
+            createWelcomeNotification();
+            markGuestAsVisited();
+        }
+    }, [isGuest]);
+
+    // Track if user is away from chat to create AI response notifications
+    const [isUserAway, setIsUserAway] = useState(false);
+    const [lastAIMessageTime, setLastAIMessageTime] = useState<number>(0);
+    
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            setIsUserAway(document.hidden);
+        };
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
+
+    // Monitor AI responses and create notifications when user is away
+    useEffect(() => {
+        const currentChat = chats[currentTab || 'private-general-chat'];
+        if (!currentChat?.messages) return;
+        
+        const aiMessages = currentChat.messages.filter(msg => msg.sender === 'ai');
+        if (aiMessages.length > 0) {
+            const latestAIMessage = aiMessages[aiMessages.length - 1];
+            const messageTime = latestAIMessage.timestamp || Date.now();
+            
+            // If AI responded and user was away, create notification
+            if (messageTime > lastAIMessageTime && isUserAway) {
+                if (isGuest) {
+                  createAIResponseNotification();
+                } else {
+                  // Logged-in: create Firestore notification
+                  createNotification({
+                    title: 'New message from AI',
+                    description: 'Your AI assistant has replied while you were away.',
+                    type: 'message',
+                    priority: 'low',
+                  } as any);
+                }
+                setLastAIMessageTime(messageTime);
+            }
+        }
+    }, [chats, currentTab, isGuest, isUserAway, lastAIMessageTime, createNotification]);
+
+    // Create study encouragement notifications based on class chats
+    useEffect(() => {
+        const classChats = Object.values(chats).filter(chat => chat.chatType === 'class');
+        if (classChats.length === 0) return;
+
+        const classNames = classChats.map(chat => chat.courseData?.courseName || 'Unknown Course').filter(Boolean);
+        
+        // Create study encouragement notification for guests
+        if (isGuest) {
+            // Check if enough time has passed since last study reminder (5 minutes)
+            const lastStudyReminder = localStorage.getItem('last-study-reminder');
+            const now = Date.now();
+            const fiveMinutes = 5 * 60 * 1000;
+            
+            if (!lastStudyReminder || (now - parseInt(lastStudyReminder)) > fiveMinutes) {
+                // 40% chance to create study reminder
+                const shouldCreateReminder = Math.random() < 0.4;
+                if (shouldCreateReminder) {
+                    createStudyEncouragementNotification(classNames);
+                    localStorage.setItem('last-study-reminder', now.toString());
+                }
+            }
+        }
+        
+        // For logged-in users, we could add similar logic here
+        // but we'd need to use the useNotifications hook
+    }, [chats, isGuest]);
 
     // Pusher integration disabled - real-time features coming soon
     const pusherConnected = false;
@@ -1763,20 +1833,18 @@ export default function ChatPage() {
                                             {/* Scroll target for auto-scroll */}
                                             <div ref={messagesEndRef} />
                                             
-                                            {/* AI Thinking Animation */}
+                                            {/* AI Thinking Animation - Blue ripple text */}
                                             {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (
-            <div className="flex items-start gap-3 w-full max-w-[90%] animate-in slide-in-from-bottom-2 duration-300">
-                <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
-                <div className="text-left min-w-0">
-                  <div className="text-xs text-muted-foreground mb-1">CourseConnect AI</div>
-                  <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" /> {analyzingSteps[analyzingStepIndex]}
-                    </div>
-                  </div>
-                </div>
-            </div>
-        )}
+                                                <div className="flex items-start gap-3 w-full max-w-[90%] animate-in slide-in-from-bottom-2 duration-300">
+                                                    <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                                                    <div className="text-left min-w-0">
+                                                        <div className="text-xs text-muted-foreground mb-1">CourseConnect AI</div>
+                                                        <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
+                                                            <RippleText text="Thinking…" className="text-sm" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
 
                                             {/* Real-time typing indicator - compact design */}
                                             {pusherTypingUsers.length > 0 && (

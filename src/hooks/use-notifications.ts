@@ -38,6 +38,22 @@ export function useNotifications(user: User | null) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Normalize guest notifications stored in localStorage to match Timestamp API
+  const toGuestTimestamp = (ms: number) => ({ toDate: () => new Date(ms) } as unknown as Timestamp);
+  const normalizeGuestNotification = (n: any): Notification => ({
+    id: n.id,
+    title: n.title,
+    description: n.description,
+    type: n.type,
+    isRead: Boolean(n.isRead),
+    createdAt: toGuestTimestamp(typeof n.createdAtMs === 'number' ? n.createdAtMs : Date.now()),
+    updatedAt: toGuestTimestamp(typeof n.updatedAtMs === 'number' ? n.updatedAtMs : Date.now()),
+    userId: 'guest',
+    actionUrl: n.actionUrl,
+    priority: n.priority || 'low',
+    icon: n.icon,
+  });
+
   // Listen to real-time notifications (only for authenticated users)
   useEffect(() => {
     // Special case: Show test user notifications even when not logged in
@@ -50,10 +66,57 @@ export function useNotifications(user: User | null) {
       return;
     }
 
-    // Handle test user notifications
+    // Handle test page: prefer local guest notifications if present; otherwise use Firestore test user
     if (isTestMode) {
+      try {
+        const guestRaw = localStorage.getItem('guest-notifications');
+        if (guestRaw) {
+          const parsed = JSON.parse(guestRaw);
+          const list = parsed.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            description: n.description,
+            type: n.type,
+            isRead: Boolean(n.isRead),
+            createdAt: { toDate: () => new Date(n.createdAtMs || Date.now()) } as any,
+            updatedAt: { toDate: () => new Date(n.updatedAtMs || Date.now()) } as any,
+            userId: 'guest',
+            actionUrl: n.actionUrl,
+            priority: n.priority || 'low',
+            icon: n.icon,
+          })) as Notification[];
+          const unread = list.filter(n => !n.isRead).length;
+          setNotifications(list);
+          setUnreadCount(unread);
+          setIsLoading(false);
+          // Poll localStorage for changes while on test page
+          const interval = setInterval(() => {
+            try {
+              const updated = localStorage.getItem('guest-notifications');
+              if (updated) {
+                const arr = JSON.parse(updated).map((n: any) => ({
+                  id: n.id,
+                  title: n.title,
+                  description: n.description,
+                  type: n.type,
+                  isRead: Boolean(n.isRead),
+                  createdAt: { toDate: () => new Date(n.createdAtMs || Date.now()) } as any,
+                  updatedAt: { toDate: () => new Date(n.updatedAtMs || Date.now()) } as any,
+                  userId: 'guest',
+                  actionUrl: n.actionUrl,
+                  priority: n.priority || 'low',
+                  icon: n.icon,
+                })) as Notification[];
+                setNotifications(arr);
+                setUnreadCount(arr.filter(n => !n.isRead).length);
+              }
+            } catch {}
+          }, 2000);
+          return () => clearInterval(interval);
+        }
+      } catch {}
+
       const testUserId = 'test-user-123';
-      
       const unsubscribe = onSnapshot(
         query(
           collection(db, 'notifications'),
@@ -63,19 +126,11 @@ export function useNotifications(user: User | null) {
         (snapshot) => {
           const testNotifications: Notification[] = [];
           let unread = 0;
-          
           snapshot.forEach((doc) => {
             const data = doc.data();
-            testNotifications.push({
-              id: doc.id,
-              ...data,
-            } as Notification);
-            
-            if (!data.isRead) {
-              unread++;
-            }
+            testNotifications.push({ id: doc.id, ...data } as Notification);
+            if (!data.isRead) unread++;
           });
-          
           setNotifications(testNotifications);
           setUnreadCount(unread);
           setIsLoading(false);
@@ -86,24 +141,24 @@ export function useNotifications(user: User | null) {
           setIsLoading(false);
         }
       );
-      
       return unsubscribe;
     }
 
     // Handle guest users - read from localStorage
-    if (user.isGuest) {
+    if ((user as any)?.isGuest) {
       console.log('🔔 Loading guest notifications from localStorage');
       try {
         const guestNotifications = localStorage.getItem('guest-notifications');
         console.log('🔔 Raw guest notifications from localStorage:', guestNotifications);
-        let notifications = [];
+        let notificationsList: Notification[] = [];
         let unread = 0;
         
         if (guestNotifications) {
           try {
-            notifications = JSON.parse(guestNotifications);
-            unread = notifications.filter((n: any) => !n.isRead).length;
-            console.log('🔔 Parsed guest notifications:', notifications.length, 'total,', unread, 'unread');
+            const parsed = JSON.parse(guestNotifications);
+            notificationsList = parsed.map((n: any) => normalizeGuestNotification(n));
+            unread = notificationsList.filter((n: any) => !n.isRead).length;
+            console.log('🔔 Parsed guest notifications:', notificationsList.length, 'total,', unread, 'unread');
           } catch (error) {
             console.warn('Error parsing guest notifications:', error);
           }
@@ -111,7 +166,7 @@ export function useNotifications(user: User | null) {
           console.log('🔔 No guest notifications found in localStorage');
         }
         
-        setNotifications(notifications);
+        setNotifications(notificationsList);
         setUnreadCount(unread);
         setIsLoading(false);
         
@@ -120,9 +175,9 @@ export function useNotifications(user: User | null) {
           const updatedNotifications = localStorage.getItem('guest-notifications');
           if (updatedNotifications) {
             try {
-              const parsed = JSON.parse(updatedNotifications);
+              const parsed = JSON.parse(updatedNotifications).map((n: any) => normalizeGuestNotification(n));
               const newUnread = parsed.filter((n: any) => !n.isRead).length;
-              setNotifications(parsed);
+              setNotifications(parsed as any);
               setUnreadCount(newUnread);
             } catch (error) {
               console.warn('Error parsing updated guest notifications:', error);
@@ -187,19 +242,20 @@ export function useNotifications(user: User | null) {
     if (!user) return;
 
     // Handle guest users - update localStorage
-    if (user.isGuest) {
+    if ((user as any)?.isGuest) {
       try {
         const guestNotifications = localStorage.getItem('guest-notifications');
         if (guestNotifications) {
-          const notifications = JSON.parse(guestNotifications);
-          const updatedNotifications = notifications.map((n: any) => 
-            n.id === notificationId ? { ...n, isRead: true } : n
+          const arr = JSON.parse(guestNotifications);
+          const updatedNotifications = arr.map((n: any) => 
+            n.id === notificationId ? { ...n, isRead: true, updatedAtMs: Date.now() } : n
           );
           localStorage.setItem('guest-notifications', JSON.stringify(updatedNotifications));
           
           // Update local state
-          setNotifications(updatedNotifications);
-          setUnreadCount(updatedNotifications.filter((n: any) => !n.isRead).length);
+          const normalized = updatedNotifications.map((n: any) => normalizeGuestNotification(n));
+          setNotifications(normalized);
+          setUnreadCount(normalized.filter((n: any) => !n.isRead).length);
         }
       } catch (error) {
         console.error('Error marking guest notification as read:', error);
@@ -224,16 +280,17 @@ export function useNotifications(user: User | null) {
     if (!user) return;
 
     // Handle guest users - update localStorage
-    if (user.isGuest) {
+    if ((user as any)?.isGuest) {
       try {
         const guestNotifications = localStorage.getItem('guest-notifications');
         if (guestNotifications) {
-          const notifications = JSON.parse(guestNotifications);
-          const updatedNotifications = notifications.map((n: any) => ({ ...n, isRead: true }));
+          const arr = JSON.parse(guestNotifications);
+          const updatedNotifications = arr.map((n: any) => ({ ...n, isRead: true, updatedAtMs: Date.now() }));
           localStorage.setItem('guest-notifications', JSON.stringify(updatedNotifications));
           
           // Update local state
-          setNotifications(updatedNotifications);
+          const normalized = updatedNotifications.map((n: any) => normalizeGuestNotification(n));
+          setNotifications(normalized);
           setUnreadCount(0);
         }
       } catch (error) {
@@ -261,6 +318,24 @@ export function useNotifications(user: User | null) {
   const deleteNotification = async (notificationId: string) => {
     if (!user) return;
 
+    // Guest: remove from localStorage
+    if ((user as any)?.isGuest) {
+      try {
+        const guestNotifications = localStorage.getItem('guest-notifications');
+        if (guestNotifications) {
+          const arr = JSON.parse(guestNotifications);
+          const updated = arr.filter((n: any) => n.id !== notificationId);
+          localStorage.setItem('guest-notifications', JSON.stringify(updated));
+          const normalized = updated.map((n: any) => normalizeGuestNotification(n));
+          setNotifications(normalized);
+          setUnreadCount(normalized.filter((n: any) => !n.isRead).length);
+        }
+      } catch (error) {
+        console.error('Error deleting guest notification:', error);
+      }
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, 'notifications', notificationId));
     } catch (error) {
@@ -271,6 +346,18 @@ export function useNotifications(user: User | null) {
   // Clear all notifications
   const clearAllNotifications = async () => {
     if (!user) return;
+
+    // Guest: clear localStorage key
+    if ((user as any)?.isGuest) {
+      try {
+        localStorage.removeItem('guest-notifications');
+        setNotifications([]);
+        setUnreadCount(0);
+      } catch (error) {
+        console.error('Error clearing guest notifications:', error);
+      }
+      return;
+    }
 
     try {
       const deletePromises = notifications.map(notification => 
@@ -283,13 +370,41 @@ export function useNotifications(user: User | null) {
   };
 
   // Create a new notification (for testing or admin use)
-  const createNotification = async (notificationData: Omit<Notification, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createNotification = async (notificationData: Omit<Notification, 'id' | 'createdAt' | 'updatedAt' | 'isRead' | 'userId'>) => {
     if (!user) return;
+
+    // Guest: append to localStorage
+    if ((user as any)?.isGuest) {
+      try {
+        const now = Date.now();
+        const guestNotifications = localStorage.getItem('guest-notifications');
+        const arr = guestNotifications ? JSON.parse(guestNotifications) : [];
+        const newItem = {
+          id: `g_${now}_${Math.random().toString(36).slice(2, 8)}`,
+          title: notificationData.title,
+          description: notificationData.description,
+          type: notificationData.type,
+          priority: notificationData.priority || 'low',
+          actionUrl: notificationData.actionUrl,
+          isRead: false,
+          createdAtMs: now,
+          updatedAtMs: now,
+        };
+        const updated = [newItem, ...arr];
+        localStorage.setItem('guest-notifications', JSON.stringify(updated));
+        const normalized = updated.map((n: any) => normalizeGuestNotification(n));
+        setNotifications(normalized);
+        setUnreadCount(normalized.filter((n: any) => !n.isRead).length);
+      } catch (error) {
+        console.error('Error creating guest notification:', error);
+      }
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'notifications'), {
         ...notificationData,
-        userId: user.uid,
+        userId: (user as User).uid,
         isRead: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -297,6 +412,54 @@ export function useNotifications(user: User | null) {
     } catch (error) {
       console.error('Error creating notification:', error);
     }
+  };
+
+  // Create study encouragement notification
+  const createStudyEncouragementNotification = async (classNames: string[]) => {
+    if (!user) return;
+
+    const encouragements = [
+      "Time to review your course materials!",
+      "Your classes are waiting for you to dive deeper.",
+      "Ready to tackle some assignments?",
+      "Let's make progress on your studies today!",
+      "Your learning journey continues - let's keep going!",
+      "Study time! Your courses are calling.",
+      "Ready to explore new concepts?",
+      "Let's strengthen your understanding today!"
+    ];
+    
+    const randomEncouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
+    const classList = classNames.length > 0 ? ` (${classNames.join(', ')})` : '';
+    
+    await createNotification({
+      title: 'Study Reminder',
+      description: `${randomEncouragement}${classList}`,
+      type: 'reminder',
+      priority: 'medium'
+    });
+  };
+
+  // Create assignment reminder notification
+  const createAssignmentReminderNotification = async (classNames: string[]) => {
+    if (!user) return;
+
+    const reminders = [
+      "Don't forget about upcoming assignments!",
+      "Check your assignments - deadlines are approaching.",
+      "Time to review assignment requirements.",
+      "Your assignments need attention soon."
+    ];
+    
+    const randomReminder = reminders[Math.floor(Math.random() * reminders.length)];
+    const classList = classNames.length > 0 ? ` in ${classNames.join(', ')}` : '';
+    
+    await createNotification({
+      title: 'Assignment Reminder',
+      description: `${randomReminder}${classList}`,
+      type: 'assignment',
+      priority: 'high'
+    });
   };
 
   return {
@@ -309,5 +472,7 @@ export function useNotifications(user: User | null) {
     deleteNotification,
     clearAllNotifications,
     createNotification,
+    createStudyEncouragementNotification,
+    createAssignmentReminderNotification,
   };
 }

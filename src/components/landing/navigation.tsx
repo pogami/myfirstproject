@@ -41,7 +41,7 @@ export function Navigation() {
             <div className="flex items-center bg-white/30 dark:bg-gray-900/30 backdrop-blur-2xl shadow-2xl border border-white/20 dark:border-white/10 rounded-full px-8 py-4 gap-12">
               {/* Logo */}
               <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-200">
-                <CCLogo className="h-10 w-auto" />
+                <CCLogo className="h-8 w-auto" />
                 <span className="text-lg font-bold text-gray-900 dark:text-white">
                   CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>
                 </span>
@@ -90,7 +90,7 @@ export function Navigation() {
             <>
               {/* Logo */}
               <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
-                <CCLogo className="h-12 w-auto" />
+                <CCLogo className="h-10 w-auto" />
                 <span className="text-xl font-bold text-gray-900 dark:text-white">
                   CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>
                 </span>

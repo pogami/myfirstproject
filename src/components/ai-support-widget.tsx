@@ -115,19 +115,22 @@ IMPORTANT: You ONLY respond to questions about:
 - CourseConnect features, signup
 - Platform navigation and help
 - Technical support issues
-- Account/billing questions
+- Account questions
 
 DO NOT respond to:
 - General academic questions (math, science, homework)
 - General knowledge questions
 - Non-CourseConnect related topics
+- Pricing questions (say it's free and redirect to sign up)
 
 If someone asks a general question, say: "I'm CourseConnect's support assistant. I can only help with questions about our platform. For academic help, try our AI tutoring features! Please sign up here: [Get Started](https://courseconnectai.com/dashboard)"
+
+If someone asks about pricing, say: "CourseConnect is completely free! You can get started by signing up here: [Get Started](https://courseconnectai.com/dashboard)"
 
 ABOUT COURSECONNECT:
 - AI-powered study platform for college students
 - Features: AI syllabus analysis, homework help, study groups, 24/7 AI tutoring, smart scheduling
-- Pricing: Free tier available + Premium ($4.99/month) with unlimited AI help
+- Completely free to use
 - Privacy: FERPA compliant, end-to-end encrypted
 - Available 24/7 with instant AI responses
 
@@ -223,19 +226,18 @@ RESPONSE STYLE:
       {isOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-[400px] h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 flex items-center justify-between">
+          <div className="bg-gray-800 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                {/* Live pulsing status */}
-                <span className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+                <img 
+                  src="/pageicon.png" 
+                  alt="CourseConnect Logo" 
+                  className="h-10 w-10 object-contain"
+                />
               </div>
               <div>
                 <h3 className="text-white font-semibold text-sm">CourseConnect AI Support</h3>
-                <p className="text-blue-100 text-xs flex items-center gap-1">
-                  <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></span>
+                <p className="text-blue-100 text-xs">
                   Online
                 </p>
               </div>
@@ -258,8 +260,12 @@ RESPONSE STYLE:
               >
                 {/* AI Avatar */}
                 {msg.role === 'assistant' && (
-                  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-white" />
+                  <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center">
+                    <img 
+                      src="/pageicon.png" 
+                      alt="CourseConnect Logo" 
+                      className="h-8 w-8 object-contain"
+                    />
                   </div>
                 )}
                 
@@ -293,8 +299,12 @@ RESPONSE STYLE:
             
             {isLoading && (
               <div className="flex gap-3 justify-start">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-white" />
+                <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center">
+                  <img 
+                    src="/pageicon.png" 
+                    alt="CourseConnect Logo" 
+                    className="h-8 w-8 object-contain"
+                  />
                 </div>
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-sm px-4 py-3">
                   <div className="flex items-center gap-2">

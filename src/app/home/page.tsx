@@ -25,7 +25,7 @@ import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { MobileAppSection } from "@/components/landing/mobile-app-section-lite";
 import { LiveActivityWidget } from "@/components/live-activity-widget";
 import { GradientStar } from "@/components/icons/gradient-star";
-import { AISupportWidget } from "@/components/ai-support-widget";
+// import { AIBot } from "@/components/ai-bot";
 
 const popularClasses = [
     { name: "BIO-101", description: "Intro to Biology", icon: <Bot className="size-8 text-green-500" />, studentCount: 123 },
@@ -940,8 +940,7 @@ export default function LandingPage() {
             {/* PWA Install Prompt */}
             <PWAInstallPrompt />
             
-            {/* AI Support Chat Widget */}
-            <AISupportWidget />
+            {/* AIBot hidden per request */}
     </div>
     );
 }

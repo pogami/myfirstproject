@@ -287,6 +287,7 @@ export default function DashboardPage() {
   // Get real-time dashboard stats
   const { stats, isLoading: statsLoading, refreshStats } = useDashboardStats(user);
   const { toast } = useToast();
+  const showTopicsReview = process.env.NEXT_PUBLIC_SHOW_TOPICS_REVIEW === 'true';
   
   // Create welcome notifications for new users
   useEffect(() => {
@@ -531,8 +532,7 @@ export default function DashboardPage() {
                     }
                   })()}
                 </p>
-                {/* Quick Major Editor */}
-                <MajorInlineEditor user={user} />
+                {/* Quick Major Editor (removed placeholder to avoid ReferenceError) */}
               </div>
             </div>
           </div>
@@ -611,9 +611,118 @@ export default function DashboardPage() {
         </Card>
         )}
 
-        {/* Today's Focus Section */}
+        {/* Topics to Review (lightweight, signal-driven) */}
+        {showTopicsReview && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-lg">
+                <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-950/40">
+                  <TrendingUp className="h-5 w-5 text-pink-600" />
+                </div>
+                Topics to review
+              </CardTitle>
+              <CardDescription>Based on your syllabus and recent chat activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                try {
+                  const now = new Date();
+                  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+                  // Collect topic candidates from syllabus across class chats
+                  const topicSet = new Set<string>();
+                  Object.values(chats).forEach((chat: any) => {
+                    if (chat?.chatType === 'class' && Array.isArray(chat?.courseData?.topics)) {
+                      chat.courseData.topics.forEach((t: any) => {
+                        if (typeof t === 'string' && t.trim()) topicSet.add(t.trim());
+                      });
+                    }
+                  });
+
+                  const topics = Array.from(topicSet);
+                  if (topics.length === 0) {
+                    return (
+                      <p className="text-sm text-muted-foreground">
+                        Upload a syllabus to see suggested topics to review.
+                      </p>
+                    );
+                  }
+
+                  // Compute simple priority using recent user messages + upcoming assignments
+                  const topicScores = topics.map((topic) => {
+                    let frequency = 0; // count of user messages mentioning topic in last 7 days
+                    let recencyBoost = 0; // +1 if mentioned in last 24h
+                    let urgency = 0; // +1..+2 for assignments due soon mentioning topic
+
+                    Object.values(chats).forEach((chat: any) => {
+                      // Count message mentions (user only)
+                      (chat?.messages || []).forEach((msg: any) => {
+                        if (msg?.sender !== 'user') return;
+                        const ts = msg?.timestamp ? new Date(msg.timestamp) : null;
+                        const text = (typeof msg?.text === 'string' ? msg.text : '') || '';
+                        if (!ts || ts < sevenDaysAgo) return;
+                        if (text.toLowerCase().includes(topic.toLowerCase())) {
+                          frequency += 1;
+                          if ((now.getTime() - ts.getTime()) <= 24 * 60 * 60 * 1000) recencyBoost = 1;
+                        }
+                      });
+
+                      // Urgency from assignments
+                      (chat?.courseData?.assignments || []).forEach((a: any) => {
+                        if (!a?.dueDate || a?.dueDate === 'null') return;
+                        const d = new Date(a.dueDate);
+                        if (isNaN(d.getTime())) return;
+                        const days = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        if (days >= 0 && days <= 7) {
+                          const name = (a?.name || '').toString();
+                          const desc = (a?.description || '').toString();
+                          if ((name + ' ' + desc).toLowerCase().includes(topic.toLowerCase())) {
+                            urgency += days <= 2 ? 2 : 1;
+                          }
+                        }
+                      });
+                    });
+
+                    const score = frequency + recencyBoost + urgency; // higher = higher priority
+                    return { topic, score, frequency, recencyBoost, urgency };
+                  })
+                  .filter(t => t.score > 0)
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 5);
+
+                  if (topicScores.length === 0) {
+                    return (
+                      <p className="text-sm text-muted-foreground">
+                        No priority topics detected yet. Ask questions in chat or add assignments to see suggestions.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      {topicScores.map(({ topic }) => {
+                        const prefill = encodeURIComponent(`Help me review ${topic}`);
+                        return (
+                          <Link key={topic} href={`/dashboard/chat?prefill=${prefill}`}>
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                              {topic}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  );
+                } catch (e) {
+                  return (
+                    <p className="text-sm text-muted-foreground">Unable to compute topics to review.</p>
+                  );
+                }
+              })()}
+            </CardContent>
+          </Card>
         </div>
+        )}
 
 
         {/* Pro Features CTA - Hidden */}

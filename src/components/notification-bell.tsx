@@ -57,6 +57,7 @@ const getNotificationIcon = (type: Notification['type'], priority: Notification[
 export function NotificationBell() {
   const [user, setUser] = useState(auth.currentUser);
   const [open, setOpen] = useState(false);
+  const [nowTick, setNowTick] = useState(Date.now());
   
   // Check if we're in test mode
   const isTestMode = typeof window !== 'undefined' && window.location.pathname.includes('test-notifications');
@@ -82,6 +83,51 @@ export function NotificationBell() {
     });
     return unsubscribe;
   }, [isTestMode]);
+
+  // Allow programmatic opening from elsewhere (e.g., test page)
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener('open-notifications', handler);
+    return () => window.removeEventListener('open-notifications', handler);
+  }, []);
+
+  // Auto-create welcome notification on first login
+  useEffect(() => {
+    if (!user) return;
+    const key = `welcome-noti-created-${user.uid}`;
+    try {
+      const created = localStorage.getItem(key);
+      if (!created) {
+        // delay slightly to avoid racing with auth/UI mount
+        setTimeout(() => {
+          fetch('/api/health').catch(() => {}); // noop touch to ensure app is ready
+        }, 0);
+      }
+      if (!created) {
+        // Create via Firestore through the hook's API surface by dispatching a custom event
+        // Consumers can listen and create a system welcome notification
+        window.dispatchEvent(new CustomEvent('create-welcome-notification-login'));
+        localStorage.setItem(key, 'true');
+      }
+    } catch {}
+  }, [user]);
+
+  // Live-update relative time every second
+  useEffect(() => {
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const renderRelativeTime = (createdAt: any) => {
+    try {
+      const date = createdAt?.toDate ? createdAt.toDate() : new Date();
+      const diffSec = Math.max(0, Math.floor((nowTick - date.getTime()) / 1000));
+      if (diffSec < 5) return 'Now';
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return 'Just now';
+    }
+  };
 
   const handleMarkAsRead = async (notificationId: string) => {
     await markAsRead(notificationId);
@@ -220,9 +266,7 @@ export function NotificationBell() {
                       {notification.description}
                     </p>
                     <p className="text-xs text-muted-foreground/60">
-                      {notification.createdAt 
-                        ? formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true })
-                        : 'Just now'}
+                      {notification.createdAt ? renderRelativeTime(notification.createdAt) : 'Just now'}
                     </p>
                   </div>
 

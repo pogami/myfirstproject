@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "CourseConnect AI",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://courseconnectai.com/pageicon.png",
         width: 1200,
         height: 630,
         alt: "CourseConnect AI - AI-Powered Study Platform",
@@ -28,19 +28,32 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CourseConnect AI - Your AI-Powered Study Companion",
     description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
-    images: ["/og-image.png"],
+    images: ["https://courseconnectai.com/pageicon.png"],
     creator: "@courseconnectai",
     site: "@courseconnectai",
   },
+  other: {
+    'og:image:width': '1200',
+    'og:image:height': '630',
+    'og:image:type': 'image/png',
+    'og:image:alt': 'CourseConnect AI - AI-Powered Study Platform',
+    'twitter:image:alt': 'CourseConnect AI - AI-Powered Study Platform',
+    'apple-mobile-web-app-title': 'CourseConnect AI',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'theme-color': '#3b82f6',
+    'msapplication-TileColor': '#3b82f6',
+    'msapplication-TileImage': '/pageicon.png',
+  },
   icons: {
     icon: [
-      { url: '/final-logo.png', sizes: '32x32', type: 'image/png' },
-      { url: '/final-logo.png', sizes: '16x16', type: 'image/png' },
+      { url: '/pageicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/pageicon.png', sizes: '16x16', type: 'image/png' },
       { url: '/favicon.ico', sizes: 'any' }
     ],
-    shortcut: '/final-logo.png',
+    shortcut: '/pageicon.png',
     apple: [
-      { url: '/final-logo.png', sizes: '180x180', type: 'image/png' }
+      { url: '/pageicon.png', sizes: '180x180', type: 'image/png' }
     ]
   }
 };

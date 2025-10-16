@@ -136,26 +136,26 @@ export function FeaturesSection() {
               {
                 step: '1',
                 title: 'Upload Syllabus',
-                description: 'Upload your course syllabus in any format',
+                description: 'Add your course syllabus or docs to get started',
                 icon: Upload
               },
               {
                 step: '2',
-                title: 'Find Classmates',
-                description: 'AI matches you with students in the same course',
-                icon: Users
+                title: 'Get AI Help',
+                description: 'Chat with CourseConnect AI for instant explanations',
+                icon: MessageCircle
               },
               {
                 step: '3',
-                title: 'Study Together',
-                description: 'Join study groups and get AI tutoring help',
-                icon: BookOpen
+                title: 'Generate Flashcards',
+                description: 'Create and study smart flashcards from your content',
+                icon: FileText
               },
               {
                 step: '4',
-                title: 'Ace Your Courses',
-                description: 'Improve your grades with AI-powered support',
-                icon: Target
+                title: 'Stay On Track',
+                description: 'Receive assignment reminders so you never miss deadlines',
+                icon: Calendar
               }
             ].map((step, index) => (
               <div key={step.step} className="text-center">

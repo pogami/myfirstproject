@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Mic, MicOff, Bot, Brain, FileText, Loader2 } from 'lucide-react';
+import { Send, Upload, Mic, MicOff, Bot, Brain, FileText, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { cn } from '@/lib/utils';
 // Removed Ollama import - now using API routes
@@ -47,8 +47,27 @@ export function EnhancedChatInput({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ name: string; size: number; type: string; url?: string }[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-resize textarea and auto-expand when needed
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const collapsedMax = 160; // px
+    const expandedMax = 240; // px
+    // Reset height to compute scrollHeight correctly
+    el.style.height = 'auto';
+    const desired = Math.min(el.scrollHeight, isExpanded ? expandedMax : collapsedMax);
+    el.style.height = desired + 'px';
+    // Keep caret/latest text visible
+    el.scrollTop = el.scrollHeight;
+    // Auto-expand if content exceeds collapsed max
+    if (!isExpanded && el.scrollHeight > collapsedMax) {
+      setIsExpanded(true);
+    }
+  }, [value, isExpanded]);
 
   // Detect mobile on mount
   useEffect(() => {
@@ -65,6 +84,20 @@ export function EnhancedChatInput({
     const hasAIMention = value.includes('@ai') || value.includes('@AI');
     setShowAIMention(hasAIMention);
   }, [value]);
+
+  // Load and persist expanded composer state
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('chat-composer-expanded');
+      if (saved === 'true') setIsExpanded(true);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('chat-composer-expanded', isExpanded ? 'true' : 'false');
+    } catch {}
+  }, [isExpanded]);
 
   // Set appropriate placeholder based on chat type
   const getPlaceholder = () => {
@@ -89,6 +122,19 @@ export function EnhancedChatInput({
     } else if (e.target.value.length === 0 && isTyping) {
       setIsTyping(false);
       onTypingStop?.();
+    }
+    // Adjust height immediately while typing
+    const el = inputRef.current;
+    if (el) {
+      const collapsedMax = 160;
+      const expandedMax = 240;
+      el.style.height = 'auto';
+      const desired = Math.min(el.scrollHeight, isExpanded ? expandedMax : collapsedMax);
+      el.style.height = desired + 'px';
+      el.scrollTop = el.scrollHeight;
+      if (!isExpanded && el.scrollHeight > collapsedMax) {
+        setIsExpanded(true);
+      }
     }
   };
 
@@ -242,7 +288,8 @@ export function EnhancedChatInput({
       <div className={cn(
         "chat-input-container relative flex items-center gap-3 p-2 rounded-full shadow-lg border border-border/20",
         "bg-card/80 backdrop-blur-sm",
-        "hover:shadow-xl transition-all duration-200"
+        "hover:shadow-xl transition-all duration-200",
+        isExpanded && "p-3"
       )}
       style={{ 
         background: 'rgba(255, 255, 255, 0.1)',
@@ -250,7 +297,7 @@ export function EnhancedChatInput({
         outline: 'none'
       }}>
         {/* When previews exist, increase min height to fit tiles */}
-        <style>{`.chat-input-container{${hasPreviews ? 'min-height:88px;' : 'min-height:48px;'}}`}</style>
+        <style>{`.chat-input-container{${hasPreviews || isExpanded ? 'min-height:112px;' : 'min-height:48px;'}}`}</style>
         
         {/* File Upload Icon (Left) */}
         <div
@@ -269,7 +316,7 @@ export function EnhancedChatInput({
 
         {/* Inline Attachment Chips (inside input) */}
         {hasPreviews && (
-          <div className="flex items-center gap-3 pr-2">
+          <div className={cn("flex items-center gap-3 pr-2", isExpanded && "flex-wrap")}> 
             {filePreviews.slice(0, 3).map((f) => (
               <div key={f.name} className="relative inline-block rounded-lg overflow-hidden border border-border/60 shadow-md bg-background">
                 {f.type.startsWith('image/') ? (
@@ -322,18 +369,36 @@ export function EnhancedChatInput({
             disabled={disabled || isSending}
             className={cn(
               "w-full bg-transparent text-base border-0 outline-none focus:outline-none placeholder:opacity-60 resize-none pr-14",
-              isDark ? "text-white placeholder-white/60" : "text-gray-900 placeholder-gray-400",
+              isDark ? "text-white placeholder-white/60" : "text-black placeholder-gray-500",
               (disabled || isSending) && "opacity-50 cursor-not-allowed"
             )}
             rows={1}
-            style={{ fontSize: '16px', color: isDark ? '#ffffff' : '#111827', maxHeight: '120px', overflowY: 'auto' }}
+            style={{ 
+              fontSize: '16px', 
+              color: isDark ? '#ffffff' : '#000000', 
+              maxHeight: isExpanded ? '240px' : '160px', 
+              overflowY: 'auto',
+              scrollBehavior: 'smooth'
+            }}
           />
-          {/* Cursor Effect */}
-          <div className={cn(
-            "absolute right-0 top-1/2 transform -translate-y-1/2 w-px h-4",
-            isTyping ? "opacity-100" : "opacity-0",
-            "bg-gradient-to-b from-orange-400 to-purple-400"
-          )} />
+          {/* Decorative cursor line removed */}
+        </div>
+
+        {/* Expand/Collapse Composer */}
+        <div
+          onClick={() => setIsExpanded(prev => !prev)}
+          className={cn(
+            "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
+            "hover:bg-transparent transition-colors duration-200",
+            isDark 
+              ? "text-white/70 hover:text-white/90" 
+              : "text-black hover:text-gray-800",
+            (disabled || isSending) && "opacity-50 cursor-not-allowed"
+          )}
+          title={isExpanded ? "Collapse" : "Expand"}
+          aria-label={isExpanded ? "Collapse composer" : "Expand composer"}
+        >
+          {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </div>
 
         {/* Voice Icon */}
@@ -348,7 +413,7 @@ export function EnhancedChatInput({
                 : "text-red-600"
               : isDark 
                 ? "text-white/70 hover:text-white/90" 
-                : "text-gray-600 hover:text-gray-800",
+                : "text-black hover:text-gray-800",
             (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
         >

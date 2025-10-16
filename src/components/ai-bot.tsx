@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Bot, MessageCircle, X, Sparkles, BookOpen, Users, GraduationCap, ArrowRight, CheckCircle, Zap, Target, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 
 interface AIBotProps {
   className?: string;
