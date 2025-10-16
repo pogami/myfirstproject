@@ -82,7 +82,7 @@ export default function ChatPage() {
         stopTyping
     } = useChatStore();
     const { isFeatureEnabled } = useFeatureFlags();
-    const { createNotification } = useNotifications(null as any);
+    const { createNotification } = useNotifications(user);
     const [inputValue, setInputValue] = useState("");
     const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(false);
@@ -106,9 +106,13 @@ export default function ChatPage() {
 
     // Auto-create welcome notification for guests on first visit
     useEffect(() => {
-        if (isGuest && isFirstGuestVisit()) {
-            createWelcomeNotification();
-            markGuestAsVisited();
+        try {
+            if (isGuest && isFirstGuestVisit()) {
+                createWelcomeNotification();
+                markGuestAsVisited();
+            }
+        } catch (error) {
+            console.warn('Error creating welcome notification:', error);
         }
     }, [isGuest]);
 
@@ -117,6 +121,8 @@ export default function ChatPage() {
     const [lastAIMessageTime, setLastAIMessageTime] = useState<number>(0);
     
     useEffect(() => {
+        if (typeof document === 'undefined') return;
+
         const handleVisibilityChange = () => {
             setIsUserAway(document.hidden);
         };
@@ -361,6 +367,8 @@ export default function ChatPage() {
 
     // Handle online/offline state changes
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+
         const handleOnline = () => {
             console.log('Back online - reinitializing auth listener');
             try {

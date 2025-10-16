@@ -9,6 +9,11 @@ export interface GuestNotificationData {
 
 export function createGuestNotification(data: GuestNotificationData): void {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      console.warn('localStorage not available, skipping guest notification');
+      return;
+    }
+
     const now = Date.now();
     const guestNotifications = localStorage.getItem('guest-notifications');
     const arr = guestNotifications ? JSON.parse(guestNotifications) : [];
@@ -29,9 +34,11 @@ export function createGuestNotification(data: GuestNotificationData): void {
     localStorage.setItem('guest-notifications', JSON.stringify(updated));
     
     // Trigger a custom event to notify components
-    window.dispatchEvent(new CustomEvent('guest-notification-added', { 
-      detail: { notification: newItem } 
-    }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('guest-notification-added', { 
+        detail: { notification: newItem } 
+      }));
+    }
     
     console.log('🔔 Guest notification created:', newItem.title);
   } catch (error) {
@@ -70,6 +77,9 @@ export function createAssignmentDueNotification(): void {
 // Check if this is the first visit for a guest
 export function isFirstGuestVisit(): boolean {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return true;
+    }
     const hasVisited = localStorage.getItem('guest-has-visited');
     return !hasVisited;
   } catch {
@@ -80,6 +90,10 @@ export function isFirstGuestVisit(): boolean {
 // Mark guest as having visited
 export function markGuestAsVisited(): void {
   try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      console.warn('localStorage not available, cannot mark guest as visited');
+      return;
+    }
     localStorage.setItem('guest-has-visited', 'true');
   } catch (error) {
     console.error('Error marking guest as visited:', error);
