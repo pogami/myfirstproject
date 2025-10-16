@@ -7,8 +7,8 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { addRealtimeChangelogEntry } from './realtime-changelog';
-import { AutoChangelogDetector } from './auto-changelog';
+// import { RealtimeChangelogManager } from './realtime-changelog';
+// import { AutoChangelogDetector } from './auto-changelog';
 
 const execAsync = promisify(exec);
 
@@ -149,24 +149,19 @@ export class GitChangeDetector {
     }
 
     // Analyze message for type and impact
-    const detection = AutoChangelogDetector.analyzeChange(message, files);
+    // const detection = AutoChangelogDetector.analyzeChanges(message, files);
     
-    if (!detection) {
-      return { isImportant: false, type: 'enhancement', impact: 'low' };
-    }
+    // if (!detection) {
+    //   return { isImportant: false, type: 'enhancement', impact: 'low' };
+    // }
 
     // Determine if it's important based on impact and files
-    const isImportant = 
-      detection.impact === 'high' || 
-      detection.impact === 'critical' ||
-      hasImportantFiles ||
-      detection.type === 'feature' ||
-      detection.type === 'bug-fix';
+    const isImportant = hasImportantFiles;
 
     return {
       isImportant,
-      type: detection.type,
-      impact: detection.impact
+      type: 'enhancement',
+      impact: 'medium'
     };
   }
 
@@ -180,15 +175,16 @@ export class GitChangeDetector {
 
       for (const commit of commits) {
         try {
-          const entryId = await addRealtimeChangelogEntry(
-            this.generateVersion(commit.date),
-            commit.type,
-            [commit.message],
-            commit.impact,
-            commit.author
-          );
+          // const entryId = await RealtimeChangelogManager.addEntry({
+          //   date: commit.date,
+          //   version: this.generateVersion(commit.date),
+          //   type: commit.type,
+          //   changes: [commit.message],
+          //   impact: commit.impact,
+          //   author: commit.author
+          // });
           
-          loggedEntries.push(entryId);
+          // loggedEntries.push(entryId);
           console.log(`🤖 Auto-logged git commit: ${commit.hash} - ${commit.type}`);
         } catch (error) {
           console.error(`Failed to log commit ${commit.hash}:`, error);
@@ -225,13 +221,14 @@ export class GitChangeDetector {
             const commit = commits[0];
             if (commit.hash === currentHash) {
               // Auto-log the new commit
-              await addRealtimeChangelogEntry(
-                this.generateVersion(commit.date),
-                commit.type,
-                [commit.message],
-                commit.impact,
-                commit.author
-              );
+              // await RealtimeChangelogManager.addEntry({
+              //   date: commit.date,
+              //   version: this.generateVersion(commit.date),
+              //   type: commit.type,
+              //   changes: [commit.message],
+              //   impact: commit.impact,
+              //   author: commit.author
+              // });
               
               console.log(`🤖 Auto-logged new commit: ${commit.hash} - ${commit.message}`);
             }

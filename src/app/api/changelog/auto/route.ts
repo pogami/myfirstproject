@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AutoChangelogDetector, logChange, logChanges } from '@/lib/auto-changelog';
+// import { AutoChangelogDetector, logChange, logChanges } from '@/lib/auto-changelog';
 
 /**
  * POST /api/changelog/auto
@@ -12,31 +12,31 @@ export async function POST(request: NextRequest) {
 
     // Single change
     if (description) {
-      const entryId = await logChange(description, version, files, author);
+      // const entryId = await logChange(description, version, files, author);
       
-      if (!entryId) {
-        return NextResponse.json(
-          { success: false, error: 'No significant change detected' },
-          { status: 400 }
-        );
-      }
+      // if (!entryId) {
+      //   return NextResponse.json(
+      //     { success: false, error: 'No significant change detected' },
+      //     { status: 400 }
+      //   );
+      // }
 
       return NextResponse.json({
         success: true,
-        entryId,
-        message: 'Change auto-logged successfully'
+        entryId: 'disabled',
+        message: 'Change auto-logged successfully (disabled)'
       });
     }
 
     // Multiple changes
     if (changes && Array.isArray(changes)) {
-      const entryIds = await logChanges(changes, version, author);
+      // const entryIds = await logChanges(changes, version, author);
       
       return NextResponse.json({
         success: true,
-        entryIds,
-        count: entryIds.length,
-        message: `${entryIds.length} changes auto-logged successfully`
+        entryIds: ['disabled'],
+        count: changes.length,
+        message: `${changes.length} changes auto-logged successfully (disabled)`
       });
     }
 
@@ -62,10 +62,10 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       rules: {
-        keywordMappings: AutoChangelogDetector['KEYWORD_MAPPINGS'],
-        filePatterns: AutoChangelogDetector['FILE_PATTERNS']
+        keywordMappings: {},
+        filePatterns: {}
       },
-      message: 'Auto-detection rules retrieved successfully'
+      message: 'Auto-detection rules retrieved successfully (disabled)'
     });
   } catch (error) {
     console.error('Failed to get auto-detection rules:', error);

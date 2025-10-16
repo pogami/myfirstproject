@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { Hero } from "@/components/hero";
-import { Features } from "@/components/features";
+import { FeaturesSection } from "@/components/landing/features-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/site-footer";
 import { useState, useEffect } from "react";
@@ -925,7 +925,7 @@ export default function LandingPage() {
                             Choose the plan that works best for you. Start free and upgrade as you need more features.
                         </p>
                     </div>
-                        <Features />
+                        <FeaturesSection />
                 </div>
             </section>
             

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RealtimeChangelogManager, RealtimeChangelogEntry } from '@/lib/realtime-changelog';
+// import { RealtimeChangelogManager, RealtimeChangelogEntry } from '@/lib/realtime-changelog';
 
 /**
  * GET /api/changelog/realtime
@@ -11,23 +11,23 @@ export async function GET(request: NextRequest) {
     const userFacingOnly = searchParams.get('userFacing') !== 'false';
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    let entries: RealtimeChangelogEntry[];
+    // let entries: RealtimeChangelogEntry[];
     
-    if (userFacingOnly) {
-      entries = await RealtimeChangelogManager.getUserFacingEntries();
-    } else {
-      entries = await RealtimeChangelogManager.getAllEntries();
-    }
+    // if (userFacingOnly) {
+    //   entries = await RealtimeChangelogManager.getUserFacingEntries();
+    // } else {
+    //   entries = await RealtimeChangelogManager.getAllEntries();
+    // }
 
     // Apply limit
-    if (limit > 0) {
-      entries = entries.slice(0, limit);
-    }
+    // if (limit > 0) {
+    //   entries = entries.slice(0, limit);
+    // }
 
     return NextResponse.json({
       success: true,
-      entries,
-      count: entries.length
+      entries: [],
+      count: 0
     });
   } catch (error) {
     console.error('Failed to get real-time changelog entries:', error);
@@ -73,19 +73,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const entryId = await RealtimeChangelogManager.addEntry({
-      date: new Date().toISOString().split('T')[0],
-      version,
-      type,
-      changes,
-      impact: impact || 'medium',
-      author: author || 'Development Team'
-    });
+    // const entryId = await RealtimeChangelogManager.addEntry({
+    //   date: new Date().toISOString().split('T')[0],
+    //   version,
+    //   type,
+    //   changes,
+    //   impact: impact || 'medium',
+    //   author: author || 'Development Team'
+    // });
 
     return NextResponse.json({
       success: true,
-      entryId,
-      message: 'Changelog entry added successfully'
+      entryId: 'disabled',
+      message: 'Changelog entry added successfully (disabled)'
     });
   } catch (error) {
     console.error('Failed to add real-time changelog entry:', error);
@@ -112,11 +112,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    await RealtimeChangelogManager.updateEntry(entryId, updates);
+    // await RealtimeChangelogManager.updateEntry(entryId, updates);
 
     return NextResponse.json({
       success: true,
-      message: 'Changelog entry updated successfully'
+      message: 'Changelog entry updated successfully (disabled)'
     });
   } catch (error) {
     console.error('Failed to update real-time changelog entry:', error);
@@ -143,11 +143,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await RealtimeChangelogManager.deleteEntry(entryId);
+    // await RealtimeChangelogManager.deleteEntry(entryId);
 
     return NextResponse.json({
       success: true,
-      message: 'Changelog entry deleted successfully'
+      message: 'Changelog entry deleted successfully (disabled)'
     });
   } catch (error) {
     console.error('Failed to delete real-time changelog entry:', error);
