@@ -498,6 +498,13 @@ export default function DashboardPage() {
                 />
                 <p className="text-base md:text-lg text-gray-700 dark:text-gray-300 mt-1 leading-snug">
                   {(() => {
+                    // Check if user has uploaded any syllabi (class chats)
+                    const classChats = Object.values(chats).filter((chat: any) => chat.chatType === 'class');
+                    
+                    if (classChats.length === 0) {
+                      return `Upload your syllabus to see what you have upcoming and track all your assignments and upcoming exams!`;
+                    }
+
                     // Compute next upcoming item (assignment/exam) from chats
                     try {
                       const now = new Date();
@@ -523,12 +530,14 @@ export default function DashboardPage() {
                         });
                       });
 
-                      if (!nextItem) return `Next up: None`;
+                      if (!nextItem) {
+                        return `No upcoming assignments or exams. Upload more syllabi to track additional courses!`;
+                      }
 
                       const formatted = nextItem.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                       return `Next up: ${nextItem.name} on ${formatted}.`;
                     } catch {
-                      return `Next up: None`;
+                      return `Upload your syllabus to see what you have upcoming and track all your assignments and upcoming exams!`;
                     }
                   })()}
                 </p>
@@ -865,6 +874,47 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Upload Syllabus Prompt - Show when no syllabi are uploaded */}
+        {Object.values(chats).filter((chat: any) => chat.chatType === 'class').length === 0 && (
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 shadow-lg mb-6">
+            <CardContent className="p-8 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900/50 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Upload Your First Syllabus
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Get started by uploading your course syllabus to see assignments, exams, and track your study progress!
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span>Track assignments and due dates</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span>Monitor upcoming exams</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span>Track study time and streaks</span>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Link href="/dashboard/chat">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Syllabus
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
 
         {/* Assignments Table - Real-time from uploaded syllabi */}
