@@ -46,9 +46,13 @@ FORMATTING RULES:
 1. For ALL mathematical expressions, equations, or formulas:
    - Use LaTeX format enclosed in $...$ for inline math
    - Use LaTeX format enclosed in $$...$$ for display/block math
+   - NEVER use \\( or \\) - ONLY use $ and $$
    - Examples: 
      * Inline: The equation is $x^2 + y^2 = r^2$
      * Display: $$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+   - For variables: $k$, $x$, $y$, etc.
+   - For equations: $f(x) = x^2 + 3x + 2$
+   - For fractions: $\\frac{a}{b}$ or $$\\frac{a}{b}$$
 
 2. Response style:
    - Be CONCISE and direct
@@ -71,9 +75,14 @@ FORMATTING RULES:
 
 5. Overall tone: Clear, concise, academic, helpful`;
 
-    const userPrompt = `${prompt}
+    // Enhanced prompt for image-only analysis
+    const enhancedPrompt = prompt.trim() === 'Describe this image and extract relevant info.' 
+      ? 'Analyze this image comprehensively. Identify what you see, extract any text or data, explain concepts shown, and provide educational insights. Be thorough but concise.'
+      : prompt;
 
-Remember to format ALL math in LaTeX ($...$ or $$...$$) and avoid unnecessary asterisks or markdown symbols.`;
+    const userPrompt = `${enhancedPrompt}
+
+CRITICAL: Format ALL math using $...$ for inline and $$...$$ for display. NEVER use \\( or \\). Examples: $k = 3$, $x^2 + 4x + 1$, $$\\frac{a}{b}$$`;
     
     // Use GPT-4o with vision
     const response = await openai.chat.completions.create({

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Target, Lightbulb, Heart, Award, Globe, Zap, TrendingUp, Clock, CheckCircle, Star, Play, Sparkles, Shield, MessageCircle } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { MotionSection, MotionHeadline, MotionCard } from '@/components/ui/motion-section';
-import { AISupportWidget } from '@/components/ai-support-widget';
+import { StudentSuccessMetrics } from '@/components/student-success-metrics';
+import { HideAISupport } from '@/components/hide-ai-support';
 
 export default function AboutPage() {
   const [activeValue, setActiveValue] = useState(0);
@@ -35,44 +36,7 @@ export default function AboutPage() {
             }}
             className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
           >
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-500 ml-2">Student Dashboard</span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Student Success Metrics</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span>Study Time</span>
-                    <span className="text-green-600">+25%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span>Grade Improvement</span>
-                    <span className="text-green-600">+15%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span>Peer Connections</span>
-                    <span className="text-green-600">+40%</span>
-                  </div>
-                </div>
-                <motion.div
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                  className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-xs text-green-600">Students love our platform</span>
-                  </div>
-                </motion.div>
-              </div>
-            </div>
+            <StudentSuccessMetrics />
           </motion.div>
         );
 
@@ -95,33 +59,33 @@ export default function AboutPage() {
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-500 ml-2">Achievement Tracker</span>
+                <span className="text-sm text-gray-500 ml-2">What We're Building</span>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Academic Goals</span>
+                  <span className="text-sm font-medium">AI Features</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span>GPA Improvement</span>
+                    <span>Smart Chat</span>
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-green-600">On Track</span>
+                      <span className="text-green-600">Live</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span>Study Goals</span>
+                    <span>Syllabus Analysis</span>
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-green-600">Achieved</span>
+                      <span className="text-green-600">Working</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span>Exam Prep</span>
+                    <span>Study Plans</span>
                     <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                      <span className="text-yellow-600">In Progress</span>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-blue-600">Coming Soon</span>
                     </div>
                   </div>
                 </div>
@@ -132,7 +96,7 @@ export default function AboutPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs text-blue-600">Excellence in every interaction</span>
+                    <span className="text-xs text-blue-600">Empowering student success</span>
                   </div>
                 </motion.div>
               </div>
@@ -159,25 +123,25 @@ export default function AboutPage() {
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-500 ml-2">Innovation Lab</span>
+                <span className="text-sm text-gray-500 ml-2">Development Hub</span>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Latest Features</span>
+                  <span className="text-sm font-medium">Current Features</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span>AI-Powered Study Plans</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                    <span>Smart Notifications</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>AI-Powered Chat</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Advanced Analytics</span>
+                    <span>Syllabus Upload & Analysis</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span>Smart Study Tools</span>
                   </div>
                 </div>
                 <motion.div
@@ -187,7 +151,7 @@ export default function AboutPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-purple-600" />
-                    <span className="text-xs text-purple-600">Always innovating</span>
+                    <span className="text-xs text-purple-600">Building the future of education</span>
                   </div>
                 </motion.div>
               </div>
@@ -214,25 +178,25 @@ export default function AboutPage() {
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-500 ml-2">Community Hub</span>
+                <span className="text-sm text-gray-500 ml-2">Community Vision</span>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Heart className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Active Members</span>
+                  <span className="text-sm font-medium">Coming Soon</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span>Study Groups</span>
-                    <span className="text-blue-600">1,247</span>
+                    <span className="text-blue-600">In Development</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span>Peer Connections</span>
-                    <span className="text-blue-600">8,932</span>
+                    <span className="text-blue-600">Planned</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span>Knowledge Shared</span>
-                    <span className="text-blue-600">15,678</span>
+                    <span>Knowledge Sharing</span>
+                    <span className="text-blue-600">Future Feature</span>
                   </div>
                 </div>
                 <motion.div
@@ -242,7 +206,7 @@ export default function AboutPage() {
                 >
                   <div className="flex items-center gap-2">
                     <MessageCircle className="h-4 w-4 text-pink-600" />
-                    <span className="text-xs text-pink-600">Building connections daily</span>
+                    <span className="text-xs text-pink-600">Creating spaces for student collaboration</span>
                   </div>
                 </motion.div>
               </div>
@@ -286,30 +250,23 @@ export default function AboutPage() {
     {
       icon: Users,
       title: 'Student-Centered',
-      description: 'Every feature is designed with students\' needs in mind, from AI tutoring to study group collaboration.'
+      description: 'Building features with students\' needs in mind, starting with AI-powered chat and syllabus analysis.'
     },
     {
       icon: Target,
       title: 'Academic Excellence',
-      description: 'We believe in empowering students to achieve their highest potential through innovative learning tools.'
+      description: 'Committed to empowering students through the tools we\'re developing for academic success.'
     },
     {
       icon: Lightbulb,
       title: 'Innovation',
-      description: 'We continuously push the boundaries of educational technology to create better learning experiences.'
+      description: 'Continuously developing new educational technology features to enhance learning experiences.'
     },
     {
       icon: Heart,
       title: 'Community',
-      description: 'Building connections between students and fostering collaborative learning environments.'
+      description: 'Working to build connections between students and create collaborative learning environments.'
     }
-  ];
-
-  const stats = [
-    { number: '500+', label: 'Active Students' },
-    { number: '25+', label: 'Universities' },
-    { number: '87%', label: 'Satisfaction Rate' },
-    { number: '24/7', label: 'AI Support' }
   ];
 
   return (
@@ -407,38 +364,6 @@ export default function AboutPage() {
             >
               We're on a mission to revolutionize how students learn, collaborate, and succeed in their academic journey.
             </motion.p>
-
-            {/* Interactive Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-wrap justify-center gap-8 mb-12"
-            >
-              {[
-                { number: "500+", label: "Students", icon: Users },
-                { number: "25+", label: "Universities", icon: Globe },
-                { number: "87%", label: "Success Rate", icon: Target },
-                { number: "24/7", label: "AI Support", icon: Clock }
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
-                  className="flex items-center gap-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl px-6 py-4 border border-gray-200/50 dark:border-gray-700/50"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                    <stat.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{stat.number}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">{stat.label}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
           </div>
         </div>
       </div>
@@ -468,30 +393,23 @@ export default function AboutPage() {
               {
                 year: "Aug 2025",
                 title: "The Beginning",
-                description: "Started this project as a solo developer, inspired by students' struggles to find study partners, get help with difficult concepts, and stay organized in their academic journey.",
+                description: "Started CourseConnect as a solo developer, inspired by students' struggles to find study partners, get help with difficult concepts, and stay organized in their academic journey. Built the foundation with AI-powered chat and syllabus analysis.",
                 icon: Lightbulb,
                 side: "left"
               },
               {
-                year: "Sep 2025",
-                title: "Current State",
-                description: "Built the core platform leveraging AI technology and modern collaboration tools. Currently developing features to transform how students learn and succeed.",
+                year: "Sep-Oct 2025",
+                title: "Development Phase",
+                description: "Worked intensively on the platform, developing core AI features, smart syllabus analysis, and intelligent chat assistance. Built the foundation for what would become a comprehensive student success platform.",
                 icon: Users,
                 side: "right"
               },
               {
-                year: "Oct 2025",
-                title: "Future Growth",
-                description: "Plans to expand the platform's capabilities, onboard more universities, and build a comprehensive ecosystem connecting students nationwide.",
-                icon: TrendingUp,
-                side: "left"
-              },
-              {
-                year: "Nov 2025",
-                title: "Future Vision",
-                description: "Envision CourseConnect becoming more than just a study platform—a community where students support each other and achieve their academic goals together.",
+                year: "Future",
+                title: "Our Vision",
+                description: "Envision CourseConnect expanding to universities nationwide, integrating with LMS systems, and becoming a comprehensive ecosystem where students, professors, and institutions collaborate for academic success through AI-powered tools.",
                 icon: Heart,
-                side: "right"
+                side: "left"
               }
             ].map((item, index) => (
               <motion.div
@@ -667,56 +585,6 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Interactive Stats Section */}
-      <div className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              By the Numbers
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Our impact on student success speaks for itself.
-            </p>
-          </motion.div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ 
-                  scale: 1.05,
-                  transition: { duration: 0.2 }
-                }}
-                className="text-center bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-                  viewport={{ once: true }}
-                  className="text-4xl md:text-5xl font-bold text-blue-600 dark:text-blue-400 mb-2"
-                >
-                  {stat.number}
-                </motion.div>
-                <div className="text-gray-600 dark:text-gray-300">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Mission Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-20">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
@@ -729,13 +597,13 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p className="text-xl text-blue-100 mb-8">
-              To democratize access to quality education by connecting students with AI-powered tutoring, 
-              study groups, and collaborative learning tools that help them succeed academically and beyond.
+              To democratize access to quality education by building AI-powered tools that help students succeed academically. 
+              Starting with intelligent chat assistance and syllabus analysis, we're creating the foundation for collaborative learning.
             </p>
             <Button
               size="lg"
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => window.location.href = '/login'}
+              onClick={() => window.location.href = '/signup'}
             >
               Join Our Mission
             </Button>
@@ -744,7 +612,7 @@ export default function AboutPage() {
       </div>
 
       <Footer />
-      <AISupportWidget />
+      <HideAISupport />
     </div>
   );
 }

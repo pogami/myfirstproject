@@ -271,9 +271,19 @@ IMPORTANT:
 - Don't ask "what would you like to know?" - instead, offer specific help based on the context`;
     }
 
-    // Build conversation context
+    // Build conversation context with file information
     const convoContext = conversationHistory?.length > 0 
-      ? `\n\nPrevious conversation:\n${conversationHistory.map((msg: any) => `${msg.role === 'assistant' ? 'AI' : 'User'}: ${msg.content}`).join('\n')}\n\n`
+      ? `\n\nPrevious conversation:\n${conversationHistory.map((msg: any) => {
+          let content = msg.content || '';
+          // Add file information if present
+          if (msg.files && msg.files.length > 0) {
+            const fileInfo = msg.files.map((f: any) => `${f.name} (${f.type})`).join(', ');
+            content += ` [Attached files: ${fileInfo}]`;
+          } else if (msg.file) {
+            content += ` [Attached file: ${msg.file.name} (${msg.file.type})]`;
+          }
+          return `${msg.role === 'assistant' ? 'AI' : 'User'}: ${content}`;
+        }).join('\n')}\n\n`
       : '';
 
     // Create course-aware prompt
@@ -317,6 +327,13 @@ CRITICAL - QUIZ RESULTS FEEDBACK:
 - Then for each wrong question, explain the concept clearly and ask if they have follow-up questions
 - Make them feel supported and motivated to improve
 - Show enthusiasm about helping them master the material
+
+CRITICAL - FILE ATTACHMENT MEMORY:
+- ALWAYS remember when students attach files/images in previous messages
+- If they ask about "what I attached" or reference "the image/file", refer to the specific files they shared
+- When you see [Attached file: filename] in conversation history, remember that file was shared
+- If they ask follow-up questions about attached content, acknowledge the specific file they shared
+- NEVER say "you didn't attach anything" if the conversation history shows file attachments
 
 ${convoContext}Student: ${cleanedQuestion}
 

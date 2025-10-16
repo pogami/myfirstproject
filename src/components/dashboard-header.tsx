@@ -41,6 +41,66 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
   const { clearGuestData } = useChatStore();
 
+  // Listen for profile picture updates
+  useEffect(() => {
+    if (user) {
+      // Set initial profile picture
+      setUserProfilePicture(user.photoURL);
+      
+      // Listen for auth state changes (profile updates)
+      const unsubscribe = auth.onAuthStateChanged((updatedUser) => {
+        if (updatedUser && updatedUser.uid === user.uid) {
+          setUserProfilePicture(updatedUser.photoURL);
+        }
+      });
+      
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  // Listen for guest profile picture updates in localStorage
+  useEffect(() => {
+    if (isGuest) {
+      const checkGuestProfilePicture = () => {
+        try {
+          const guestData = localStorage.getItem('guestUser');
+          if (guestData) {
+            const parsed = JSON.parse(guestData);
+            if (parsed.profilePicture) {
+              setUserProfilePicture(parsed.profilePicture);
+            }
+          }
+        } catch (error) {
+          console.error('Error reading guest profile picture:', error);
+        }
+      };
+
+      // Check initially
+      checkGuestProfilePicture();
+
+      // Listen for storage changes
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'guestUser') {
+          checkGuestProfilePicture();
+        }
+      };
+
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also listen for custom events (for same-tab updates)
+      const handleCustomStorageChange = () => {
+        checkGuestProfilePicture();
+      };
+      
+      window.addEventListener('guestProfileUpdated', handleCustomStorageChange);
+
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('guestProfileUpdated', handleCustomStorageChange);
+      };
+    }
+  }, [isGuest]);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -51,7 +111,11 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
       const hasSeenOnboarding = localStorage.getItem('onboarding-completed');
       const justSignedUp = sessionStorage.getItem('justSignedUp');
       
-      if (!hasSeenOnboarding || justSignedUp) {
+      // For guest users, also check if they've seen onboarding as a guest
+      const guestHasSeenOnboarding = user.isGuest || user.isAnonymous ? 
+        localStorage.getItem('guest-onboarding-completed') : true;
+      
+      if ((!hasSeenOnboarding || justSignedUp) && guestHasSeenOnboarding) {
         // Delay to let the dashboard load
         setTimeout(() => {
           setShowOnboarding(true);

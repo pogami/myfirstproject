@@ -24,8 +24,18 @@ export function FormattedMessage({ text, className = "" }: FormattedMessageProps
     // Clean markdown first
     const cleanedText = cleanMarkdown(text);
     
-    // Split text by LaTeX math expressions
-    const parts = cleanedText.split(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/);
+    // Check if text contains any math delimiters
+    const hasMath = cleanedText.includes("$$") || (cleanedText.includes("$") && cleanedText.includes("$")) || 
+                    (cleanedText.includes("\\(") && cleanedText.includes("\\)")) || 
+                    (cleanedText.includes("\\[") && cleanedText.includes("\\]"));
+    
+    if (!hasMath) {
+      // No math, return as regular text
+      return <span>{cleanedText}</span>;
+    }
+    
+    // Split text by LaTeX math expressions (both $ and \( formats)
+    const parts = cleanedText.split(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([^)]*?\\\))/);
     
     return parts.map((part, index) => {
       // Block math ($$...$$)
@@ -33,9 +43,19 @@ export function FormattedMessage({ text, className = "" }: FormattedMessageProps
         const mathContent = part.slice(2, -2).trim();
         return <BlockMath key={index} math={mathContent} />;
       }
+      // Block math (\[...\])
+      else if (part.startsWith('\\[') && part.endsWith('\\]')) {
+        const mathContent = part.slice(2, -2).trim();
+        return <BlockMath key={index} math={mathContent} />;
+      }
       // Inline math ($...$)
       else if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
         const mathContent = part.slice(1, -1).trim();
+        return <InlineMath key={index} math={mathContent} />;
+      }
+      // Inline math (\(...\))
+      else if (part.startsWith('\\(') && part.endsWith('\\)')) {
+        const mathContent = part.slice(2, -2).trim();
         return <InlineMath key={index} math={mathContent} />;
       }
       // Regular text

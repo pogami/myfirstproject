@@ -83,45 +83,79 @@ const convertMarkdownLinks = (text: string) => {
 
 // Detect math and render with KaTeX
 function renderMathLine(line: string, i: number) {
-  if (line.includes("$$")) {
-    const expr = line.replace(/\$\$/g, "");
-    return <BlockMath key={i} math={expr} />;
-  } else if (line.includes("$")) {
-    const expr = line.replace(/\$/g, "");
-    return <InlineMath key={i} math={expr} />;
-  } else {
-    // Check if line contains boxed math answers
-    if (line.includes("\\boxed{")) {
-      // Extract boxed content and render it prominently
-      const boxedMatch = line.match(/\\boxed\{([^}]+)\}/);
-      if (boxedMatch) {
-        const boxedContent = boxedMatch[1];
-        const beforeBoxed = line.substring(0, boxedMatch.index);
-        const afterBoxed = line.substring(boxedMatch.index! + boxedMatch[0].length);
-        
-        return (
-          <div key={i} className="mb-2 flex items-center gap-2">
-            {beforeBoxed && <span className="text-sm">{beforeBoxed}</span>}
-            <div className="inline-flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-700 rounded-md px-2 py-0.5 min-h-[24px] text-sm">
-              <InlineMath math={boxedContent} />
-            </div>
-            {afterBoxed && <span className="text-sm">{afterBoxed}</span>}
-          </div>
-        );
-      }
-    }
-    // Handle bold text with **text** and convert markdown links
+  // Check if line contains any math delimiters
+  const hasMath = line.includes("$$") || (line.includes("$") && line.includes("$")) || 
+                  (line.includes("\\(") && line.includes("\\)")) || 
+                  (line.includes("\\[") && line.includes("\\]")) ||
+                  line.includes("\\boxed{");
+  
+  if (!hasMath) {
+    // No math, return as regular text with bold formatting
     let processedLine = line
       .replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>') // Bold
-      .replace(/\*([^\*]+)\*/g, '<em>$1</em>'); // Italic
+      .replace(/\*([^\*]+)\*/g, '<strong>$1</strong>'); // Convert italic to bold instead
     
     // Convert markdown links to clickable HTML links
     processedLine = convertMarkdownLinks(processedLine);
-    // Highlight @ai mentions
-    processedLine = highlightAIMentions(processedLine);
     
-    return <p key={i} className="text-sm break-words ai-response mb-2" dangerouslySetInnerHTML={{ __html: processedLine }}></p>;
+    return (
+      <p key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans" dangerouslySetInnerHTML={{ __html: processedLine }} />
+    );
   }
+
+  // Split the line by math expressions and render each part appropriately
+  const parts = line.split(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([^)]*?\\\)|\\boxed\{[^}]*\})/);
+  
+  return (
+    <p key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans">
+      {parts.map((part, partIndex) => {
+        // Block math ($$...$$)
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          const mathContent = part.slice(2, -2).trim();
+          return <BlockMath key={`${i}-${partIndex}`} math={mathContent} />;
+        }
+        // Block math (\[...\])
+        else if (part.startsWith('\\[') && part.endsWith('\\]')) {
+          const mathContent = part.slice(2, -2).trim();
+          return <BlockMath key={`${i}-${partIndex}`} math={mathContent} />;
+        }
+        // Inline math ($...$)
+        else if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
+          const mathContent = part.slice(1, -1).trim();
+          return <InlineMath key={`${i}-${partIndex}`} math={mathContent} />;
+        }
+        // Inline math (\(...\))
+        else if (part.startsWith('\\(') && part.endsWith('\\)')) {
+          const mathContent = part.slice(2, -2).trim();
+          return <InlineMath key={`${i}-${partIndex}`} math={mathContent} />;
+        }
+        // Boxed math
+        else if (part.startsWith('\\boxed{') && part.endsWith('}')) {
+          const boxedMatch = part.match(/\\boxed\{([^}]+)\}/);
+          if (boxedMatch) {
+            const boxedContent = boxedMatch[1];
+            return (
+              <span key={`${i}-${partIndex}`} className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-md font-medium">
+                <span className="text-green-600 dark:text-green-400">Answer:</span>
+                <InlineMath math={boxedContent} />
+              </span>
+            );
+          }
+        }
+        // Regular text with formatting
+        else if (part.trim()) {
+          let processedPart = part
+            .replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>') // Bold
+            .replace(/\*([^\*]+)\*/g, '<strong>$1</strong>'); // Convert italic to bold instead
+          
+          processedPart = convertMarkdownLinks(processedPart);
+          
+          return <span key={`${i}-${partIndex}`} dangerouslySetInnerHTML={{ __html: processedPart }} />;
+        }
+        return null;
+      })}
+    </p>
+  );
 }
 
 // Function to break long text into paragraphs

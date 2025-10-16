@@ -89,9 +89,19 @@ export async function POST(request: NextRequest) {
       currentInfo = searchResults ? `\n\nCurrent information:\n${searchResults}\n` : '';
     }
 
-    // Build natural, human-like prompt
+    // Build natural, human-like prompt with file information
     const convoContext = conversationHistory?.length > 0 
-      ? `\n\nPrevious chat:\n${conversationHistory.map((msg: any) => `${msg.role === 'assistant' ? 'AI' : 'User'}: ${msg.content}`).join('\n')}\n\n`
+      ? `\n\nPrevious chat:\n${conversationHistory.map((msg: any) => {
+          let content = msg.content || '';
+          // Add file information if present
+          if (msg.files && msg.files.length > 0) {
+            const fileInfo = msg.files.map((f: any) => `${f.name} (${f.type})`).join(', ');
+            content += ` [Attached files: ${fileInfo}]`;
+          } else if (msg.file) {
+            content += ` [Attached file: ${msg.file.name} (${msg.file.type})]`;
+          }
+          return `${msg.role === 'assistant' ? 'AI' : 'User'}: ${content}`;
+        }).join('\n')}\n\n`
       : '';
 
     const prompt = `You're CourseConnect AI, a friendly and helpful study buddy! Respond naturally like you're chatting with a friend. Be conversational, engaging, and helpful.

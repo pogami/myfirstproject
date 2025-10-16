@@ -79,6 +79,77 @@ export function EnhancedChatInput({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Handle pasted files directly
+  const handlePastedFile = (file: File) => {
+    try {
+      console.log('📋 Pasted file:', file.name, file.type, file.size);
+      
+      if (!file || !file.name) {
+        console.error('Invalid file object:', file);
+        return;
+      }
+
+      // Check file size (50MB limit)
+      const maxFileSize = 50 * 1024 * 1024;
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" must be less than 50MB`);
+        return;
+      }
+
+      // Check if we already have too many files (5 max)
+      if (selectedFiles.length >= 5) {
+        alert('Maximum 5 files allowed at once');
+        return;
+      }
+
+      // Add to selected files
+      setSelectedFiles(prev => [...prev, file]);
+      
+      // Create preview
+      const preview = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+      };
+      setFilePreviews(prev => [...prev, preview]);
+      
+      console.log('📋 File added successfully:', file.name);
+    } catch (error) {
+      console.error('Error handling pasted file:', error);
+    }
+  };
+
+  // Handle paste events for files
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      try {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.kind === 'file') {
+            e.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              console.log('📋 Processing pasted file:', file.name, file.type);
+              handlePastedFile(file);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling paste event:', error);
+      }
+    };
+
+    const inputElement = inputRef.current;
+    if (inputElement) {
+      inputElement.addEventListener('paste', handlePaste);
+      return () => inputElement.removeEventListener('paste', handlePaste);
+    }
+  }, []);
+
   // Check for @ mentions
   useEffect(() => {
     const hasAIMention = value.includes('@ai') || value.includes('@AI');
@@ -149,7 +220,7 @@ export function EnhancedChatInput({
   };
 
   const handleSend = () => {
-    // If there are files selected, send them with the text
+    // If there are files selected, send them (with or without text)
     if (selectedFiles.length > 0) {
       if (onFileProcessed) {
         // Send as a single payload so UI can render a grid on one message
@@ -168,8 +239,7 @@ export function EnhancedChatInput({
       setFilePreviews([]);
       setUploadProgress({});
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-    if (value.trim() && selectedFiles.length === 0) {
+    } else if (value.trim()) {
       // No file, just text
       const shouldCallAI = !isPublicChat || value.includes('@ai') || value.includes('@AI');
       onSend(shouldCallAI);
@@ -178,34 +248,24 @@ export function EnhancedChatInput({
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📁 File upload triggered', e.target.files);
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const allowedTypes = [
-      'text/plain',
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp'
-    ];
-
-    // Respect maximum of 3 total chips including already selected
-    const remaining = Math.max(0, 3 - selectedFiles.length);
+    // Allow any file type - just check size
+    const maxFileSize = 50 * 1024 * 1024; // 50MB limit
+    
+    // Respect maximum of 5 total files including already selected
+    const remaining = Math.max(0, 5 - selectedFiles.length);
     const limited = files.slice(0, remaining);
 
     const valid: File[] = [];
-    for (const f of limited) { // limit 3 chips total
-      if (f.size > 10 * 1024 * 1024) {
-        alert(`File "${f.name}" must be less than 10MB`);
+    for (const f of limited) {
+      if (f.size > maxFileSize) {
+        alert(`File "${f.name}" must be less than 50MB`);
         continue;
       }
-      if (!allowedTypes.includes(f.type)) {
-        alert(`Unsupported type for "${f.name}"`);
-        continue;
-      }
+      // Allow any file type
       valid.push(f);
     }
 
@@ -239,22 +299,107 @@ export function EnhancedChatInput({
   };
 
   const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    console.log('📁 Upload button clicked');
+    if (fileInputRef.current) {
+      console.log('📁 File input found, triggering click');
+      fileInputRef.current.click();
+    } else {
+      console.error('📁 File input ref not found');
+    }
   };
 
   const toggleVoice = async () => {
+    console.log('🎤 Microphone button clicked, isVoiceActive:', isVoiceActive);
+    
     if (!isVoiceActive) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        setIsVoiceActive(true);
-        setTimeout(() => {
-          stream.getTracks().forEach(track => track.stop());
-        }, 100);
+        // Check if browser supports speech recognition
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          console.log('🎤 Speech recognition not supported');
+          alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+          return;
+        }
+
+        console.log('🎤 Speech recognition supported, creating recognition instance');
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = true; // Enable real-time results
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = () => {
+          console.log('🎤 Speech recognition started');
+          setIsVoiceActive(true);
+        };
+        
+        recognition.onresult = (event: any) => {
+          console.log('🎤 Speech recognition result:', event);
+          
+          let interimTranscript = '';
+          let finalTranscript = '';
+          
+          // Process all results
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          // Use final transcript if available, otherwise use interim
+          const transcriptToUse = finalTranscript || interimTranscript;
+          
+          if (transcriptToUse) {
+            const currentValue = value;
+            const newValue = currentValue + (currentValue ? ' ' : '') + transcriptToUse;
+            console.log('🎤 Speech recognized:', transcriptToUse);
+            console.log('🎤 Current value:', currentValue);
+            console.log('🎤 New value:', newValue);
+            
+            // Try multiple approaches to update the input
+            try {
+              // Approach 1: Create a proper synthetic event
+              const syntheticEvent = {
+                target: { value: newValue },
+                currentTarget: { value: newValue }
+              } as React.ChangeEvent<HTMLTextAreaElement>;
+              onChange(syntheticEvent);
+              console.log('🎤 Updated via synthetic event');
+            } catch (error) {
+              console.error('🎤 Error with synthetic event:', error);
+            }
+          }
+        };
+        
+        recognition.onerror = (event: any) => {
+          console.error('🎤 Speech recognition error:', event.error);
+          setIsVoiceActive(false);
+          if (event.error === 'not-allowed') {
+            alert('Microphone access is required for voice input. Please allow microphone access and try again.');
+          } else if (event.error === 'no-speech') {
+            alert('No speech detected. Please try again.');
+          } else {
+            alert(`Speech recognition error: ${event.error}`);
+          }
+        };
+        
+        recognition.onend = () => {
+          console.log('🎤 Speech recognition ended');
+          setIsVoiceActive(false);
+        };
+        
+        console.log('🎤 Starting speech recognition...');
+        recognition.start();
       } catch (error) {
-        console.error('Error accessing microphone:', error);
+        console.error('🎤 Error accessing microphone:', error);
         alert('Microphone access is required for voice input. Please allow microphone access and try again.');
       }
     } else {
+      console.log('🎤 Stopping speech recognition');
+      // Stop recognition if it's running
       setIsVoiceActive(false);
     }
   };
@@ -433,7 +578,7 @@ export function EnhancedChatInput({
             isDark 
               ? "text-purple-400 hover:text-purple-300" 
               : "text-purple-600 hover:text-purple-500",
-            (disabled || isSending || !value.trim()) && "opacity-50 cursor-not-allowed"
+            (disabled || isSending || (!value.trim() && selectedFiles.length === 0)) && "opacity-50 cursor-not-allowed"
           )}
         >
           <Send className="h-4 w-4" />
@@ -445,18 +590,11 @@ export function EnhancedChatInput({
           type="file"
           onChange={handleFileUpload}
           multiple
-          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
+          accept="*/*"
           className="hidden"
         />
       </div>
 
-      {/* Floating Particles Effect - Hidden on mobile for performance */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg hidden md:block">
-        <div className="absolute top-2 left-4 w-0.5 h-0.5 bg-orange-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '0s' }} />
-        <div className="absolute top-3 right-16 w-0.5 h-0.5 bg-purple-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute bottom-2 left-8 w-0.5 h-0.5 bg-blue-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '3s' }} />
-        <div className="absolute bottom-3 right-8 w-0.5 h-0.5 bg-pink-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '0.8s' }} />
-      </div>
     </div>
   );
 }

@@ -187,7 +187,11 @@ export default function EnhancedSyllabusUpload() {
                 setShowReview(true);
                 setProgress(100);
             } else {
+                setProgress(95);
+                setCurrentMessage("Creating course chat...");
                 await createCourseFromParsedData(result.data!);
+                setProgress(100);
+                setCurrentMessage("Course created successfully!");
             }
 
         } catch (error) {

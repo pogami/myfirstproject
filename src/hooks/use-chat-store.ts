@@ -44,6 +44,12 @@ export type Message = {
         type: string;
         url: string;
     };
+    files?: Array<{
+        name: string;
+        size: number;
+        type: string;
+        url: string;
+    }>;
 };
 
 export type Chat = {
@@ -617,7 +623,10 @@ export const useChatStore = create<ChatState>()(
           ...(message.avatar && { avatar: message.avatar }),
           ...(message.photoURL && { photoURL: message.photoURL }),
           ...(message.isAI && { isAI: message.isAI }),
-          ...(message.metadata && { metadata: message.metadata })
+          ...(message.metadata && { metadata: message.metadata }),
+          ...(message.file && { file: message.file }),
+          ...(message.files && { files: message.files }),
+          ...(message.sources && { sources: message.sources })
         };
         
         // Optimistic update for immediate UI response (with deduplication)

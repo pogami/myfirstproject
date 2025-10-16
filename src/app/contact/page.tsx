@@ -14,7 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
-import { AISupportWidget } from "@/components/ai-support-widget";
+import { HideAISupport } from "@/components/hide-ai-support";
 
 const contactMethods = [
   {
@@ -449,7 +449,7 @@ export default function ContactPage() {
       </main>
 
       <SiteFooter />
-      <AISupportWidget />
+      <HideAISupport />
     </div>
   );
 }

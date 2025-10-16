@@ -215,13 +215,6 @@ export function FuturisticChatInput({
         />
       </div>
 
-      {/* Floating Particles Effect - Hidden on mobile for performance */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg hidden md:block">
-        <div className="absolute top-2 left-4 w-0.5 h-0.5 bg-orange-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '0s' }} />
-        <div className="absolute top-3 right-16 w-0.5 h-0.5 bg-purple-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute bottom-2 left-8 w-0.5 h-0.5 bg-blue-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '3s' }} />
-        <div className="absolute bottom-3 right-8 w-0.5 h-0.5 bg-pink-400 rounded-full animate-ping opacity-70" style={{ animationDelay: '0.8s' }} />
-      </div>
     </div>
   );
 }

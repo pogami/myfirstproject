@@ -61,6 +61,7 @@ import { InDepthAnalysis } from "@/components/in-depth-analysis";
 import { JoinMessage } from "@/components/join-message";
 import { createWelcomeNotification, createAIResponseNotification, createStudyEncouragementNotification, createAssignmentReminderNotification, isFirstGuestVisit, markGuestAsVisited } from "@/lib/guest-notifications";
 import { useNotifications } from "@/hooks/use-notifications";
+import { WelcomeCard } from "@/components/welcome-card";
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -103,6 +104,36 @@ export default function ChatPage() {
     const [unreadById, setUnreadById] = useState<Record<string, number>>({});
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
     const { toast } = useToast();
+
+    // Helper function to get clean chat display name
+    const getChatDisplayName = (chatId: string) => {
+        const chat = chats[chatId];
+        
+        // If it's the public general chat, show "Community"
+        if (chatId === 'public-general-chat') {
+            return 'Community';
+        }
+        
+        // If it's private general chat, show "General Chat"
+        if (chatId === 'private-general-chat' || chatId === 'private-general-chat-guest') {
+            return 'General Chat';
+        }
+        
+        // If it's a class chat with course data, use course name
+        if (chat?.courseData?.courseName) {
+            return chat.courseData.courseName;
+        }
+        
+        // If chat has a proper title and it's not the ugly ID, use it
+        if (chat?.title && !chat.title.includes('private-general-chat-')) {
+            return chat.title;
+        }
+        
+        // Fallback to cleaned chat ID
+        const cleaned = chatId.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        console.log('Chat display name fallback:', { chatId, cleaned, chat });
+        return cleaned;
+    };
 
     // Auto-create welcome notification for guests on first visit
     useEffect(() => {
@@ -526,11 +557,26 @@ export default function ChatPage() {
         if (!currentTab) {
             let last = '';
             try { last = localStorage.getItem('cc-active-tab') || ''; } catch {}
-            if (last && chats[last]) setCurrentTab(last);
-            else if (chats['public-general-chat']) setCurrentTab('public-general-chat');
-            else setCurrentTab('private-general-chat');
+            if (last && chats[last]) {
+                setCurrentTab(last);
+            } else if (chats['public-general-chat']) {
+                setCurrentTab('public-general-chat');
+            } else {
+                // Default to private general chat and ensure it's properly initialized
+                setCurrentTab('private-general-chat');
+                console.log('Setting default chat to private-general-chat');
+            }
         }
-    }, [initializeGeneralChats, currentTab, setCurrentTab]);
+    }, [initializeGeneralChats, currentTab, setCurrentTab, chats]);
+
+    // Ensure the current tab has a proper chat object
+    useEffect(() => {
+        if (currentTab && !chats[currentTab]) {
+            console.log('Current tab exists but chat object is missing:', currentTab);
+            // Re-initialize general chats to ensure the chat object exists
+            initializeGeneralChats();
+        }
+    }, [currentTab, chats, initializeGeneralChats]);
 
     // Force load after 2 seconds to prevent infinite loading
     useEffect(() => {
@@ -1400,7 +1446,7 @@ export default function ChatPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-medium truncate">
-                                                                    {chat.title}
+                                                                    {getChatDisplayName(chat.chatId)}
                                                                 </span>
                                                                 {isPublic && (
                                                                     <span className="inline-flex items-center text-[10px] px-2 py-1 rounded-md font-semibold bg-emerald-500/20 text-emerald-700 dark:bg-emerald-500/30 dark:text-emerald-300 border border-emerald-500/30">
@@ -1474,11 +1520,7 @@ export default function ChatPage() {
                                 <CardHeader className="pb-3 flex-shrink-0">
                                     <CardTitle className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
-                                        {currentTab === 'public-general-chat' 
-                                            ? 'Community' 
-                                            : currentTab === 'private-general-chat' 
-                                            ? 'General Chat' 
-                                            : (currentTab && chats[currentTab]?.title) || 'Chat'}
+                                        {currentTab ? getChatDisplayName(currentTab) : 'Loading...'}
                                         <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
                                             All Users
@@ -1555,27 +1597,68 @@ export default function ChatPage() {
                                                 </div>
                                             ) : (
                                                 <>
-                                            {/* Welcome Card - only show for first message and if it's a welcome message */}
-                                            {generalChat?.messages?.length === 1 && 
-                                             generalChat.messages[0]?.sender === 'bot' && 
-                                             generalChat.messages[0]?.text?.includes('Welcome') && (
-                                                <WelcomeCard 
-                                                    chatType={currentTab === 'public-general-chat' ? 'community' : 'general'}
-                                                    onQuickAction={(action) => {
-                                                        setInputValue(action);
-                                                        // Focus on input after setting value
-                                                        setTimeout(() => {
-                                                            const input = document.querySelector('textarea[placeholder*="message"]') as HTMLTextAreaElement;
-                                                            if (input) {
-                                                                input.focus();
-                                                                input.setSelectionRange(input.value.length, input.value.length);
-                                                            }
-                                                        }, 100);
-                                                    }}
-                                                />
-                                            )}
+                                            {/* Welcome Card - show for first message and if it's a welcome message */}
+                                            {(() => {
+                                                const currentChat = chats[currentTab || 'private-general-chat-guest'];
+                                                const isClassChat = currentChat?.chatType === 'class';
+                                                const isGeneralChat = currentTab === 'private-general-chat' || currentTab === 'private-general-chat-guest' || currentTab === 'public-general-chat';
+                                                
+                                                // Show WelcomeCard for class chats
+                                                if (isClassChat && currentChat?.messages?.length === 1 && 
+                                                    currentChat.messages[0]?.sender === 'bot' && 
+                                                    currentChat.messages[0]?.text?.includes('Welcome')) {
+                                                    return (
+                                                        <WelcomeCard 
+                                                            chatType="class"
+                                                            courseData={currentChat.courseData}
+                                                            onQuickAction={(action) => {
+                                                                setInputValue(action);
+                                                                setTimeout(() => {
+                                                                    const input = document.querySelector('textarea[placeholder*="message"]') as HTMLTextAreaElement;
+                                                                    if (input) {
+                                                                        input.focus();
+                                                                        input.setSelectionRange(input.value.length, input.value.length);
+                                                                    }
+                                                                }, 100);
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+                                                
+                                                // Show WelcomeCard for general chats
+                                                if (isGeneralChat && generalChat?.messages?.length === 1 && 
+                                                    generalChat.messages[0]?.sender === 'bot' && 
+                                                    generalChat.messages[0]?.text?.includes('Welcome')) {
+                                                    return (
+                                                        <WelcomeCard 
+                                                            chatType={currentTab === 'public-general-chat' ? 'community' : 'general'}
+                                                            onQuickAction={(action) => {
+                                                                setInputValue(action);
+                                                                setTimeout(() => {
+                                                                    const input = document.querySelector('textarea[placeholder*="message"]') as HTMLTextAreaElement;
+                                                                    if (input) {
+                                                                        input.focus();
+                                                                        input.setSelectionRange(input.value.length, input.value.length);
+                                                                    }
+                                                                }, 100);
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+                                                
+                                                return null;
+                                            })()}
                                             
-                                            {generalChat?.messages?.map((message, index) => {
+                                            {/* Render messages for current chat */}
+                                            {(() => {
+                                                const currentChat = chats[currentTab || 'private-general-chat-guest'];
+                                                const isClassChat = currentChat?.chatType === 'class';
+                                                const isGeneralChat = currentTab === 'private-general-chat' || currentTab === 'private-general-chat-guest' || currentTab === 'public-general-chat';
+                                                
+                                                // Use currentChat for class chats, generalChat for general chats
+                                                const messagesToRender = isClassChat ? currentChat?.messages : generalChat?.messages;
+                                                
+                                                return messagesToRender?.map((message, index) => {
                                                 const messageKey = message.id || `fallback-${index}-${message.timestamp}`;
                                                 if (deletedMessageIds.has(messageKey)) {
                                                     return (
@@ -1650,7 +1733,7 @@ export default function ChatPage() {
                                                                 <div className="flex flex-col items-end gap-2">
                                                                     {/* Show file(s) preview if exists */}
                                                                     {((message as any).files || (message as any).file) && (
-                                                                        <div className="grid grid-cols-2 gap-2 max-w-sm">
+                                                                        <div className={`${((message as any).files || [(message as any).file]).filter(Boolean).length === 1 ? 'max-w-sm' : 'grid grid-cols-2 gap-2 max-w-sm'}`}>
                                                                             {/* Support old single-file shape */}
                                                                             {((message as any).files || [(message as any).file]).filter(Boolean).map((f: any, idx: number) => (
                                                                                 <div key={idx} className="relative rounded-xl overflow-hidden shadow-md border border-primary/20">
@@ -1834,7 +1917,8 @@ export default function ChatPage() {
                                                                 </div>
                                                             </div>
                                             );
-                                            })}
+                                                });
+                                            })()}
                                             </>
                                             )}
                                             
@@ -1918,31 +2002,98 @@ export default function ChatPage() {
                                                 setInputValue('');
                                                 await addMessage(currentTab || 'private-general-chat', uploadMessage);
 
-                                                // If the first file is an image, trigger vision analysis (uses existing flow)
+                                                // Analyze the first file with AI
                                                 const first = files[0];
-                                                if (first && first.type.startsWith('image/')) {
+                                                if (first) {
                                                     setIsLoading(true);
-                                                    const reader = new FileReader();
-                                                    reader.onload = async (e) => {
+                                                    
+                                                    if (first.type.startsWith('image/')) {
+                                                        // Handle image analysis with vision API
+                                                        const reader = new FileReader();
+                                                        reader.onload = async (e) => {
+                                                            try {
+                                                                const base64Image = e.target?.result as string;
+                                                                const base64Data = base64Image.split(',')[1];
+                                                                const analysisPrompt = userText || 'Describe this image and extract relevant info.';
+                                                                await fetch('/api/chat/vision', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ message: analysisPrompt, image: base64Data, mimeType: first.type })
+                                                                }).then(res => res.json()).then(async (data) => {
+                                                                    const aiText = data?.answer || data?.response || 'I analyzed the image.';
+                                                                    await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: aiText, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
+                                                                }).catch(async () => {
+                                                                    await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: 'Failed to analyze the image.', sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
+                                                                }).finally(() => setIsLoading(false));
+                                                            } catch {
+                                                                setIsLoading(false);
+                                                            }
+                                                        };
+                                                        reader.readAsDataURL(first);
+                                                    } else {
+                                                        // Handle any file type with appropriate analysis
                                                         try {
-                                                            const base64Image = e.target?.result as string;
-                                                            const base64Data = base64Image.split(',')[1];
-                                                            const analysisPrompt = userText || 'Describe this image and extract relevant info.';
-                                                            await fetch('/api/chat/vision', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ message: analysisPrompt, image: base64Data, mimeType: first.type })
-                                                            }).then(res => res.json()).then(async (data) => {
-                                                                const aiText = data?.answer || data?.response || 'I analyzed the attachments.';
-                                                                await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: aiText, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
-                                                            }).catch(async () => {
-                                                                await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: 'Failed to analyze the image.', sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
-                                                            }).finally(() => setIsLoading(false));
+                                                            const fileType = first.type;
+                                                            let analysisPrompt = userText;
+                                                            
+                                                            if (!analysisPrompt) {
+                                                                // Generate appropriate prompt based on file type
+                                                                if (fileType.includes('pdf')) {
+                                                                    analysisPrompt = 'Analyze this PDF document and provide insights about its content, structure, and key information.';
+                                                                } else if (fileType.includes('word') || fileType.includes('document')) {
+                                                                    analysisPrompt = 'Analyze this Word document and provide insights about its content, structure, and key information.';
+                                                                } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
+                                                                    analysisPrompt = 'Analyze this Excel spreadsheet and provide insights about the data, structure, and key findings.';
+                                                                } else if (fileType.includes('text') || fileType.includes('plain')) {
+                                                                    analysisPrompt = 'Analyze this text file and provide insights about its content and key information.';
+                                                                } else if (fileType.includes('json')) {
+                                                                    analysisPrompt = 'Analyze this JSON file and provide insights about its structure, data, and key information.';
+                                                                } else if (fileType.includes('csv')) {
+                                                                    analysisPrompt = 'Analyze this CSV file and provide insights about the data, structure, and key findings.';
+                                                                } else if (fileType.includes('zip') || fileType.includes('archive')) {
+                                                                    analysisPrompt = 'I received an archive file. I can help you with questions about it, but I cannot directly analyze compressed files.';
+                                                                } else {
+                                                                    analysisPrompt = `Analyze this ${first.name} file (${fileType}) and provide insights about its content and purpose.`;
+                                                                }
+                                                            }
+                                                            
+                                                            // Try document analysis API for supported file types
+                                                            if (fileType.includes('pdf') || fileType.includes('word') || fileType.includes('document') || fileType.includes('text') || fileType.includes('plain')) {
+                                                                const formData = new FormData();
+                                                                formData.append('file', first);
+                                                                formData.append('prompt', analysisPrompt);
+                                                                
+                                                                await fetch('/api/ai/analyze-document', {
+                                                                    method: 'POST',
+                                                                    body: formData
+                                                                }).then(res => res.json()).then(async (data) => {
+                                                                    const aiText = data?.analysis || data?.response || `I analyzed the ${first.name} file.`;
+                                                                    await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: aiText, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
+                                                                }).catch(async () => {
+                                                                    await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: `I received your ${first.name} file. I can help you with questions about it!`, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
+                                                                });
+                                                            } else {
+                                                                // For unsupported file types, provide a helpful message
+                                                                await addMessage(currentTab || 'private-general-chat', { 
+                                                                    id: generateMessageId(), 
+                                                                    text: `I received your ${first.name} file (${fileType}). While I can't directly analyze this file type, I can help you with questions about it or assist with related topics!`, 
+                                                                    sender: 'bot', 
+                                                                    name: 'CourseConnect AI', 
+                                                                    timestamp: Date.now() 
+                                                                });
+                                                            }
                                                         } catch {
+                                                            await addMessage(currentTab || 'private-general-chat', { 
+                                                                id: generateMessageId(), 
+                                                                text: `I received your ${first.name} file. I can help you with questions about it!`, 
+                                                                sender: 'bot', 
+                                                                name: 'CourseConnect AI', 
+                                                                timestamp: Date.now() 
+                                                            });
+                                                        } finally {
                                                             setIsLoading(false);
                                                         }
-                                                    };
-                                                    reader.readAsDataURL(first);
+                                                    }
                                                 }
                                             }}
                                             placeholder={

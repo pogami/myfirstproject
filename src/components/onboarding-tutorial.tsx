@@ -351,6 +351,20 @@ export function OnboardingTutorial({ isOpen, onClose }: OnboardingTutorialProps)
 
   const handleComplete = () => {
     localStorage.setItem('onboarding-completed', 'true');
+    
+    // Also set guest-specific key if user is a guest
+    try {
+      const guestUserData = localStorage.getItem('guestUser');
+      if (guestUserData) {
+        const guestUser = JSON.parse(guestUserData);
+        if (guestUser.isGuest || guestUser.isAnonymous) {
+          localStorage.setItem('guest-onboarding-completed', 'true');
+        }
+      }
+    } catch (error) {
+      console.warn('Error checking guest status for onboarding:', error);
+    }
+    
     onClose();
   };
 

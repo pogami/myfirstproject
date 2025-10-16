@@ -567,6 +567,9 @@ export default function ProfilePage() {
                     guestUserData.profilePicture = downloadURL;
                     localStorage.setItem('guestUser', JSON.stringify(guestUserData));
                     console.log("Guest profile picture saved to localStorage");
+                    
+                    // Dispatch custom event to notify other components
+                    window.dispatchEvent(new CustomEvent('guestProfileUpdated'));
                 } catch (error) {
                     console.error("Error saving guest profile picture:", error);
                 }
@@ -661,37 +664,85 @@ export default function ProfilePage() {
         
         setIsSaving(true);
         try {
-            // Update displayName in Auth
-            const fullName = `${firstName} ${lastName}`.trim();
-            if (user.displayName !== fullName) {
-                await updateProfile(user, { displayName: fullName });
-                setDisplayName(fullName);
+            // Check if user is a guest user
+            let isGuestUser = false;
+            try {
+                const guestData = localStorage.getItem('guestUser');
+                if (guestData) {
+                    const parsed = JSON.parse(guestData);
+                    isGuestUser = parsed.isGuest === true;
+                }
+            } catch (error) {
+                console.error("Error checking guest status:", error);
             }
+            const fullName = `${firstName} ${lastName}`.trim();
+            
+            if (isGuestUser || user.isGuest || user.isAnonymous) {
+                // Handle guest user data - save to localStorage
+                const guestData = localStorage.getItem('guestUser');
+                let guestUserData = guestData ? JSON.parse(guestData) : {};
+                
+                guestUserData = {
+                    ...guestUserData,
+                    displayName: fullName,
+                    firstName,
+                    lastName,
+                    email: user.email,
+                    school,
+                    major,
+                    graduationYear,
+                    phoneNumber,
+                    location,
+                    birthday,
+                    bio,
+                    gpa,
+                    credits,
+                    academicYear,
+                    profilePicture,
+                    lastUpdated: Date.now()
+                };
+                
+                localStorage.setItem('guestUser', JSON.stringify(guestUserData));
+                
+                // Dispatch custom event to notify other components
+                window.dispatchEvent(new CustomEvent('guestProfileUpdated'));
+                
+                toast({
+                    title: "Profile Updated",
+                    description: "Your profile has been successfully saved locally.",
+                });
+            } else {
+                // Handle authenticated user data
+                if (user.displayName !== fullName) {
+                    await updateProfile(user, { displayName: fullName });
+                    setDisplayName(fullName);
+                }
 
-            // Update user data in Firestore with safe operation
-            const userDocRef = doc(db, "users", user.uid);
-            await localSafeFirebaseOperation(() => setDoc(userDocRef, {
-                displayName: fullName,
-                firstName,
-                lastName,
-                email: user.email,
-                school,
-                major,
-                graduationYear,
-                phoneNumber,
-                location,
-                birthday,
-                bio,
-                gpa,
-                credits,
-                academicYear,
-                profilePicture,
-            }, { merge: true }), "save user profile");
+                // Update user data in Firestore with safe operation
+                const userDocRef = doc(db, "users", user.uid);
+                await localSafeFirebaseOperation(() => setDoc(userDocRef, {
+                    displayName: fullName,
+                    firstName,
+                    lastName,
+                    email: user.email,
+                    school,
+                    major,
+                    graduationYear,
+                    phoneNumber,
+                    location,
+                    birthday,
+                    bio,
+                    gpa,
+                    credits,
+                    academicYear,
+                    profilePicture,
+                }, { merge: true }), "save user profile");
 
-            toast({
-                title: "Profile Updated",
-                description: "Your profile has been successfully updated.",
-            });
+                toast({
+                    title: "Profile Updated",
+                    description: "Your profile has been successfully updated.",
+                });
+            }
         } catch (error: any) {
             console.error("Profile update error:", error);
             

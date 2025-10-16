@@ -179,7 +179,7 @@ export function AIBot({ className = "" }: AIBotProps) {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <img 
-                    src="/final-logo.png" 
+                    src="/pageicon.png" 
                     alt="CourseConnect AI" 
                     className="w-5 h-5 object-contain"
                   />

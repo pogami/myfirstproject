@@ -10,7 +10,7 @@ import { CourseConnectLogo } from "@/components/icons/courseconnect-logo";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/theme-context";
-import { AISupportWidget } from "@/components/ai-support-widget";
+import { HideAISupport } from "@/components/hide-ai-support";
 
 const termsSections = [
   {
@@ -466,7 +466,7 @@ export default function TermsPage() {
       </main>
 
       <SiteFooter />
-      <AISupportWidget />
+      <HideAISupport />
     </div>
   );
 }

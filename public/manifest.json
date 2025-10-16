@@ -1,5 +1,5 @@
 {
-  "name": "CourseConnect - AI College Platform",
+  "name": "CourseConnect",
   "short_name": "CourseConnect",
   "description": "AI-powered study companion for college students with chat, syllabus analysis, and collaborative features",
   "start_url": "/dashboard",
@@ -12,20 +12,20 @@
   "categories": ["education", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/final-logo.png",
-      "sizes": "1024x1024",
+      "src": "/pageicon.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/final-logo.png",
+      "src": "/pageicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/final-logo.png",
-      "sizes": "256x256 512x512",
+      "src": "/pageicon.png",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
     }

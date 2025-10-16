@@ -24,6 +24,12 @@ function renderMathLine(line: string, i: number) {
   } else if (line.includes("$")) {
     const expr = line.replace(/\$/g, "");
     return <InlineMath key={i} math={expr} />;
+  } else if (line.includes("\\(") && line.includes("\\)")) {
+    const expr = line.replace(/\\\(/g, "").replace(/\\\)/g, "");
+    return <InlineMath key={i} math={expr} />;
+  } else if (line.includes("\\[") && line.includes("\\]")) {
+    const expr = line.replace(/\\\[/g, "").replace(/\\\]/g, "");
+    return <BlockMath key={i} math={expr} />;
   } else {
     return (
       <p key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans">

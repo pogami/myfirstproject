@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import { WebsiteTimeTracker } from "@/components/website-time-tracker";
+import { HideAISupport } from "@/components/hide-ai-support";
 import Image from "next/image";
 import { auth } from "@/lib/firebase/client-simple";
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -549,6 +550,9 @@ export default function DashboardLayout({
         
         {/* Website Time Tracker */}
         <WebsiteTimeTracker />
+        
+        {/* Hide AI Support */}
+        <HideAISupport />
         
       </SidebarProvider>
   );

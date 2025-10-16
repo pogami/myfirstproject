@@ -18,6 +18,12 @@ function renderMathLine(line: string, i: number) {
   } else if (line.includes("$")) {
     const expr = line.replace(/\$/g, "");
     return <InlineMath key={i} math={expr} className="mobile-math-inline" />;
+  } else if (line.includes("\\(") && line.includes("\\)")) {
+    const expr = line.replace(/\\\(/g, "").replace(/\\\)/g, "");
+    return <InlineMath key={i} math={expr} className="mobile-math-inline" />;
+  } else if (line.includes("\\[") && line.includes("\\]")) {
+    const expr = line.replace(/\\\[/g, "").replace(/\\\]/g, "");
+    return <BlockMath key={i} math={expr} className="mobile-math-display" />;
   } else {
     return <p key={i} className="text-sm break-words max-w-full overflow-hidden mobile-text">{line}</p>;
   }
