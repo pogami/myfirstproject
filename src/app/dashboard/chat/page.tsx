@@ -82,6 +82,7 @@ export default function ChatPage() {
         stopTyping
     } = useChatStore();
     const { isFeatureEnabled } = useFeatureFlags();
+    const [user, setUser] = useState<any>(null);
     const { createNotification } = useNotifications(user);
     const [inputValue, setInputValue] = useState("");
     const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
@@ -90,7 +91,6 @@ export default function ChatPage() {
     const analyzingSteps = ["Analyzing...", "Extracting...", "Preparing response..."];
     const [analyzingStepIndex, setAnalyzingStepIndex] = useState(0);
     const [isMessagesLoading, setIsMessagesLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
     const [isGuest, setIsGuest] = useState(false);
     const [userProfilePicture, setUserProfilePicture] = useState<string>("");
     const [forceLoad, setForceLoad] = useState(false);
