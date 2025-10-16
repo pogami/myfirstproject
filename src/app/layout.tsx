@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster as Sonner } from "@/components/ui/sonner"
 import { StudyBreakProvider } from "@/components/study-break-provider"
 import { PageTransitionBar } from "@/components/ui/page-transition-bar"
+import { MobileDetectionPopup } from "@/components/mobile-detection-popup"
 import { Analytics } from '@vercel/analytics/next';
 import { Providers } from "@/components/providers";
 
@@ -139,6 +140,7 @@ export default function RootLayout({
           <StudyBreakProvider>
             {children}
           </StudyBreakProvider>
+          <MobileDetectionPopup />
           <Sonner />
           <Analytics />
         </Providers>
