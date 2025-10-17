@@ -31,9 +31,9 @@ interface OnboardingSlide {
 const slides: OnboardingSlide[] = [
   {
     id: "welcome",
-    title: "Welcome to CourseConnect AI! 🎓",
+    title: "Welcome to CourseConnect AI",
     description: "Your AI-powered learning companion is ready to help you succeed",
-    icon: <Sparkles className="size-12 text-purple-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "Upload your syllabus for personalized insights",
       "AI tutoring for each course",
@@ -44,9 +44,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "command-menu",
-    title: "Command Menu (⌘K) ⚡",
+    title: "Command Menu (⌘K)",
     description: "Navigate instantly with keyboard shortcuts",
-    icon: <ArrowRight className="size-12 text-purple-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "Press Ctrl+K (or ⌘K on Mac) anywhere",
       "Access all your course chats instantly",
@@ -57,9 +57,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "upload",
-    title: "Upload Your Syllabus 📚",
+    title: "Upload Your Syllabus",
     description: "AI analyzes and creates your course chat automatically",
-    icon: <Upload className="size-12 text-blue-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "Drag & drop or click to upload PDF",
       "AI extracts course info, exam dates, assignments",
@@ -70,9 +70,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "ai-tutor",
-    title: "Class Chats 🤖",
+    title: "Class Chats",
     description: "AI tutoring for each course - knows your syllabus!",
-    icon: <Brain className="size-12 text-indigo-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "Ask: 'When is my next exam?'",
       "Get help: 'Help me study for the midterm'",
@@ -83,9 +83,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "interactive-learning",
-    title: "Interactive Learning 🎯",
+    title: "Interactive Learning",
     description: "Quizzes, exams, and flashcards powered by AI",
-    icon: <BookOpen className="size-12 text-green-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "Interactive quizzes (5-question quick tests)",
       "Practice exams (20-question timed tests)",
@@ -96,9 +96,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "community",
-    title: "Community & Chats 👥",
+    title: "Community & Chats",
     description: "Connect with classmates and get AI help",
-    icon: <Users className="size-12 text-orange-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "General AI chat for all courses",
       "Community chat with classmates (coming soon)",
@@ -109,9 +109,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "complete",
-    title: "You're All Set! 🎉",
+    title: "You're All Set",
     description: "Start your learning journey with these quick steps",
-    icon: <CheckCircle className="size-12 text-green-600" />,
+    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
     features: [
       "1. Upload your syllabi",
       "2. Try the command menu (⌘K)",
@@ -229,7 +229,7 @@ export function OnboardingSlideshow({ isOpen, onClose, onComplete }: OnboardingS
             {/* Slide Content */}
             <div className="text-center space-y-6">
               {/* Icon */}
-              <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${currentSlideData.color} shadow-lg`}>
+              <div className="inline-flex">
                 {currentSlideData.icon}
               </div>
 
