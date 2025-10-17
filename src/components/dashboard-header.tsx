@@ -128,18 +128,16 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   useEffect(() => {
     const checkGuestStatus = async () => {
       if (user) {
-        // Check if it's a guest user from localStorage
-        if (user.isGuest || user.isAnonymous) {
+        // Check if it's a guest user from localStorage first
+        const guestData = localStorage.getItem('guestUser');
+        if (guestData && (user.isGuest || user.isAnonymous)) {
           setIsGuest(true);
           
           // Load profile picture from localStorage for guest users
           try {
-            const guestData = localStorage.getItem('guestUser');
-            if (guestData) {
-              const parsed = JSON.parse(guestData);
-              if (parsed.profilePicture) {
-                setUserProfilePicture(parsed.profilePicture);
-              }
+            const parsed = JSON.parse(guestData);
+            if (parsed.profilePicture) {
+              setUserProfilePicture(parsed.profilePicture);
             }
           } catch (error) {
             console.error("Error loading guest profile picture:", error);
@@ -147,12 +145,14 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           return;
         }
         
+        // For authenticated users, check Firebase document
         try {
           const userDocRef = doc(db, "users", user.uid);
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
-            setIsGuest(userData.isGuest || false);
+            // If user has a Firebase document, they're not a guest
+            setIsGuest(false);
             // Set profile picture from Firestore if available
             if (userData.profilePicture) {
               setUserProfilePicture(userData.profilePicture);

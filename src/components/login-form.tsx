@@ -126,15 +126,20 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         console.error('Guest data migration failed:', error);
       });
       
-      // For new signups, show onboarding slideshow
+      // Clear guest data after successful account creation/sign-in
       if (isSigningUp) {
+        // Clear guest user data from localStorage
+        localStorage.removeItem('guestUser');
+        localStorage.removeItem('guest-notifications');
+        localStorage.removeItem('guest-onboarding-completed');
+        
         // Store flag to show onboarding
         localStorage.setItem('showOnboarding', 'true');
         sessionStorage.setItem('justSignedUp', 'true');
+        
+        // Force page reload to refresh auth state
+        window.location.reload();
       }
-      
-      // Navigate to dashboard
-      router.push('/dashboard');
 
     } catch (error: any)
     {
