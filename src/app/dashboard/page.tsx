@@ -905,7 +905,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="mt-6">
                   <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/dashboard/chat">
+                    <Link href="/dashboard/upload">
                       <Upload className="h-4 w-4 mr-2" />
                       Upload Syllabus
                     </Link>

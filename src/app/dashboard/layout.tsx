@@ -62,17 +62,17 @@ function AnnouncementBanner() {
     <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white shadow-lg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 rounded-full p-2 backdrop-blur-sm">
-              <Megaphone className="h-4 w-4" />
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-r from-pink-400 to-purple-400 rounded-xl p-3 shadow-lg">
+              <Megaphone className="h-5 w-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <p className="font-bold text-base tracking-wide">
-                <span className="hidden md:inline">Welcome to CourseConnect! 🎓</span>
-                <span className="md:hidden">Welcome! 🎓</span>
-              </p>
-              <p className="text-sm text-white/95 font-medium hidden sm:block mt-1">
-                Your AI-powered learning companion is ready to help you succeed
+              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
+                <span className="hidden md:inline">Ready to transform your studies?</span>
+                <span className="md:hidden">Transform your studies</span>
+              </h2>
+              <p className="text-gray-200 font-medium hidden sm:block mt-1">
+                Upload your syllabus and unlock AI-powered insights
               </p>
             </div>
           </div>

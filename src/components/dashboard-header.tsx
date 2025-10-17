@@ -25,7 +25,7 @@ import { Skeleton } from "./ui/skeleton";
 import { User as UserIcon, Settings as SettingsIcon, LogOut, Bell, Shield, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useChatStore } from "@/hooks/use-chat-store";
-import { OnboardingTutorial } from "@/components/onboarding-tutorial";
+import { OnboardingSlideshow } from "@/components/onboarding-slideshow";
 import { NotificationBell } from "@/components/notification-bell";
 
 interface DashboardHeaderProps {
@@ -394,10 +394,11 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      <OnboardingTutorial 
-        isOpen={showOnboarding} 
-        onClose={() => setShowOnboarding(false)} 
-      />
+        <OnboardingSlideshow 
+          isOpen={showOnboarding} 
+          onClose={() => setShowOnboarding(false)}
+          onComplete={() => setShowOnboarding(false)}
+        />
     </div>
   );
 }

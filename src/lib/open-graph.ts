@@ -9,7 +9,7 @@ import { Metadata } from 'next';
 
 // Base configuration
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.courseconnectai.com';
-const DEFAULT_IMAGE = 'https://courseconnectai.com/pageicon.png';
+const DEFAULT_IMAGE = 'https://courseconnectai.com/social-icon-400x400.png';
 const DEFAULT_IMAGE_WIDTH = 400;
 const DEFAULT_IMAGE_HEIGHT = 400;
 

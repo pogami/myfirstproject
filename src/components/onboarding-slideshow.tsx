@@ -31,68 +31,94 @@ interface OnboardingSlide {
 const slides: OnboardingSlide[] = [
   {
     id: "welcome",
-    title: "Welcome to CourseConnect! 🎓",
-    description: "Your AI-powered study companion is ready to help you succeed academically.",
+    title: "Welcome to CourseConnect AI! 🎓",
+    description: "Your AI-powered learning companion is ready to help you succeed",
     icon: <Sparkles className="size-12 text-purple-600" />,
     features: [
-      "AI-powered homework assistance",
-      "Smart syllabus analysis",
-      "Collaborative study groups",
-      "Automated flashcard generation"
+      "Upload your syllabus for personalized insights",
+      "AI tutoring for each course",
+      "Smart flashcards and study tools",
+      "Track assignments and exams automatically"
     ],
     color: "from-purple-500 to-blue-600"
   },
   {
+    id: "command-menu",
+    title: "Command Menu (⌘K) ⚡",
+    description: "Navigate instantly with keyboard shortcuts",
+    icon: <ArrowRight className="size-12 text-purple-600" />,
+    features: [
+      "Press Ctrl+K (or ⌘K on Mac) anywhere",
+      "Access all your course chats instantly",
+      "Navigate between pages quickly",
+      "Upload new syllabus on the fly"
+    ],
+    color: "from-purple-500 to-indigo-600"
+  },
+  {
     id: "upload",
     title: "Upload Your Syllabus 📚",
-    description: "Get instant analysis of your course materials and assignments.",
+    description: "AI analyzes and creates your course chat automatically",
     icon: <Upload className="size-12 text-blue-600" />,
     features: [
-      "Automatic assignment detection",
-      "Due date tracking",
-      "Study schedule suggestions",
-      "Grade prediction insights"
+      "Drag & drop or click to upload PDF",
+      "AI extracts course info, exam dates, assignments",
+      "Automatic deadline tracking",
+      "Pro tip: Upload all syllabi at once!"
     ],
     color: "from-blue-500 to-indigo-600"
   },
   {
     id: "ai-tutor",
-    title: "AI Study Assistant 🤖",
-    description: "Get personalized help with your coursework and assignments.",
+    title: "Class Chats 🤖",
+    description: "AI tutoring for each course - knows your syllabus!",
     icon: <Brain className="size-12 text-indigo-600" />,
     features: [
-      "24/7 homework help",
-      "Step-by-step explanations",
-      "Practice problem generation",
-      "Concept clarification"
+      "Ask: 'When is my next exam?'",
+      "Get help: 'Help me study for the midterm'",
+      "Generate: 'Create a practice quiz on Chapter 3'",
+      "Explain: 'Explain this concept in simple terms'"
     ],
     color: "from-indigo-500 to-purple-600"
   },
   {
-    id: "study-groups",
-    title: "Join Study Groups 👥",
-    description: "Connect with classmates and collaborate on assignments.",
-    icon: <Users className="size-12 text-green-600" />,
+    id: "interactive-learning",
+    title: "Interactive Learning 🎯",
+    description: "Quizzes, exams, and flashcards powered by AI",
+    icon: <BookOpen className="size-12 text-green-600" />,
     features: [
-      "Find classmates in your courses",
-      "Group chat and collaboration",
-      "Shared study materials",
-      "Peer support network"
+      "Interactive quizzes (5-question quick tests)",
+      "Practice exams (20-question timed tests)",
+      "Smart flashcards from course content",
+      "Just ask: 'Quiz me on Baroque music'"
     ],
     color: "from-green-500 to-emerald-600"
   },
   {
-    id: "flashcards",
-    title: "Smart Flashcards 📝",
-    description: "Generate personalized flashcards from your course content.",
-    icon: <BookOpen className="size-12 text-orange-600" />,
+    id: "community",
+    title: "Community & Chats 👥",
+    description: "Connect with classmates and get AI help",
+    icon: <Users className="size-12 text-orange-600" />,
     features: [
-      "Auto-generated from syllabus",
-      "Spaced repetition learning",
-      "Progress tracking",
-      "Customizable study sets"
+      "General AI chat for all courses",
+      "Community chat with classmates (coming soon)",
+      "Type @ai to call AI for help",
+      "Get notified of new messages"
     ],
     color: "from-orange-500 to-red-600"
+  },
+  {
+    id: "complete",
+    title: "You're All Set! 🎉",
+    description: "Start your learning journey with these quick steps",
+    icon: <CheckCircle className="size-12 text-green-600" />,
+    features: [
+      "1. Upload your syllabi",
+      "2. Try the command menu (⌘K)",
+      "3. Ask the AI for help",
+      "4. Generate a practice quiz"
+    ],
+    color: "from-green-500 to-emerald-600"
   }
 ];
 
@@ -135,6 +161,22 @@ export function OnboardingSlideshow({ isOpen, onClose, onComplete }: OnboardingS
   };
 
   const handleComplete = () => {
+    // Set onboarding completion flags
+    localStorage.setItem('onboarding-completed', 'true');
+    
+    // Also set guest-specific key if user is a guest
+    try {
+      const guestUserData = localStorage.getItem('guestUser');
+      if (guestUserData) {
+        const guestUser = JSON.parse(guestUserData);
+        if (guestUser.isGuest || guestUser.isAnonymous) {
+          localStorage.setItem('guest-onboarding-completed', 'true');
+        }
+      }
+    } catch (error) {
+      console.warn('Error checking guest status for onboarding:', error);
+    }
+    
     // Activate trial for new users
     activateTrial();
     handleClose();
