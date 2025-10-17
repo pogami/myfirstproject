@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "https://courseconnectai.com/pageicon.png",
-        width: 400,
-        height: 400,
+        width: 120,
+        height: 120,
         alt: "CourseConnect AI - AI-Powered Study Platform",
       },
     ],
@@ -77,19 +77,19 @@ export default function RootLayout({
         <meta property="og:url" content="https://courseconnectai.com" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="CourseConnect AI" />
-        <meta property="og:image" content="/og-image.png" />
-        <meta property="og:image:secure_url" content="/og-image.png" />
+        <meta property="og:image" content="/pageicon.png" />
+        <meta property="og:image:secure_url" content="/pageicon.png" />
         <meta property="og:image:type" content="image/png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        <meta property="og:image:width" content="120" />
+        <meta property="og:image:height" content="120" />
         <meta property="og:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta property="og:locale" content="en_US" />
         
         {/* Twitter Card Meta Tags */}
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content="CourseConnect AI - Your AI-Powered Study Companion" />
         <meta name="twitter:description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
-        <meta name="twitter:image" content="/og-image.png" />
+        <meta name="twitter:image" content="/pageicon.png" />
         <meta name="twitter:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta name="twitter:creator" content="@courseconnectai" />
         <meta name="twitter:site" content="@courseconnectai" />
