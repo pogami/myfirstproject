@@ -335,13 +335,21 @@ CourseConnect AI:`;
     // Create notification for AI response (only if user is authenticated and not in public chat)
     if (userId && chatId && !isPublicChat) {
       try {
-        await createAIResponseNotification(
-          userId,
-          aiResponse,
-          chatId,
-          chatTitle || context
-        );
-        console.log(`✅ Notification created for user ${userId} in ${chatTitle || context}`);
+        // Check if user is currently active in this chat (not away)
+        const isUserActive = request.headers.get('user-active') === 'true';
+        
+        // Only create notification if user is not actively in the chat
+        if (!isUserActive) {
+          await createAIResponseNotification(
+            userId,
+            aiResponse,
+            chatId,
+            chatTitle || context
+          );
+          console.log(`✅ Notification created for user ${userId} in ${chatTitle || context} (user was away)`);
+        } else {
+          console.log(`ℹ️ No notification created - user is actively in chat ${chatId}`);
+        }
       } catch (error) {
         console.error('Failed to create notification:', error);
         // Don't fail the request if notification creation fails

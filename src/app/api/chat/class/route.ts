@@ -539,17 +539,25 @@ What would you like to dive into? What's challenging you right now?`;
     // Create notification for AI response (only if user is authenticated)
     if (userId && chatId) {
       try {
-        const chatTitle = courseData 
-          ? `${courseData.courseName} (${courseData.courseCode})`
-          : context;
+        // Check if user is currently active in this chat (not away)
+        const isUserActive = request.headers.get('user-active') === 'true';
         
-        await createAIResponseNotification(
-          userId,
-          aiResponse,
-          chatId,
-          chatTitle
-        );
-        console.log(`✅ Notification created for user ${userId} in ${chatTitle}`);
+        // Only create notification if user is not actively in the chat
+        if (!isUserActive) {
+          const chatTitle = courseData 
+            ? `${courseData.courseName} (${courseData.courseCode})`
+            : context;
+          
+          await createAIResponseNotification(
+            userId,
+            aiResponse,
+            chatId,
+            chatTitle
+          );
+          console.log(`✅ Notification created for user ${userId} in ${chatTitle} (user was away)`);
+        } else {
+          console.log(`ℹ️ No notification created - user is actively in class chat ${chatId}`);
+        }
       } catch (error) {
         console.error('Failed to create notification:', error);
         // Don't fail the request if notification creation fails

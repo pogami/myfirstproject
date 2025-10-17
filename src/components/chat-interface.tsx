@@ -958,6 +958,7 @@ export default function ChatInterface() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'user-active': 'true' // User is actively in the chat
                 },
                 body: JSON.stringify({
                     question: messageToProcess,

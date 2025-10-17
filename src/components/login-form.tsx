@@ -137,8 +137,11 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         localStorage.setItem('showOnboarding', 'true');
         sessionStorage.setItem('justSignedUp', 'true');
         
-        // Force page reload to refresh auth state
-        window.location.reload();
+        // Navigate to dashboard instead of reloading
+        router.push('/dashboard');
+      } else {
+        // For regular sign-in, just navigate
+        router.push('/dashboard');
       }
 
     } catch (error: any)

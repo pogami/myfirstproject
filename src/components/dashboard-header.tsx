@@ -332,7 +332,9 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground font-normal truncate">{user.email || 'Guest User'}</p>
+                    <p className="text-xs text-muted-foreground font-normal truncate">
+                      {isGuest ? 'Guest User' : (user.email || 'No email')}
+                    </p>
                   </div>
                 </div>
               </DropdownMenuLabel>
