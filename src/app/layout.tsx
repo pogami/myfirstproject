@@ -18,10 +18,16 @@ export const metadata: Metadata = {
     siteName: "CourseConnect AI",
     images: [
       {
-        url: "https://courseconnectai.com/social-icon-400x400.png",
-        width: 400,
-        height: 400,
+        url: "https://courseconnectai.com/favicon-32x32.png",
+        width: 32,
+        height: 32,
         alt: "CourseConnect AI - AI-Powered Study Platform",
+      },
+      {
+        url: "https://courseconnectai.com/favicon-32x32.png",
+        width: 32,
+        height: 32,
+        alt: "CourseConnect AI - Mobile Preview",
       },
     ],
   },
@@ -29,13 +35,13 @@ export const metadata: Metadata = {
     card: "summary",
     title: "CourseConnect AI - Your AI-Powered Study Companion",
     description: "Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes.",
-    images: ["https://courseconnectai.com/social-icon-400x400.png"],
+    images: ["https://courseconnectai.com/favicon-32x32.png"],
     creator: "@courseconnectai",
     site: "@courseconnectai",
   },
   other: {
-    'og:image:width': '400',
-    'og:image:height': '400',
+    'og:image:width': '32',
+    'og:image:height': '32',
     'og:image:type': 'image/png',
     'og:image:alt': 'CourseConnect AI - AI-Powered Study Platform',
     'twitter:image:alt': 'CourseConnect AI - AI-Powered Study Platform',
@@ -77,8 +83,8 @@ export default function RootLayout({
         <meta property="og:url" content="https://courseconnectai.com" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="CourseConnect AI" />
-        <meta property="og:image" content="https://courseconnectai.com/social-icon-400x400.png" />
-        <meta property="og:image:secure_url" content="https://courseconnectai.com/social-icon-400x400.png" />
+        <meta property="og:image" content="https://courseconnectai.com/favicon-32x32.png" />
+        <meta property="og:image:secure_url" content="https://courseconnectai.com/favicon-32x32.png" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="400" />
         <meta property="og:image:height" content="400" />
@@ -89,7 +95,7 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="CourseConnect AI - Your AI-Powered Study Companion" />
         <meta name="twitter:description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
-        <meta name="twitter:image" content="https://courseconnectai.com/social-icon-400x400.png" />
+        <meta name="twitter:image" content="https://courseconnectai.com/favicon-32x32.png" />
         <meta name="twitter:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta name="twitter:creator" content="@courseconnectai" />
         <meta name="twitter:site" content="@courseconnectai" />
