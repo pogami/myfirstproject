@@ -31,7 +31,7 @@ export default function NotificationsPage() {
   const classNotifications = notifications.slice(0, 10).map((notification) => {
     // Get class information from chatId
     const chat = chats[notification.classId || ''];
-    const courseCode = chat?.courseData?.courseCode || chat?.title || 'Unknown Class';
+    const courseCode = chat?.courseData?.courseCode || chat?.title || 'System';
     
     // Determine icon based on notification type
     let icon;

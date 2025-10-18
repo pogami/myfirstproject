@@ -1,74 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
-
-// Helper function to split text into chunks for AI processing
-function splitTextIntoChunks(text: string, chunkSize: number = 500): string[] {
-  const words = text.split(/\s+/);
-  const chunks: string[] = [];
-  
-  for (let i = 0; i < words.length; i += chunkSize) {
-    chunks.push(words.slice(i, i + chunkSize).join(' '));
-  }
-  
-  return chunks;
-}
-
-async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  // For now, provide helpful guidance for PDF processing
-  // In a production environment, you would implement proper PDF text extraction
-  // using libraries like pdf2pic + tesseract.js for OCR, or pdf-parse for text-based PDFs
-  
-  const helpfulMessage = `PDF text extraction is currently being enhanced.
-
-While we work on implementing full PDF processing capabilities, here are some quick alternatives:
-
-**Easiest Options:**
-1. **Copy & Paste**: Select all text in your PDF (Ctrl+A) and paste into a .txt file
-2. **Google Docs**: Upload PDF to Google Docs → Download as DOCX
-3. **Microsoft Word**: Open PDF directly in Word (if text-based)
-
-**Online Converters:**
-- SmallPDF.com (free, no registration)
-- ILovePDF.com (free PDF to Word)
-- PDF24.org (free online tools)
-
-**Professional Tools:**
-- Adobe Acrobat: File → Export To → Microsoft Word
-- Microsoft Word: File → Open → Select PDF file
-
-Once converted to TXT or DOCX format, you can upload it here for immediate processing!
-
-We're implementing proper PDF text extraction that will be available soon.`;
-
-  throw new Error(helpfulMessage);
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const formData = await req.formData();
+    const formData = await request.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No file provided' 
-      }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'No file provided' },
+        { status: 400 }
+      );
     }
 
+    // Validate file type
     if (file.type !== 'application/pdf') {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'File must be a PDF' 
-      }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Invalid file type. Please upload a PDF file.' },
+        { status: 400 }
+      );
     }
 
-    console.log('PDF upload received:', file.name, 'Size:', file.size);
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `File too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(1)}MB` 
+        },
+        { status: 400 }
+      );
+    }
 
-    // Provide helpful guidance for PDF processing
-    const helpfulMessage = `PDF text extraction is currently being enhanced.
+    try {
+      console.log('🔍 Step 1: Converting file to ArrayBuffer...');
+      // Convert file to ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      console.log('✅ Step 1 complete: ArrayBuffer size:', arrayBuffer.byteLength);
+      
+      console.log('🔍 Step 2: Importing pdf-parse library...');
+      // Use pdf-parse library to extract text
+      const pdfParse = await import('pdf-parse');
+      console.log('✅ Step 2 complete: pdf-parse imported');
+      console.log('📦 pdf-parse structure:', Object.keys(pdfParse));
+      console.log('📦 pdf-parse.default type:', typeof pdfParse.default);
+      
+      console.log('🔍 Step 3: Calling pdf-parse on ArrayBuffer...');
+      const data = await pdfParse.default(arrayBuffer);
+      console.log('✅ Step 3 complete: PDF parsed');
+      console.log('📄 Data structure:', Object.keys(data));
+      console.log('📄 Text length:', data.text?.length);
+      
+      const extractedText = data.text.trim();
+      console.log('📝 Extracted text preview:', extractedText.substring(0, 200));
 
-While we work on implementing full PDF processing capabilities, here are some quick alternatives:
+      if (!extractedText || extractedText.length === 0) {
+        console.error('❌ No text found in PDF');
+        return NextResponse.json(
+          { success: false, error: 'No text content found in the PDF file' },
+          { status: 400 }
+        );
+      }
+
+      console.log('✅ PDF extraction successful!');
+      // Return success response
+      return NextResponse.json({
+        success: true,
+        text: extractedText,
+        metadata: {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          extractedAt: new Date().toISOString(),
+          textLength: extractedText.length
+        }
+      });
+
+    } catch (extractionError: any) {
+      console.error('PDF extraction error:', extractionError);
+      
+      // Fallback to helpful guidance if extraction fails
+      const helpfulMessage = `PDF text extraction failed: ${extractionError.message}
+
+While we work on improving PDF processing, here are some quick alternatives:
 
 **Easiest Options:**
 1. **Copy & Paste**: Select all text in your PDF (Ctrl+A) and paste into a .txt file
@@ -76,41 +90,38 @@ While we work on implementing full PDF processing capabilities, here are some qu
 3. **Microsoft Word**: Open PDF directly in Word (if text-based)
 
 **Online Converters:**
-- SmallPDF.com (free, no registration)
-- ILovePDF.com (free PDF to Word)
+- SmallPDF.com (PDF to TXT)
+- ILovePDF.com (PDF to TXT)
 - PDF24.org (free online tools)
 
-**Professional Tools:**
-- Adobe Acrobat: File → Export To → Microsoft Word
-- Microsoft Word: File → Open → Select PDF file
+Once converted to TXT format, you can upload it here for immediate processing!`;
 
-Once converted to TXT or DOCX format, you can upload it here for immediate processing!
-
-We're implementing proper PDF text extraction that will be available soon.`;
-
-    return NextResponse.json({
-      success: false,
-      error: helpfulMessage,
-      alternatives: [
-        'Copy text from PDF and paste into a .txt file',
-        'Use Google Docs: Upload PDF → Download as DOCX',
-        'Use Microsoft Word: File → Open → Select PDF',
-        'Use online converters like SmallPDF or ILovePDF',
-        'Use Adobe Acrobat: Export PDF as Word document'
-      ],
-      note: 'TXT and DOCX files work perfectly! We\'re working on PDF text extraction.'
-    }, { status: 200 });
+      return NextResponse.json({
+        success: false,
+        error: helpfulMessage,
+        alternatives: [
+          'Copy text from PDF and paste into a .txt file',
+          'Use Google Docs: Upload PDF → Download as DOCX',
+          'Use Microsoft Word: File → Open → Select PDF',
+          'Use online converters like SmallPDF or ILovePDF'
+        ],
+        note: 'TXT files work perfectly! We\'re working on improving PDF text extraction.'
+      }, { status: 200 });
+    }
 
   } catch (error: any) {
-    console.error('PDF extraction API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'PDF processing is temporarily unavailable. Please try converting to TXT or DOCX format.',
-      alternatives: [
-        'Copy text from PDF and paste into a .txt file',
-        'Use Google Docs: Upload PDF → Download as DOCX',
-        'Use Microsoft Word: File → Open → Select PDF'
-      ]
-    }, { status: 200 });
+    console.error('PDF processing error:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'PDF processing is temporarily unavailable. Please try converting to TXT format.',
+        alternatives: [
+          'Copy text from PDF and paste into a .txt file',
+          'Use Google Docs: Upload PDF → Download as DOCX',
+          'Use Microsoft Word: File → Open → Select PDF'
+        ]
+      },
+      { status: 200 }
+    );
   }
 }

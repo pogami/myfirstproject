@@ -25,7 +25,6 @@ import { Skeleton } from "./ui/skeleton";
 import { User as UserIcon, Settings as SettingsIcon, LogOut, Bell, Shield, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useChatStore } from "@/hooks/use-chat-store";
-import { OnboardingSlideshow } from "@/components/onboarding-slideshow";
 import { NotificationBell } from "@/components/notification-bell";
 
 interface DashboardHeaderProps {
@@ -369,7 +368,10 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => setShowOnboarding(true)}
+                onClick={() => {
+                  localStorage.setItem('showOnboarding', 'true');
+                  window.location.reload();
+                }}
                 className="group px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-primary/15 hover:text-primary hover:shadow-md hover:scale-[1.01] hover:ring-2 hover:ring-primary/20 transition-all duration-150"
               >
                 <BookOpen className="size-4 mr-2 sm:mr-3 text-muted-foreground group-hover:text-primary flex-shrink-0" />
@@ -395,12 +397,6 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      
-        <OnboardingSlideshow 
-          isOpen={showOnboarding} 
-          onClose={() => setShowOnboarding(false)}
-          onComplete={() => setShowOnboarding(false)}
-        />
     </div>
   );
 }

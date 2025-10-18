@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check if API key exists
     const apiKey = process.env.OPENAI_API_KEY;
-    console.log('OpenAI API Key exists:', !!apiKey);
+    console.log('OpenAI API Key configured:', !!apiKey);
     
     if (!apiKey) {
       return NextResponse.json(

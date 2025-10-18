@@ -34,7 +34,7 @@ export default function FeedbackPage() {
   const [error, setError] = useState('');
 
   // Password for accessing the feedback page
-  const ADMIN_PASSWORD = 'courseconnect2025';
+  const ADMIN_PASSWORD = 'courseconnect2025'; // TODO: Move to server-side auth
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();

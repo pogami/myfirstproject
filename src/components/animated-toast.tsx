@@ -54,7 +54,7 @@ export function AnimatedToast({
   duration = 5000,
   onClose 
 }: AnimatedToastProps) {
-  const { icon: Icon, bgColor, borderColor, iconColor } = variants[variant];
+  const { icon: Icon, bgColor, borderColor, iconColor } = variants[variant] || variants.default;
 
   React.useEffect(() => {
     const timer = setTimeout(() => {

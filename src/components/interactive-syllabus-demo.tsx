@@ -217,14 +217,14 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   };
 
   const handleFileSelect = (selectedFile: File) => {
-    const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const allowedExtensions = ['.pdf', '.txt', '.docx'];
+    const allowedTypes = ['text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedExtensions = ['.txt', '.docx'];
     const maxSize = 10 * 1024 * 1024; // 10MB
     
     const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf('.'));
     
     if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('Please upload a PDF, TXT, or DOCX file. Supported formats: PDF, TXT, DOCX');
+      setError('Please upload a TXT or DOCX file. Supported formats: TXT, DOCX');
       return;
     }
 
@@ -308,29 +308,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
       
       if (file.type === 'text/plain') {
         text = await file.text();
-        } else if (file.type === 'application/pdf') {
-          // PDF processing provides helpful guidance instead of text extraction
-          console.log('PDF file detected - providing conversion guidance...');
-          
-          const formData = new FormData();
-          formData.append('file', file);
-          
-          const response = await fetch('/api/pdf-extract', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const result = await response.json();
-          
-          // PDF processing always returns helpful guidance, not text
-          if (result.alternatives) {
-            const alternativesText = result.alternatives.map((alt: string, i: number) => `${i + 1}. ${alt}`).join('\n');
-            const errorMessage = `${result.error}\n\nAlternatives:\n${alternativesText}${result.note ? `\n\n${result.note}` : ''}`;
-            throw new Error(errorMessage);
-          } else {
-            throw new Error(result.error || 'PDF processing is currently being enhanced. Please try converting to TXT or DOCX format.');
-          }
-        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
           try {
             setProcessingStep('Reading DOCX content...');
             setProgress(20);
@@ -492,6 +470,8 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
     // Only navigate to signup if redirectToSignup is true (homepage users)
     if (redirectToSignup) {
       console.log('📤 Redirecting to signup...');
+      // Mark this as a new signup from homepage
+      localStorage.setItem('cc-new-signup', 'true');
       router.push('/signup');
     } else {
       console.log('✅ Authenticated user - creating chat...');
@@ -765,7 +745,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
                 className="hidden" 
-                accept=".pdf,.doc,.docx,.txt" 
+                accept=".docx,.txt" 
               />
               
               <div className='flex justify-center mb-6'>
@@ -790,7 +770,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 {isDragOver ? 'Drop to upload' : 'Drop syllabus or click to browse'}
               </h3>
               <p className="text-base text-muted-foreground">
-                PDF, DOCX, or TXT • Max 10MB
+                DOCX or TXT • Max 10MB
               </p>
             </div>
           )}
@@ -927,7 +907,6 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                   </>
                 ) : (
                   <>
-                    <Zap className="size-4 mr-2" />
                     Analyze Syllabus with AI
                   </>
                 )}
@@ -1158,8 +1137,8 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                       <div className="flex justify-center mb-5">
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 blur-2xl opacity-60 rounded-full" />
-                          <div className="relative p-5 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-xl">
-                            <Sparkles className="size-10 text-white animate-pulse" />
+                          <div className="relative p-5 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 shadow-xl">
+                            <CheckCircle className="size-10 text-white" />
                           </div>
                         </div>
                       </div>

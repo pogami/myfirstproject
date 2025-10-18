@@ -178,35 +178,6 @@ export function FeaturesSection() {
           </div>
         </motion.div>
 
-        {/* CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
-          className="mt-20 text-center"
-        >
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Ready to transform your learning experience?
-          </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Start your AI-powered learning journey today.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-              onClick={() => window.location.href = '/login'}
-            >
-              Get Started Free
-            </button>
-            <button 
-              className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-8 py-3 rounded-full font-semibold transition-all duration-300"
-              onClick={() => window.location.href = '/features'}
-            >
-              Learn More
-            </button>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

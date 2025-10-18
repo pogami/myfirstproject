@@ -13,7 +13,7 @@ import {
   Users, 
   Brain, 
   BookOpen, 
-  Sparkles,
+  Command,
   CheckCircle,
   ArrowRight
 } from "lucide-react";
@@ -33,7 +33,7 @@ const slides: OnboardingSlide[] = [
     id: "welcome",
     title: "Welcome to CourseConnect AI",
     description: "Your AI-powered learning companion is ready to help you succeed",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    icon: <img src="/apple-touch-icon.png" alt="CourseConnect" className="size-20" style={{ imageRendering: 'high-quality' }} />,
     features: [
       "Upload your syllabus for personalized insights",
       "AI tutoring for each course",
@@ -46,7 +46,7 @@ const slides: OnboardingSlide[] = [
     id: "command-menu",
     title: "Command Menu (⌘K)",
     description: "Navigate instantly with keyboard shortcuts",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    icon: <Command className="size-12 text-purple-500" />,
     features: [
       "Press Ctrl+K (or ⌘K on Mac) anywhere",
       "Access all your course chats instantly",
@@ -59,10 +59,10 @@ const slides: OnboardingSlide[] = [
     id: "upload",
     title: "Upload Your Syllabus",
     description: "AI analyzes and creates your course chat automatically",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    icon: <Upload className="size-12 text-blue-500" />,
     features: [
       "Drag & drop or click to upload PDF",
-      "AI extracts course info, exam dates, assignments",
+      "AI extracts course info automatically",
       "Automatic deadline tracking",
       "Pro tip: Upload all syllabi at once!"
     ],
@@ -70,9 +70,9 @@ const slides: OnboardingSlide[] = [
   },
   {
     id: "ai-tutor",
-    title: "Class Chats",
-    description: "AI tutoring for each course - knows your syllabus!",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    title: "AI-Powered Class Chats",
+    description: "Personalized AI tutoring that understands your specific courses",
+    icon: <MessageSquare className="size-12 text-indigo-500" />,
     features: [
       "Ask: 'When is my next exam?'",
       "Get help: 'Help me study for the midterm'",
@@ -85,7 +85,7 @@ const slides: OnboardingSlide[] = [
     id: "interactive-learning",
     title: "Interactive Learning",
     description: "Quizzes, exams, and flashcards powered by AI",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    icon: <Users className="size-12 text-green-500" />,
     features: [
       "Interactive quizzes (5-question quick tests)",
       "Practice exams (20-question timed tests)",
@@ -95,15 +95,15 @@ const slides: OnboardingSlide[] = [
     color: "from-green-500 to-emerald-600"
   },
   {
-    id: "community",
-    title: "Community & Chats",
-    description: "Connect with classmates and get AI help",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    id: "analytics",
+    title: "Study Analytics",
+    description: "Track your progress and build better study habits",
+    icon: <BookOpen className="size-12 text-orange-500" />,
     features: [
-      "General AI chat for all courses",
-      "Community chat with classmates (coming soon)",
-      "Type @ai to call AI for help",
-      "Get notified of new messages"
+      "Monitor daily study time and streaks",
+      "Track assignment completion rates",
+      "Get insights on your learning patterns",
+      "Build consistent study habits"
     ],
     color: "from-orange-500 to-red-600"
   },
@@ -111,7 +111,7 @@ const slides: OnboardingSlide[] = [
     id: "complete",
     title: "You're All Set",
     description: "Start your learning journey with these quick steps",
-    icon: <img src="/pageicon.png" alt="CourseConnect" className="size-12" />,
+    icon: <CheckCircle className="size-12 text-green-500" />,
     features: [
       "1. Upload your syllabi",
       "2. Try the command menu (⌘K)",
@@ -194,19 +194,19 @@ export function OnboardingSlideshow({ isOpen, onClose, onComplete }: OnboardingS
   const progress = ((currentSlide + 1) / slides.length) * 100;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300 ${
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-300 ${
       isVisible ? 'opacity-100' : 'opacity-0'
-    }`}>
-      <Card className={`w-full max-w-2xl mx-4 shadow-2xl border-0 bg-gradient-to-br from-card/95 to-card/80 backdrop-blur-sm transition-all duration-300 ${
+    }`} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <Card className={`w-full max-w-2xl mx-4 shadow-2xl border-0 bg-white dark:bg-gray-900 transition-all duration-300 ${
         isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-      }`}>
+      }`} style={{ margin: 'auto' }}>
         <CardContent className="p-0">
           {/* Header */}
           <div className="relative p-6 pb-4">
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-4 right-4 h-8 w-8 p-0 hover:bg-transparent"
+              className="absolute top-1 right-2 h-8 w-8 p-0 hover:bg-transparent"
               onClick={handleSkip}
             >
               <X className="h-4 w-4" />
@@ -245,12 +245,22 @@ export function OnboardingSlideshow({ isOpen, onClose, onComplete }: OnboardingS
 
               {/* Features */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {currentSlideData.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="size-4 text-green-500 flex-shrink-0" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
+                <div className="space-y-3">
+                  {currentSlideData.features.filter((_, index) => index % 2 === 0).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2 text-sm">
+                      <CheckCircle className="size-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground leading-relaxed">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {currentSlideData.features.filter((_, index) => index % 2 === 1).map((feature, index) => (
+                    <div key={index} className="flex items-start gap-2 text-sm">
+                      <CheckCircle className="size-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground leading-relaxed">{feature}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

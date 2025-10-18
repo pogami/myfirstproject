@@ -41,7 +41,7 @@ export default function DashboardPage() {
     try {
       // Get the class information for context
       const chat = chats[chatId];
-      const courseCode = chat?.courseData?.courseCode || chat?.title || 'Unknown Class';
+      const courseCode = chat?.courseData?.courseCode || chat?.title || 'System';
       const courseName = chat?.courseData?.courseName || chat?.title || 'Unknown Course';
       
       let title = '';
@@ -399,57 +399,100 @@ export default function DashboardPage() {
 
   // Handle both guest and authenticated users
   useEffect(() => {
-    // Check for guest user first (faster than Firebase auth)
-    const guestUserData = localStorage.getItem('guestUser');
-    if (guestUserData) {
-      try {
-        const guestUser = JSON.parse(guestUserData);
-        console.log("Dashboard: Found guest user in localStorage:", guestUser);
-        setUser(guestUser);
-        return; // Exit early for guest users
-      } catch (error) {
-        console.warn("Dashboard: Error parsing guest user data:", error);
-        localStorage.removeItem('guestUser');
-      }
-    }
-
-    // If no guest user exists, create one automatically
-    console.log("Dashboard: No guest user found, creating one automatically");
-    const autoGuestUser = {
-      uid: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      displayName: "Guest User",
-      email: null,
-      photoURL: null,
-      isAnonymous: true,
-      isGuest: true
-    };
-    
-    localStorage.setItem('guestUser', JSON.stringify(autoGuestUser));
-    console.log("Dashboard: Created auto guest user:", autoGuestUser);
-    setUser(autoGuestUser);
-    return; // Exit early for auto-created guest users
-
-    // Handle authenticated users
+    // FIRST: Check Firebase auth for authenticated users
     try {
       if (auth && typeof auth.onAuthStateChanged === 'function') {
         console.log('Dashboard: Setting up auth state listener');
         const unsubscribe = auth.onAuthStateChanged(
           (user: any) => {
             console.log('Dashboard: Auth state changed - user:', user ? 'authenticated' : 'not authenticated');
-            setUser(user);
+            if (user) {
+              // User is authenticated, clear any guest data and use real user
+              localStorage.removeItem('guestUser');
+              localStorage.removeItem('guest-notifications');
+              localStorage.removeItem('guest-onboarding-completed');
+              setUser(user);
+            } else {
+              // No authenticated user, check for guest user
+              const guestUserData = localStorage.getItem('guestUser');
+              if (guestUserData) {
+                try {
+                  const guestUser = JSON.parse(guestUserData);
+                  console.log("Dashboard: Found guest user in localStorage:", guestUser);
+                  setUser(guestUser);
+                } catch (error) {
+                  console.warn("Dashboard: Error parsing guest user data:", error);
+                  localStorage.removeItem('guestUser');
+                  // Create new guest user
+                  createGuestUser();
+                }
+              } else {
+                // No guest user exists, create one automatically
+                createGuestUser();
+              }
+            }
           },
           (error: any) => {
             console.warn("Dashboard: Auth state error:", error);
-            setUser(null);
+            // On auth error, fall back to guest user
+            const guestUserData = localStorage.getItem('guestUser');
+            if (guestUserData) {
+              try {
+                const guestUser = JSON.parse(guestUserData);
+                setUser(guestUser);
+              } catch (error) {
+                createGuestUser();
+              }
+            } else {
+              createGuestUser();
+            }
           }
         );
         return unsubscribe;
       } else {
-        setUser(null);
+        // Auth not available, check for guest user
+        const guestUserData = localStorage.getItem('guestUser');
+        if (guestUserData) {
+          try {
+            const guestUser = JSON.parse(guestUserData);
+            setUser(guestUser);
+          } catch (error) {
+            createGuestUser();
+          }
+        } else {
+          createGuestUser();
+        }
       }
     } catch (authError) {
       console.warn("Dashboard: Auth initialization error:", authError);
-      setUser(null);
+      // Fall back to guest user
+      const guestUserData = localStorage.getItem('guestUser');
+      if (guestUserData) {
+        try {
+          const guestUser = JSON.parse(guestUserData);
+          setUser(guestUser);
+        } catch (error) {
+          createGuestUser();
+        }
+      } else {
+        createGuestUser();
+      }
+    }
+
+    function createGuestUser() {
+      console.log("Dashboard: Creating new guest user");
+      const autoGuestUser = {
+        uid: `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        displayName: "Guest User",
+        email: null,
+        photoURL: null,
+        isAnonymous: true,
+        isGuest: true
+      };
+      
+      localStorage.setItem('guestUser', JSON.stringify(autoGuestUser));
+      console.log("Dashboard: Created auto guest user:", autoGuestUser);
+      setUser(autoGuestUser);
     }
   }, []);
 
@@ -478,13 +521,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      {/* Mobile Header */}
-      <div className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/20">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-lg font-bold text-primary">CourseConnect</h1>
-          <MobileNavigation user={user} />
-        </div>
-      </div>
 
       <div className="space-y-8">
         {/* Modern Header Section */}
@@ -547,78 +583,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Scholar Features Status - Only show if trial is activated */}
-        {trialActivated && trialDaysLeft > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-card/80 to-card/40 shadow-xl mb-6 max-w-md mx-auto sm:mx-0">
-          <CardContent className="p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 shadow-lg">
-                  <Crown className="size-5 text-white" />
-                </div>
-                <div>
-                  <Badge className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0 text-sm font-medium px-3 py-1">
-                    Scholar Active
-                  </Badge>
-                </div>
-              </div>
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg"></div>
-            </div>
-            
-            {/* Days Left */}
-            <div className="text-center mb-6">
-              <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-                {trialDaysLeft}
-              </div>
-              <div className="text-sm text-muted-foreground font-medium">
-                {trialDaysLeft === 1 ? 'day left' : 'days left'} in trial
-              </div>
-            </div>
-            
-            {/* Progress Bar */}
-            <div className="mb-6">
-              <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                <span className="font-medium">Progress</span>
-                <span className="font-semibold">{Math.round(((14 - trialDaysLeft) / 14) * 100)}%</span>
-              </div>
-              <div className="w-full bg-muted/30 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-purple-500 to-blue-600 h-3 rounded-full transition-all duration-700 ease-out shadow-sm"
-                  style={{ width: `${((14 - trialDaysLeft) / 14) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button 
-                size="sm" 
-                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 h-10 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                asChild
-              >
-                <Link href="/features">
-                  View Features
-                </Link>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/30 h-10 text-sm font-medium transition-all duration-300 hover:scale-105"
-                onClick={() => {
-                  // Enable demo mode when accessing features
-                  setIsDemoMode(true);
-                }}
-                asChild
-              >
-                <Link href="/features">
-                  View Features
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        )}
 
         {/* Topics to Review (lightweight, signal-driven) */}
         {showTopicsReview && (

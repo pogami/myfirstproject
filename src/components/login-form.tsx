@@ -16,8 +16,6 @@ import { Loader2, User } from "lucide-react";
 import { useAnimatedToast } from "@/hooks/use-animated-toast";
 import { ToastContainer } from "@/components/animated-toast";
 import { CCLogo } from "@/components/icons/cc-logo";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { universities } from "@/lib/universities";
 import { useChatStore, Chat } from "@/hooks/use-chat-store";
 import { GuestUsernamePopup } from "@/components/guest-username-popup";
 
@@ -29,10 +27,6 @@ interface LoginFormProps {
 export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [graduationYear, setGraduationYear] = useState("");
-  const [school, setSchool] = useState("");
-  const [major, setMajor] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingGoogle, setIsSubmittingGoogle] = useState(false);
   const [isSubmittingGuest, setIsSubmittingGuest] = useState(false);
@@ -92,27 +86,18 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
     try {
       let user;
       if (isSigningUp) {
-        if (!school || !major) {
-            toast({
-                variant: "destructive",
-                title: "Validation Failed",
-                description: "Please select your school and enter your major.",
-            });
-            setIsSubmitting(false);
-            return;
-        }
-
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         user = userCredential.user;
         
-        await updateProfile(user, { displayName });
+        // Set a default display name from email if not provided
+        const defaultDisplayName = email.split('@')[0];
+        await updateProfile(user, { displayName: defaultDisplayName });
         await setDoc(doc(db, "users", user.uid), {
-            displayName,
+            displayName: defaultDisplayName,
             email,
-            graduationYear,
-            school,
-            major,
-        });
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+        }, { merge: true });
 
         toast({ title: "Account Created!", description: "You have been successfully signed up." });
       } else {
@@ -137,11 +122,19 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
         localStorage.setItem('showOnboarding', 'true');
         sessionStorage.setItem('justSignedUp', 'true');
         
-        // Navigate to dashboard instead of reloading
-        router.push('/dashboard');
+        // Add a small delay to ensure localStorage is cleared before navigation
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
       } else {
-        // For regular sign-in, just navigate
-        router.push('/dashboard');
+        // For regular sign-in, clear guest data and navigate
+        localStorage.removeItem('guestUser');
+        localStorage.removeItem('guest-notifications');
+        localStorage.removeItem('guest-onboarding-completed');
+        
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
       }
 
     } catch (error: any)
@@ -385,19 +378,19 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       <div className="w-full max-w-md animate-in fade-in-50 zoom-in-95">
         {/* Animated background elements */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-indigo-400/15 to-purple-400/15 rounded-full blur-2xl animate-pulse delay-500"></div>
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-indigo-400/15 to-purple-400/15 rounded-full blur-2xl delay-500"></div>
         </div>
         
         <Card className="relative shadow-2xl rounded-3xl border-2 bg-gradient-to-br from-white/95 via-white/90 to-white/95 backdrop-blur-sm border-white/20 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-900/95 dark:border-gray-800/20">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-cyan-500/5 rounded-3xl"></div>
           
-          <CardHeader className="relative text-center pb-6">
+          <CardHeader className="relative text-center pb-4">
             <div className="mb-6 flex justify-center">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-lg opacity-30 animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-lg opacity-30"></div>
                 <div className="relative rounded-full bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-6 border-2 border-purple-200/30 dark:border-purple-800/30 backdrop-blur-sm">
                   <CCLogo className="h-20 w-auto drop-shadow-lg" />
                 </div>
@@ -410,13 +403,13 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
               {isSigningUp ? "Start your academic journey with AI-powered tools" : "Sign in to continue your learning"}
             </CardDescription>
           </CardHeader>
-          <CardContent className="relative space-y-6 p-8 pt-2">
+          <CardContent className="relative space-y-4 p-6 pt-2">
             {/* Guest Login Button - Prominent for new users */}
             {isSigningUp && (
               <div className="space-y-3">
                 <Button 
                   variant="outline" 
-                  className="w-full h-14 text-lg font-semibold border-2 border-dashed border-purple-300/50 hover:border-purple-400/70 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-blue-50/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm bg-white/80 dark:bg-gray-900/80" 
+                  className="w-full h-14 text-lg font-semibold border-2 border-dashed border-purple-300/50 hover:border-purple-500 hover:shadow-purple-500/50 hover:shadow-lg transition-all duration-500 hover:scale-[1.02] backdrop-blur-sm bg-white/80 dark:bg-gray-900/80" 
                   onClick={handleGuestLogin}
                   disabled={isSubmitting || isSubmittingGoogle || isSubmittingGuest}
                 >
@@ -430,76 +423,15 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                 <p className="text-xs text-center text-muted-foreground">
                   Explore the platform without creating an account. You can always sign up later to save your progress.
                 </p>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or create an account</span>
-                  </div>
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+                  <div className="px-3 text-xs uppercase text-muted-foreground">Or create an account</div>
+                  <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
                 </div>
               </div>
             )}
             
-            <form onSubmit={handleAuth} className="space-y-5">
-              {isSigningUp && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="displayName" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Full Name</Label>
-                    <Input
-                      id="displayName"
-                      type="text"
-                      placeholder="John Doe"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      required
-                      disabled={isSubmitting || isSubmittingGoogle || isSubmittingGuest}
-                      className="h-12 border-2 border-gray-200/50 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 transition-all duration-300 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 dark:border-gray-700/50 dark:focus:border-purple-400"
-                    />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="school" className="text-sm font-semibold text-gray-700 dark:text-gray-300">School</Label>
-                     <Select onValueChange={setSchool} value={school} required>
-                        <SelectTrigger id="school" disabled={isSubmitting || isSubmittingGoogle || isSubmittingGuest} className="h-12 border-2 border-gray-200/50 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 transition-all duration-300 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 dark:border-gray-700/50 dark:focus:border-purple-400">
-                            <SelectValue placeholder="Select your university" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white/95 backdrop-blur-sm border-2 border-gray-200/50 dark:bg-gray-800/95 dark:border-gray-700/50">
-                            {universities.map(uni => (
-                                <SelectItem key={uni} value={uni} className="hover:bg-purple-50 dark:hover:bg-purple-900/20">{uni}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="major" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Major</Label>
-                    <Input
-                      id="major"
-                      type="text"
-                      placeholder="Computer Science"
-                      value={major}
-                      onChange={(e) => setMajor(e.target.value)}
-                      required
-                      disabled={isSubmitting || isSubmittingGoogle || isSubmittingGuest}
-                      className="h-12 border-2 border-gray-200/50 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 transition-all duration-300 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 dark:border-gray-700/50 dark:focus:border-purple-400"
-                    />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="graduationYear" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Graduation Year</Label>
-                    <Input
-                      id="graduationYear"
-                      type="number"
-                      placeholder="2025"
-                      value={graduationYear}
-                      onChange={(e) => setGraduationYear(e.target.value)}
-                      required
-                      min="2020"
-                      max="2035"
-                      disabled={isSubmitting || isSubmittingGoogle || isSubmittingGuest}
-                      className="h-12 border-2 border-gray-200/50 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 transition-all duration-300 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 dark:border-gray-700/50 dark:focus:border-purple-400"
-                    />
-                  </div>
-                </>
-              )}
+            <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email</Label>
                 <Input
@@ -544,13 +476,10 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
                 {isSubmitting ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : (isSigningUp ? "Create Account" : "Sign In")}
               </Button>
             </form>
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
-                </div>
+            <div className="flex items-center">
+                <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+                <div className="px-3 text-xs uppercase text-muted-foreground">Or</div>
+                <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             </div>
             <div className="space-y-4">
               <Button variant="outline" className="w-full h-14 text-lg font-semibold border-2 border-gray-200/50 hover:border-blue-400 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-blue-100/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 dark:border-gray-700/50 dark:hover:border-blue-400" size="lg" onClick={handleGoogleSignIn} disabled={isSubmitting || isSubmittingGoogle || isSubmittingGuest}>

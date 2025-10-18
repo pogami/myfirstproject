@@ -5,7 +5,7 @@ import { Navigation } from '@/components/landing/navigation';
 import { Footer } from '@/components/landing/footer';
 import { FeaturesSection } from '@/components/landing/features-section';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, Users, FileText, MessageCircle, Clock, Zap, Shield, Globe, Play, Sparkles, Target, TrendingUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Users, FileText, MessageCircle, Clock, Zap, Shield, Globe, Play, Sparkles, Target, TrendingUp, MessageSquare, Bell, Upload, BookOpen } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { MotionHeadline } from '@/components/ui/motion-section';
 
@@ -21,7 +21,7 @@ export default function FeaturesPage() {
 
   const renderFeatureDemo = (feature: any) => {
     switch (feature.title) {
-      case 'AI-Powered Tutoring':
+      case 'AI-Powered Class Chats':
         return (
           <motion.div
             animate={{
@@ -33,29 +33,30 @@ export default function FeaturesPage() {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+            className="bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 shadow-2xl border border-purple-200 dark:border-slate-700"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-500 ml-2">AI Tutor Chat</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300 ml-2">CS 101 - AI Tutor</span>
               </div>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                    <MessageSquare className="h-4 w-4 text-white" />
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 max-w-xs">
-                    <p className="text-sm">Hi! I'm your AI tutor. How can I help you with calculus today?</p>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-3 max-w-xs shadow-sm border border-gray-200 dark:border-slate-700">
+                    <p className="text-sm text-gray-800 dark:text-white">Hi! I know your CS 101 syllabus. How can I help with your programming assignment?</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 justify-end">
-                  <div className="bg-blue-600 text-white rounded-lg p-3 max-w-xs">
-                    <p className="text-sm">Can you explain derivatives?</p>
+                  <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl p-3 max-w-xs shadow-sm">
+                    <p className="text-sm">What's the deadline for Project 2?</p>
                   </div>
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <Users className="h-4 w-4 text-green-600" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Users className="h-4 w-4 text-white" />
                   </div>
                 </div>
                 <motion.div
@@ -63,14 +64,15 @@ export default function FeaturesPage() {
                   transition={{ duration: 1.5, repeat: Infinity }}
                   className="flex items-start gap-3"
                 >
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                    <MessageSquare className="h-4 w-4 text-white" />
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 max-w-xs">
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-3 max-w-xs shadow-sm border border-gray-200 dark:border-slate-700">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                      <span className="text-xs text-gray-500">AI is typing...</span>
+                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">CourseConnect AI is typing...</span>
                     </div>
                   </div>
                 </motion.div>
@@ -79,52 +81,209 @@ export default function FeaturesPage() {
           </motion.div>
         );
 
-      case 'Study Groups':
+      case 'Syllabus Upload & Analysis':
         return (
           <motion.div
             animate={{
-              rotate: [0, 1, -1, 0],
-              scale: [1, 1.005, 1],
+              rotate: [0, -1, 1, 0],
+              scale: [1, 1.01, 1],
             }}
             transition={{
-              duration: 6,
+              duration: 5,
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-gray-700"
+            className="bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 shadow-2xl border border-emerald-200 dark:border-slate-700"
           >
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-500 ml-2">Study Group Chat</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300 ml-2">Syllabus Upload</span>
               </div>
               <div className="space-y-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className="bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700/30 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
+                      <Upload className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-white">CS 101 - Introduction to Programming</span>
                   </div>
-                  <span className="text-sm font-medium">CSCI 1301 Study Group (4 online)</span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600 dark:text-gray-400">Assignments:</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">8 projects</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600 dark:text-gray-400">Exams:</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">2 midterms, 1 final</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600 dark:text-gray-400">Grading:</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">Projects 60%, Exams 40%</span>
+                    </div>
+                  </div>
                 </div>
+                <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="font-medium">Syllabus processed successfully</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 'General AI Chat':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 1, -1, 0],
+              scale: [1, 1.01, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 shadow-2xl border border-blue-200 dark:border-slate-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-slate-600 dark:text-slate-300 ml-2">General AI Chat</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                    <MessageCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-3 max-w-xs shadow-sm border border-gray-200 dark:border-slate-700">
+                    <p className="text-sm text-gray-800 dark:text-white">Hi! I can help with any academic question. What do you need help with?</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 justify-end">
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-3 max-w-xs shadow-sm">
+                    <p className="text-sm">Explain photosynthesis</p>
+                  </div>
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                    <Users className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="flex items-start gap-3"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                    <MessageCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-3 max-w-xs shadow-sm border border-gray-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">CourseConnect AI is typing...</span>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 'Smart Notifications':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, 1, -1, 0],
+              scale: [1, 1.01, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-slate-300 ml-2">Notifications</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-900/30 to-blue-800/20 rounded-xl border border-blue-700/30">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full shadow-lg"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">AI Response Ready</p>
+                    <p className="text-xs text-slate-300">CS 101: Your question about loops</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-green-900/30 to-green-800/20 rounded-xl border border-green-700/30">
+                  <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">Assignment Reminder</p>
+                    <p className="text-xs text-slate-300">Project 2 due tomorrow</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-900/30 to-purple-800/20 rounded-xl border border-purple-700/30">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full shadow-lg"></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">Course Update</p>
+                    <p className="text-xs text-slate-300">New syllabus uploaded</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 'File Management':
+        return (
+          <motion.div
+            animate={{
+              rotate: [0, -1, 1, 0],
+              scale: [1, 1.01, 1],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 shadow-2xl border border-orange-200 dark:border-slate-700"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-slate-600 dark:text-slate-300 ml-2">File Manager</span>
+              </div>
+              <div className="space-y-3">
                 <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">A</div>
-                    <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2 max-w-xs">
-                      <p className="text-xs">Anyone else struggling with the homework?</p>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-xl border border-orange-200 dark:border-orange-700/30 shadow-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
+                      <FileText className="h-4 w-4 text-white" />
                     </div>
+                    <span className="text-sm font-medium text-gray-800 dark:text-white flex-1">CS101_Syllabus.pdf</span>
+                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
                   </div>
-                  <div className="flex items-start gap-2 justify-end">
-                    <div className="bg-blue-600 text-white rounded-lg p-2 max-w-xs">
-                      <p className="text-xs">I can help! The AI tutor explained it well</p>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-xl border border-orange-200 dark:border-orange-700/30 shadow-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                      <FileText className="h-4 w-4 text-white" />
                     </div>
-                    <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">B</div>
+                    <span className="text-sm font-medium text-gray-800 dark:text-white flex-1">MATH201_Syllabus.pdf</span>
+                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-sm"></div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">C</div>
-                    <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-2 max-w-xs">
-                      <p className="text-xs">Thanks! Can you share your notes?</p>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm">
+                    <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center shadow-lg">
+                      <Upload className="h-4 w-4 text-white" />
                     </div>
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400 flex-1">Upload new syllabus...</span>
                   </div>
                 </div>
               </div>
@@ -515,91 +674,58 @@ export default function FeaturesPage() {
 
   const features = [
     {
-      icon: Users,
-      title: 'AI-Powered Tutoring',
-      description: 'Get instant help with homework, assignments, and exam prep from our advanced AI tutor.',
+      icon: MessageSquare,
+      title: 'AI-Powered Class Chats',
+      description: 'Get personalized AI tutoring that understands your specific courses and syllabus.',
       benefits: [
-        '24/7 availability',
-        'Personalized explanations',
-        'Step-by-step solutions',
-        'Multiple subject support'
-      ]
-    },
-    {
-      icon: Users,
-      title: 'Study Groups',
-      description: 'Connect with classmates taking the same courses and collaborate on assignments.',
-      benefits: [
-        'Automatic group matching',
-        'Real-time collaboration',
-        'Shared resources',
-        'Peer support network'
+        'Course-specific AI knowledge',
+        'Instant homework help',
+        'Exam preparation support',
+        '24/7 availability'
       ]
     },
     {
       icon: FileText,
-      title: 'Syllabus Analysis',
-      description: 'Upload your syllabus and get instant insights about course requirements and structure.',
+      title: 'Syllabus Upload & Analysis',
+      description: 'Upload your syllabus and automatically create AI-powered class chats.',
       benefits: [
         'Smart content extraction',
-        'Course overview generation',
+        'Automatic class creation',
         'Assignment tracking',
-        'Grade calculation tools'
+        'Course structure analysis'
       ]
     },
     {
       icon: MessageCircle,
-      title: 'Real-time Chat',
-      description: 'Communicate with study groups and get instant AI assistance through our chat interface.',
+      title: 'General AI Chat',
+      description: 'Get instant AI help for any academic question across all subjects.',
       benefits: [
-        'Group messaging',
-        'AI integration',
-        'File sharing',
-        'Message history'
+        'Ask any academic question',
+        'Get instant responses',
+        'Multi-subject expertise',
+        'Always available'
       ]
     },
     {
-      icon: Clock,
-      title: 'Study Tracking',
-      description: 'Monitor your study time, track progress, and maintain consistent study habits.',
-      benefits: [
-        'Time tracking',
-        'Progress analytics',
-        'Study streaks',
-        'Goal setting'
-      ]
-    },
-    {
-      icon: Zap,
+      icon: Bell,
       title: 'Smart Notifications',
-      description: 'Stay updated with assignment deadlines, study reminders, and group activities.',
+      description: 'Stay updated with AI responses and important course updates.',
       benefits: [
-        'Customizable alerts',
-        'Deadline reminders',
-        'Study suggestions',
-        'Group updates'
+        'AI response alerts',
+        'Assignment reminders',
+        'Course notifications',
+        'Study suggestions'
       ]
     },
     {
-      icon: Shield,
-      title: 'Privacy & Security',
-      description: 'Your data is protected with enterprise-grade security and privacy controls.',
+      icon: Upload,
+      title: 'File Management',
+      description: 'Upload and manage your syllabi and course materials securely.',
       benefits: [
-        'End-to-end encryption',
-        'Data privacy controls',
         'Secure file storage',
-        'GDPR compliance'
-      ]
-    },
-    {
-      icon: Globe,
-      title: 'Multi-Platform Access',
-      description: 'Access CourseConnect from any device, anywhere, with seamless synchronization.',
-      benefits: [
-        'Web application',
-        'Mobile responsive',
-        'Cross-device sync',
-        'Offline capabilities'
+        'PDF processing',
+        'Document organization',
+        'Easy access'
       ]
     }
   ];
@@ -672,7 +798,7 @@ export default function FeaturesPage() {
             </motion.div>
             
             <MotionHeadline className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Powerful Features for{' '}
+              AI-Powered Study Tools for{' '}
               <motion.span 
                 className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
                 animate={{
@@ -697,7 +823,8 @@ export default function FeaturesPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto"
             >
-              Everything you need to excel in your studies, connect with classmates, and achieve your academic goals.
+              Upload your syllabi and get personalized AI tutoring for each course. Track assignments, 
+              get instant help, and excel in your studies with CourseConnect.
             </motion.p>
 
             {/* Interactive Stats */}
@@ -708,10 +835,10 @@ export default function FeaturesPage() {
               className="flex flex-wrap justify-center gap-8 mb-12"
             >
               {[
-                { number: "2,500+", label: "Students", icon: Users },
-                { number: "150+", label: "Universities", icon: Globe },
-                { number: "87%", label: "Success Rate", icon: Target },
-                { number: "24/7", label: "AI Support", icon: Clock }
+                { number: "AI", label: "Powered", icon: Sparkles },
+                { number: "Syllabus", label: "Upload", icon: Upload },
+                { number: "Instant", label: "Chat", icon: MessageSquare },
+                { number: "Smart", label: "Notifications", icon: Bell }
               ].map((stat, index) => (
                 <motion.div
                   key={stat.label}
@@ -860,11 +987,6 @@ export default function FeaturesPage() {
                     {benefit}
                   </motion.li>
                 ))}
-                {feature.benefits.length > 3 && (
-                  <li className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                    +{feature.benefits.length - 3} more benefits
-                  </li>
-                )}
               </ul>
             </motion.div>
           ))}

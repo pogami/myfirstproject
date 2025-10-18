@@ -19,6 +19,9 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----E
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 
+# Admin Password (for admin and feedback pages)
+ADMIN_PASSWORD=your_admin_password_here
+
 # Instructions:
 # 1. Copy this file to .env.local for local development
 # 2. Add these variables to Vercel for production

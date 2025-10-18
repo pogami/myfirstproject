@@ -216,8 +216,8 @@ export default function ClassOverviewPage() {
                             Class Overview
                         </h1>
                         <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl">
-                            Browse all your classes, see activity levels, and connect with classmates. 
-                            Join study groups and collaborate on assignments.
+                            Upload your syllabi to create AI-powered class chats. Get personalized help, 
+                            track assignments, and access course-specific study tools.
                         </p>
                     </div>
                 </div>
@@ -281,76 +281,6 @@ export default function ClassOverviewPage() {
                     </Card>
                 </div>
 
-                {/* Public General Chat Card (real data) - Same size as class cards */}
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    <Card className="border-0 bg-gradient-to-br from-emerald-50 to-teal-100/40 dark:from-emerald-950/20 dark:to-teal-900/10 group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:bg-card/80">
-                        <CardHeader className="pb-4">
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-xl bg-emerald-500/10">
-                                        <Globe className="size-6 text-emerald-600" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <CardTitle className="text-lg group-hover:text-emerald-600 transition-colors">Community</CardTitle>
-                                        <CardDescription className="mt-1">Open to all students • Type <code className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-xs">@ai</code> to call AI</CardDescription>
-                                    </div>
-                                </div>
-                                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</Badge>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <MessageSquare className="size-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Messages</span>
-                                    </div>
-                                    <span className="font-medium">{publicChat?.messages?.length || 0}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Users className="size-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Messages today</span>
-                                    </div>
-                                    <span className="font-medium">{(publicChat?.messages || []).filter(m => m.timestamp && (Date.now() - m.timestamp) < 24*60*60*1000).length}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="size-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Last active</span>
-                                    </div>
-                                    <span className="font-medium">
-                                        {publicChat?.messages?.length ? 
-                                            (() => {
-                                                const lastMessage = publicChat.messages[publicChat.messages.length - 1];
-                                                if (!lastMessage.timestamp) return '—';
-                                                const timeDiff = Date.now() - lastMessage.timestamp;
-                                                if (timeDiff < 60000) return 'just now';
-                                                if (timeDiff < 3600000) return `${Math.floor(timeDiff / 60000)}m ago`;
-                                                if (timeDiff < 86400000) return `${Math.floor(timeDiff / 3600000)}h ago`;
-                                                return `${Math.floor(timeDiff / 86400000)}d ago`;
-                                            })() : '—'
-                                        }
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-border/50">
-                                <div className="flex gap-2">
-                                    <Button 
-                                        className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium"
-                                        onClick={handleJoinPublicChat}
-                                        asChild
-                                    >
-                                        <Link href="/dashboard/chat?tab=public-general-chat">
-                                            Join Chat
-                                            <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
 
                 {/* Removed Live Activity feed per request */}
 

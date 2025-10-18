@@ -91,7 +91,7 @@ export default function AdminDashboard() {
     darkMode: true
   });
 
-  const ADMIN_PASSWORD = 'courseconnect2025';
+  const ADMIN_PASSWORD = 'courseconnect2025'; // TODO: Move to server-side auth
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();

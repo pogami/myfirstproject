@@ -54,7 +54,7 @@ export default function EnhancedSyllabusUploadPage() {
               </div>
               <h3 className="font-semibold text-sm sm:text-base">Upload File</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Drag and drop your course syllabus (PDF, DOCX, TXT)
+                Drag and drop your course syllabus (DOCX, TXT)
               </p>
             </div>
             <div className="text-center space-y-2 sm:space-y-3">

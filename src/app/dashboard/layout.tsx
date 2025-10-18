@@ -42,54 +42,6 @@ import { ClientThemeToggle } from "@/components/client-theme-toggle";
 import { NotificationToastListener } from "@/components/notification-toast-listener";
 import { toast } from "sonner";
 
-function AnnouncementBanner() {
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Auto-dismiss after 10 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-    }, 10000); // 10 seconds
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isVisible) {
-    return null;
-  }
-
-  return (
-    <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white shadow-lg">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-r from-pink-400 to-purple-400 rounded-xl p-3 shadow-lg">
-              <Megaphone className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
-                <span className="hidden md:inline">Ready to transform your studies?</span>
-                <span className="md:hidden">Transform your studies</span>
-              </h2>
-              <p className="text-gray-200 font-medium hidden sm:block mt-1">
-                Upload your syllabus and unlock AI-powered insights
-              </p>
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 hover:bg-white/20 text-white"
-            onClick={() => setIsVisible(false)}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Dismiss</span>
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function DashboardLayout({
   children,
@@ -195,7 +147,78 @@ export default function DashboardLayout({
     }
   }, [pathname]);
   
-  const { chats, showUpgrade, setShowUpgrade, isGuest, isDemoMode, setIsDemoMode } = useChatStore();
+  const { chats, showUpgrade, setShowUpgrade, isGuest, isDemoMode, setIsDemoMode, addChat, setCurrentTab } = useChatStore();
+  
+  // Auto-create course chat from saved syllabus data after signup (HOMEPAGE ONLY)
+  useEffect(() => {
+    if (!user || isGuest) return; // Only for authenticated users
+    
+    const createCourseFromSavedData = async () => {
+      try {
+        // Check for saved course data from homepage syllabus upload
+        const savedCourseData = sessionStorage.getItem('cc-course-context-card');
+        if (!savedCourseData) return;
+        
+        // Additional check: Only create if this is a fresh signup (not an existing user)
+        // This prevents creating chats for existing users who might have stale sessionStorage
+        const isNewSignup = localStorage.getItem('cc-new-signup') === 'true';
+        if (!isNewSignup) {
+          console.log('🚫 Not a new signup, skipping auto-creation');
+          sessionStorage.removeItem('cc-course-context-card'); // Clean up stale data
+          return;
+        }
+        
+        console.log('🎓 Found saved course data after homepage signup!');
+        const courseData = JSON.parse(savedCourseData);
+        
+        // Create course chat
+        const chatTitle = `${courseData.courseCode} - ${courseData.courseName}`;
+        const welcomeMessage = {
+          id: `welcome-${Date.now()}`,
+          sender: 'bot' as const,
+          name: 'CourseConnect AI',
+          text: `Welcome to your ${courseData.courseName} course chat! I'm your AI tutor with full context about your syllabus. I can help you with:\n\n• Course topics and concepts\n• Assignment deadlines and requirements\n• Exam preparation\n• Study strategies\n• Any questions about the course material\n\nWhat would you like to know about ${courseData.courseName}?`,
+          timestamp: Date.now()
+        };
+        
+        const uniqueChatId = `${courseData.courseCode}-${courseData.courseName}-${Date.now()}`;
+        
+        console.log('✅ Creating course chat:', chatTitle);
+        
+        // Create the chat
+        await addChat(chatTitle, welcomeMessage, uniqueChatId, 'class', {
+          courseName: courseData.courseName,
+          courseCode: courseData.courseCode,
+          professor: courseData.professor || 'Unknown Professor',
+          topics: courseData.topics || [],
+        });
+        
+        // Clear the saved data
+        sessionStorage.removeItem('cc-course-context-card');
+        localStorage.removeItem('cc-new-signup'); // Clear the new signup flag
+        
+        // Show success message
+        toast.success('Course Chat Created!', {
+          description: `Your ${courseData.courseName} chat is ready. Let's start learning!`,
+          duration: 5000,
+        });
+        
+        // Redirect to the new chat
+        setTimeout(() => {
+          setCurrentTab(uniqueChatId);
+          router.push(`/dashboard/chat?tab=${uniqueChatId}`);
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Failed to create course chat from saved data:', error);
+        // Clear the data anyway to prevent retry loops
+        sessionStorage.removeItem('cc-course-context-card');
+        localStorage.removeItem('cc-new-signup');
+      }
+    };
+    
+    createCourseFromSavedData();
+  }, [user, isGuest, addChat, setCurrentTab, router]);
   const [guestUser, setGuestUser] = useState<any>(null);
   const [isProUser, setIsProUser] = useState(false); // Demo access - set to true for demo
   
@@ -232,14 +255,19 @@ export default function DashboardLayout({
         return; // Don't redirect yet
       }
       
-      const storedGuest = localStorage.getItem('guestUser');
-      if (!storedGuest) {
-        // No user and no guest, redirect to login
-        console.log("No user and no guest found, redirecting to login");
-        router.push('/login');
-      } else {
-        console.log("Guest user found in localStorage:", storedGuest);
-      }
+      // Give auth listener time to work before redirecting
+      const timeoutId = setTimeout(() => {
+        const storedGuest = localStorage.getItem('guestUser');
+        if (!storedGuest) {
+          // No user and no guest, redirect to login
+          console.log("No user and no guest found after timeout, redirecting to login");
+          router.push('/login');
+        } else {
+          console.log("Guest user found in localStorage:", storedGuest);
+        }
+      }, 1000); // Wait 1 second for auth to initialize
+      
+      return () => clearTimeout(timeoutId);
     } else if (user) {
       // Clear the flag once user is loaded
       sessionStorage.removeItem('justLoggedIn');
@@ -249,8 +277,14 @@ export default function DashboardLayout({
   // Check for onboarding flag
   useEffect(() => {
     if (!loading && user) {
+      // Check if user has completed onboarding
+      const onboardingCompleted = localStorage.getItem('onboarding-completed');
       const shouldShowOnboarding = localStorage.getItem('showOnboarding');
-      if (shouldShowOnboarding === 'true') {
+      
+      // Show onboarding if:
+      // 1. User hasn't completed onboarding yet, OR
+      // 2. Manual trigger flag is set
+      if (!onboardingCompleted || shouldShowOnboarding === 'true') {
         setShowOnboarding(true);
         localStorage.removeItem('showOnboarding');
       }
@@ -510,8 +544,6 @@ export default function DashboardLayout({
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="bg-gray-50/50 dark:bg-gray-950 min-h-screen">
-          <AnnouncementBanner />
-          
           {/* Header with Hamburger Menu - Always Visible */}
           <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
             <div className="flex h-16 items-center justify-between px-6">
