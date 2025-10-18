@@ -83,19 +83,12 @@ export default function RootLayout({
         <meta property="og:url" content="https://courseconnectai.com" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="CourseConnect AI" />
-        <meta property="og:image" content="https://courseconnectai.com/favicon-32x32.png" />
-        <meta property="og:image:secure_url" content="https://courseconnectai.com/favicon-32x32.png" />
-        <meta property="og:image:type" content="image/png" />
-        <meta property="og:image:width" content="400" />
-        <meta property="og:image:height" content="400" />
-        <meta property="og:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta property="og:locale" content="en_US" />
         
         {/* Twitter Card Meta Tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="CourseConnect AI - Your AI-Powered Study Companion" />
         <meta name="twitter:description" content="Upload your syllabus and let AI help you ace your courses. Get personalized study plans, interactive quizzes, and smart tutoring tailored to your classes." />
-        <meta name="twitter:image" content="https://courseconnectai.com/favicon-32x32.png" />
         <meta name="twitter:image:alt" content="CourseConnect AI - AI-Powered Study Platform" />
         <meta name="twitter:creator" content="@courseconnectai" />
         <meta name="twitter:site" content="@courseconnectai" />
