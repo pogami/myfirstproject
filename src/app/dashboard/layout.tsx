@@ -399,7 +399,7 @@ export default function DashboardLayout({
               </div>
 
               {/* List courses from chats */}
-              {Object.values(chats).filter((chat: any) => chat.chatType === 'class').slice(0, 5).map((chat: any) => (
+              {Object.values(chats).filter((chat: any) => chat.chatType === 'class').slice(0, 3).map((chat: any) => (
                 <SidebarMenuItem key={chat.id}>
                   <Link 
                     href={`/dashboard/course/${encodeURIComponent(chat.id)}`}
