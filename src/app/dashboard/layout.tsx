@@ -373,25 +373,80 @@ export default function DashboardLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu className="space-y-2 p-4">
+              {/* Home */}
               <SidebarMenuItem>
                 <Link 
                   href="/dashboard"
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     pathname === "/dashboard" 
-                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 text-blue-700 dark:text-blue-300 shadow-sm" 
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   }`}
                 >
-                  <div className={`p-2 rounded-md transition-all duration-200 ${
-                    pathname === "/dashboard" 
-                      ? "bg-blue-100 dark:bg-blue-900/50" 
-                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
-                  }`}>
-                    <Home className="size-4" />
-                  </div>
-                  <span className="font-medium text-sm">Dashboard</span>
+                  <Home className="size-5" />
+                  <span className="font-semibold text-sm">Home</span>
                 </Link>
               </SidebarMenuItem>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
+
+              {/* My Courses Section */}
+              <div className="px-4 py-2">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  My Courses
+                </p>
+              </div>
+
+              {/* List courses from chats */}
+              {Object.values(chats).filter((chat: any) => chat.chatType === 'class').slice(0, 5).map((chat: any) => (
+                <SidebarMenuItem key={chat.id}>
+                  <Link 
+                    href={`/dashboard/course/${encodeURIComponent(chat.id)}`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+                      pathname.includes(chat.id)
+                        ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 text-blue-700 dark:text-blue-300 shadow-sm" 
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    }`}
+                  >
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                          {chat.courseData?.courseCode?.charAt(0) || 'C'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {chat.courseData?.courseCode || chat.title}
+                      </p>
+                      {chat.courseData?.assignments && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {chat.courseData.assignments.filter((a: any) => a.status === 'Completed').length}/{chat.courseData.assignments.length} done
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+              
+              {/* Add Course */}
+              <SidebarMenuItem>
+                <Link 
+                  href="/dashboard/upload"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group border-2 border-dashed ${
+                    isActive("/dashboard/upload") 
+                      ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 text-blue-700 dark:text-blue-300 border-blue-300" 
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 border-gray-300 dark:border-gray-600"
+                  }`}
+                >
+                  <FilePlus className="size-5" />
+                  <span className="font-medium text-sm">Add Course</span>
+                </Link>
+              </SidebarMenuItem>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
               
               <SidebarMenuItem>
                 <Link 
