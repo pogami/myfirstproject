@@ -1081,12 +1081,7 @@ export default function FlashcardGenerator() {
                                         </div>
                                     </Button>
                                 ))}
-                                <div className="pt-2">
-                                    <Button variant="secondary" className="w-full hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => router.push('/dashboard/upload')}>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Upload another syllabus
-                                    </Button>
-                                </div>
+                                {/* Removed 'Upload another syllabus' shortcut per request */}
                                 </>
                             ) : (
                                  <div className="text-center text-muted-foreground text-sm p-8 border-2 border-dashed rounded-xl">

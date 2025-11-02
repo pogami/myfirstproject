@@ -200,12 +200,13 @@ interface BotResponseProps {
     url: string;
     snippet: string;
   }[];
+  isSearchRequest?: boolean; // Flag to indicate web search was requested
   onSendMessage?: (message: string) => void;
   messageId?: string;
   onFeedback?: (feedback: { rating: 'positive' | 'negative'; comment?: string; messageId: string }) => void;
 }
 
-export default function BotResponse({ content, className = "", sources, onSendMessage, messageId, onFeedback }: BotResponseProps) {
+export default function BotResponse({ content, className = "", sources, isSearchRequest = false, onSendMessage, messageId, onFeedback }: BotResponseProps) {
   const isGraph = useMemo(() => looksLikeGraph(content), [content]);
   const quizData = useMemo(() => extractQuizData(content), [content]);
   const { isFeatureEnabled } = useFeatureFlags();
@@ -356,14 +357,39 @@ export default function BotResponse({ content, className = "", sources, onSendMe
     return <AIResponse content={content} className={className} alwaysHighlight={false} />;
   }
 
+  // Check if this is a web search response (but hide UI for now)
+  // const isWebSearch = isSearchRequest === true || (sources && sources.length > 0);
+  const isWebSearch = false; // Temporarily disabled
+  
   // Otherwise treat as text + math (original behavior)
   return (
     <div className={`relative bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group shadow-sm ${className}`}>
+      
+      {/* Header with Badge - Temporarily hidden */}
+      {/* <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-medium">
+          {isWebSearch ? (
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">🌐 Web Search</span>
+          ) : (
+            <span className="text-gray-600 dark:text-gray-400">💡 General Knowledge</span>
+          )}
+        </div>
+      </div> */}
+      
       {breakIntoParagraphs(content).map((paragraph, i) => (
         <div key={i} className="mb-3 last:mb-0">
           {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
         </div>
       ))}
+      
+      {/* Footer Indicators - Temporarily hidden */}
+      {/* <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+        {isWebSearch ? (
+          <span className="font-medium">Based on online data</span>
+        ) : (
+          <span>Based on training data</span>
+        )}
+      </div> */}
       
       {/* Source Icon */}
       <div className="absolute top-2 right-10 z-10">

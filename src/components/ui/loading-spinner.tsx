@@ -29,10 +29,12 @@ export function LoadingSpinner({ size = "md", className, text }: LoadingSpinnerP
         {/* Inner gradient ring */}
         <div
           className={cn(
-            "absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-purple-600 border-r-blue-600",
+            "absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-primary/50",
             sizeClasses[size]
           )}
-          style={{ animationDuration: '1.5s' }}
+          style={{ 
+            animation: 'spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+          }}
         />
         {/* Center dot */}
         <div

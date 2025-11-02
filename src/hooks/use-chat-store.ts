@@ -38,6 +38,7 @@ export type Message = {
         url: string;
         snippet: string;
     }>;
+    isSearchRequest?: boolean; // Flag to indicate web search was requested
     file?: {
         name: string;
         size: number;
@@ -923,16 +924,35 @@ export const useChatStore = create<ChatState>()(
       clearGuestData: () => {
         // Clear all local storage data
         try {
+          // Remove the correct Zustand persist key
+          localStorage.removeItem('chat-storage');
+          // Also remove any legacy keys
           localStorage.removeItem('cc-chat-store');
           localStorage.removeItem('cc-active-tab');
           localStorage.removeItem('cc-course-context-card');
+          
+          // Clear guest-specific stats
+          const today = new Date().toDateString();
+          localStorage.removeItem(`guest-stats-${today}`);
+          
+          // Clear any guest notifications
+          localStorage.removeItem('guest-notifications');
+          
           console.log('✅ Cleared all guest data from localStorage');
         } catch (error) {
           console.warn('Failed to clear localStorage:', error);
         }
         
-        // Reset store state
-        set({ chats: {}, currentTab: undefined });
+        // Reset store state to initial values
+        set({ 
+          chats: {}, 
+          currentTab: undefined,
+          isGuest: true,
+          isDemoMode: false,
+          trialActivated: false,
+          trialStartDate: null,
+          trialDaysLeft: 14
+        });
       },
       
       // Reset Community chat to clean state (both local and Firestore)

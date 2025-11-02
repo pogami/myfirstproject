@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile, signInAnonymously, sendPasswordResetEmail } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/client-simple";
-import { doc, setDoc, getDoc, writeBatch, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, writeBatch, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,35 +46,139 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
 
   const migrateGuestData = async (userId: string) => {
     try {
-        if (Object.keys(guestChats).length > 0) {
+        const chatIds = Object.keys(guestChats);
+        if (chatIds.length === 0) {
+            return;
+        }
+
+        // Firestore batch limit is 500 operations, so we need to split into multiple batches
+        const MAX_BATCH_SIZE = 500;
+        const chatsToMigrate: Array<{ chatId: string; chat: Chat }> = [];
+        
+        // Check which chats need to be migrated (don't exist in Firestore yet)
+        const checkPromises = chatIds.map(async (chatId) => {
+            const chat = guestChats[chatId];
+            const chatDocRef = doc(db, "chats", chatId);
+            const chatDocSnap = await getDoc(chatDocRef);
+            
+            if (!chatDocSnap.exists()) {
+                chatsToMigrate.push({ chatId, chat });
+            }
+        });
+        
+        await Promise.all(checkPromises);
+        
+        if (chatsToMigrate.length === 0) {
+            console.log('No new chats to migrate');
+            return;
+        }
+        
+        // Process in batches of MAX_BATCH_SIZE - 1 (reserve 1 for user doc update)
+        const batches: Array<Array<{ chatId: string; chat: Chat }>> = [];
+        for (let i = 0; i < chatsToMigrate.length; i += MAX_BATCH_SIZE - 1) {
+            batches.push(chatsToMigrate.slice(i, i + MAX_BATCH_SIZE - 1));
+        }
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // Process each batch
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batchChats = batches[batchIndex];
             const batch = writeBatch(db);
-            const chatIds = Object.keys(guestChats);
-
-            for (const chatId of chatIds) {
-                const chat = guestChats[chatId];
-                const chatDocRef = doc(db, "chats", chatId);
-                const chatDocSnap = await getDoc(chatDocRef);
-
-                if (!chatDocSnap.exists()) {
-                    batch.set(chatDocRef, { 
-                        name: chat.name, 
-                        messages: chat.messages,
+            
+            for (const { chatId, chat } of batchChats) {
+                try {
+                    // Save ALL chat data including courseData, metadata, and other properties
+                    const chatData: any = {
+                        name: chat.name || chat.title, 
+                        messages: chat.messages || [],
                         userId: userId,
-                        createdAt: new Date().toISOString()
-                    });
+                        createdAt: chat.createdAt ? new Date(chat.createdAt).toISOString() : new Date().toISOString(),
+                        updatedAt: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString()
+                    };
+                    
+                    // Include optional fields if they exist
+                    if (chat.chatType) chatData.chatType = chat.chatType;
+                    if (chat.classGroupId) chatData.classGroupId = chat.classGroupId;
+                    if (chat.members) chatData.members = chat.members;
+                    if (chat.courseData) {
+                        // Save complete courseData including assignments, exams, and all course info
+                        chatData.courseData = chat.courseData;
+                    }
+                    if (chat.metadata) {
+                        // Save metadata including quizzes, study plans, topics covered
+                        chatData.metadata = chat.metadata;
+                    }
+                    
+                    const chatDocRef = doc(db, "chats", chatId);
+                    batch.set(chatDocRef, chatData);
+                } catch (error) {
+                    console.warn(`Failed to prepare chat ${chatId} for migration:`, error);
+                    errorCount++;
                 }
             }
             
-            const userDocRef = doc(db, "users", userId);
-            batch.set(userDocRef, { chats: chatIds }, { merge: true });
+            // Update user doc with chat IDs (only in the last batch to avoid overwriting)
+            if (batchIndex === batches.length - 1) {
+                const userDocRef = doc(db, "users", userId);
+                batch.set(userDocRef, { chats: chatIds }, { merge: true });
+            }
             
-            await batch.commit();
+            try {
+                await batch.commit();
+                successCount += batchChats.length;
+                console.log(`✅ Migrated batch ${batchIndex + 1}/${batches.length} (${batchChats.length} chats)`);
+            } catch (error: any) {
+                // Check if it's a document size limit error
+                if (error?.code === 'invalid-argument' || error?.message?.includes('size')) {
+                    console.warn('⚠️ One or more chats may be too large for Firestore. Attempting to migrate messages in chunks...');
+                    // Try to save with limited messages if document is too large
+                    for (const { chatId, chat } of batchChats) {
+                        try {
+                            const limitedChatData: any = {
+                                name: chat.name || chat.title,
+                                messages: (chat.messages || []).slice(-500), // Keep last 500 messages
+                                userId: userId,
+                                createdAt: chat.createdAt ? new Date(chat.createdAt).toISOString() : new Date().toISOString(),
+                                updatedAt: chat.updatedAt ? new Date(chat.updatedAt).toISOString() : new Date().toISOString()
+                            };
+                            
+                            if (chat.chatType) limitedChatData.chatType = chat.chatType;
+                            if (chat.classGroupId) limitedChatData.classGroupId = chat.classGroupId;
+                            if (chat.members) limitedChatData.members = chat.members;
+                            if (chat.courseData) limitedChatData.courseData = chat.courseData;
+                            if (chat.metadata) limitedChatData.metadata = chat.metadata;
+                            
+                            const limitedBatch = writeBatch(db);
+                            const chatDocRef = doc(db, "chats", chatId);
+                            limitedBatch.set(chatDocRef, limitedChatData);
+                            await limitedBatch.commit();
+                            successCount++;
+                            console.log(`✅ Migrated chat ${chatId} with limited messages (last 500)`);
+                        } catch (limitedError) {
+                            console.error(`❌ Failed to migrate chat ${chatId} even with limited messages:`, limitedError);
+                            errorCount++;
+                        }
+                    }
+                } else {
+                    console.error(`❌ Batch ${batchIndex + 1} migration failed:`, error);
+                    errorCount += batchChats.length;
+                }
+            }
+        }
+        
+        // Only clear guest data if migration was mostly successful
+        if (successCount > 0) {
             clearGuestData();
-            console.log('Guest data migrated successfully');
+            console.log(`✅ Guest data migration completed: ${successCount} chats migrated${errorCount > 0 ? `, ${errorCount} failed` : ''}`);
+        } else {
+            console.warn('⚠️ No chats were migrated successfully. Guest data preserved.');
         }
     } catch (error) {
-        console.error('Error migrating guest data:', error);
+        console.error('❌ Error migrating guest data:', error);
         // Don't throw error - let user continue to dashboard
+        // Guest data will remain in localStorage for retry
     }
 }
 
@@ -348,6 +452,23 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
       // Store guest info in localStorage
       localStorage.setItem('guestUser', JSON.stringify(guestUser));
       console.log("Stored guest user in localStorage");
+
+      // Sign in anonymously so Firestore rules recognize the session
+      const anonCred = await signInAnonymously(auth);
+      const anonUid = anonCred.user?.uid;
+
+      // Create/update minimal user profile for anonymous user
+      if (anonUid) {
+        try {
+          await setDoc(doc(db, "users", anonUid), {
+            displayName: username,
+            isAnonymous: true,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) {
+          console.warn("Failed to write anonymous user profile:", e);
+        }
+      }
 
       // Show success message
         toast({ 

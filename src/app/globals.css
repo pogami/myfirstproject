@@ -1222,3 +1222,19 @@ body {
   background-color: transparent !important;
 }
 
+/* Sonner toast overlapping styles */
+[data-sonner-toaster] {
+  --width: 356px;
+  --gap: 0px;
+}
+
+[data-sonner-toast] {
+  margin-bottom: 0px !important;
+  margin-top: 0px !important;
+}
+
+[data-sonner-toast]:not(:first-child) {
+  margin-top: -5px !important;
+  transform: translateY(-5px) !important;
+}
+

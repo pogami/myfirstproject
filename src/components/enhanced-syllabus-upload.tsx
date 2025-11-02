@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, Users, Bot, Brain, CheckCircle, AlertTriangle } from "lucide-react";
+import { Upload, FileText, X, Users, Bot, Brain, CheckCircle, AlertTriangle, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/hooks/use-chat-store";
@@ -403,13 +403,11 @@ export default function EnhancedSyllabusUpload() {
                 <Card>
                     <CardContent className="pt-6">
                         <div className="text-center space-y-4">
-                            <AnalyzingIcon className="mx-auto" />
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2">AI-Powered Syllabus Analysis</h3>
-                                <p className="text-muted-foreground">{currentMessage}</p>
+                            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>{currentMessage}</span>
                             </div>
                             <Progress value={progress} className="w-full" />
-                            <p className="text-sm text-muted-foreground">{progress}% Complete</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -495,6 +493,13 @@ export default function EnhancedSyllabusUpload() {
                                     <Badge variant="outline">TXT</Badge>
                                     <Badge variant="outline">Images</Badge>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 p-3 rounded-md border bg-muted/30 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <Shield className="h-5 w-5" />
+                                <span>Processed in your browser; only extracted text is sent for AI parsing, we never store the original file, and any parsed course data saved to your account can be deleted.</span>
                             </div>
                         </div>
                     </CardContent>

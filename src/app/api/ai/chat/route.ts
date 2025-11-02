@@ -22,6 +22,94 @@ async function searchDuckDuckGo(query: string): Promise<string> {
   }
 }
 
+// Web content scraping function
+async function searchWebContent(query: string): Promise<string> {
+  try {
+    console.log(`🔍 Web scraping for: ${query}`);
+    
+    // Try to get search results from DuckDuckGo HTML
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+    
+    if (response.ok) {
+      const html = await response.text();
+      
+      // Extract text content from search results
+      const textMatch = html.match(/<a[^>]*class="result__a"[^>]*>([^<]+)<\/a>/g);
+      if (textMatch && textMatch.length > 0) {
+        const results = textMatch.slice(0, 3).map(match => {
+          const textMatch = match.match(/>([^<]+)</);
+          return textMatch ? textMatch[1] : '';
+        }).filter(text => text.length > 0);
+        
+        if (results.length > 0) {
+          return results.join(' ');
+        }
+      }
+    }
+    
+    return '';
+  } catch (error) {
+    console.log('Web scraping failed:', error);
+    return '';
+  }
+}
+
+// Weather data fetching function
+async function fetchWeatherData(query: string): Promise<string> {
+  try {
+    // Extract location from query
+    const locationMatch = query.match(/(?:in|at|for)\s+([^,]+)(?:,\s*([^,]+))?/i);
+    let location = 'Atlanta, Georgia'; // default
+    
+    if (locationMatch) {
+      const city = locationMatch[1]?.trim();
+      const state = locationMatch[2]?.trim();
+      location = state ? `${city}, ${state}` : city;
+    }
+    
+    console.log(`🌤️ Fetching weather for: ${location}`);
+    
+    // Use wttr.in free weather API
+    const city = location.split(',')[0].trim();
+    const weatherUrl = `https://wttr.in/${encodeURIComponent(city)}?format=j1`;
+    
+    const response = await fetch(weatherUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (data.current_condition && data.current_condition[0]) {
+        const current = data.current_condition[0];
+        return `Current weather in ${location}:
+- Temperature: ${current.temp_F}°F (feels like ${current.FeelsLikeF}°F)
+- Conditions: ${current.weatherDesc[0].value}
+- Humidity: ${current.humidity}%
+- Wind: ${current.windspeedMiles} mph ${current.winddir16Point}
+- Cloud cover: ${current.cloudcover}%
+- Pressure: ${current.pressure} mb
+- Visibility: ${current.visibility} miles`;
+      }
+    }
+    
+    return `Unable to fetch current weather data for ${location}. Please try again later.`;
+    
+  } catch (error) {
+    console.error('Weather fetch error:', error);
+    return 'Unable to fetch weather data at this time.';
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { message, context, conversationHistory } = await request.json();
@@ -36,17 +124,61 @@ export async function POST(request: NextRequest) {
     // Check if we need current information and search for it
     let currentInfo = '';
     const messageLower = message.toLowerCase();
-    const needsCurrentInfo = messageLower.includes('news') || 
-                           messageLower.includes('current') || 
-                           messageLower.includes('today') || 
-                           messageLower.includes('recent') ||
-                           messageLower.includes('trump') ||
-                           messageLower.includes('tylenol') ||
-                           messageLower.includes('politics') ||
-                           messageLower.includes('2025');
+    
+    // Check for weather queries
+    const isWeatherQuery = messageLower.includes('weather') || 
+                          messageLower.includes('temperature') || 
+                          messageLower.includes('forecast') ||
+                          messageLower.includes('rain') ||
+                          messageLower.includes('sunny') ||
+                          messageLower.includes('cloudy');
+    
+    // Check for ANY query that might need real-time data
+    const needsRealTimeData = messageLower.includes('news') || 
+                             messageLower.includes('current') || 
+                             messageLower.includes('today') || 
+                             messageLower.includes('recent') ||
+                             messageLower.includes('now') ||
+                             messageLower.includes('latest') ||
+                             messageLower.includes('what is') ||
+                             messageLower.includes('how is') ||
+                             messageLower.includes('what are') ||
+                             messageLower.includes('who is') ||
+                             messageLower.includes('when is') ||
+                             messageLower.includes('where is') ||
+                             messageLower.includes('why is') ||
+                             messageLower.includes('trump') ||
+                             messageLower.includes('tylenol') ||
+                             messageLower.includes('politics') ||
+                             messageLower.includes('2025') ||
+                             messageLower.includes('stock') ||
+                             messageLower.includes('price') ||
+                             messageLower.includes('crypto') ||
+                             messageLower.includes('bitcoin') ||
+                             messageLower.includes('nba') ||
+                             messageLower.includes('fbi') ||
+                             messageLower.includes('ceo') ||
+                             messageLower.includes('tesla') ||
+                             messageLower.includes('space') ||
+                             messageLower.includes('ai') ||
+                             messageLower.includes('artificial intelligence');
 
-    if (needsCurrentInfo) {
-      const searchResults = await searchDuckDuckGo(message);
+    if (isWeatherQuery) {
+      // Fetch real weather data
+      const weatherData = await fetchWeatherData(message);
+      currentInfo = weatherData ? `\n\nCurrent weather information:\n${weatherData}\n` : '';
+    } else if (needsRealTimeData) {
+      // Try multiple search methods
+      let searchResults = '';
+      
+      // Try DuckDuckGo first
+      searchResults = await searchDuckDuckGo(message);
+      
+      // If DuckDuckGo fails, try web scraping
+      if (!searchResults) {
+        searchResults = await searchWebContent(message);
+      }
+      
       currentInfo = searchResults ? `\n\nCurrent information:\n${searchResults}\n` : '';
     }
 

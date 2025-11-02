@@ -19,6 +19,12 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----E
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 
+# Real-Time Web Search (Server-side only - KEEP PRIVATE!)
+# Get these from: https://console.cloud.google.com/ (API Key) and https://cse.google.com/ (Search Engine ID)
+GOOGLE_SEARCH_API_KEY=your_google_search_api_key_here
+GOOGLE_SEARCH_ENGINE_ID=your_search_engine_id_here
+SEARCH_RESULTS_LIMIT=12  # Optional: Number of results (1-20, default: 12)
+
 # Admin Password (for admin and feedback pages)
 ADMIN_PASSWORD=your_admin_password_here
 
@@ -31,3 +37,5 @@ ADMIN_PASSWORD=your_admin_password_here
 # 6. Get Google AI API key from: https://aistudio.google.com/app/apikey
 # 7. Get OpenAI API key from: https://platform.openai.com/api-keys
 # 8. For Firebase Admin SDK, go to Firebase Console > Project Settings > Service Accounts > Generate New Private Key
+# 9. Get Google Search API key from: https://console.cloud.google.com/ → Enable "Custom Search API" → Create API Key
+# 10. Get Search Engine ID from: https://cse.google.com/ → Create search engine → Copy "Search engine ID"

@@ -1237,27 +1237,19 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                         Re-upload Syllabus
                       </Button>
                     </div>
-                    <div className="mt-3 flex items-center gap-3 max-w-md mx-auto">
-                      <div className="h-px bg-muted-foreground/30 flex-1" />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">Upload another syllabus</span>
-                      <div className="h-px bg-muted-foreground/30 flex-1" />
-                    </div>
+                    {/* Removed helper text per request */}
                   </CardContent>
                 </Card>
               )}
               
               
-              {/* Security Message for Upload Page */}
-              {!redirectToSignup && (
-                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
-                    <Shield className="size-4" />
-                    <p className="text-sm font-medium">
-                      Your syllabus is secured safely and is only used to better match you with other students.
-                    </p>
-                  </div>
+              {/* Privacy/processing disclaimer */}
+              <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-blue-900 dark:text-blue-100">
+                  <Shield className="h-5 w-5" />
+                  <span>Processed in your browser; only extracted text is sent for AI parsing, we never store the original file, and any parsed course data saved to your account can be deleted.</span>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </CardContent>

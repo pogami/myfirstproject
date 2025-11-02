@@ -5,88 +5,11 @@ import { createAIResponseNotification } from '@/lib/notifications/server';
 
 export const runtime = 'nodejs';
 
-// Enhanced web search function with source links
+// SearchResult interface for sources
 interface SearchResult {
   title: string;
   url: string;
   snippet: string;
-}
-
-async function searchWebWithSources(query: string): Promise<{ content: string; sources: SearchResult[] }> {
-  try {
-    console.log(`🔍 Searching web for: ${query}`);
-    
-    // Try DuckDuckGo first
-    const ddgResponse = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
-    const ddgData = await ddgResponse.json();
-    
-    const sources: SearchResult[] = [];
-    let content = '';
-    
-    // Process abstract
-    if (ddgData.AbstractText && ddgData.AbstractText.length > 10) {
-      content = ddgData.AbstractText;
-      if (ddgData.AbstractURL) {
-        sources.push({
-          title: ddgData.Heading || 'Abstract',
-          url: ddgData.AbstractURL,
-          snippet: ddgData.AbstractText.substring(0, 150) + '...'
-        });
-      }
-    }
-    
-    // Process results
-    if (ddgData.Results && ddgData.Results.length > 0) {
-      const results = ddgData.Results.slice(0, 3);
-      const resultTexts = results.map((result: any) => {
-        sources.push({
-          title: result.Text || result.Heading || 'Search Result',
-          url: result.FirstURL || result.URL || '#',
-          snippet: (result.Text || result.Body || '').substring(0, 150) + '...'
-        });
-        return result.Text || result.Body;
-      }).filter(Boolean);
-      
-      if (resultTexts.length > 0 && !content) {
-        content = resultTexts.join(' ');
-      }
-    }
-    
-    // Fallback: Try searching for current news specifically
-    if (query.toLowerCase().includes('trump') && query.toLowerCase().includes('tylenol')) {
-      console.log('🔍 Searching for Trump Tylenol news specifically...');
-      content = `Recent news indicates that former President Trump has made controversial statements about Tylenol (acetaminophen) and pregnancy. Medical experts have strongly disputed these claims, stating there is no reliable scientific evidence linking acetaminophen use during pregnancy to autism. Major medical organizations continue to recommend acetaminophen as safe for pain relief during pregnancy when used as directed.`;
-    sources.push({
-        title: 'Medical Expert Analysis',
-        url: 'https://www.medicalnewstoday.com/articles/acetaminophen-pregnancy-safety',
-        snippet: 'Medical experts dispute claims about acetaminophen and autism...'
-      });
-    }
-    
-    if (content) {
-      console.log(`✅ Web search found: ${content.substring(0, 100)}...`);
-      return { content, sources };
-    }
-    
-    console.log('❌ No web results found');
-    return { content: '', sources: [] };
-  } catch (error) {
-    console.log('❌ Web search failed:', error);
-    
-    // Provide specific fallback for Trump/Tylenol queries
-    if (query.toLowerCase().includes('trump') && query.toLowerCase().includes('tylenol')) {
-      return {
-        content: `There has been recent coverage about former President Trump mentioning Tylenol in relation to autism concerns. Medical experts have consistently refuted any claims about Tylenol causing autism during pregnancy, and major health organizations continue to recommend it as safe when used properly.`,
-        sources: [{
-          title: 'Medical Expert Response',
-          url: 'https://www.cdc.gov/pregnancy/meds/treatingfortwo/acetaminophen.html',
-          snippet: 'CDC guidance on acetaminophen use during pregnancy...'
-        }]
-      };
-    }
-    
-    return { content: '', sources: [] };
-  }
 }
 
 // Removed Ollama - now using Gemini + OpenAI fallback
@@ -103,7 +26,8 @@ export async function POST(request: NextRequest) {
       allSyllabi,
       userId,
       chatId,
-      chatTitle 
+      chatTitle,
+      isSearchRequest = false
     } = await request.json();
     
     if (!question) {
@@ -125,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Check if it's a general academic question (not CourseConnect support)
     const isGeneralQuestion = /^(what is|how do|explain|solve|calculate|define|tell me about|help me with).*(math|science|homework|biology|chemistry|physics|history|english|literature|essay|assignment|quiz|test|exam)/i.test(cleanedQuestion);
     
-    if (isGeneralQuestion) {
+    if (isGeneralQuestion && !isSearchRequest) {
       return NextResponse.json({
         success: true,
         answer: "I'm CourseConnect's support assistant. I can only help with questions about our platform. For academic help, try our AI tutoring features! Please sign up here: [Get Started](https://courseconnectai.com/dashboard)",
@@ -166,8 +90,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Check if we need current information and search for it
-    let currentInfo = '';
-    let sources: SearchResult[] = [];
+    let sources: SearchResult[] = []; // Will be populated by AI service if search is performed
     const questionLower = cleanedQuestion.toLowerCase();
     const needsCurrentInfo = questionLower.includes('news') || 
                            questionLower.includes('current') || 
@@ -187,11 +110,7 @@ export async function POST(request: NextRequest) {
                            questionLower.includes('country') ||
                            questionLower.includes('history');
 
-    if (needsCurrentInfo) {
-      const searchResults = await searchWebWithSources(cleanedQuestion);
-      currentInfo = searchResults.content ? `\n\nCurrent information:\n${searchResults.content}\n` : '';
-      sources = searchResults.sources;
-    }
+    // AI service will handle search when isSearchRequest is true
 
     // Build natural, human-like prompt with file information
     const convoContext = conversationHistory?.length > 0 
@@ -230,6 +149,7 @@ export async function POST(request: NextRequest) {
       syllabiContext += `\nYou can help with ANY of these courses! The student can ask about any topic, assignment, or exam from any of their classes.\n\n`;
     }
 
+    // Simple prompt - AI service will handle search and insert results if needed
     const prompt = `You're CourseConnect AI - an all-in-one academic assistant${allSyllabi && allSyllabi.length > 0 ? ` with full access to the student's course syllabi` : ''}.
 
 ${syllabiContext}
@@ -239,6 +159,7 @@ You help with:
 - Course-specific help (assignments, exams, topics)
 - Study strategies and explanations
 - General knowledge and learning
+- Current events and real-time information (when search results are provided)
 
 Style rules:
 - Be conversational and helpful
@@ -255,10 +176,6 @@ If the user's question is mathematical or an equation, strictly follow these rul
 
 Context: ${context || 'General Chat'}
 
-When talking about current events or news, be conversational but factual. You can reference the information provided to give context.
-
-${currentInfo}
-
 ${convoContext}User: ${cleanedQuestion}
 
 CourseConnect AI:`;
@@ -266,6 +183,7 @@ CourseConnect AI:`;
     // Use Gemini + OpenAI fallback (no more Ollama)
     let aiResponse: string;
     let selectedModel: string;
+    let aiResult: any = null; // Store AI result for later use
     
     try {
       console.log('Using Gemini + OpenAI fallback system');
@@ -277,31 +195,26 @@ CourseConnect AI:`;
         enrichedContext = `${context || 'General Chat'}${syllabiContext}`;
       }
       
-      const aiResult = await provideStudyAssistanceWithFallback({
+      // Let AI service handle search directly (simpler approach)
+      aiResult = await provideStudyAssistanceWithFallback({
         question: cleanedQuestion,
         context: enrichedContext,
-        conversationHistory: conversationHistory || []
+        conversationHistory: conversationHistory || [],
+        isSearchRequest: isSearchRequest
       });
       
       aiResponse = aiResult.answer;
       selectedModel = aiResult.provider;
+      sources = aiResult.sources || []; // Sources come from AI service when it performs search
       
-      console.log(`AI response from ${selectedModel}: ${aiResponse.substring(0, 100)}...`);
       
     } catch (error) {
       console.log('AI service failed, using intelligent fallback response');
       
-      // Intelligent fallback that can handle current events if search succeeded
+      // Intelligent fallback for when AI service fails
       const lowerQuestion = cleanedQuestion.toLowerCase();
       
-      if (currentInfo) {
-        // We have current info from search, provide a smart response
-        if (lowerQuestion.includes('trump') && lowerQuestion.includes('tylenol')) {
-          aiResponse = `${currentInfo}\n\nYeah, that's been a big topic lately! The science on this is pretty clear though - the claims made don't hold up to medical evidence. What specific aspect of this story are you curious about?`;
-    } else {
-          aiResponse = `Based on what I found: ${currentInfo.substring(0, 300)}...\n\nThat's the latest info I could find on this topic. Want to dive deeper into any specific aspect?`;
-        }
-      } else if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {
+      if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {
         aiResponse = "Hey there! I'm CourseConnect AI, your friendly study buddy! I'm here to help with academics, homework questions, study strategies, or just chat about whatever's on your mind. What's up today?";
       } else if (lowerQuestion.includes('who are you')) {
         aiResponse = "I'm CourseConnect AI, your friendly study buddy! I was created by a solo developer who built CourseConnect as a unified platform for college students. I'm here to help you with studies, answer questions, or just chat about whatever's on your mind. What's up?";
@@ -356,14 +269,52 @@ CourseConnect AI:`;
       }
     }
 
-    return NextResponse.json({
+    // Filter and rank sources to only those most relevant to the final answer
+    let filteredSources = sources;
+    try {
+      if (Array.isArray(sources) && sources.length > 0 && typeof aiResponse === 'string') {
+        const stop = new Set(['the','a','an','and','or','to','of','in','on','for','with','by','at','is','are','was','were','it','as','that','this','these','those','from','be','can','will']);
+        const tokenize = (s: string) => (s || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .split(/\s+/)
+          .filter(t => t && !stop.has(t) && t.length > 2);
+        const answerTokens = new Set(tokenize(aiResponse));
+        const scored = sources.map((s) => {
+          const hay = `${s.title || ''} ${s.snippet || ''}`.toLowerCase();
+          let score = 0;
+          answerTokens.forEach(t => { if (hay.includes(t)) score += 1; });
+          try { const host = new URL(s.url).hostname.replace(/^www\./,''); if (host) score += 0.25; } catch {}
+          return { s, score };
+        });
+        const maxKeep = Math.min(parseInt(process.env.SEARCH_RESULTS_LIMIT || '12', 10), 20);
+        const used = scored
+          .filter(x => x.score > 0)
+          .sort((a,b) => b.score - a.score)
+          .slice(0, maxKeep)
+          .map(x => x.s);
+        filteredSources = used.length > 0 ? used : sources.slice(0, Math.max(3, Math.min(10, sources.length)));
+      }
+    } catch (e) {
+      console.warn('Source ranking failed; returning original sources:', e);
+      filteredSources = sources;
+    }
+
+    // Use isSearchRequest from AI result if available (more accurate), otherwise use original request
+    const finalIsSearchRequest = aiResult?.isSearchRequest !== undefined ? aiResult.isSearchRequest : isSearchRequest;
+    
+    const response = {
       success: true,
       answer: aiResponse,
       provider: selectedModel || 'fallback',
       shouldRespond: true,
       timestamp: new Date().toISOString(),
-      sources: sources.length > 0 ? sources : undefined
-    });
+      sources: filteredSources.length > 0 ? filteredSources : undefined,
+      isSearchRequest: finalIsSearchRequest // CRITICAL: Include flag from AI service result
+    };
+    
+    
+    return NextResponse.json(response);
     
   } catch (error: any) {
     console.error('Chat API error:', error);

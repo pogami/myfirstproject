@@ -69,21 +69,18 @@ export function MessageTimestamp({ timestamp, className = "" }: MessageTimestamp
   }
 
   return (
-    <div className={`flex items-center gap-0.5 text-[10px] text-muted-foreground/70 ${className}`}>
+    <div className={`flex items-center gap-1 text-sm text-muted-foreground/80 font-medium ${className}`}>
       <span className="font-mono">
         {isRealTime ? (
-          <span className="text-green-500/80 animate-pulse">
+          <span className="text-green-500/90 animate-pulse font-semibold">
             {formatTime(messageTime)}
           </span>
         ) : (
-          <span className="text-muted-foreground/60">
+          <span className="text-muted-foreground/70 font-medium">
             {timeDisplay}
           </span>
         )}
       </span>
-      {isRealTime && (
-        <div className="w-0.5 h-0.5 bg-green-500/60 rounded-full animate-pulse" />
-      )}
     </div>
   );
 }

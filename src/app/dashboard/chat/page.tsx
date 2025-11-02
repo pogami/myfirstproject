@@ -21,6 +21,9 @@ import { doc, getDoc } from "firebase/firestore";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { OnlineUsersIndicator } from "@/components/online-users-indicator";
 
+// Lightweight debug flag to silence heavy client logs in production
+const DEBUG = false;
+
 // Helper function to get guest display name from localStorage
 const getGuestDisplayName = (): string => {
   if (typeof window === 'undefined') return 'Guest User';
@@ -332,7 +335,14 @@ export default function ChatPage() {
 
     // Initialize general chats when component mounts
     useEffect(() => {
-        initializeGeneralChats();
+        const idle = (cb: () => void) => {
+            if (typeof (window as any).requestIdleCallback === 'function') {
+                (window as any).requestIdleCallback(cb, { timeout: 1200 });
+            } else {
+                setTimeout(cb, 0);
+            }
+        };
+        idle(() => initializeGeneralChats());
     }, [initializeGeneralChats]);
 
     // Handle URL parameters for specific chat tabs (only on initial load)
@@ -343,26 +353,32 @@ export default function ChatPage() {
         
         const tabParam = searchParams.get('tab');
         const chatIdParam = searchParams.get('chatId');
-        const targetChatId = chatIdParam || tabParam;
+        let targetChatId = chatIdParam || tabParam;
+        
+        // Map friendly alias to internal general chat id
+        if (targetChatId === 'general') {
+            const generalIds = ['private-general-chat', 'public-general-chat', 'private-general-chat-guest'];
+            targetChatId = generalIds.find(id => !!chats[id]) || 'private-general-chat-guest';
+        }
         
         if (targetChatId && !isStoreLoading) {
             urlProcessedRef.current = true;
-            console.log('URL parameter found (initial load):', { tabParam, chatIdParam, targetChatId });
+            if (DEBUG) console.log('URL parameter found (initial load):', { tabParam, chatIdParam, targetChatId });
             if (chats[targetChatId]) {
-                console.log('Chat exists, switching to:', targetChatId);
+                if (DEBUG) console.log('Chat exists, switching to:', targetChatId);
                 setCurrentTab(targetChatId);
                 try { localStorage.setItem('cc-active-tab', targetChatId); } catch {}
             } else {
-                console.log('Chat not found, waiting for it to be created:', targetChatId);
+                if (DEBUG) console.log('Chat not found, waiting for it to be created:', targetChatId);
                 const start = Date.now();
                 const interval = setInterval(() => {
                     if (chats[targetChatId] || Date.now() - start > 5000) {
                         if (chats[targetChatId]) {
-                            console.log('Chat created, switching to:', targetChatId);
+                            if (DEBUG) console.log('Chat created, switching to:', targetChatId);
                             setCurrentTab(targetChatId);
                             try { localStorage.setItem('cc-active-tab', targetChatId); } catch {}
                         } else {
-                            console.log('Chat creation timeout, staying on current tab');
+                            if (DEBUG) console.log('Chat creation timeout, staying on current tab');
                         }
                         clearInterval(interval);
                     }
@@ -375,22 +391,48 @@ export default function ChatPage() {
         }
     }, [searchParams, chats, setCurrentTab, isStoreLoading]);
 
+    // Respond to subsequent URL param changes to switch chats seamlessly
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        const chatIdParam = searchParams.get('chatId');
+        let targetChatId = chatIdParam || tabParam;
+        if (targetChatId === 'general') {
+            const generalIds = ['private-general-chat', 'public-general-chat', 'private-general-chat-guest'];
+            targetChatId = generalIds.find(id => !!chats[id]) || 'private-general-chat-guest';
+        }
+        if (!targetChatId) return;
+        if (currentTab === targetChatId) return;
+        if (chats[targetChatId] || !isStoreLoading) {
+            setCurrentTab(targetChatId);
+            try { localStorage.setItem('cc-active-tab', targetChatId); } catch {}
+        }
+    }, [searchParams, currentTab, chats, isStoreLoading, setCurrentTab]);
+
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
         try {
-            console.log('Initializing auth listener...');
+            if (DEBUG) console.log('Initializing auth listener...');
             // Check if we're online before initializing auth listener
-            if (navigator.onLine) {
-                const unsubscribe = initializeAuthListener();
-                console.log('Auth listener initialized, unsubscribe function:', typeof unsubscribe);
-            } else {
-                console.log('Offline mode - skipping auth listener initialization');
-            }
+            const idle = (cb: () => void) => {
+                if (typeof (window as any).requestIdleCallback === 'function') {
+                    (window as any).requestIdleCallback(cb, { timeout: 1200 });
+                } else {
+                    setTimeout(cb, 0);
+                }
+            };
+            idle(() => {
+                if (navigator.onLine) {
+                    const unsubscribe = initializeAuthListener();
+                    if (DEBUG) console.log('Auth listener initialized, unsubscribe function:', typeof unsubscribe);
+                } else {
+                    if (DEBUG) console.log('Offline mode - skipping auth listener initialization');
+                }
+            });
         } catch (error) {
             console.warn('Failed to initialize auth listener:', error);
             // Force load if auth fails
             setTimeout(() => {
-                console.log('Auth failed, forcing load');
+                if (DEBUG) console.log('Auth failed, forcing load');
                 setForceLoad(true);
             }, 1000);
         }
@@ -401,7 +443,7 @@ export default function ChatPage() {
         if (typeof window === 'undefined') return;
 
         const handleOnline = () => {
-            console.log('Back online - reinitializing auth listener');
+            if (DEBUG) console.log('Back online - reinitializing auth listener');
             try {
                 initializeAuthListener();
             } catch (error) {
@@ -410,7 +452,7 @@ export default function ChatPage() {
         };
 
         const handleOffline = () => {
-            console.log('Gone offline - continuing in offline mode');
+            if (DEBUG) console.log('Gone offline - continuing in offline mode');
         };
 
         window.addEventListener('online', handleOnline);
@@ -429,10 +471,12 @@ export default function ChatPage() {
                 const unsubscribe = auth.onAuthStateChanged(
                     async (user: any) => {
                         setUser(user);
-                        // Check if user is guest/anonymous
-                        setIsGuest(user?.isAnonymous || user?.isGuest || false);
+                        // Check if user is guest/anonymous - also check localStorage for guest data
+                        const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+                        const isGuestUser = user?.isAnonymous || user?.isGuest || (guestData !== null);
+                        setIsGuest(isGuestUser);
                         
-                        // Load profile picture from Firestore for authenticated users
+                        // Load profile picture for authenticated users (Firestore first, then auth.photoURL fallback)
                         if (user && !user.isGuest && !user.isAnonymous) {
                             try {
                                 const userDocRef = doc(db, "users", user.uid);
@@ -441,7 +485,15 @@ export default function ChatPage() {
                                     const userData = userDocSnap.data();
                                     if (userData.profilePicture) {
                                         setUserProfilePicture(userData.profilePicture);
+                                    } else if (user.photoURL) {
+                                        setUserProfilePicture(user.photoURL);
+                                    } else {
+                                        setUserProfilePicture("");
                                     }
+                                } else if (user.photoURL) {
+                                    setUserProfilePicture(user.photoURL);
+                                } else {
+                                    setUserProfilePicture("");
                                 }
                             } catch (error) {
                                 console.error("Error loading profile picture:", error);
@@ -466,18 +518,24 @@ export default function ChatPage() {
                     (error: any) => {
                         console.warn("Auth state error in chat page:", error);
                         setUser(null);
-                        setIsGuest(false);
+                        // Check localStorage for guest user even on auth error
+                        const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+                        setIsGuest(guestData !== null);
                     }
                 );
                 return unsubscribe;
             } else {
                 setUser(null);
-                setIsGuest(false);
+                // Check localStorage for guest user even if auth not available
+                const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+                setIsGuest(guestData !== null);
             }
         } catch (authError) {
             console.warn("Auth initialization error in chat page:", authError);
             setUser(null);
-            setIsGuest(false);
+            // Check localStorage for guest user even on auth error
+            const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+            setIsGuest(guestData !== null);
         }
     }, []);
 
@@ -641,13 +699,21 @@ export default function ChatPage() {
         const isPublicChat = currentChat?.chatType === 'public';
         const isClassChat = currentChat?.chatType === 'class';
 
+        // Check if search mode is enabled (globe icon was clicked)
+        let searchModeEnabled = false;
+        if (typeof document !== 'undefined') {
+            const bodyAttr = document.body.getAttribute('data-search-mode');
+            const storageFlag = typeof window !== 'undefined' ? localStorage.getItem('web-search-enabled') : null;
+            searchModeEnabled = bodyAttr === 'true' || storageFlag === 'true';
+        }
+
         // Check if AI chat is disabled
         if (!isFeatureEnabled('aiChat') && shouldCallAI) {
             const userMessage = {
                 id: generateMessageId(),
                 text: messageText,
                 sender: 'user' as const,
-                name: user?.displayName || 'Anonymous',
+                name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
                 userId: user?.uid || 'guest',
                 timestamp: Date.now(),
             };
@@ -675,7 +741,7 @@ export default function ChatPage() {
                 id: generateMessageId(),
                 text: messageText,
                 sender: 'user' as const,
-                name: user?.displayName || 'Anonymous',
+                name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
                 userId: user?.uid || 'guest',
                 timestamp: Date.now(),
             };
@@ -718,7 +784,7 @@ export default function ChatPage() {
             id: generateMessageId(),
             text: messageText,
             sender: 'user' as const,
-            name: user?.displayName || 'Anonymous',
+            name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
             userId: user?.uid || 'guest',
             timestamp: Date.now()
         };
@@ -756,6 +822,13 @@ export default function ChatPage() {
                     // Get userId from logged-in user (notifications only work for authenticated users)
                     const effectiveUserId = user?.uid;
                     
+                    // Check search mode before API call
+                    let searchModeEnabledBeforeAPI = false;
+                    if (typeof document !== 'undefined') {
+                        const bodyAttr = document.body.getAttribute('data-search-mode');
+                        const storageFlag = typeof window !== 'undefined' ? localStorage.getItem('web-search-enabled') : null;
+                        searchModeEnabledBeforeAPI = bodyAttr === 'true' || storageFlag === 'true';
+                    }
                     const requestBody: any = {
                             question: messageText,
                             context: currentChat?.title || 'General Chat',
@@ -764,10 +837,11 @@ export default function ChatPage() {
                                 content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
                             })) || [],
                             shouldCallAI: shouldCallAIFinal,
-                        isPublicChat: isPublicChat, // Only true for community chat, not class chats
-                        userId: effectiveUserId, // Add userId for notification (works for both guest and logged-in users)
-                        chatId: currentTab, // Add chatId for notification
-                        chatTitle: currentChat?.title // Add chatTitle for notification
+                        isPublicChat: isPublicChat,
+                        userId: effectiveUserId,
+                        chatId: currentTab,
+                        chatTitle: currentChat?.title,
+                        isSearchRequest: searchModeEnabledBeforeAPI
                     };
 
                     // Add course data for class chats
@@ -829,6 +903,12 @@ export default function ChatPage() {
                         sources: data.sources,
                         metadata: data.metadata
                     });
+                    
+                    // Disable search mode after successful API call
+                    if (searchModeEnabled) {
+                        document.body.removeAttribute('data-search-mode');
+                        console.log('Search mode disabled after API call');
+                    }
                     
                     // Track conversation metadata for class chats
                     if (isClassChat && data.metadata && currentTab) {
@@ -901,10 +981,248 @@ export default function ChatPage() {
                     sender: 'bot' as const,
                     name: 'CourseConnect AI',
                     timestamp: Date.now(),
-                    sources: aiResponse?.sources || undefined
+                    sources: aiResponse?.sources || undefined,
+                    isSearchRequest: (aiResponse as any)?.isSearchRequest || false // Flag to indicate web search was requested
                 };
+
+                // Add AI response
+                await addMessage(currentTab || 'private-general-chat', aiMessage);
+
+                // Real-time AI response broadcasting is now handled in the chat store
+            } catch (error) {
+                console.error('AI Error:', error);
+                const errorMessage = {
+                    id: generateMessageId(),
+                    text: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+                    sender: 'bot' as const,
+                    name: 'CourseConnect AI',
+                    timestamp: Date.now()
+                };
+                await addMessage(currentTab || 'private-general-chat', errorMessage);
+            } finally {
+                console.log('Setting isLoading to false');
+                setIsLoading(false);
+            }
+        }
+    };
+
+    const handleSearchSelect = async (searchType: string, query: string) => {
+        console.log('🔍 handleSearchSelect called:', { searchType, query, currentTab, isLoading });
+        if (!currentTab || isLoading) {
+            console.log('🔍 handleSearchSelect: Early return due to missing currentTab or isLoading');
+            return;
+        }
+        
+        // Send the message with search flag (no @search prefix needed)
+        setInputValue(query);
+        
+        // Send the message with search flag
+        await handleSendMessageWithSearch(query);
+    };
+
+    const handleSendMessageWithSearch = async (query: string) => {
+        console.log('🔍 handleSendMessageWithSearch called:', { query, currentTab, isLoading });
+        if (!query.trim() || !currentTab || isLoading) {
+            console.log('🔍 handleSendMessageWithSearch: Early return');
+            return;
+        }
+        
+        const messageText = query.trim();
+        const currentChat = chats[currentTab || 'private-general-chat'];
+        const isPublicChat = currentChat?.chatType === 'public';
+        const isClassChat = currentChat?.chatType === 'class';
+
+        // Determine if this message mentions AI
+        const hasAIMention = messageText.includes('@ai') || messageText.includes('@AI');
+        
+        // For public chats, only call AI if explicitly mentioned
+        // For class chats (syllabus-based), always call AI
+        // For private chats, use shouldCallAI setting
+        const shouldCallAIFinal = isClassChat ? true : (isPublicChat ? hasAIMention : true);
+
+        const userMessage = {
+            id: generateMessageId(),
+            text: messageText,
+            sender: 'user' as const,
+            name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
+            userId: user?.uid || 'guest',
+            timestamp: Date.now()
+        };
+
+        // Clear input immediately to prevent spam
+        setInputValue("");
+
+        // Stop typing indicator when message is sent
+        if (currentTab) {
+            pusherStopTyping();
+        }
+
+        // Set loading state immediately for instant thinking animation
+        if (shouldCallAIFinal) {
+            console.log('Setting isLoading to true for search message:', messageText);
+            setIsLoading(true);
+        }
+
+        // Send message via Pusher for real-time broadcasting (this will update other tabs)
+        pusherSendMessage(userMessage);
+
+        // Add user message immediately for instant UI response (non-blocking)
+        addMessage(currentTab || 'private-general-chat', userMessage).catch(console.error);
+
+        // Only get AI response if appropriate
+        if (shouldCallAIFinal) {
+            try {
+                // Get AI response via API call with enhanced error handling
+                let aiResponse;
+                try {
+                    // Determine if this is a class chat and use appropriate endpoint
+                    const apiEndpoint = isClassChat ? '/api/chat/class' : '/api/chat';
+                    console.log(`Making API call to ${apiEndpoint}...`, { isClassChat, hasCourseData: !!currentChat?.courseData });
+                    
+                    // Get userId from logged-in user (notifications only work for authenticated users)
+                    const effectiveUserId = user?.uid;
+                    
+                    const requestBody: any = {
+                            question: messageText,
+                            context: currentChat?.title || 'General Chat',
+                            conversationHistory: currentChat?.messages?.slice(-10).map(msg => ({
+                                role: msg.sender === 'user' ? 'user' : 'assistant',
+                                content: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+                            })) || [],
+                            shouldCallAI: shouldCallAIFinal,
+                        isPublicChat: isPublicChat, // Only true for community chat, not class chats
+                        userId: effectiveUserId, // Add userId for notification (works for both guest and logged-in users)
+                        chatId: currentTab, // Add chatId for notification
+                        chatTitle: currentChat?.title, // Add chatTitle for notification
+                        isSearchRequest: true // Flag to indicate this is a search request
+                    };
+                    
+                    console.log('🔍 Search request body created:', { 
+                        question: requestBody.question, 
+                        isSearchRequest: requestBody.isSearchRequest,
+                        shouldCallAI: requestBody.shouldCallAI 
+                    });
+
+                    // Add course data for class chats
+                    if (isClassChat && currentChat?.courseData) {
+                        requestBody.courseData = currentChat.courseData;
+                        requestBody.chatId = currentTab;
+                        requestBody.metadata = currentChat.metadata; // Send metadata for persistent memory
+                        console.log('Including course data:', {
+                            courseName: currentChat.courseData.courseName,
+                            courseCode: currentChat.courseData.courseCode,
+                            hasMetadata: !!currentChat.metadata
+                        });
+                    }
+                    
+                    // For General Chat: Include ALL syllabi from all class chats
+                    if (currentTab === 'private-general-chat') {
+                        const allClassChats = Object.values(chats).filter(chat => chat.chatType === 'class' && chat.courseData);
+                        if (allClassChats.length > 0) {
+                            requestBody.allSyllabi = allClassChats.map(chat => ({
+                                courseName: chat.courseData?.courseName || chat.title,
+                                courseCode: chat.courseData?.courseCode,
+                                professor: chat.courseData?.professor,
+                                description: chat.courseData?.description,
+                                topics: chat.courseData?.topics,
+                                exams: chat.courseData?.exams,
+                                assignments: chat.courseData?.assignments,
+                                gradingPolicy: chat.courseData?.gradingPolicy,
+                                officeHours: chat.courseData?.officeHours
+                            }));
+                        }
+                    }
+                    
+                    console.log('Making API request with body:', {
+                        question: requestBody.question.substring(0, 50) + '...',
+                        context: requestBody.context,
+                        conversationHistory: requestBody.conversationHistory.length,
+                        isSearchRequest: requestBody.isSearchRequest
+                    });
+                    
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestBody),
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('API response received:', {
+                        success: data.success,
+                        answerLength: data.answer?.length || 0,
+                        provider: data.provider,
+                        sources: data.sources?.length || 0
+                    });
+                    
+                    // Update conversation metadata if available
+                    if (data.metadata) {
+                        const currentMetadata = currentChat?.metadata || {};
+                        const updatedMetadata = {
+                            ...currentMetadata,
+                            lastTopic: data.metadata.lastTopic || currentMetadata.lastTopic,
+                            strugglingWith: data.metadata.strugglingWith || currentMetadata.strugglingWith
+                        };
+                        
+                        // Update chat metadata in store (this would need to be persisted to Firebase in production)
+                        console.log('Updated conversation metadata:', updatedMetadata);
+                    }
+                    
+                    aiResponse = data;
+                } catch (apiError) {
+                    console.warn("API call failed, using enhanced fallback:", apiError);
+                    
+                    // Enhanced fallback based on error type
+                    let fallbackMessage = "I'm having some trouble connecting right now, but don't worry! 🤔\n\n**Here's what you can do:**\n\n📚 Review your syllabus and course materials in the sidebar\n📝 Check your upcoming assignments and exam dates\n🔍 Browse through your course topics\n⏰ Try asking me again in a moment\n\nI'll be back up and running soon!";
+                    
+                    if (apiError instanceof Error) {
+                        if (apiError.name === 'TimeoutError' || apiError.message.includes('timeout')) {
+                            fallbackMessage = "Hey there! I'm taking a bit longer than usual to respond, but I'm still here to help! I can assist with:\n\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat would you like to talk about?";
+                        } else if (apiError.message.includes('network') || apiError.message.includes('fetch')) {
+                            fallbackMessage = "Hey! I'm having some network connectivity issues right now, but I'm still here to help! I can assist with:\n\n📚 Academic subjects and homework\n💡 Study strategies and tips\n📝 Writing and research\n🧠 Problem-solving\n💬 General questions and conversation\n\nWhat's on your mind?";
+                        }
+                    }
+                    
+                    aiResponse = {
+                        answer: fallbackMessage,
+                        provider: 'fallback',
+                        success: true
+                    };
+                }
                 
-                console.log('💬 Creating AI message with sources:', aiMessage.sources?.length || 0, aiMessage.sources);
+                // Debug logging to see what aiResponse contains
+                console.log('ChatPage - aiResponse:', aiResponse, 'type:', typeof aiResponse, 'answer type:', typeof (aiResponse as any)?.answer);
+
+                // Ensure we always have a string for the message text
+                let responseText = 'I apologize, but I couldn\'t generate a response.';
+                
+                if (aiResponse && typeof aiResponse === 'object') {
+                    const responseObj = aiResponse as any;
+                    if (responseObj.answer && typeof responseObj.answer === 'string') {
+                        responseText = responseObj.answer;
+                    } else if (responseObj.response && typeof responseObj.response === 'string') {
+                        responseText = responseObj.response;
+                    } else {
+                        responseText = 'I apologize, but I couldn\'t generate a proper response.';
+                    }
+                } else if (typeof aiResponse === 'string') {
+                    responseText = aiResponse;
+                }
+                
+                const aiMessage = {
+                    id: generateMessageId(),
+                    text: responseText || 'I apologize, but I couldn\'t generate a response.',
+                    sender: 'bot' as const,
+                    name: 'CourseConnect AI',
+                    timestamp: Date.now(),
+                    sources: aiResponse?.sources || undefined,
+                    isSearchRequest: (aiResponse as any)?.isSearchRequest || false // Flag to indicate web search was requested
+                };
 
                 // Add AI response
                 await addMessage(currentTab || 'private-general-chat', aiMessage);
@@ -1018,7 +1336,7 @@ export default function ChatPage() {
                 id: generateMessageId(),
                 text: userText, // Include user's typed message
                 sender: 'user' as const,
-                name: user?.displayName || 'Anonymous',
+                name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
                 timestamp: Date.now(),
                 file: {
                     name: file.name,
@@ -1237,10 +1555,12 @@ export default function ChatPage() {
     const generalChat = chats[currentTab || 'private-general-chat'];
 
     // Debug logging
-    console.log('ChatPage - isStoreLoading:', isStoreLoading, 'forceLoad:', forceLoad, 'chats:', Object.keys(chats), 'currentTab:', currentTab);
-    console.log('ChatPage - classChats:', classChats);
-    console.log('ChatPage - generalChat:', generalChat);
-    console.log('ChatPage - isLoading:', isLoading, 'lastMessageSender:', generalChat?.messages?.at(-1)?.sender);
+    if (DEBUG) {
+        console.log('ChatPage - isStoreLoading:', isStoreLoading, 'forceLoad:', forceLoad, 'chats:', Object.keys(chats), 'currentTab:', currentTab);
+        console.log('ChatPage - classChats:', classChats);
+        console.log('ChatPage - generalChat:', generalChat);
+        console.log('ChatPage - isLoading:', isLoading, 'lastMessageSender:', generalChat?.messages?.at(-1)?.sender);
+    }
     // console.log('ChatPage - Pusher state:', { isConnected: pusherConnected, activeUsers: pusherActiveUsers.length, typingUsers: pusherTypingUsers.length, isAiThinking: pusherIsAiThinking });
 
     // Show loading state while chat store is initializing (but not if force loaded)
@@ -1258,7 +1578,7 @@ export default function ChatPage() {
 
     return (
         <>
-        <div className="min-h-screen bg-transparent flex flex-col">
+        <div className="min-h-screen flex flex-col">
             {/* Mobile Header */}
             <div className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/20">
                 <div className="flex items-center justify-between px-4 py-3">
@@ -1267,7 +1587,7 @@ export default function ChatPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto p-6 max-w-7xl flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col w-full h-full">
                 <div className="mb-6">
                     <div className="flex items-center justify-between">
                         <div>
@@ -1289,18 +1609,18 @@ export default function ChatPage() {
                 </div>
 
 
-                {/* Chat Interface with Sidebar */}
-                <div className="w-full flex-1 flex gap-4">
-                    {/* Chat Sidebar */}
-                    <div className="w-64 flex-shrink-0 chat-sidebar">
-                        <Card className="h-full flex flex-col">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="flex items-center gap-2 text-lg">
+                {/* Chat Interface - Full Width */}
+                <div className="w-full flex-1 flex">
+                    {/* Chat Sidebar - HIDDEN FOR NOW, will implement better later */}
+                    <div className="hidden w-64 flex-shrink-0 chat-sidebar bg-transparent">
+                        <div className="h-full flex flex-col">
+                            <div className="pb-3 p-4">
+                                <div className="flex items-center gap-2 text-lg font-semibold">
                                     <MessageSquare className="h-5 w-5" />
                                     Chats
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="flex-1 overflow-hidden p-0">
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-hidden">
                                 <div className="h-full overflow-y-auto">
                                     <div className="p-4 space-y-2">
                                         {(() => {
@@ -1510,17 +1830,17 @@ export default function ChatPage() {
                                         })()}
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Chat Content */}
                     <div className="flex-1 flex flex-col">
-                        <Card className="flex-1 flex flex-col overflow-hidden relative">
-                                <CardHeader className="pb-3 flex-shrink-0">
-                                    <CardTitle className="flex items-center gap-2">
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                                <div className="pb-3 flex-shrink-0 px-4">
+                                    <div className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
-                                        {currentTab ? getChatDisplayName(currentTab) : 'Loading...'}
+                                        <span className="font-semibold">{currentTab ? getChatDisplayName(currentTab) : 'Loading...'}</span>
                                         <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
                                             All Users
@@ -1554,12 +1874,12 @@ export default function ChatPage() {
                                                 )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden chat-container">
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
                     {/* New chat modal removed: chats are created via Upload Syllabus only */}
-                                    <ScrollArea className="h-[calc(100vh-200px)] px-4" ref={scrollAreaRef}>
-                                        <div className="space-y-6 pb-4 max-w-full overflow-hidden chat-message">
+                                    <ScrollArea className="h-[calc(100vh-200px)] scrollbar-hide" ref={scrollAreaRef}>
+                                        <div className="space-y-6 pb-4 w-full px-4">
                                             {/* Skeleton Loading */}
                                             {isMessagesLoading ? (
                                                 <div className="space-y-6 py-4">
@@ -1662,16 +1982,16 @@ export default function ChatPage() {
                                                 const messageKey = message.id || `fallback-${index}-${message.timestamp}`;
                                                 if (deletedMessageIds.has(messageKey)) {
                                                     return (
-                                                        <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
-                                                            <div className={`flex gap-3 ${message.sender === 'user' ? 'max-w-[70%]' : 'max-w-[90%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                        <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} w-full px-4`}>
+                                                            <div className={`flex gap-4 ${message.sender === 'user' ? 'max-w-[80%]' : 'max-w-[80%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                                 {message.sender === 'bot' ? (
-                                                                    <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                                                                    <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
                                                                 ) : (
-                                                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                                                    <Avatar className="w-10 h-10 flex-shrink-0">
                                                                         {message.sender === 'user' && !isGuest && userProfilePicture ? (
                                                                             <AvatarImage src={userProfilePicture} />
                                                                         ) : null}
-                                                                        <AvatarFallback className="text-xs">
+                                                                        <AvatarFallback className="text-sm font-medium">
                                                                             {message.sender === 'user' ? (
                                                                                 isGuest ? 'G' : (user?.displayName?.[0] || user?.email?.[0] || 'U')
                                                                             ) : null}
@@ -1703,18 +2023,18 @@ export default function ChatPage() {
                                                 }
                                                 
                                                 return (
-                                                <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} max-w-full`}>
-                                                    <div className={`flex gap-3 ${message.sender === 'user' ? 'max-w-[70%]' : 'max-w-[90%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} w-full px-4`}>
+                                                    <div className={`flex gap-4 ${message.sender === 'user' ? 'max-w-[80%]' : 'max-w-[80%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         {message.sender === 'bot' ? (
-                                                            <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                                                            <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
                                                         ) : (
-                                                            <Avatar className="w-8 h-8 flex-shrink-0">
+                                                            <Avatar className="w-10 h-10 flex-shrink-0">
                                                                 {message.sender === 'user' && !isGuest && userProfilePicture ? (
                                                                     <AvatarImage src={userProfilePicture} />
                                                                 ) : null}
-                                                                <AvatarFallback className="text-xs">
+                                                                <AvatarFallback className="text-sm font-medium">
                                                                     {message.sender === 'user' ? (
-                                                                        isGuest ? 'G' : (user?.displayName?.[0] || user?.email?.[0] || 'U')
+                                                                        message.name ? message.name[0].toUpperCase() : 'U'
                                                                     ) : null}
                                                                 </AvatarFallback>
                                                             </Avatar>
@@ -1724,10 +2044,10 @@ export default function ChatPage() {
                                                             <ContextMenuTrigger asChild>
                                                             <div className="text-right min-w-0 group">
                                                                 <div className="flex items-center justify-end gap-2 mb-1">
-                                                                    <MessageTimestamp timestamp={message.timestamp} />
-                                                                    <div className="text-xs text-muted-foreground">
+                                                                    <div className="text-sm text-gray-600 font-medium">
                                                                         {message.name}
                                                                     </div>
+                                                                    <MessageTimestamp timestamp={message.timestamp} />
                                                                 </div>
                                                                 {/* Show file preview and/or text bubble */}
                                                                 <div className="flex flex-col items-end gap-2">
@@ -1751,10 +2071,10 @@ export default function ChatPage() {
                                                                     )}
                                                                     {/* Show text bubble if text exists */}
                                                                     {message.text && message.text.trim() && (
-                                                                        <div className="relative inline-block bg-primary text-primary-foreground px-4 py-2 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble shadow-md">
+                                                                        <div className="relative inline-block bg-primary text-primary-foreground px-4 py-2.5 rounded-2xl rounded-br-md max-w-full overflow-hidden user-message-bubble shadow-md text-[15px]">
                                                                             <ExpandableUserMessage 
                                                                                 content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
-                                                                                className="text-primary-foreground"
+                                                                                className="text-primary-foreground text-[15px]"
                                                                             />
                                                                             {/* Remove copy button on user messages; use context menu instead */}
                                                                         </div>
@@ -1772,7 +2092,7 @@ export default function ChatPage() {
                                                             <ContextMenuTrigger asChild>
                                                             <div className="text-left min-w-0 group">
                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                    <div className="text-sm text-gray-600 font-medium flex items-center gap-1">
                                                                         {message.name}
                                                                         {(() => {
                                                                             // Check if this is a bot message and if the previous user message contained math
@@ -1800,8 +2120,9 @@ export default function ChatPage() {
                                                                 </div>
                         <BotResponse 
                             content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
-                                                                    className="text-sm ai-response leading-relaxed max-w-full overflow-hidden"
+                                                                    className="text-[15px] ai-response leading-relaxed max-w-full overflow-hidden"
                             sources={message.sources}
+                            isSearchRequest={(message as any).isSearchRequest || false}
                             messageId={message.id}
                             onSendMessage={async (msg) => {
                               // Automatically send quiz results to AI (without showing in input field)
@@ -1813,7 +2134,7 @@ export default function ChatPage() {
                                 id: generateMessageId(),
                                 text: msg,
                                 sender: 'user' as const,
-                                name: user?.displayName || 'Anonymous',
+                                name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
                                 userId: user?.uid || 'guest',
                                 timestamp: Date.now()
                               };
@@ -1927,12 +2248,12 @@ export default function ChatPage() {
                                             
                                             {/* AI Thinking Animation - Blue ripple text */}
                                             {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (
-                                                <div className="flex items-start gap-3 w-full max-w-[90%] animate-in slide-in-from-bottom-2 duration-300">
-                                                    <img src="/favicon-32x32.png" alt="AI" className="w-8 h-8 flex-shrink-0 object-contain" />
+                                                <div className="flex items-start gap-3 w-full px-4 animate-in slide-in-from-bottom-2 duration-300">
+                                                    <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
                                                     <div className="text-left min-w-0">
                                                         <div className="text-xs text-muted-foreground mb-1">CourseConnect AI</div>
                                                         <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
-                                                            <RippleText text="Thinking…" className="text-sm" />
+                                                            <RippleText text="thinking…" className="text-sm" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1945,9 +2266,9 @@ export default function ChatPage() {
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, y: -5 }}
                                                     transition={{ duration: 0.2, ease: "easeOut" }}
-                                                    className="flex gap-2 justify-start max-w-full"
+                                                    className="flex gap-3 justify-start"
                                                 >
-                                                    <div className="flex gap-2 max-w-[85%] min-w-0 flex-row">
+                                                    <div className="flex gap-3 max-w-[90%] min-w-0 flex-row">
                                                         <Avatar className="w-6 h-6 flex-shrink-0">
                                                             <AvatarImage src="" />
                                                             <AvatarFallback className="bg-muted/50 text-muted-foreground text-xs">
@@ -1962,8 +2283,13 @@ export default function ChatPage() {
                                             )}
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 sm:p-6 flex-shrink-0 bg-background pb-safe">
-                                        <EnhancedChatInput
+                                    
+                                    {/* Floating Input Field */}
+                                    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
+                                        <div className="relative flex items-center gap-2 px-4 py-2 shadow-lg border bg-white dark:bg-gray-800 backdrop-blur-xl border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl transition-all duration-300" style={{ borderRadius: '24px', minHeight: '44px', width: 'fit-content', minWidth: '500px', maxWidth: '800px', height: 'auto' }}>
+                                            <div className="w-full">
+                                                <EnhancedChatInput
+                                            isClassChat={Boolean(currentTab && chats[currentTab!]?.chatType === 'class')}
                                             value={inputValue}
                                             onChange={(e) => {
                                                 setInputValue(e.target.value);
@@ -1975,6 +2301,7 @@ export default function ChatPage() {
                                                 }
                                             }}
                                             onSend={handleSendMessage}
+                                            onSearchSelect={handleSearchSelect}
                                             onFileUpload={handleFileUpload}
                                             onFileProcessed={async (payload: any) => {
                                                 // payload: { files: File[], text: string }
@@ -1994,7 +2321,7 @@ export default function ChatPage() {
                                                     id: generateMessageId(),
                                                     text: userText,
                                                     sender: 'user' as const,
-                                                    name: user?.displayName || 'Anonymous',
+                                                    name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
                                                     timestamp: Date.now(),
                                                     files: attachments
                                                 };
@@ -2109,10 +2436,19 @@ export default function ChatPage() {
                                             className="w-full"
                                             isPublicChat={currentTab === 'public-general-chat'}
                                             isClassChat={false}
-                                        />
+                                            />
+                                            </div>
+                                        </div>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    
+                                    {/* AI Disclaimer */}
+                                    <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-40 pointer-events-none">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                                            CourseConnect AI may make mistakes. Please verify important information.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

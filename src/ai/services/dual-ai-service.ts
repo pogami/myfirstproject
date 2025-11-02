@@ -35,6 +35,7 @@ export interface AIResponse {
     url: string;
     snippet: string;
   }[];
+  isSearchRequest?: boolean; // Flag to indicate web search was requested
 }
 
 export interface StudyAssistanceInput {
@@ -49,6 +50,7 @@ export interface StudyAssistanceInput {
     fileType: string;
     fileContent?: string;
   };
+  isSearchRequest?: boolean; // Flag to indicate web search was requested
 }
 
 /**
@@ -72,16 +74,28 @@ async function tryGoogleAI(input: StudyAssistanceInput): Promise<AIResponse> {
       ? `\n\nFile Context: The user has uploaded a file named "${input.fileContext.fileName}" (${input.fileContext.fileType}). ${input.fileContext.fileContent ? `File content: ${input.fileContext.fileContent}` : 'Please reference this file when answering questions.'}`
       : '';
     
-    // Always fetch current information for better responses
+    // Only search if explicitly requested
     let currentInfo = '';
-      console.log('Fetching current information for:', input.question);
+    let searchSources: { title: string; url: string; snippet: string; }[] = [];
+    
+    if (input.isSearchRequest === true) {
+      console.log('Web search requested - fetching current information for:', input.question);
       try {
         const searchResults = await searchCurrentInformation(input.question);
-        currentInfo = formatSearchResultsForAI(searchResults);
-      } catch (error) {
+        if (searchResults.results && searchResults.results.length > 0) {
+          currentInfo = formatSearchResultsForAI(searchResults);
+          searchSources = searchResults.results.map(result => ({
+            title: result.title,
+            url: result.url,
+            snippet: result.snippet
+          }));
+        } else {
+          currentInfo = `\n\n⚠️ No search results found for: "${input.question}"\n`;
+        }
+      } catch (error: any) {
         console.warn('Failed to fetch current information:', error);
-      // Provide fallback current info
-      currentInfo = `\n\nCurrent Information Context: This response is generated in real-time to provide the most accurate and up-to-date information available.\n`;
+        currentInfo = `\n\n⚠️ Search failed: ${error.message || 'Unknown error'}\n`;
+      }
     }
     
     // Check if the question contains URLs to scrape
@@ -337,7 +351,9 @@ Remember: This is part of an ongoing conversation. Reference previous discussion
     
     return {
       answer: enhancedAnswer.trim(),
-      provider: 'google'
+      provider: 'google',
+      sources: searchSources.length > 0 ? searchSources : undefined,
+      isSearchRequest: input.isSearchRequest || false
     };
   } catch (error) {
     console.warn('Google AI failed:', error);
@@ -362,15 +378,27 @@ async function tryOpenAI(input: StudyAssistanceInput): Promise<AIResponse> {
       ? `\n\nFile Context: The user has uploaded a file named "${input.fileContext.fileName}" (${input.fileContext.fileType}). ${input.fileContext.fileContent ? `File content: ${input.fileContext.fileContent}` : 'Please reference this file when answering questions.'}`
       : '';
     
-    // Check if we need current information
+    // Only search if explicitly requested
     let currentInfo = '';
-    if (needsCurrentInformation(input.question)) {
-      console.log('Fetching current information for:', input.question);
+    let searchSources: { title: string; url: string; snippet: string; }[] = [];
+    
+    if (input.isSearchRequest === true) {
+      console.log('Web search requested - fetching current information for:', input.question);
       try {
         const searchResults = await searchCurrentInformation(input.question);
-        currentInfo = formatSearchResultsForAI(searchResults);
-      } catch (error) {
+        if (searchResults.results && searchResults.results.length > 0) {
+          currentInfo = formatSearchResultsForAI(searchResults);
+          searchSources = searchResults.results.map(result => ({
+            title: result.title,
+            url: result.url,
+            snippet: result.snippet
+          }));
+        } else {
+          currentInfo = `\n\n⚠️ No search results found for: "${input.question}"\n`;
+        }
+      } catch (error: any) {
         console.warn('Failed to fetch current information:', error);
+        currentInfo = `\n\n⚠️ Search failed: ${error.message || 'Unknown error'}\n`;
       }
     }
     
@@ -567,7 +595,9 @@ Remember: This is part of an ongoing conversation. Reference previous discussion
     
     return {
       answer: enhancedAnswer,
-      provider: 'openai'
+      provider: 'openai',
+      sources: searchSources.length > 0 ? searchSources : undefined,
+      isSearchRequest: input.isSearchRequest || false
     };
   } catch (error) {
     console.warn('OpenAI failed:', error);

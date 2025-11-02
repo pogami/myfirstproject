@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Upload, Mic, MicOff, Bot, Brain, FileText, Loader2, Maximize2, Minimize2 } from 'lucide-react';
+import { Send, Upload, Mic, MicOff, Bot, Brain, FileText, Loader2 } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { cn } from '@/lib/utils';
+import { SearchMenu } from './search-menu';
+import { useChatStore } from '@/hooks/use-chat-store';
+import { useRouter } from 'next/navigation';
 // Removed Ollama import - now using API routes
 
 interface EnhancedChatInputProps {
@@ -13,6 +16,7 @@ interface EnhancedChatInputProps {
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onFileUpload?: (file: File) => void;
   onFileProcessed?: (processedFile: any) => void;
+  onSearchSelect?: (searchType: string, query: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -30,6 +34,7 @@ export function EnhancedChatInput({
   onKeyPress,
   onFileUpload,
   onFileProcessed,
+  onSearchSelect,
   placeholder,
   disabled = false,
   className = "",
@@ -40,6 +45,8 @@ export function EnhancedChatInput({
   onTypingStop
 }: EnhancedChatInputProps) {
   const { theme } = useTheme();
+  const router = useRouter();
+  const { chats } = useChatStore();
   const [isTyping, setIsTyping] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -47,27 +54,22 @@ export function EnhancedChatInput({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<{ name: string; size: number; type: string; url?: string }[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-resize textarea and auto-expand when needed
+  // Auto-resize textarea
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
-    const collapsedMax = 160; // px
-    const expandedMax = 240; // px
+    
     // Reset height to compute scrollHeight correctly
     el.style.height = 'auto';
-    const desired = Math.min(el.scrollHeight, isExpanded ? expandedMax : collapsedMax);
-    el.style.height = desired + 'px';
-    // Keep caret/latest text visible
-    el.scrollTop = el.scrollHeight;
-    // Auto-expand if content exceeds collapsed max
-    if (!isExpanded && el.scrollHeight > collapsedMax) {
-      setIsExpanded(true);
-    }
-  }, [value, isExpanded]);
+    // Set height to scrollHeight - no cap, let it expand naturally
+    el.style.height = el.scrollHeight + 'px';
+    
+    // Also handle width expansion for long lines
+    el.style.width = '100%';
+  }, [value]);
 
   // Detect mobile on mount
   useEffect(() => {
@@ -156,19 +158,14 @@ export function EnhancedChatInput({
     setShowAIMention(hasAIMention);
   }, [value]);
 
-  // Load and persist expanded composer state
+  // Load composer state (no longer needed for expand functionality)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('chat-composer-expanded');
-      if (saved === 'true') setIsExpanded(true);
-    } catch {}
+    // Expanded state removed - auto-expansion handles this now
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('chat-composer-expanded', isExpanded ? 'true' : 'false');
-    } catch {}
-  }, [isExpanded]);
+    // No need to save expanded state since we removed the expand functionality
+  }, []);
 
   // Set appropriate placeholder based on chat type
   const getPlaceholder = () => {
@@ -197,19 +194,14 @@ export function EnhancedChatInput({
     // Adjust height immediately while typing
     const el = inputRef.current;
     if (el) {
-      const collapsedMax = 160;
-      const expandedMax = 240;
       el.style.height = 'auto';
-      const desired = Math.min(el.scrollHeight, isExpanded ? expandedMax : collapsedMax);
-      el.style.height = desired + 'px';
+      el.style.height = Math.min(el.scrollHeight, 200) + 'px';
       el.scrollTop = el.scrollHeight;
-      if (!isExpanded && el.scrollHeight > collapsedMax) {
-        setIsExpanded(true);
-      }
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Use keydown (keypress is deprecated and unreliable for Enter)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (onKeyPress) {
       onKeyPress(e);
     }
@@ -241,6 +233,7 @@ export function EnhancedChatInput({
       if (fileInputRef.current) fileInputRef.current.value = '';
     } else if (value.trim()) {
       // No file, just text
+      // Always use onSend() - handleSendMessage will detect search mode automatically
       const shouldCallAI = !isPublicChat || value.includes('@ai') || value.includes('@AI');
       onSend(shouldCallAI);
       onTypingStop?.();
@@ -407,6 +400,7 @@ export function EnhancedChatInput({
   const isDark = theme === 'dark';
 
   const hasPreviews = filePreviews.length > 0;
+  const courseChats = Object.values(chats || {}).filter((c: any) => c?.chatType === 'class') as any[];
 
   return (
     <div className={cn("relative w-full chat-input-container", className)}>
@@ -430,42 +424,31 @@ export function EnhancedChatInput({
       )}
 
       {/* Main Input Container */}
-      <div className={cn(
-        "chat-input-container relative flex items-center gap-3 p-2 rounded-full shadow-lg border border-border/20",
-        "bg-card/80 backdrop-blur-sm",
-        "hover:shadow-xl transition-all duration-200",
-        isExpanded && "p-3"
-      )}
-      style={{ 
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        outline: 'none'
-      }}>
-        {/* When previews exist, increase min height to fit tiles */}
-        <style>{`.chat-input-container{${hasPreviews || isExpanded ? 'min-height:112px;' : 'min-height:48px;'}}`}</style>
+      <div
+        className={cn(
+          "chat-input-container relative flex flex-col gap-3 px-4 py-3",
+          // No background, shadow, or border - let parent handle styling
+          "bg-transparent"
+        )}
+        style={{
+          minHeight: hasPreviews ? '140px' : '44px',
+          alignItems: 'flex-end',
+          overflow: 'visible',
+          height: 'auto'
+        }}
+      >
         
-        {/* File Upload Icon (Left) */}
-        <div
-          onClick={triggerFileInput}
-          className={cn(
-            "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-transparent transition-colors duration-200",
-            isDark 
-              ? "text-white/70 hover:text-white/90" 
-              : "text-gray-600 hover:text-gray-800",
-            (disabled || isSending) && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <Upload className="h-4 w-4" />
-        </div>
-
-        {/* Inline Attachment Chips (inside input) */}
+        {/* File Previews Above Text Area */}
         {hasPreviews && (
-          <div className={cn("flex items-center gap-3 pr-2", isExpanded && "flex-wrap")}> 
+          <div className="flex items-center gap-3 w-full"> 
             {filePreviews.slice(0, 3).map((f) => (
-              <div key={f.name} className="relative inline-block rounded-lg overflow-hidden border border-border/60 shadow-md bg-background">
+                <div key={f.name} className="relative inline-block rounded-lg overflow-hidden border border-border/60 shadow-md bg-background group">
                 {f.type.startsWith('image/') ? (
-                  <img src={f.url} alt={f.name} className="h-20 w-20 object-cover bg-white" />
+                  <img 
+                    src={f.url} 
+                    alt={f.name} 
+                    className="h-20 w-20 object-cover bg-white" 
+                  />
                 ) : f.type === 'application/pdf' ? (
                   <div className={cn(
                     "h-20 w-20 flex items-center justify-center bg-muted/40",
@@ -487,101 +470,102 @@ export function EnhancedChatInput({
                     </div>
                   </div>
                 )}
-                <button
-                  onClick={() => removeFile(f.name)}
-                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-white text-black text-xs font-bold flex items-center justify-center shadow ring-1 ring-black/20"
-                  title="Remove"
-                  aria-label={`Remove ${f.name}`}
-                >
-                  ×
-                </button>
+                  <button
+                    onClick={() => removeFile(f.name)}
+                    className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                    title="Remove file"
+                  >
+                    ×
+                  </button>
               </div>
             ))}
           </div>
         )}
 
-        {/* Input Field */}
-        <div className="flex-1 relative min-w-0">
+        {/* Input Row with Icons and Text */}
+        <div className="flex items-end gap-3 w-full">
+          {/* File Upload Icon (Left) */}
+          <div
+            onClick={triggerFileInput}
+            className={cn(
+              "h-8 w-8 flex items-center justify-center cursor-pointer rounded-lg",
+              "hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200",
+              "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white",
+              (disabled || isSending) && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <Upload className="h-5 w-5" />
+          </div>
+
+          {/* Course selector removed per request */}
+
+          {/* Search Menu - Temporarily hidden */}
+          {false && onSearchSelect && (
+            <SearchMenu
+              onSearchSelect={onSearchSelect}
+              disabled={disabled || isSending}
+            />
+          )}
+
+          {/* Input Field */}
           <textarea
             ref={inputRef}
             value={value}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder={
               isSending ? "AI is responding..." : 
               getPlaceholder()
             }
             disabled={disabled || isSending}
             className={cn(
-              "w-full bg-transparent text-base border-0 outline-none focus:outline-none placeholder:opacity-60 resize-none pr-14",
-              isDark ? "text-white placeholder-white/60" : "text-black placeholder-gray-500",
+              "flex-1 bg-transparent text-base border-0 outline-none resize-none",
+              "text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400",
               (disabled || isSending) && "opacity-50 cursor-not-allowed"
             )}
             rows={1}
             style={{ 
               fontSize: '16px', 
-              color: isDark ? '#ffffff' : '#000000', 
-              maxHeight: isExpanded ? '240px' : '160px', 
-              overflowY: 'auto',
-              scrollBehavior: 'smooth'
+              minHeight: '24px',
+              maxHeight: '200px'
+            }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = target.scrollHeight + 'px';
             }}
           />
-          {/* Decorative cursor line removed */}
-        </div>
 
-        {/* Expand/Collapse Composer */}
-        <div
-          onClick={() => setIsExpanded(prev => !prev)}
-          className={cn(
-            "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-transparent transition-colors duration-200",
-            isDark 
-              ? "text-white/70 hover:text-white/90" 
-              : "text-black hover:text-gray-800",
-            (disabled || isSending) && "opacity-50 cursor-not-allowed"
-          )}
-          title={isExpanded ? "Collapse" : "Expand"}
-          aria-label={isExpanded ? "Collapse composer" : "Expand composer"}
-        >
-          {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </div>
+          {/* Voice Icon */}
+          <div
+            onClick={toggleVoice}
+            className={cn(
+              "h-8 w-8 flex items-center justify-center cursor-pointer rounded-full",
+              "hover:bg-gray-100 dark:hover:bg-muted/50 transition-colors duration-200",
+              isVoiceActive
+                ? "text-red-500 dark:text-red-400" 
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100",
+              (disabled || isSending) && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {isVoiceActive ? (
+              <MicOff className="h-5 w-5" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
+          </div>
 
-        {/* Voice Icon */}
-        <div
-          onClick={toggleVoice}
-          className={cn(
-            "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-transparent transition-colors duration-200",
-            isVoiceActive
-              ? isDark 
-                ? "text-red-400" 
-                : "text-red-600"
-              : isDark 
-                ? "text-white/70 hover:text-white/90" 
-                : "text-black hover:text-gray-800",
-            (disabled || isSending) && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          {isVoiceActive ? (
-            <MicOff className="h-4 w-4" />
-          ) : (
-            <Mic className="h-4 w-4" />
-          )}
-        </div>
-
-        {/* Send Icon */}
-        <div
-          onClick={handleSend}
-          className={cn(
-            "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation rounded-full",
-            "hover:bg-transparent transition-colors duration-200",
-            isDark 
-              ? "text-purple-400 hover:text-purple-300" 
-              : "text-purple-600 hover:text-purple-500",
-            (disabled || isSending || (!value.trim() && selectedFiles.length === 0)) && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <Send className="h-4 w-4" />
+          {/* Send Icon */}
+          <div
+            onClick={handleSend}
+            className={cn(
+              "h-8 w-8 flex items-center justify-center cursor-pointer rounded-full",
+              "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100",
+              "hover:bg-gray-100 dark:hover:bg-muted/50 transition-colors duration-200"
+            )}
+          >
+            <Send className="h-5 w-5" />
+          </div>
         </div>
 
         {/* Hidden File Input */}
@@ -594,7 +578,6 @@ export function EnhancedChatInput({
           className="hidden"
         />
       </div>
-
     </div>
   );
 }

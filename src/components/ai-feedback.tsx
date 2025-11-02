@@ -19,7 +19,12 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleRating = (newRating: 'positive' | 'negative') => {
-    console.log('👍👎 Rating selected:', newRating, 'for message:', messageId);
+    // Toggle off if the same rating is clicked again
+    if (rating === newRating) {
+      setRating(null);
+      setIsOpen(false);
+      return;
+    }
     setRating(newRating);
     setIsOpen(true);
   };
@@ -79,6 +84,7 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
               : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-green-600 dark:hover:text-green-400'
           }`}
           title="Good response"
+          aria-pressed={rating === 'positive'}
         >
           <ThumbsUp className="w-4 h-4" />
         </button>
@@ -90,6 +96,7 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
               : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-red-600 dark:hover:text-red-400'
           }`}
           title="Could be better"
+          aria-pressed={rating === 'negative'}
         >
           <ThumbsDown className="w-4 h-4" />
         </button>
@@ -102,11 +109,11 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[100] w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-4"
+            className="fixed bottom-6 right-6 z-[100] w-[320px] max-w-[85vw] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3"
           >
             {!isSubmitted ? (
               <>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -121,7 +128,7 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
                   </button>
                 </div>
 
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                   {rating === 'positive'
                     ? 'What did you like? (optional)'
                     : 'What could be better? (optional)'}
@@ -135,7 +142,7 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
                       ? 'E.g., Clear explanation, good examples...'
                       : 'E.g., Too complex, missing examples...'
                   }
-                  className="text-sm min-h-[70px] max-h-[100px] mb-3 resize-none bg-gray-50 dark:bg-gray-800"
+                  className="text-sm min-h-[60px] max-h-[100px] mb-2 resize-none bg-gray-50 dark:bg-gray-800"
                   autoFocus
                 />
 

@@ -132,11 +132,15 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
         if (guestData && (user.isGuest || user.isAnonymous)) {
           setIsGuest(true);
           
-          // Load profile picture from localStorage for guest users
+          // Load profile picture and displayName from localStorage for guest users
           try {
             const parsed = JSON.parse(guestData);
             if (parsed.profilePicture) {
               setUserProfilePicture(parsed.profilePicture);
+            }
+            // Update user object with guest displayName if available
+            if (parsed.displayName && !user.displayName) {
+              user.displayName = parsed.displayName;
             }
           } catch (error) {
             console.error("Error loading guest profile picture:", error);
@@ -283,13 +287,56 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   };
 
   const getInitials = (name: string | null | undefined) => {
-      if (!name) return "U";
+      if (!name) {
+        // For guests, try to get name from localStorage
+        if (isGuest) {
+          try {
+            const guestData = localStorage.getItem('guestUser');
+            if (guestData) {
+              const parsed = JSON.parse(guestData);
+              if (parsed.displayName) {
+                return parsed.displayName[0].toUpperCase();
+              }
+            }
+          } catch (error) {
+            console.error('Error getting guest name:', error);
+          }
+        }
+        return "U";
+      }
       const parts = name.split(' ');
       if (parts.length > 1) {
           return parts[0][0] + parts[parts.length - 1][0];
       }
       return name[0];
   }
+  
+  // Get guest display name from localStorage
+  const getGuestDisplayName = (): string => {
+    if (typeof window === 'undefined') return 'Guest User';
+    try {
+      const guestUser = localStorage.getItem('guestUser');
+      if (guestUser) {
+        const parsed = JSON.parse(guestUser);
+        return parsed.displayName || 'Guest User';
+      }
+    } catch (error) {
+      console.warn('Failed to parse guest user from localStorage:', error);
+    }
+    return 'Guest User';
+  };
+  
+  // Check if user is guest synchronously (for immediate rendering)
+  const checkIfGuest = (): boolean => {
+    if (!user) return false;
+    if (user.isGuest || user.isAnonymous) {
+      const guestData = localStorage.getItem('guestUser');
+      if (guestData) return true;
+    }
+    return false;
+  };
+  
+  const isGuestSync = checkIfGuest();
 
   return (
     <div className="flex items-center gap-2">
@@ -300,9 +347,15 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
                 <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                     {user ? (
                         <>
-                            <AvatarImage src={userProfilePicture || user.photoURL || ''} data-ai-hint="student avatar" alt={user.displayName || 'Student'} />
+                            <AvatarImage src={userProfilePicture || user.photoURL || ''} data-ai-hint="student avatar" alt={(isGuest || isGuestSync) ? getGuestDisplayName() : (user.displayName || 'Student')} />
                             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm sm:text-base">
-                                {getInitials(user.displayName || user.email)}
+                                {(() => {
+                                  if (isGuest || isGuestSync) {
+                                    const guestName = getGuestDisplayName();
+                                    return guestName ? guestName[0].toUpperCase() : 'G';
+                                  }
+                                  return getInitials(user.displayName || user.email);
+                                })()}
                             </AvatarFallback>
                         </>
                     ) : (
@@ -317,22 +370,28 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
               <DropdownMenuLabel className="px-3 sm:px-4 py-2 sm:py-3">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
-                    <AvatarImage src={userProfilePicture || user.photoURL || ''} alt={user.displayName || 'Student'} />
+                    <AvatarImage src={userProfilePicture || user.photoURL || ''} alt={(isGuest || isGuestSync) ? getGuestDisplayName() : (user.displayName || 'Student')} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-xs sm:text-sm">
-                      {getInitials(user.displayName || user.email)}
+                      {(() => {
+                        if (isGuest || isGuestSync) {
+                          const guestName = getGuestDisplayName();
+                          return guestName ? guestName[0].toUpperCase() : 'G';
+                        }
+                        return getInitials(user.displayName || user.email);
+                      })()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1 sm:gap-2">
-                      <p className="font-semibold truncate text-foreground text-sm sm:text-base">{user.displayName || 'Student User'}</p>
-                      {isGuest && (
+                      <p className="font-semibold truncate text-foreground text-sm sm:text-base">{(isGuest || isGuestSync) ? getGuestDisplayName() : (user.displayName || 'Student User')}</p>
+                      {(isGuest || isGuestSync) && (
                         <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-700 border-orange-200 flex-shrink-0">
                           Guest
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground font-normal truncate">
-                      {isGuest ? 'Guest User' : (user.email || 'No email')}
+                      {(isGuest || isGuestSync) ? getGuestDisplayName() : (user.email || 'No email')}
                     </p>
                   </div>
                 </div>

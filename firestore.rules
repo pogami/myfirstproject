@@ -1,0 +1,139 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Users collection - users can read/write only their own data
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Chats collection - users can read/write their own chats
+    match /chats/{chatId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+      
+      // Messages subcollection within chats
+      match /messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isSignedIn();
+      }
+    }
+    
+    // Messages collection (standalone, if used separately)
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // Files collection
+    match /files/{fileId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // Notifications - users can read their own notifications
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Flashcard sets
+    match /flashcardSets/{setId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // Study sessions
+    match /studySessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // Whiteboard sessions
+    match /whiteboardSessions/{sessionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+      
+      // Elements subcollection
+      match /elements/{elementId} {
+        allow read, write: if isSignedIn();
+      }
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+    
+    // Scanned documents
+    match /scannedDocuments/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // Courses
+    match /courses/{courseId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // Study schedules
+    match /studySchedules/{scheduleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+    
+    // User stats (per-user nested collection)
+    match /userStats/{userId} {
+      // Allow the owner to read/write their own stats doc (if present)
+      allow read, write: if isOwner(userId);
+
+      // Daily stats subcollection
+      match /dailyStats/{dateId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Newsletter subscribers (admin write only, no read)
+    match /newsletter_subscribers/{subscriberId} {
+      allow read: if false; // Never allow read
+      allow write: if isSignedIn();
+    }
+  }
+}
+

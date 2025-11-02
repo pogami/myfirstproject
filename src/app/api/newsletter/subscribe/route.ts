@@ -4,7 +4,12 @@ import { db } from '@/lib/firebase/server';
 
 export const runtime = 'nodejs';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization - only create Resend instance if API key exists
+const getResend = () => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,7 +63,11 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email via Resend
     try {
-      await resend.emails.send({
+      const resend = getResend();
+      if (!resend) {
+        console.warn('RESEND_API_KEY not configured, skipping welcome email');
+      } else {
+        await resend.emails.send({
         from: 'CourseConnect AI <noreply@courseconnectai.com>',
         to: normalizedEmail,
         subject: '🎓 Welcome to CourseConnect AI Newsletter!',
@@ -118,9 +127,10 @@ export async function POST(request: NextRequest) {
             </body>
           </html>
         `,
-      });
+        });
 
-      console.log(`✅ Welcome email sent to ${normalizedEmail}`);
+        console.log(`✅ Welcome email sent to ${normalizedEmail}`);
+      }
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Don't fail the request if email sending fails

@@ -31,33 +31,12 @@ export interface AutoSearchResult {
  * Check if the AI should automatically search for information
  */
 export function shouldAutoSearch(question: string, aiResponse: string): AutoSearchResult {
-  const lowerQuestion = question.toLowerCase();
-  const lowerResponse = aiResponse.toLowerCase();
-  
-  // Keywords that indicate uncertainty
-  const uncertaintyKeywords = [
-    'i don\'t know', 'i\'m not sure', 'i can\'t tell', 'i\'m uncertain',
-    'i don\'t have information', 'i\'m not familiar', 'i haven\'t heard',
-    'i\'m not aware', 'i don\'t have access', 'i can\'t find',
-    'i don\'t have that information', 'i\'m not certain'
-  ];
-  
-  // Keywords that indicate need for current information
-  const currentInfoKeywords = [
-    'latest', 'recent', 'current', 'today', 'now', '2024', '2025',
-    'breaking', 'news', 'update', 'recently', 'just happened',
-    'what\'s happening', 'what\'s new', 'current events'
-  ];
-  
-  // Check for uncertainty in AI response
-  const hasUncertainty = uncertaintyKeywords.some(keyword => 
-    lowerResponse.includes(keyword)
-  );
-  
-  // Check for need for current information
-  const needsCurrentInfo = currentInfoKeywords.some(keyword => 
-    lowerQuestion.includes(keyword)
-  );
+  // Disable automatic search - only search when explicitly requested via @search or search button
+  return {
+    shouldSearch: false,
+    searchQuery: null,
+    reason: 'Automatic search disabled - use @search or search button'
+  };
   
   // Check for specific topics that benefit from web search
   const searchableTopics = [

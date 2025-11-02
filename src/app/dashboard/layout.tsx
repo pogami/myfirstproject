@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Home, Users, FilePlus, MessageSquare, Bell, GraduationCap, AlertTriangle, Megaphone, X, FileText } from "lucide-react";
 import { GlobalCommandMenu } from "@/components/global-command-menu";
 import {
@@ -20,8 +20,10 @@ import {
 import DashboardHeader from "@/components/dashboard-header";
 import { WebsiteTimeTracker } from "@/components/website-time-tracker";
 import { HideAISupport } from "@/components/hide-ai-support";
+import { FloatingChatButton } from "@/components/floating-chat-button";
 import Image from "next/image";
-import { auth } from "@/lib/firebase/client-simple";
+import type { Auth } from "firebase/auth";
+import { signInAnonymously } from "firebase/auth";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useEffect, useState } from "react";
 import { useChatStore } from "@/hooks/use-chat-store";
@@ -50,11 +52,13 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeChatId = searchParams?.get('tab') || searchParams?.get('chatId') || '';
   const isActive = (path: string) => pathname === path || (path !== '/dashboard' && pathname.startsWith(path));
   
   // Safely handle auth state
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start as true to wait for auth to restore
   const [error, setError] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   
@@ -85,9 +89,11 @@ export default function DashboardLayout({
 
     // Safely handle auth state for authenticated users
     try {
-      if (auth && typeof auth.onAuthStateChanged === 'function') {
+      const { auth } = require("@/lib/firebase/client-simple") as { auth: Auth };
+      const safeAuth = auth as Auth | undefined;
+      if (safeAuth && typeof safeAuth.onAuthStateChanged === 'function') {
         console.log('Dashboard: Setting up auth state listener');
-        const unsubscribe = auth.onAuthStateChanged(
+        const unsubscribe = safeAuth.onAuthStateChanged(
           (user: any) => {
             clearTimeout(authTimeout); // Clear timeout when auth resolves
             console.log('Dashboard: Auth state changed - user:', user ? 'authenticated' : 'not authenticated');
@@ -102,6 +108,17 @@ export default function DashboardLayout({
             setUser(user);
             setLoading(false);
             setError(null);
+
+            // Ensure anonymous auth for Firestore rules if not logged in and not explicitly a guest
+            try {
+              const hasGuest = !!localStorage.getItem('guestUser');
+              if (!user && !hasGuest) {
+                console.log('Dashboard: No user detected, performing anonymous sign-in for permissions');
+                signInAnonymously(safeAuth).catch(() => {
+                  // ignore errors (e.g., if disabled); app still works in guest mode
+                });
+              }
+            } catch {}
           },
           (error: any) => {
             clearTimeout(authTimeout); // Clear timeout when auth resolves (even with error)
@@ -246,18 +263,32 @@ export default function DashboardLayout({
   }, []);
 
   useEffect(() => {
-    // If user is not logged in and not loading, check if they're a guest
+    // Only check redirect after loading is complete
+    // Firebase needs time to restore the session from localStorage/indexedDB
     if (!loading && !user) {
-      // Check if user just logged in (give it 2 more seconds to load)
+      // Check if user just logged in (give it more time to load)
       const justLoggedIn = sessionStorage.getItem('justLoggedIn');
       if (justLoggedIn === 'true') {
         console.log("User just logged in, waiting for auth to load...");
         return; // Don't redirect yet
       }
       
-      // Give auth listener time to work before redirecting
+      // Give Firebase auth MORE time to restore session (increased from 1s to 3s)
+      // Firebase auth restoration happens asynchronously and can take time
       const timeoutId = setTimeout(() => {
+        // Double-check: Make sure Firebase hasn't restored a user since we started the timeout
         const storedGuest = localStorage.getItem('guestUser');
+        const isLoggingOut = localStorage.getItem('isLoggingOut');
+        
+        // Don't redirect if logout is in progress
+        if (isLoggingOut === 'true') {
+          console.log("Logout in progress, skipping redirect");
+          return;
+        }
+        
+        // Check if we have a guest user OR if auth state listener hasn't fired yet
+        // Firebase auth persists sessions automatically, so if there's no user after 3 seconds,
+        // they're truly not logged in
         if (!storedGuest) {
           // No user and no guest, redirect to login
           console.log("No user and no guest found after timeout, redirecting to login");
@@ -265,7 +296,7 @@ export default function DashboardLayout({
         } else {
           console.log("Guest user found in localStorage:", storedGuest);
         }
-      }, 1000); // Wait 1 second for auth to initialize
+      }, 3000); // Increased to 3 seconds to give Firebase time to restore session
       
       return () => clearTimeout(timeoutId);
     } else if (user) {
@@ -303,7 +334,7 @@ export default function DashboardLayout({
         setTimeout(() => {
           toast.success('🎉 Welcome to CourseConnect!', {
             description: 'Your AI-powered learning companion is ready to help you ace your courses! Upload your syllabus to get started.',
-            duration: 5000,
+            duration: 10000,
           });
         }, 500);
       }
@@ -319,10 +350,7 @@ export default function DashboardLayout({
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-muted border-t-primary mx-auto mb-4"></div>
           <h2 className="text-lg font-semibold mb-2">Loading Dashboard</h2>
-          <p className="text-sm text-muted-foreground mb-4">Please wait while we prepare your workspace</p>
-          <div className="text-xs text-muted-foreground">
-            Taking too long? <Link href="/login" className="text-primary hover:underline">Click here to sign in</Link>
-          </div>
+          <p className="text-sm text-muted-foreground">Please wait while we prepare your workspace</p>
         </div>
       </div>
     );
@@ -398,16 +426,50 @@ export default function DashboardLayout({
                 </p>
               </div>
 
-              {/* List courses from chats */}
-              {Object.values(chats).filter((chat: any) => chat.chatType === 'class').slice(0, 3).map((chat: any) => (
+              {/* Permanent General Chat (if present) */}
+              {(() => {
+                const generalIds = [
+                  'private-general-chat',
+                  'public-general-chat',
+                  'private-general-chat-guest'
+                ];
+                const existingGeneral = generalIds.find(id => !!chats[id]);
+                if (!existingGeneral) return null;
+                const generalChat = chats[existingGeneral as keyof typeof chats];
+                return (
+                  <SidebarMenuItem key={existingGeneral}>
+                    <Link 
+                      href={`/dashboard/chat?tab=general`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+                        pathname.includes(String(existingGeneral))
+                          ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 text-blue-700 dark:text-blue-300 shadow-sm" 
+                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      } ${activeChatId === 'general' || activeChatId === String(existingGeneral) ? 'border-2 border-dashed border-blue-300 dark:border-blue-700' : ''}`}
+                    >
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">G</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">General Chat</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Always-on</p>
+                      </div>
+                    </Link>
+                  </SidebarMenuItem>
+                );
+              })()}
+
+              {/* List courses from chats (class chats) */}
+              {Object.values(chats).filter((chat: any) => chat.chatType === 'class').map((chat: any) => (
                 <SidebarMenuItem key={chat.id}>
                   <Link 
-                    href={`/dashboard/course/${encodeURIComponent(chat.id)}`}
+                    href={`/dashboard/chat?tab=${encodeURIComponent(chat.id)}`}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                       pathname.includes(chat.id)
                         ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 text-blue-700 dark:text-blue-300 shadow-sm" 
                         : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    }`}
+                    } ${activeChatId === String(chat.id) ? 'border-2 border-dashed border-blue-300 dark:border-blue-700' : ''}`}
                   >
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
@@ -420,15 +482,68 @@ export default function DashboardLayout({
                       <p className="text-sm font-medium truncate">
                         {chat.courseData?.courseCode || chat.title}
                       </p>
-                      {chat.courseData?.assignments && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {chat.courseData.assignments.filter((a: any) => a.status === 'Completed').length}/{chat.courseData.assignments.length} done
-                        </p>
-                      )}
+                      {(() => {
+                        const assignments = chat.courseData?.assignments || [];
+                        if (!Array.isArray(assignments) || assignments.length === 0) return null;
+                        
+                        const completed = assignments.filter((a: any) => a.status === 'Completed').length;
+                        const total = assignments.length;
+                        const upcoming = assignments.filter((a: any) => {
+                          if (a.status === 'Completed') return false;
+                          if (!a.dueDate) return true;
+                          const dueDate = a.dueDate?.toDate ? a.dueDate.toDate() : new Date(a.dueDate);
+                          return dueDate >= new Date();
+                        });
+                        
+                        // Get next assignment
+                        const nextAssignment = upcoming
+                          .filter((a: any) => a.dueDate)
+                          .sort((a: any, b: any) => {
+                            const dateA = a.dueDate?.toDate ? a.dueDate.toDate() : new Date(a.dueDate);
+                            const dateB = b.dueDate?.toDate ? b.dueDate.toDate() : new Date(b.dueDate);
+                            return dateA.getTime() - dateB.getTime();
+                          })[0];
+                        
+                        if (nextAssignment?.dueDate) {
+                          const dueDate = nextAssignment.dueDate?.toDate ? nextAssignment.dueDate.toDate() : new Date(nextAssignment.dueDate);
+                          const daysUntil = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                          
+                          if (daysUntil < 0) {
+                            return <p className="text-xs text-red-500 dark:text-red-400">⚠️ Assignment overdue</p>;
+                          } else if (daysUntil === 0) {
+                            return <p className="text-xs text-orange-500 dark:text-orange-400">📅 Assignment due today</p>;
+                          } else if (daysUntil === 1) {
+                            return <p className="text-xs text-orange-500 dark:text-orange-400">📅 Assignment due tomorrow</p>;
+                          } else if (daysUntil <= 7) {
+                            return <p className="text-xs text-yellow-600 dark:text-yellow-400">📅 Assignment due in {daysUntil} days</p>;
+                          } else {
+                            return <p className="text-xs text-gray-500 dark:text-gray-400">📅 Assignment due {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>;
+                          }
+                        }
+                        
+                        // Fallback to progress if no due dates
+                        if (upcoming.length > 0) {
+                          return <p className="text-xs text-blue-500 dark:text-blue-400">{upcoming.length} assignment{upcoming.length !== 1 ? 's' : ''} upcoming</p>;
+                        }
+                        
+                        return <p className="text-xs text-green-500 dark:text-green-400">✓ All work completed</p>;
+                      })()}
                     </div>
                   </Link>
                 </SidebarMenuItem>
               ))}
+              
+              {/* View All Courses Link - Only show if more than 5 courses */}
+              {Object.values(chats).filter((chat: any) => chat.chatType === 'class').length > 5 && (
+                <SidebarMenuItem>
+                  <Link 
+                    href="/dashboard/overview"
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 group text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                  >
+                    <span className="text-xs font-medium">View All Courses ({Object.values(chats).filter((chat: any) => chat.chatType === 'class').length})</span>
+                  </Link>
+                </SidebarMenuItem>
+              )}
               
               {/* Add Course */}
               <SidebarMenuItem>
@@ -445,48 +560,7 @@ export default function DashboardLayout({
                 </Link>
               </SidebarMenuItem>
 
-              {/* Divider */}
-              <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
-              
-              <SidebarMenuItem>
-                <Link 
-                  href="/dashboard/upload"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                    isActive("/dashboard/upload") 
-                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  }`}
-                >
-                  <div className={`p-2 rounded-md transition-all duration-200 ${
-                    isActive("/dashboard/upload") 
-                      ? "bg-blue-100 dark:bg-blue-900/50" 
-                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
-                  }`}>
-                    <FilePlus className="size-4" />
-                  </div>
-                  <span className="font-medium text-sm">Upload Syllabus</span>
-                </Link>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <Link 
-                  href="/dashboard/chat"
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                    isActive("/dashboard/chat") 
-                      ? "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  }`}
-                >
-                  <div className={`p-2 rounded-md transition-all duration-200 ${
-                    isActive("/dashboard/chat") 
-                      ? "bg-blue-100 dark:bg-blue-900/50" 
-                      : "bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
-                  }`}>
-                    <MessageSquare className="size-4" />
-                  </div>
-                  <span className="font-medium text-sm">Class Chats</span>
-                </Link>
-              </SidebarMenuItem>
+              {/* Class Chats link removed: chats are accessible via My Courses */}
               
               <SidebarMenuItem>
                 <Link 
@@ -615,10 +689,8 @@ export default function DashboardLayout({
             </div>
           </header>
           
-          <main className="flex-1 bg-transparent relative min-h-screen">
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
-              {children}
-            </div>
+          <main className={`flex-1 bg-transparent relative min-h-screen ${pathname === '/dashboard/chat' ? '' : 'max-w-7xl mx-auto p-6 space-y-6'}`}>
+            {pathname === '/dashboard/chat' ? children : <div className="max-w-7xl mx-auto p-6 space-y-6">{children}</div>}
           </main>
         </SidebarInset>
 
@@ -640,6 +712,9 @@ export default function DashboardLayout({
         
         {/* Hide AI Support */}
         <HideAISupport />
+        
+        {/* Floating Chat Button */}
+        <FloatingChatButton />
         
       </SidebarProvider>
   );

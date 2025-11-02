@@ -68,7 +68,7 @@ export function CTASection() {
               variant="outline"
               size="lg"
               className="border-2 border-white text-white hover:bg-white/20 px-8 py-4 text-lg font-semibold rounded-full backdrop-blur-sm transition-all duration-300 shadow-lg bg-white/10"
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => window.location.href = '/login?state=signup'}
             >
               <Users className="mr-2 h-5 w-5" />
               Join Now

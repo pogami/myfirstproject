@@ -57,7 +57,7 @@ export function Navigation() {
             >
               {/* Liquid glass shimmer overlay */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-full"
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-full pointer-events-none"
                 animate={{
                   x: ["-100%", "100%"],
                   opacity: [0, 0.6, 0]
@@ -72,7 +72,7 @@ export function Navigation() {
               
               {/* Liquid glass ripple effect */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-radial from-white/20 via-transparent to-transparent rounded-full"
+                className="absolute inset-0 bg-gradient-radial from-white/20 via-transparent to-transparent rounded-full pointer-events-none"
                 animate={{
                   scale: [0.8, 1.2, 0.8],
                   opacity: [0.3, 0.6, 0.3]
@@ -85,7 +85,7 @@ export function Navigation() {
                 }}
               />
               {/* Logo */}
-              <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
+              <Link href="/" className="relative z-10 flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
                 <CCLogo className="h-8 w-auto" />
                 <span className="text-base font-bold text-gray-900 dark:text-white">
                   CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span>
@@ -93,7 +93,7 @@ export function Navigation() {
               </Link>
 
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-8">
+              <div className="relative z-10 hidden md:flex items-center gap-8">
                 {navigation.map((item) => (
                   <a
                     key={item.name}
@@ -106,10 +106,10 @@ export function Navigation() {
               </div>
 
               {/* Desktop CTA */}
-              <div className="hidden md:flex items-center gap-3">
+              <div className="relative z-10 hidden md:flex items-center gap-3">
                 <Button
                   variant="ghost"
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-3 py-2 h-9"
+                  className="bg-transparent hover:bg-transparent text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-3 py-2 h-9"
                   onClick={toggleTheme}
                   aria-label="Toggle theme"
                 >
@@ -117,14 +117,14 @@ export function Navigation() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-4 py-2 h-9"
+                  className="bg-transparent hover:bg-transparent text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-sm px-4 py-2 h-9"
                   onClick={() => window.location.href = '/login'}
                 >
                   Sign In
                 </Button>
                 <Button 
                   className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-sm px-5 py-2 h-9"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={() => window.location.href = '/login?state=signup'}
                 >
                   Get Started
                 </Button>
@@ -173,7 +173,7 @@ export function Navigation() {
                 </Button>
                 <Button 
                   className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={() => window.location.href = '/login?state=signup'}
                 >
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -237,7 +237,7 @@ export function Navigation() {
                 </Button>
                 <Button 
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white h-12"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={() => window.location.href = '/login?state=signup'}
                 >
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -261,7 +261,7 @@ export function Navigation() {
             </Button>
             <Button 
               className="flex-1 h-10 text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => window.location.href = '/login?state=signup'}
             >
               Get Started
               <ArrowRight className="ml-1 h-3 w-3" />

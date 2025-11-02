@@ -191,8 +191,8 @@ export function useDashboardStats(user: User | null) {
   const updateWebsiteTime = async (minutes: number) => {
     if (!user) return;
 
-    // Handle guest users differently - store in localStorage
-    if (user.isGuest) {
+    // Handle guest or anonymous users in localStorage to avoid Firestore permission issues
+    if ((user as any).isGuest || (user as any).isAnonymous) {
       try {
         const today = getTodayString();
         const dayStatsKey = `guest-stats-${today}`;
@@ -230,7 +230,7 @@ export function useDashboardStats(user: User | null) {
       }
     }
 
-    // Handle authenticated users - store in Firebase
+    // Handle fully authenticated users - store in Firebase
     try {
       const today = getTodayString();
       const dayStatsRef = doc(db, 'userStats', user.uid, 'dailyStats', today);
@@ -264,8 +264,8 @@ export function useDashboardStats(user: User | null) {
   const trackWebsiteVisit = async () => {
     if (!user) return;
 
-    // Handle guest users differently - store in localStorage
-    if (user.isGuest) {
+    // Handle guest or anonymous users differently - store in localStorage
+    if ((user as any).isGuest || (user as any).isAnonymous) {
       try {
         const today = getTodayString();
         const dayStatsKey = `guest-stats-${today}`;

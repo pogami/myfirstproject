@@ -71,7 +71,7 @@ export function NotificationToastListener() {
         toast(notification.title, {
           description: notification.description,
           icon: icon,
-          duration: 5000,
+          duration: 10000,
           action: notification.priority === 'high' ? {
             label: 'View',
             onClick: () => window.location.href = '/dashboard/notifications'

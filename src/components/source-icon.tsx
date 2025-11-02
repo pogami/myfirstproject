@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { ExternalLink, Globe } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Globe, X } from 'lucide-react';
 
 interface Source {
   title: string;
@@ -15,61 +15,97 @@ interface SourceIconProps {
 }
 
 export function SourceIcon({ sources, className = "" }: SourceIconProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
+
+  // Close popup when scrolling
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isClicked) {
+        setIsClicked(false);
+      }
+    };
+
+    if (isClicked) {
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [isClicked]);
 
   if (!sources || sources.length === 0) {
     return null;
   }
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Globe icon clicked!', { isClicked, sources: sources.length });
+    
+    if (!isClicked) {
+      // Get the position of the clicked element relative to viewport
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      setPopupPosition({
+        top: rect.top - 10, // Position it right above the globe
+        left: rect.left + rect.width / 2
+      });
+    }
+    
+    setIsClicked(!isClicked);
+  };
+
   return (
     <div className={`relative inline-block ${className}`}>
       {/* Source Icon */}
-      <div
-        className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors duration-200 border border-blue-200 dark:border-blue-700 shadow-sm"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        title={`${sources.length} source${sources.length > 1 ? 's' : ''} available`}
+      <button
+        className={`inline-flex items-center justify-center w-6 h-6 rounded-md cursor-pointer transition-colors duration-200 border shadow-sm ${
+          isClicked 
+            ? 'bg-blue-100 dark:bg-blue-800/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-600' 
+            : 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 border-blue-200 dark:border-blue-700'
+        }`}
+        onClick={handleClick}
+        title={`Click to ${isClicked ? 'hide' : 'show'} ${sources.length} source${sources.length > 1 ? 's' : ''}`}
       >
         <Globe className="w-4 h-4" />
-      </div>
+      </button>
 
-      {/* Tooltip */}
-      {isHovered && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 max-w-sm z-50">
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3">
-            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Sources ({sources.length})
+      {/* Simple URL Popup - Fixed Above Globe */}
+      {isClicked && (
+        <div 
+          className="fixed z-[9999] w-72 max-w-sm"
+          style={{
+            top: `${popupPosition.top}px`,
+            left: `${popupPosition.left}px`,
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Sources ({sources.length})
+              </div>
+              <button
+                onClick={() => setIsClicked(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {sources.map((source, index) => (
-                <div key={index} className="border-b border-gray-100 dark:border-gray-700 last:border-b-0 pb-2 last:pb-0">
+                <div key={index} className="text-xs">
                   <a
                     href={source.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block hover:bg-gray-50 dark:hover:bg-gray-700 rounded p-2 -m-2 transition-colors duration-150"
+                    className="block text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline break-all"
                   >
-                    <div className="flex items-start gap-2">
-                      <ExternalLink className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
-                          {source.title}
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                          {source.snippet}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500 mt-1 truncate">
-                          {new URL(source.url).hostname}
-                        </div>
-                      </div>
-                    </div>
+                    {source.url}
                   </a>
                 </div>
               ))}
             </div>
           </div>
-          {/* Arrow */}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-200 dark:border-t-gray-700"></div>
         </div>
       )}
     </div>

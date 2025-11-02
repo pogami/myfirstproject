@@ -11,14 +11,13 @@ import { useChatStore } from "@/hooks/use-chat-store";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/client-simple";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { UnifiedLoadingAnimation } from "@/components/unified-loading-animation";
 
 export default function ClassOverviewPage() {
     const { chats, setCurrentTab, deleteChat, addChat, joinPublicGeneralChat, subscribeToChat } = useChatStore();
     const router = useRouter();
     const [user] = useAuthState(auth);
-    const { toast } = useToast();
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [transitioningTo, setTransitioningTo] = useState("");
     const [liveStats, setLiveStats] = useState({
@@ -114,19 +113,25 @@ export default function ClassOverviewPage() {
         router.push('/dashboard/chat?tab=' + encodeURIComponent(chatId));
     }
 
-    const handleLeaveClass = async (chatId: string, chatTitle: string) => {
+    const handleLeaveClass = async (chatId: string, chatTitle: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        console.log('🔴 Leave button clicked:', { chatId, chatTitle });
         try {
             await deleteChat(chatId);
-            toast({
-                title: "Left Class",
-                description: `You have left ${chatTitle}`,
+            console.log('✅ Chat deleted successfully');
+            toast.error(`You left ${chatTitle}`, {
+                description: "You have successfully left the class",
+                duration: 3000,
             });
             // No redirect - stay on overview page
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to leave class. Please try again.",
-                variant: "destructive",
+            console.error('❌ Error deleting chat:', error);
+            toast.error("Failed to leave class", {
+                description: "Please try again",
+                duration: 3000,
             });
         }
     }
@@ -361,7 +366,7 @@ export default function ClassOverviewPage() {
                                                         className="bg-gradient-to-r from-red-500/10 to-red-500/5 hover:from-red-500/20 hover:to-red-500/10 text-red-500 border-red-500/20 hover:border-red-500/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => handleLeaveClass(id, getChatDisplayName(chat, id))}
+                                                        onClick={(e) => handleLeaveClass(id, getChatDisplayName(chat, id), e)}
                                                     >
                                                         <LogOut className="size-4" />
                                                     </Button>

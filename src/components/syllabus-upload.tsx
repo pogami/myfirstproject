@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, Users, Bot, Brain, Zap } from "lucide-react";
+import { Upload, FileText, X, Users, Bot, Brain, Zap, Shield, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentProcessorClient } from '@/lib/syllabus-parser/document-processor-client';
 import { AISyllabusParser } from '@/lib/syllabus-parser/ai-parser';
@@ -644,6 +644,15 @@ export default function SyllabusUpload() {
                     </div>
                 )}
 
+                {!isAnalyzing && (
+                    <div className="mt-3 p-3 rounded-md border bg-muted/30 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <Shield className="h-5 w-5" />
+                            <span>Processed in your browser; only extracted text is sent for AI parsing, we never store the original file, and any parsed course data saved to your account can be deleted.</span>
+                        </div>
+                    </div>
+                )}
+
                 {file && !isAnalyzing && (
                     <div className="space-y-3 sm:space-y-4">
                         <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-secondary/50 border">
@@ -663,125 +672,22 @@ export default function SyllabusUpload() {
                     </div>
                 )}
                 {isAnalyzing && (
-                     <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 space-y-4 sm:space-y-6">
-                        {/* Step Animation */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex gap-2">
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                                        parsingProgress.stage === 'uploading' || parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                                    }`}>
-                                        {parsingProgress.stage === 'uploading' || parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '1'}
-                                    </div>
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                                        parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                                    }`}>
-                                        {parsingProgress.stage === 'extracting' || parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '2'}
-                                    </div>
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                                        parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                                    }`}>
-                                        {parsingProgress.stage === 'parsing' || parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '3'}
-                                    </div>
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                                        parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                                    }`}>
-                                        {parsingProgress.stage === 'structuring' || parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '4'}
-                                    </div>
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                                        parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                                    }`}>
-                                        {parsingProgress.stage === 'validating' || parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '5'}
-                                    </div>
-                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                                        parsingProgress.stage === 'complete' ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                                    }`}>
-                                        {parsingProgress.stage === 'complete' ? <CheckCircle className="w-3 h-3" /> : '6'}
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500 ease-out"
-                                            style={{ width: `${parsingProgress.progress}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                        </div>
-                            
-                            {/* Current Step Description */}
-                            <div className="space-y-2">
-                                <h3 className="text-lg sm:text-xl font-semibold text-primary">
-                                    {parsingProgress.stage === 'uploading' && '📁 Validating File'}
-                                    {parsingProgress.stage === 'extracting' && '📄 Extracting Text'}
-                                    {parsingProgress.stage === 'parsing' && '🧠 AI Analysis'}
-                                    {parsingProgress.stage === 'structuring' && '🏗️ Structuring Data'}
-                                    {parsingProgress.stage === 'validating' && '✅ Validating Results'}
-                                    {parsingProgress.stage === 'complete' && '🎉 Processing Complete!'}
-                        </h3>
-                        <p className="text-muted-foreground text-sm sm:text-base">{parsingProgress.message}</p>
-                            </div>
-                        </div>
-                        
-                        {/* Progress Details */}
-                        <div className="flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                                <span className="font-medium text-primary">{Math.round(parsingProgress.progress)}%</span>
-                            </div>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">
-                                {parsingProgress.stage === 'uploading' && 'Stage 1/6'}
-                                {parsingProgress.stage === 'extracting' && 'Stage 2/6'}
-                                {parsingProgress.stage === 'parsing' && 'Stage 3/6'}
-                                {parsingProgress.stage === 'structuring' && 'Stage 4/6'}
-                                {parsingProgress.stage === 'validating' && 'Stage 5/6'}
-                                {parsingProgress.stage === 'complete' && 'Stage 6/6'}
+                     <div className="flex flex-col items-center justify-center text-center p-6 sm:p-8 space-y-4 sm:space-y-5">
+                        <div className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>
+                                {parsingProgress.stage === 'uploading' && 'Validating file'}
+                                {parsingProgress.stage === 'extracting' && 'Extracting text'}
+                                {parsingProgress.stage === 'parsing' && 'Analyzing with AI'}
+                                {parsingProgress.stage === 'structuring' && 'Structuring data'}
+                                {parsingProgress.stage === 'validating' && 'Finalizing'}
+                                {parsingProgress.stage === 'complete' && 'Processing complete'}
+                                {parsingProgress.message ? ` • ${parsingProgress.message}` : ''}
                             </span>
                         </div>
-                        {parsingResult && (
-                            <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                                            AI Analysis Complete
-                                        </span>
-                                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                            parsingResult.success ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
-                                        }`}>
-                                            {parsingResult.success ? 'Success' : 'Review'}
-                                        </span>
-                                        {ollamaResult?.isOllamaAvailable && (
-                                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                                <Brain className="h-3 w-3 inline mr-1" />
-                                                Ollama
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs">
-                                        <span className="text-gray-600 dark:text-gray-400">
-                                            Confidence: <span className={`font-medium ${
-                                                (parsingResult.confidence || 0) > 0.8 ? 'text-green-600' : 
-                                                (parsingResult.confidence || 0) > 0.6 ? 'text-yellow-600' : 'text-orange-600'
-                                            }`}>
-                                                {Math.round((parsingResult.confidence || 0) * 100)}%
-                                            </span>
-                                        </span>
-                                        {parsingResult.data?.courseInfo?.title && (
-                                            <span className="text-gray-600 dark:text-gray-400">
-                                                Course: <span className="font-medium text-gray-900 dark:text-gray-100">{parsingResult.data.courseInfo.title}</span>
-                                            </span>
-                                        )}
-                                        {parsingResult.data?.courseInfo?.courseCode && (
-                                            <span className="text-gray-600 dark:text-gray-400">
-                                                Code: <span className="font-medium text-gray-900 dark:text-gray-100">{parsingResult.data.courseInfo.courseCode}</span>
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        <div className="w-full">
+                            <Progress value={parsingProgress.progress} className="w-full" />
+                        </div>
                     </div>
                 )}
             </CardContent>

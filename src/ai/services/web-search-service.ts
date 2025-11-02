@@ -1,8 +1,7 @@
 /**
  * Web Search Service for Real-Time Information
  * 
- * This service provides current information by searching the web
- * when the AI needs up-to-date data.
+ * This service provides current information using ONLY Google Custom Search API
  */
 
 export interface WebSearchResult {
@@ -19,23 +18,22 @@ export interface WebSearchResponse {
 }
 
 /**
- * Search for current information using real web search
+ * Search for current information using ONLY Google Custom Search API
  */
-// Rate limiting for DuckDuckGo (minimal - no strict limits)
 let lastSearchTime = 0;
-const MIN_SEARCH_INTERVAL = 1000; // 1 second between searches (very generous)
+const MIN_SEARCH_INTERVAL = 1000; // 1 second between searches
 
 export async function searchCurrentInformation(query: string): Promise<WebSearchResponse> {
   try {
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       console.log('⚠️ Invalid query provided to searchCurrentInformation');
       return {
-        success: false,
         results: [],
-        error: 'Invalid query provided'
+        query: '',
+        timestamp: new Date().toISOString()
       };
     }
-    console.log('🔍 Web search:', query);
+    // Query logging removed for production
     
     // Check rate limits
     const now = Date.now();
@@ -44,253 +42,155 @@ export async function searchCurrentInformation(query: string): Promise<WebSearch
       await new Promise(resolve => setTimeout(resolve, MIN_SEARCH_INTERVAL - (now - lastSearchTime)));
     }
     
-    const searchQuery = encodeURIComponent(query);
     const results: WebSearchResult[] = [];
-    const currentYear = new Date().getFullYear();
-    const currentDate = new Date().toLocaleDateString();
-    const currentTime = new Date().toLocaleTimeString();
     
-    // Try Google Custom Search API first (if configured)
+    // Get Google API credentials
     const googleApiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const googleSearchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
     
-    if (googleApiKey && googleSearchEngineId && 
-        googleApiKey !== 'demo-key' && googleApiKey !== 'your_google_search_key_here' &&
-        googleSearchEngineId !== 'demo-engine-id' && googleSearchEngineId !== 'your_search_engine_id_here') {
-      
-      try {
-        console.log('🔍 Using Google Custom Search API...');
-        
-        const googleSearchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleSearchEngineId}&q=${searchQuery}&num=5`;
-        
-        const googleResponse = await fetch(googleSearchUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; CourseConnect-AI/1.0; +https://courseconnectai.com)',
-          },
-          signal: AbortSignal.timeout(8000)
-        });
-        
-        if (googleResponse.ok) {
-          const googleData = await googleResponse.json();
-          
-          if (googleData.items && googleData.items.length > 0) {
-            googleData.items.forEach((item: any) => {
-              results.push({
-                title: item.title || 'Untitled',
-                snippet: item.snippet || 'No description available',
-                url: item.link || '',
-                date: new Date().toISOString()
-              });
-            });
-        console.log('✅ Google search completed');
-            lastSearchTime = Date.now();
-          }
-        }
-      } catch (error) {
-        console.warn('❌ Google Custom Search failed:', error);
-      }
+    // Note: Logging removed for production security - API keys and engine IDs should not be logged
+    
+    // Validate that we have actual string values (not just truthy)
+    if (!googleApiKey || typeof googleApiKey !== 'string' || googleApiKey.trim().length === 0 ||
+        googleApiKey === 'demo-key' || googleApiKey === 'your_google_search_key_here') {
+      console.error('❌ GOOGLE_SEARCH_API_KEY is missing or invalid');
+      console.error('   Value:', googleApiKey);
+      console.error('   Type:', typeof googleApiKey);
+      return {
+        results: [],
+        query,
+        timestamp: new Date().toISOString()
+      };
     }
     
-    // Fallback to DuckDuckGo if Google Search fails or isn't configured
-    if (results.length === 0) {
-      try {
-        console.log('🔍 Falling back to DuckDuckGo Instant Answer API...');
+    if (!googleSearchEngineId || typeof googleSearchEngineId !== 'string' || googleSearchEngineId.trim().length === 0 ||
+        googleSearchEngineId === 'demo-engine-id' || googleSearchEngineId === 'your_search_engine_id_here') {
+      console.error('❌ GOOGLE_SEARCH_ENGINE_ID is missing or invalid');
+      console.error('   Value:', googleSearchEngineId);
+      console.error('   Type:', typeof googleSearchEngineId);
+      return {
+        results: [],
+        query,
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    try {
+      console.log('🔍 Using Google Custom Search API...');
+      
+      const limitFromEnv = parseInt(process.env.SEARCH_RESULTS_LIMIT || "12", 10);
+      const limit = Number.isFinite(limitFromEnv) && limitFromEnv > 0 && limitFromEnv <= 20 ? limitFromEnv : 12;
+      
+      // Ensure query is properly encoded (API key and engine ID should NOT be encoded)
+      const encodedQuery = encodeURIComponent(query.trim());
+      
+      // Build URL - only encode the query, not the API key or engine ID
+      const googleSearchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleSearchEngineId}&q=${encodedQuery}&num=${limit}`;
+      
+      // Logging removed for production security
+      
+      const googleResponse = await fetch(googleSearchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; CourseConnect-AI/1.0; +https://courseconnectai.com)',
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+      
+      if (googleResponse.ok) {
+        const googleData = await googleResponse.json();
         
-        // Try DuckDuckGo Instant Answer API first (more reliable)
-        const instantAnswerUrl = `https://api.duckduckgo.com/?q=${searchQuery}&format=json&no_html=1&skip_disambig=1`;
-        
-        const instantResponse = await fetch(instantAnswerUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; CourseConnect-AI/1.0; +https://courseconnectai.com)',
-          },
-          signal: AbortSignal.timeout(5000)
-        });
-        
-        if (instantResponse.ok) {
-          const instantData = await instantResponse.json();
-          
-          // Check for instant answer
-          if (instantData.Abstract) {
+        if (googleData.items && googleData.items.length > 0) {
+          googleData.items.forEach((item: any) => {
             results.push({
-              title: instantData.Heading || query,
-              snippet: instantData.Abstract,
-              url: instantData.AbstractURL || 'https://duckduckgo.com/',
+              title: item.title || 'Untitled',
+              snippet: item.snippet || 'No description available',
+              url: item.link || '',
               date: new Date().toISOString()
             });
-            console.log('✅ DuckDuckGo Instant Answer found');
-          }
-          
-          // Check for related topics
-          if (instantData.RelatedTopics && instantData.RelatedTopics.length > 0) {
-            instantData.RelatedTopics.slice(0, 3).forEach((topic: any) => {
-              if (topic.Text && topic.FirstURL) {
-                results.push({
-                  title: topic.Text.split(' - ')[0] || topic.Text,
-                  snippet: topic.Text,
-                  url: topic.FirstURL,
-                  date: new Date().toISOString()
-                });
-              }
-            });
-            console.log('✅ DuckDuckGo Related Topics found');
-          }
-        }
-        
-        // If no instant answer, try HTML scraping as fallback
-        if (results.length === 0) {
-          console.log('🔍 No instant answer, trying HTML scraping...');
-          
-          const duckDuckGoUrl = `https://html.duckduckgo.com/html/?q=${searchQuery}&kl=us-en`;
-          
-          const response = await fetch(duckDuckGoUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Accept-Language': 'en-US,en;q=0.5',
-              'Accept-Encoding': 'gzip, deflate',
-              'Connection': 'keep-alive',
-              'Upgrade-Insecure-Requests': '1',
-            },
-            signal: AbortSignal.timeout(10000)
           });
-          
-          if (response.ok) {
-            const html = await response.text();
-            
-            // Try multiple parsing approaches
-            const patterns = [
-              // Pattern 1: Look for result links
-              /<a[^>]*href="(https?:\/\/[^"]*)"[^>]*class="[^"]*result[^"]*"[^>]*>([^<]*)<\/a>/g,
-              // Pattern 2: Look for any external links
-              /<a[^>]*href="(https?:\/\/[^"]*)"[^>]*>([^<]{10,})<\/a>/g
-            ];
-            
-            let resultCount = 0;
-            
-            for (const pattern of patterns) {
-              let match;
-              while ((match = pattern.exec(html)) !== null && resultCount < 3) {
-                const url = match[1];
-                const title = match[2] ? match[2].trim() : '';
-                
-                // Skip DuckDuckGo internal links and validate results
-                if (!url.includes('duckduckgo.com') && 
-                    !url.includes('javascript:') && 
-                    !url.includes('mailto:') &&
-                    title && 
-                    title.length > 10) {
-                  
-                  results.push({
-                    title: title,
-                    snippet: `Search result for: ${query}`,
-                    url: url,
-                    date: new Date().toISOString()
-                  });
-                  resultCount++;
-                }
-              }
-              
-              if (resultCount > 0) break;
-            }
-          }
-        }
-        
-        if (results.length > 0) {
-          console.log('✅ DuckDuckGo search completed, found', results.length, 'results');
+          console.log('✅ Google search completed with', results.length, 'results');
           lastSearchTime = Date.now();
         } else {
-          console.log('⚠️ No results found from DuckDuckGo');
+          console.log('⚠️ No results found from Google Search');
         }
-      } catch (error) {
-        console.warn('❌ DuckDuckGo search failed:', error);
+      } else {
+        console.error('❌ Google Search API error:', googleResponse.status, googleResponse.statusText);
+        const errorText = await googleResponse.text();
+        console.error('Raw error text:', errorText);
         
-        // Provide helpful fallback information
-        console.log('🔄 Providing fallback information due to search failure');
-        results.push({
-          title: 'Search Temporarily Unavailable',
-          snippet: 'Unable to fetch search results at the moment. Please try again later or ask about specific topics that don\'t require real-time information.',
-          url: 'https://duckduckgo.com/',
-          date: new Date().toISOString()
-        });
+        // Try to parse error JSON for more details
+        try {
+          const errorJson = JSON.parse(errorText);
+          console.error('📋 Parsed error JSON:', JSON.stringify(errorJson, null, 2));
+          
+          // Extract detailed error information
+          if (errorJson.error) {
+            const error = errorJson.error;
+            console.error('🔍 Error Code:', error.code);
+            console.error('🔍 Error Message:', error.message);
+            
+            if (error.errors && Array.isArray(error.errors)) {
+              error.errors.forEach((err: any, index: number) => {
+                console.error(`🔍 Error ${index + 1}:`, {
+                  domain: err.domain,
+                  reason: err.reason,
+                  message: err.message,
+                  location: err.location,
+                  locationType: err.locationType
+                });
+              });
+            }
+          }
+          
+          // Check specific error types
+          if (errorJson.error?.status === 'INVALID_ARGUMENT' || errorJson.error?.code === 400) {
+            console.error('⚠️ INVALID_ARGUMENT Error - Possible causes:');
+            console.error('  1. ❌ API key does NOT have "Custom Search API" enabled');
+            console.error('     → Go to: https://console.cloud.google.com/apis/library/customsearch.googleapis.com');
+            console.error('     → Click "Enable" if not already enabled');
+            console.error('  2. ❌ Search Engine ID (cx) is incorrect or not accessible by this API key');
+            console.error('     → Check your engine ID at: https://cse.google.com/cse/all');
+            console.error('  3. ❌ API key has restrictions (IP, HTTP referrer) that block this request');
+            console.error('     → Go to: https://console.cloud.google.com/apis/credentials');
+            console.error('     → Edit your API key and check "Application restrictions"');
+            console.error('  4. ❌ API key quota exceeded or billing not enabled');
+            console.error('     → Check quota at: https://console.cloud.google.com/apis/api/customsearch.googleapis.com/quotas');
+          }
+        } catch (e) {
+          console.error('❌ Could not parse error as JSON:', e);
+          console.error('Raw error text was:', errorText);
+        }
       }
+    } catch (error) {
+      console.error('❌ Google Custom Search failed:', error);
     }
     
-    // Strategy 2: Enhanced real-time information based on query
-    const lowerQuery = query.toLowerCase();
-    
-    // Only add generic context if we have no results from DuckDuckGo
+    // If no results from Google, return empty results
     if (results.length === 0) {
-      results.push({
-        title: `Real-Time Search Results`,
-        snippet: `Search conducted in real-time to provide the most accurate and up-to-date information available.`,
-        url: 'https://duckduckgo.com/',
-        date: new Date().toISOString()
-      });
+      console.log('⚠️ No results found from Google Search');
+      return {
+        results: [],
+        query,
+        timestamp: new Date().toISOString()
+      };
     }
     
-    // Add specific real-time information (updated for 2025)
-    if (lowerQuery.includes('richest') && (lowerQuery.includes('person') || lowerQuery.includes('man') || lowerQuery.includes('world'))) {
-      results.push({
-        title: `Current Richest Person in the World`,
-        snippet: `As of 2025, the richest person rankings fluctuate frequently. Check Forbes Real-Time Billionaires list for the most current rankings, as net worth changes daily with stock market movements.`,
-        url: 'https://www.forbes.com/billionaires/',
-        date: new Date().toISOString()
-      });
-    } else if (lowerQuery.includes('president') && (lowerQuery.includes('usa') || lowerQuery.includes('united states') || lowerQuery.includes('america'))) {
-      results.push({
-        title: `Current President of the United States`,
-        snippet: `The President of the United States is Joe Biden. This reflects the current administration as of 2025.`,
-        url: 'https://www.whitehouse.gov',
-        date: new Date().toISOString()
-      });
-    } else if (lowerQuery.includes('2024') || lowerQuery.includes('2025') || lowerQuery.includes('year')) {
-      results.push({
-        title: `Current Year Information`,
-        snippet: `The current year is ${currentYear}. Information about ${currentYear} is the most up-to-date available. Previous years like 2024 contain historical data.`,
-        url: 'https://www.timeanddate.com',
-        date: new Date().toISOString()
-      });
-    } else if (lowerQuery.includes('bitcoin') && lowerQuery.includes('price')) {
-      results.push({
-        title: `Current Bitcoin Price`,
-        snippet: `Bitcoin price fluctuates constantly throughout the day. For the most current price, check real-time cryptocurrency exchanges like Coinbase, Binance, or CoinMarketCap.`,
-        url: 'https://coinmarketcap.com/currencies/bitcoin/',
-        date: new Date().toISOString()
-      });
-    } else if (lowerQuery.includes('weather')) {
-      results.push({
-        title: `Current Weather Information`,
-        snippet: `Weather conditions vary by location and change frequently. For accurate current weather, check your local weather service or apps like Weather.com.`,
-        url: 'https://weather.com',
-        date: new Date().toISOString()
-      });
-    } else {
-        // For any other query, provide general real-time context
-        results.push({
-          title: `Real-Time Information Context`,
-          snippet: `This information is current and up-to-date. For the most recent information on this topic, check recent news sources or official websites.`,
-          url: 'https://duckduckgo.com/',
-          date: new Date().toISOString()
-        });
-    }
-    
-    console.log('🎯 Real-time search completed with', results.length, 'results');
+    console.log('🎯 Google search completed with', results.length, 'results');
     
     return {
-      results: results.slice(0, 5), // Limit to 5 results
+      results: results.slice(0, Number(process.env.SEARCH_RESULTS_LIMIT || 12)),
       query,
       timestamp: new Date().toISOString()
     };
     
   } catch (error) {
-    console.warn('❌ Web search failed:', error);
+    console.error('❌ Google search failed:', error);
     
-    // Ultimate fallback with timestamp
     return {
       results: [{
-        title: 'Search Information',
-        snippet: `Search performed on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}. For real-time information, please check current news sources.`,
-        url: 'https://www.google.com',
+        title: 'Google Search Error',
+        snippet: `Search failed due to an error. Please check your Google Search API configuration.`,
+        url: 'https://console.cloud.google.com/',
         date: new Date().toISOString()
       }],
       query,
@@ -301,11 +201,23 @@ export async function searchCurrentInformation(query: string): Promise<WebSearch
 
 /**
  * Check if a query needs current information
- * ALWAYS return true - we want real-time data for every question
+ * Only return true for specific current events, news, weather, etc.
  */
 export function needsCurrentInformation(question: string): boolean {
-  // Always search for current information to ensure students get accurate, up-to-date data
-  return true;
+  const lowerQuestion = question.toLowerCase();
+  
+  // Only search for specific current information topics
+  const currentInfoKeywords = [
+    'weather', 'temperature', 'forecast',
+    'news', 'latest', 'recent', 'today', 'now',
+    'stock', 'market', 'price', 'crypto', 'bitcoin',
+    'election', 'politics', 'breaking',
+    'sports', 'game', 'score', 'nba', 'nfl', 'mlb',
+    'covid', 'pandemic', 'virus',
+    'earthquake', 'hurricane', 'disaster'
+  ];
+  
+  return currentInfoKeywords.some(keyword => lowerQuestion.includes(keyword));
 }
 
 /**
@@ -320,5 +232,5 @@ export function formatSearchResultsForAI(searchResponse: WebSearchResponse): str
     return `${index + 1}. ${result.title}\n   ${result.snippet}\n   Source: ${result.url}\n`;
   }).join('\n');
   
-  return `\n\nCurrent Information (as of ${new Date().toLocaleDateString()}):\n${formattedResults}\n`;
+  return `\n\n🔍 REAL-TIME SEARCH RESULTS (${new Date().toLocaleDateString()}):\nIMPORTANT: Use ONLY this current information to answer questions. Do NOT use outdated training data when current information is available.\n\n${formattedResults}\n\nCRITICAL: Base your response ONLY on the current information above. Ignore any outdated information from your training data.`;
 }
