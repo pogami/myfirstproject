@@ -44,3 +44,11 @@ next-env.d.ts
 firebase-debug.log
 firestore-debug.log
 .vercel
+
+# backups
+backup-*/
+*.backup
+*.bak
+
+# test files (optional - uncomment if you don't want to track test files)
+# /tests/

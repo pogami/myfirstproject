@@ -1222,7 +1222,7 @@ body {
   background-color: transparent !important;
 }
 
-/* Sonner toast overlapping styles */
+/* Sonner toast overlapping styles - Vercel-style */
 [data-sonner-toaster] {
   --width: 356px;
   --gap: 0px;
@@ -1231,10 +1231,97 @@ body {
 [data-sonner-toast] {
   margin-bottom: 0px !important;
   margin-top: 0px !important;
+  background: #000 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  padding: 16px !important;
+  color: #fff !important;
+  transition: all 0.2s ease !important;
 }
 
 [data-sonner-toast]:not(:first-child) {
   margin-top: -5px !important;
   transform: translateY(-5px) !important;
+}
+
+/* Hover state - elevate and brighten (like Vercel) */
+[data-sonner-toast]:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  transform: translateY(-2px) scale(1.01) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Title styling - bold white at top */
+[data-sonner-toast] [data-title] {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: #fff !important;
+  margin-bottom: 4px !important;
+  line-height: 1.4 !important;
+}
+
+/* Description styling - white body text */
+[data-sonner-toast] [data-description] {
+  color: #fff !important;
+  font-size: 13px !important;
+  opacity: 0.9 !important;
+  line-height: 1.5 !important;
+}
+
+/* Action button container - bottom right */
+[data-sonner-toast] [data-button-container] {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+  justify-content: flex-end !important;
+}
+
+/* Cancel/Dismiss button - ghost style */
+[data-sonner-toast] button[data-button][data-cancel] {
+  background: transparent !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+  opacity: 0.9 !important;
+}
+
+[data-sonner-toast] button[data-button][data-cancel]:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Primary action button (Install style) - white on light gray */
+[data-sonner-toast] button[data-button]:not([data-cancel]) {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toast] button[data-button]:not([data-cancel]):hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Close button */
+[data-sonner-toast] button[data-close-button] {
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+[data-sonner-toast] button[data-close-button]:hover {
+  opacity: 1 !important;
+  color: #fff !important;
 }
 

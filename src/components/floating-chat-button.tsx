@@ -28,8 +28,12 @@ export function FloatingChatButton() {
   const [value, setValue] = useState('');
   const [showCourseDropdown, setShowCourseDropdown] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [recognition, setRecognition] = useState<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { chats, addMessage, setCurrentTab } = useChatStore();
   const [user, setUser] = useState<any>(null);
 
@@ -39,6 +43,39 @@ export function FloatingChatButton() {
       setUser(u);
     });
     return unsubscribe;
+  }, []);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognitionInstance = new SpeechRecognition();
+        recognitionInstance.continuous = false;
+        recognitionInstance.interimResults = false;
+        recognitionInstance.lang = 'en-US';
+
+        recognitionInstance.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setValue((prev) => prev + (prev ? ' ' : '') + transcript);
+          setIsVoiceActive(false);
+        };
+
+        recognitionInstance.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsVoiceActive(false);
+          if (event.error === 'not-allowed') {
+            alert('Microphone permission denied. Please allow microphone access in your browser settings.');
+          }
+        };
+
+        recognitionInstance.onend = () => {
+          setIsVoiceActive(false);
+        };
+
+        setRecognition(recognitionInstance);
+      }
+    }
   }, []);
 
   // Close dropdown when clicking outside
@@ -70,7 +107,8 @@ export function FloatingChatButton() {
   );
 
   const handleSend = async () => {
-    if (!value.trim()) return;
+    // Don't send if there's no message and no file
+    if (!value.trim() && !selectedFile) return;
 
     const messageText = value.trim();
 
@@ -82,7 +120,7 @@ export function FloatingChatButton() {
       const isGuest = user?.isGuest || user?.isAnonymous;
       const userName = isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous');
       
-      const userMessage = {
+      const userMessage: any = {
         id: `msg-${Date.now()}-${Math.random()}`,
         text: messageText,
         sender: 'user' as const,
@@ -90,6 +128,18 @@ export function FloatingChatButton() {
         userId: user?.uid || 'guest',
         timestamp: Date.now(),
       };
+
+      // Add file if selected
+      if (selectedFile) {
+        const fileUrl = URL.createObjectURL(selectedFile);
+        userMessage.file = {
+          name: selectedFile.name,
+          size: selectedFile.size,
+          type: selectedFile.type,
+          url: fileUrl
+        };
+        setSelectedFile(null); // Clear after adding
+      }
 
       try {
         // Set the current tab before adding message
@@ -100,6 +150,7 @@ export function FloatingChatButton() {
         // Clear input and selection before redirect
         setValue('');
         setSelectedChatId(null);
+        setSelectedFile(null);
 
         // If it's a class chat, trigger AI response
         if (isClassChat) {
@@ -173,8 +224,21 @@ export function FloatingChatButton() {
         console.error('Error sending message:', error);
       }
     } else {
-      // Default behavior: redirect to general chat
+      // Default behavior: redirect to general chat with message and file
       sessionStorage.setItem('floating-chat-message', messageText);
+      
+      // If there's a file, store it for the chat page to pick up
+      if (selectedFile) {
+        const fileUrl = URL.createObjectURL(selectedFile);
+        sessionStorage.setItem('floating-chat-file', JSON.stringify({
+          name: selectedFile.name,
+          size: selectedFile.size,
+          type: selectedFile.type,
+          url: fileUrl
+        }));
+        setSelectedFile(null);
+      }
+      
       router.push('/dashboard/chat');
     }
   };
@@ -186,9 +250,44 @@ export function FloatingChatButton() {
     }
   };
 
-  const handleMicClick = () => {
-    // For now, just redirect to chat - voice features can be added later
-    router.push('/dashboard/chat');
+  const handleMicClick = async () => {
+    if (!recognition) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge for voice input.');
+      return;
+    }
+
+    if (!isVoiceActive) {
+      try {
+        setIsVoiceActive(true);
+        recognition.start();
+        textareaRef.current?.focus();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsVoiceActive(false);
+      }
+    } else {
+      recognition.stop();
+      setIsVoiceActive(false);
+    }
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    
+    // Store file locally - will be sent when user clicks send
+    setSelectedFile(file);
+    
+    // Reset file input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleAtClick = () => {
@@ -223,12 +322,32 @@ export function FloatingChatButton() {
           className={cn(
             "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 rounded-lg",
             "hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200",
-            "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            selectedFile
+              ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+              : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           )}
-          onClick={() => router.push('/dashboard/chat')}
+          onClick={handleFileUpload}
+          title={selectedFile ? `Selected: ${selectedFile.name}` : "Upload file"}
         >
           <Upload className="h-5 w-5" />
         </div>
+        
+        {/* Show selected file name */}
+        {selectedFile && (
+          <div className="absolute -top-8 left-0 px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs rounded-md max-w-[200px] truncate">
+            {selectedFile.name}
+          </div>
+        )}
+        
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileChange}
+          multiple
+          accept="*/*"
+          className="hidden"
+        />
 
         {/* @ Course Selector Button */}
         <div className="relative" ref={dropdownRef}>
@@ -288,7 +407,9 @@ export function FloatingChatButton() {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            selectedChatId
+            selectedFile
+              ? `Message with ${selectedFile.name}...`
+              : selectedChatId
               ? `Message ${chats[selectedChatId]?.courseData?.courseCode || chats[selectedChatId]?.title || 'course'}...`
               : 'Ask anything...'
           }
@@ -309,8 +430,11 @@ export function FloatingChatButton() {
           className={cn(
             "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 rounded-lg",
             "hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200",
-            "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            isVoiceActive
+              ? "text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+              : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           )}
+          title={isVoiceActive ? "Stop recording" : "Start voice input"}
         >
           <Mic className="h-5 w-5" />
         </div>
@@ -322,7 +446,7 @@ export function FloatingChatButton() {
             "relative z-10 h-8 w-8 flex items-center justify-center cursor-pointer flex-shrink-0 rounded-lg",
             "hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200",
             "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100",
-            (!value.trim()) && "opacity-50 cursor-not-allowed"
+            (!value.trim() && !selectedFile) && "opacity-50 cursor-not-allowed"
           )}
           aria-label="Send"
         >
