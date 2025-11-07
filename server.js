@@ -5,9 +5,10 @@ const next = require('next');
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
 const port = process.env.PORT || process.argv[2]?.replace('--port=', '') || 9002;
+const useTurbopack = process.argv.includes('--turbopack') || process.env.TURBOPACK === 'true';
 
 // Initialize Next.js app
-const app = next({ dev, hostname, port });
+const app = next({ dev, hostname, port, turbo: useTurbopack });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {

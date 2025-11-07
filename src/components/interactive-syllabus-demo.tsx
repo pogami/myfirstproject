@@ -217,14 +217,18 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   };
 
   const handleFileSelect = (selectedFile: File) => {
-    const allowedTypes = ['text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const allowedExtensions = ['.txt', '.docx'];
+    const allowedTypes = [
+      'text/plain', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/pdf'
+    ];
+    const allowedExtensions = ['.txt', '.docx', '.pdf'];
     const maxSize = 10 * 1024 * 1024; // 10MB
     
     const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf('.'));
     
     if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('Please upload a TXT or DOCX file. Supported formats: TXT, DOCX');
+      setError('Please upload a TXT, DOCX, or PDF file. Supported formats: TXT, DOCX, PDF');
       return;
     }
 
@@ -247,6 +251,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
@@ -256,12 +261,31 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragOver(false);
+    e.stopPropagation();
+    // Only set dragOver to false if we're actually leaving the drop zone
+    // Check if we're leaving the drop zone itself, not a child element
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    // If the mouse is outside the drop zone bounds, then we've actually left
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
   };
 
   const removeFile = () => {
@@ -353,17 +377,40 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
             console.error('DOCX extraction error:', docxError);
             throw new Error(`Failed to extract text from DOCX: ${docxError.message}. Please try a TXT or PDF file instead.`);
           }
+      } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+          try {
+            setProcessingStep('Extracting text from PDF...');
+            setProgress(20);
+            
+            // Use DocumentProcessorClient which has client-side + server-side fallback
+            console.log('Processing PDF...');
+            
+            const { DocumentProcessorClient } = await import('@/lib/syllabus-parser/document-processor-client');
+            const result = await DocumentProcessorClient.extractText(file);
+            
+            text = result.text;
+            console.log('PDF extraction successful:', {
+              textLength: text.length,
+              format: result.format,
+              pages: result.metadata?.pages
+            });
+            setProgress(50);
+            
+          } catch (pdfError: any) {
+            console.error('PDF extraction error:', pdfError);
+            throw new Error(`Failed to extract text from PDF: ${pdfError.message}`);
+          }
       } else {
-        throw new Error('Unsupported file format');
+        throw new Error('Unsupported file format. Please upload a TXT, DOCX, or PDF file.');
       }
 
-      // Only validate text content for TXT and DOCX files (PDF will throw errors with guidance)
-      if ((file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') && (!text || text.trim().length === 0)) {
+      // Validate text content for all file types
+      if (!text || text.trim().length === 0) {
         throw new Error('No text content found in the file. Please try a different file.');
       }
 
-      // Process TXT and DOCX files with AI (PDF will have already thrown errors with guidance)
-      if (file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      // Process all supported file types with AI
+      if (file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
       // Step 2: Validate syllabus content (with bypass option for testing)
       setProcessingStep('Validating syllabus content...');
       setProgress(60);
@@ -735,6 +782,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                   ? 'border-purple-500 dark:border-purple-400 bg-purple-100/80 dark:bg-purple-900/30 shadow-lg scale-[1.02]' 
                   : 'border-purple-300 dark:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-950/20'
               }`}
+              onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -745,7 +793,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
                 className="hidden" 
-                accept=".docx,.txt" 
+                accept=".docx,.txt,.pdf" 
               />
               
               <div className='flex justify-center mb-6'>
@@ -770,7 +818,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 {isDragOver ? 'Drop to upload' : 'Drop syllabus or click to browse'}
               </h3>
               <p className="text-base text-muted-foreground">
-                DOCX or TXT • Max 10MB
+                DOCX, TXT, or PDF • Max 10MB
               </p>
             </div>
           )}

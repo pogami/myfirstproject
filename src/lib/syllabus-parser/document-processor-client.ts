@@ -18,47 +18,92 @@ export interface DocumentText {
 export class DocumentProcessorClient {
   
   /**
-   * Extract text from PDF document (client-side only)
+   * Extract text from PDF document (uses server-side API for reliability)
    */
   static async extractFromPDF(file: File): Promise<DocumentText> {
-    // Dynamic import to avoid SSR issues
-    const pdfjsLib = await import('pdfjs-dist');
-    
-    // Configure PDF.js worker with local file
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    
+    // Use server-side extraction directly - it's more reliable and handles all PDF types
+    return await this.extractFromPDFServer(file);
+  }
+  
+  /**
+   * Server-side PDF extraction (uses pdf-parse library - works reliably)
+   */
+  private static async extractFromPDFServer(file: File): Promise<DocumentText> {
     try {
+      // Ensure we're in a browser environment
+      if (typeof window === 'undefined') {
+        throw new Error('PDF extraction requires browser environment');
+      }
+      
+      // Ensure file is valid
+      if (!(file instanceof File)) {
+        throw new Error('Invalid file object');
+      }
+      
+      // Convert file to base64 to avoid FormData issues
+      // Use chunked approach for large files to avoid "Maximum call stack size exceeded"
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ 
-        data: arrayBuffer,
-        useSystemFonts: true,
-        disableFontFace: true,
-        disableRange: true,
-        disableStream: true
-      }).promise;
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const chunkSize = 8192; // Process in chunks
+      let base64 = '';
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.slice(i, i + chunkSize);
+        base64 += String.fromCharCode(...chunk);
+      }
+      base64 = btoa(base64);
       
-      let fullText = '';
-      const pageCount = pdf.numPages;
+      console.log('📤 Sending PDF to server:', { fileName: file.name, fileSize: file.size, base64Length: base64.length });
       
-      for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
+      const response = await fetch('/api/pdf-extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file: base64,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        })
+      }).catch((fetchError) => {
+        console.error('❌ Fetch error:', fetchError);
+        throw new Error(`Network error: ${fetchError.message}. Make sure the server is running on port 9002.`);
+      });
+      
+      console.log('📥 Server response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        let errorData: any = {};
+        try {
+          const text = await response.text();
+          console.error('❌ Server error response:', text);
+          errorData = text ? JSON.parse(text) : {};
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+          errorData = { error: `Server error: ${response.status} ${response.statusText}` };
+        }
+        throw new Error(errorData.error || `Server extraction failed: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success || !result.text) {
+        throw new Error(result.error || 'No text extracted from PDF');
       }
       
       return {
-        text: fullText.trim(),
+        text: result.text,
         format: 'pdf',
         metadata: {
-          pages: pageCount
+          pages: result.metadata?.pageCount || result.metadata?.pages,
+          fileName: result.metadata?.fileName,
+          fileSize: result.metadata?.fileSize
         }
       };
     } catch (error) {
       console.error('PDF extraction error:', error);
-      throw new Error('Failed to extract text from PDF');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to extract text from PDF: ${errorMessage}`);
     }
   }
   

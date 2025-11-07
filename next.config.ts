@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
   // Turbopack configuration (replaces webpack config)
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    serverComponentsExternalPackages: ['pdf2json'],
   },
   // Exclude problematic test pages from build
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],

@@ -18,6 +18,7 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----E
 # AI API Keys (Server-side only - KEEP PRIVATE!)
 GOOGLE_AI_API_KEY=your_google_ai_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_MODEL=gemini-1.5-flash  # Options: gemini-1.5-flash, gemini-1.5-pro, gemini-2.0-flash-exp, etc.
 
 # Real-Time Web Search (Server-side only - KEEP PRIVATE!)
 # Get these from: https://console.cloud.google.com/ (API Key) and https://cse.google.com/ (Search Engine ID)

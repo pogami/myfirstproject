@@ -94,7 +94,9 @@ Extract the following information and return as JSON:
 
 IMPORTANT: Return ONLY the JSON object above, with actual values extracted from the syllabus text. Use null for missing information.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleApiKey}`, {
+    // Use Gemini o3-mini or o4-mini (fallback to flash if not available)
+    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${googleApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
