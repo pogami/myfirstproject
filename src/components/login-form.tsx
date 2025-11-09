@@ -35,12 +35,14 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
   const [resetEmail, setResetEmail] = useState("");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [showGuestUsernamePopup, setShowGuestUsernamePopup] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const { toast, toasts, removeToast } = useAnimatedToast();
   const { chats: guestChats, clearGuestData } = useChatStore();
 
 
   useEffect(() => {
+    setIsMounted(true);
     setIsSigningUp(initialState === 'signup');
   }, [initialState]);
 
@@ -449,66 +451,91 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
 
       console.log("Created guest user:", guestUser);
 
-      // Store guest info in localStorage
-      localStorage.setItem('guestUser', JSON.stringify(guestUser));
-      console.log("Stored guest user in localStorage");
+      // Store guest info in localStorage FIRST (before Firebase operations)
+      try {
+        localStorage.setItem('guestUser', JSON.stringify(guestUser));
+        console.log("Stored guest user in localStorage");
+      } catch (storageError) {
+        console.error("Failed to store guest user in localStorage:", storageError);
+        throw new Error("Failed to save guest session. Please check your browser settings.");
+      }
 
       // Sign in anonymously so Firestore rules recognize the session
-      const anonCred = await signInAnonymously(auth);
-      const anonUid = anonCred.user?.uid;
+      // Wrap in try-catch to handle Firebase initialization errors gracefully
+      let anonCred = null;
+      let anonUid = null;
+      
+      try {
+        // Check if auth is available
+        if (!auth) {
+          throw new Error("Authentication service is not available. Please refresh the page.");
+        }
+        
+        anonCred = await signInAnonymously(auth);
+        anonUid = anonCred?.user?.uid;
+        console.log("Anonymous sign-in successful:", anonUid);
+      } catch (authError: any) {
+        console.warn("Anonymous sign-in failed, continuing with guest mode:", authError);
+        // Continue without Firebase auth - guest mode will work with localStorage only
+        // This allows the app to work even if Firebase is having issues
+      }
 
-      // Create/update minimal user profile for anonymous user
-      if (anonUid) {
+      // Create/update minimal user profile for anonymous user (non-blocking)
+      if (anonUid && db) {
         try {
           await setDoc(doc(db, "users", anonUid), {
             displayName: username,
             isAnonymous: true,
             createdAt: new Date().toISOString()
           }, { merge: true });
+          console.log("Guest user profile created in Firestore");
         } catch (e) {
-          console.warn("Failed to write anonymous user profile:", e);
+          console.warn("Failed to write anonymous user profile (non-critical):", e);
+          // Don't throw - this is not critical for guest mode
         }
       }
 
       // Show success message
-        toast({ 
-          title: `Welcome, ${username}!`, 
-          description: "You're now exploring CourseConnect. Create an account anytime to save your progress.",
-          variant: 'success'
-        });
+      toast({ 
+        title: `Welcome, ${username}!`, 
+        description: "You're now exploring CourseConnect. Create an account anytime to save your progress.",
+        variant: 'success'
+      });
       
       console.log("Redirecting to dashboard...");
       
-      // Immediate redirect for faster loading
+      // Small delay to ensure state is saved before redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Redirect to dashboard
       router.push('/dashboard');
       
     } catch (error: any) {
       console.error("Guest login error:", error);
+      setIsSubmittingGuest(false);
       toast({
         variant: "destructive",
         title: "Guest Login Failed",
-        description: `Could not sign in as guest: ${error.message || 'Unknown error'}`,
+        description: error.message || "Could not sign in as guest. Please try again or refresh the page.",
       });
-    } finally {
-      setIsSubmittingGuest(false);
     }
   }
 
 
   return (
-      <div className="w-full max-w-md animate-in fade-in-50 zoom-in-95">
+      <div className="w-full max-w-md animate-in fade-in-50 zoom-in-95" suppressHydrationWarning>
         {/* Animated background elements */}
-        <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-0 -z-10 overflow-hidden" suppressHydrationWarning>
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl delay-1000"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-indigo-400/15 to-purple-400/15 rounded-full blur-2xl delay-500"></div>
         </div>
         
-        <Card className="relative shadow-2xl rounded-3xl border-2 bg-gradient-to-br from-white/95 via-white/90 to-white/95 backdrop-blur-sm border-white/20 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-900/95 dark:border-gray-800/20">
+        <Card className="relative shadow-2xl rounded-3xl border-2 bg-gradient-to-br from-white/95 via-white/90 to-white/95 backdrop-blur-sm border-white/20 dark:from-gray-900/95 dark:via-gray-900/90 dark:to-gray-900/95 dark:border-gray-800/20" suppressHydrationWarning>
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-cyan-500/5 rounded-3xl"></div>
           
-          <CardHeader className="relative text-center pb-4">
+          <CardHeader className="relative text-center pb-4" suppressHydrationWarning>
             <div className="mb-6 flex justify-center">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-lg opacity-30"></div>
@@ -524,7 +551,7 @@ export function LoginForm({ initialState = 'login' }: LoginFormProps) {
               {isSigningUp ? "Start your academic journey with AI-powered tools" : "Sign in to continue your learning"}
             </CardDescription>
           </CardHeader>
-          <CardContent className="relative space-y-4 p-6 pt-2">
+          <CardContent className="relative space-y-4 p-6 pt-2" suppressHydrationWarning>
             {/* Guest Login Button - Prominent for new users */}
             {isSigningUp && (
               <div className="space-y-3">

@@ -16,8 +16,15 @@ async function extractPDFText(buffer: Buffer): Promise<{ text: string; pageCount
     
     // Try pdf2json first (file-based approach from GitHub repo)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const PDFParser = require('pdf2json');
+      // Use dynamic require to avoid build-time errors if package is missing
+      let PDFParser: any;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        PDFParser = require('pdf2json');
+      } catch (requireError) {
+        // pdf2json not available, skip to fallback
+        throw new Error('pdf2json package not available');
+      }
       
       // Instantiate PDFParser as shown in the GitHub repo
       const pdfParser = new (PDFParser as any)(null, 1);

@@ -262,6 +262,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
     if (!isDragOver) {
       setIsDragOver(true);
     }
@@ -276,14 +277,19 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // Only set dragOver to false if we're actually leaving the drop zone
-    // Check if we're leaving the drop zone itself, not a child element
+    // Only reset drag state if we're actually leaving the drop zone
+    // (not just moving over a child element)
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
     
-    // If the mouse is outside the drop zone bounds, then we've actually left
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+    // Check if mouse is still within the drop zone bounds
+    if (
+      x < rect.left ||
+      x > rect.right ||
+      y < rect.top ||
+      y > rect.bottom
+    ) {
       setIsDragOver(false);
     }
   };

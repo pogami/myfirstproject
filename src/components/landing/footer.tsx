@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { CCLogo } from '@/components/icons/cc-logo';
+import Link from 'next/link';
 
 const footerLinks = {
   product: [
@@ -27,10 +28,22 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { name: 'GitHub', href: '#', icon: Github },
-  { name: 'Twitter', href: '#', icon: Twitter },
-  { name: 'LinkedIn', href: '#', icon: Linkedin },
-  { name: 'Email', href: '#', icon: Mail },
+  { 
+    name: 'GitHub', 
+    icon: Github,
+  },
+  { 
+    name: 'Twitter', 
+    icon: Twitter,
+  },
+  { 
+    name: 'LinkedIn', 
+    icon: Linkedin,
+  },
+  { 
+    name: 'Email', 
+    icon: Mail,
+  },
 ];
 
 export function Footer() {
@@ -125,7 +138,7 @@ export function Footer() {
     }
   };
   return (
-    <footer className="bg-white text-black dark:bg-gray-900 dark:text-white">
+    <footer className="bg-white text-black dark:bg-gray-900 dark:text-white" suppressHydrationWarning>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
@@ -140,13 +153,20 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social) => (
-                <a
+                <button
                   key={social.name}
-                  href={social.href}
-                  className="text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors duration-200"
+                  onClick={() => {
+                    toast.info('Coming Soon', {
+                      description: `${social.name} link will be available soon!`,
+                      duration: 3000,
+                    });
+                  }}
+                  aria-label={social.name}
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-all duration-200 hover:scale-110 transform cursor-pointer"
+                  title={`${social.name} - Coming Soon`}
                 >
                   <social.icon className="h-5 w-5" />
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -159,12 +179,12 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors duration-200"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -178,12 +198,12 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors duration-200"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -17,7 +17,7 @@ import { EducationComparisonSection } from '@/components/landing/education-compa
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900" suppressHydrationWarning>
       <Navigation />
       <main>
         <HeroSection />

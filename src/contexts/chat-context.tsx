@@ -35,9 +35,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Load messages from localStorage on mount
   useEffect(() => {
-    const savedMessages = localStorage.getItem('courseconnect-chat-messages');
-    if (savedMessages) {
-      try {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const savedMessages = localStorage.getItem('courseconnect-chat-messages');
+      if (savedMessages) {
         const parsed = JSON.parse(savedMessages);
         // Convert timestamp strings back to Date objects
         const messagesWithDates = parsed.map((msg: any) => ({
@@ -45,16 +47,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           timestamp: new Date(msg.timestamp)
         }));
         setMessages(messagesWithDates);
-      } catch (error) {
-        console.error('Failed to load chat messages:', error);
       }
+    } catch (error) {
+      console.error('Failed to load chat messages:', error);
     }
   }, []);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     if (messages.length > 1) { // Only save if there are messages beyond the initial greeting
-      localStorage.setItem('courseconnect-chat-messages', JSON.stringify(messages));
+      try {
+        localStorage.setItem('courseconnect-chat-messages', JSON.stringify(messages));
+      } catch (error) {
+        console.warn('Error saving chat messages:', error);
+      }
     }
   }, [messages]);
 
@@ -82,7 +90,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       timestamp: new Date()
     };
     setMessages([initialMessage]);
-    localStorage.removeItem('courseconnect-chat-messages');
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('courseconnect-chat-messages');
+      }
+    } catch (error) {
+      console.warn('Error clearing chat messages:', error);
+    }
     setUnreadCount(0);
   };
 

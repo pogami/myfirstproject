@@ -9,8 +9,8 @@ function LoginPageContent() {
     const initialState = searchParams.get('state') === 'signup' ? 'signup' : 'login';
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-start bg-transparent p-8 pt-8 pb-16">
-            <div className="w-full max-w-md">
+        <div className="flex min-h-screen flex-col items-center justify-start bg-transparent p-8 pt-8 pb-16" suppressHydrationWarning>
+            <div className="w-full max-w-md" suppressHydrationWarning>
                 <LoginForm initialState={initialState} />
             </div>
         </div>

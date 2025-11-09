@@ -3,25 +3,41 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
-// Firebase Admin configuration
-const firebaseAdminConfig = {
-  projectId: "courseconnect-61eme",
-  // Note: In production, use environment variables for service account key
-  // For now, we'll use the default service account
-};
+// Initialize Firebase Admin (only if credentials are available)
+let adminApp: any = null;
 
-// Initialize Firebase Admin
-let adminApp;
-if (!getApps().length) {
+// Only initialize if we have the required environment variables OR use default project
+if (
+  process.env.FIREBASE_PROJECT_ID &&
+  process.env.FIREBASE_CLIENT_EMAIL &&
+  process.env.FIREBASE_PRIVATE_KEY
+) {
+  // Use environment variables (production)
   try {
-    adminApp = initializeApp(firebaseAdminConfig);
+    const firebaseAdminConfig = {
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
+    };
+    adminApp = getApps().length === 0 ? initializeApp(firebaseAdminConfig) : getApps()[0];
   } catch (error) {
-    console.error('Firebase Admin initialization failed:', error);
-    // Create a mock admin app for development
+    console.warn('Firebase Admin initialization with credentials failed:', error);
+    adminApp = { name: 'admin-app' };
+  }
+} else if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID) {
+  // Fallback: Use project ID only (for build time)
+  try {
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "courseconnect-61eme";
+    adminApp = getApps().length === 0 ? initializeApp({ projectId }) : getApps()[0];
+  } catch (error) {
+    console.warn('Firebase Admin initialization failed:', error);
     adminApp = { name: 'admin-app' };
   }
 } else {
-  adminApp = getApps()[0];
+  // No credentials available - create mock app for build time
+  adminApp = { name: 'admin-app' };
 }
 
 // Initialize services

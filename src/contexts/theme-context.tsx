@@ -18,13 +18,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Load theme from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(prefersDark ? 'dark' : 'light');
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      if (savedTheme) {
+        setThemeState(savedTheme);
+      } else {
+        // Check system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setThemeState(prefersDark ? 'dark' : 'light');
+      }
+    } catch (error) {
+      console.warn('Error loading theme:', error);
+      setThemeState('light');
     }
     setMounted(true);
   }, []);
@@ -49,23 +56,40 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     // Use View Transitions if supported and motion isn't reduced
     if (
+      typeof window !== 'undefined' &&
       typeof document !== 'undefined' &&
       'startViewTransition' in document &&
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       (document as any).startViewTransition(() => {
         setThemeState(newTheme);
-        localStorage.setItem('theme', newTheme);
+        try {
+          localStorage.setItem('theme', newTheme);
+        } catch (error) {
+          console.warn('Error saving theme:', error);
+        }
       });
     } else {
       setThemeState(newTheme);
-      localStorage.setItem('theme', newTheme);
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('theme', newTheme);
+        }
+      } catch (error) {
+        console.warn('Error saving theme:', error);
+      }
     }
   };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('theme', newTheme);
+      }
+    } catch (error) {
+      console.warn('Error saving theme:', error);
+    }
   };
 
   return (

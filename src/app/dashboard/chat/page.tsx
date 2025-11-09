@@ -20,27 +20,6 @@ import { doc, getDoc } from "firebase/firestore";
 // import { usePusherChat } from "@/hooks/use-pusher-chat";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { OnlineUsersIndicator } from "@/components/online-users-indicator";
-
-// Lightweight debug flag to silence heavy client logs in production
-const DEBUG = false;
-
-// Helper function to get guest display name from localStorage
-const getGuestDisplayName = (): string => {
-  if (typeof window === 'undefined') return 'Guest User';
-  
-  try {
-    const guestUser = localStorage.getItem('guestUser');
-    if (guestUser) {
-      const parsed = JSON.parse(guestUser);
-      return parsed.displayName || 'Guest User';
-    }
-  } catch (error) {
-    console.warn('Failed to parse guest user from localStorage:', error);
-  }
-  
-  return 'Guest User';
-};
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
@@ -65,6 +44,26 @@ import { JoinMessage } from "@/components/join-message";
 import { createWelcomeNotification, createAIResponseNotification, createStudyEncouragementNotification, createAssignmentReminderNotification, isFirstGuestVisit, markGuestAsVisited } from "@/lib/guest-notifications";
 import { useNotifications } from "@/hooks/use-notifications";
 import { WelcomeCard } from "@/components/welcome-card";
+
+// Lightweight debug flag to silence heavy client logs in production
+const DEBUG = false;
+
+// Helper function to get guest display name from localStorage
+const getGuestDisplayName = (): string => {
+  if (typeof window === 'undefined') return 'Guest User';
+  
+  try {
+    const guestUser = localStorage.getItem('guestUser');
+    if (guestUser) {
+      const parsed = JSON.parse(guestUser);
+      return parsed.displayName || 'Guest User';
+    }
+  } catch (error) {
+    console.warn('Failed to parse guest user from localStorage:', error);
+  }
+  
+  return 'Guest User';
+};
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -335,14 +334,25 @@ export default function ChatPage() {
 
     // Initialize general chats when component mounts
     useEffect(() => {
-        const idle = (cb: () => void) => {
-            if (typeof (window as any).requestIdleCallback === 'function') {
-                (window as any).requestIdleCallback(cb, { timeout: 1200 });
-            } else {
-                setTimeout(cb, 0);
-            }
-        };
-        idle(() => initializeGeneralChats());
+        try {
+            const idle = (cb: () => void) => {
+                if (typeof (window as any).requestIdleCallback === 'function') {
+                    (window as any).requestIdleCallback(cb, { timeout: 1200 });
+                } else {
+                    setTimeout(cb, 0);
+                }
+            };
+            idle(() => {
+                try {
+                    initializeGeneralChats();
+                } catch (error) {
+                    console.warn('Failed to initialize general chats (non-critical):', error);
+                    // Don't crash - app can work without this
+                }
+            });
+        } catch (error) {
+            console.warn('Error setting up general chats initialization:', error);
+        }
     }, [initializeGeneralChats]);
 
     // Handle URL parameters for specific chat tabs (only on initial load)
@@ -421,16 +431,21 @@ export default function ChatPage() {
                 }
             };
             idle(() => {
-                if (navigator.onLine) {
-                    const unsubscribe = initializeAuthListener();
-                    if (DEBUG) console.log('Auth listener initialized, unsubscribe function:', typeof unsubscribe);
-                } else {
-                    if (DEBUG) console.log('Offline mode - skipping auth listener initialization');
+                try {
+                    if (navigator.onLine) {
+                        const unsubscribe = initializeAuthListener();
+                        if (DEBUG) console.log('Auth listener initialized, unsubscribe function:', typeof unsubscribe);
+                    } else {
+                        if (DEBUG) console.log('Offline mode - skipping auth listener initialization');
+                    }
+                } catch (authError) {
+                    console.warn('Auth listener initialization error (non-critical):', authError);
+                    // Don't crash - guest mode can work without auth
                 }
             });
         } catch (error) {
             console.warn('Failed to initialize auth listener:', error);
-            // Force load if auth fails
+            // Force load if auth fails - don't crash the app
             setTimeout(() => {
                 if (DEBUG) console.log('Auth failed, forcing load');
                 setForceLoad(true);
@@ -467,38 +482,52 @@ export default function ChatPage() {
     // Safely handle auth state
     useEffect(() => {
         try {
+            // Check for guest user first (before Firebase auth)
+            const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+            if (guestData) {
+                try {
+                    const parsedGuest = JSON.parse(guestData);
+                    setUser(parsedGuest);
+                    setIsGuest(true);
+                    console.log('Guest user detected from localStorage:', parsedGuest.displayName);
+                } catch (parseError) {
+                    console.warn('Failed to parse guest user data:', parseError);
+                }
+            }
+
             if (auth && typeof auth.onAuthStateChanged === 'function') {
                 const unsubscribe = auth.onAuthStateChanged(
                     async (user: any) => {
-                        setUser(user);
-                        // Check if user is guest/anonymous - also check localStorage for guest data
-                        const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
-                        const isGuestUser = user?.isAnonymous || user?.isGuest || (guestData !== null);
-                        setIsGuest(isGuestUser);
-                        
-                        // Load profile picture for authenticated users (Firestore first, then auth.photoURL fallback)
-                        if (user && !user.isGuest && !user.isAnonymous) {
-                            try {
-                                const userDocRef = doc(db, "users", user.uid);
-                                const userDocSnap = await getDoc(userDocRef);
-                                if (userDocSnap.exists()) {
-                                    const userData = userDocSnap.data();
-                                    if (userData.profilePicture) {
-                                        setUserProfilePicture(userData.profilePicture);
+                        try {
+                            setUser(user);
+                            // Check if user is guest/anonymous - also check localStorage for guest data
+                            const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+                            const isGuestUser = user?.isAnonymous || user?.isGuest || (guestData !== null);
+                            setIsGuest(isGuestUser);
+                            
+                            // Load profile picture for authenticated users (Firestore first, then auth.photoURL fallback)
+                            if (user && !user.isGuest && !user.isAnonymous) {
+                                try {
+                                    const userDocRef = doc(db, "users", user.uid);
+                                    const userDocSnap = await getDoc(userDocRef);
+                                    if (userDocSnap.exists()) {
+                                        const userData = userDocSnap.data();
+                                        if (userData.profilePicture) {
+                                            setUserProfilePicture(userData.profilePicture);
+                                        } else if (user.photoURL) {
+                                            setUserProfilePicture(user.photoURL);
+                                        } else {
+                                            setUserProfilePicture("");
+                                        }
                                     } else if (user.photoURL) {
                                         setUserProfilePicture(user.photoURL);
                                     } else {
                                         setUserProfilePicture("");
                                     }
-                                } else if (user.photoURL) {
-                                    setUserProfilePicture(user.photoURL);
-                                } else {
-                                    setUserProfilePicture("");
+                                } catch (error) {
+                                    console.warn("Error loading profile picture (non-critical):", error);
                                 }
-                            } catch (error) {
-                                console.error("Error loading profile picture:", error);
-                            }
-                        } else if (user && (user.isGuest || user.isAnonymous)) {
+                            } else if (user && (user.isGuest || user.isAnonymous)) {
                             // Load profile picture from localStorage for guest users
                             try {
                                 const guestData = localStorage.getItem('guestUser');
@@ -513,6 +542,20 @@ export default function ChatPage() {
                             }
                         } else {
                             setUserProfilePicture("");
+                        }
+                        } catch (userError) {
+                            console.warn("Error in auth state change handler (non-critical):", userError);
+                            // Don't crash - continue with guest mode if available
+                            const guestData = typeof window !== 'undefined' ? localStorage.getItem('guestUser') : null;
+                            if (guestData) {
+                                try {
+                                    const parsedGuest = JSON.parse(guestData);
+                                    setUser(parsedGuest);
+                                    setIsGuest(true);
+                                } catch (e) {
+                                    // Ignore parse errors
+                                }
+                            }
                         }
                     },
                     (error: any) => {

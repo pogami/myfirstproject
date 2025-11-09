@@ -16,16 +16,24 @@ const navigation = [
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
+    setIsMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
 
+    // Set initial scroll state
+    handleScroll();
+    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Prevent hydration mismatch by ensuring consistent initial render
+  const shouldShowScrolled = isMounted && isScrolled;
 
   return (
     <motion.nav
@@ -33,10 +41,11 @@ export function Navigation() {
       animate={{ y: 0 }}
       transition={{ duration: 0.6 }}
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      suppressHydrationWarning
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center justify-between ${isScrolled ? 'pt-6' : 'h-16'}`}>
-          {isScrolled ? (
+        <div className={`flex items-center justify-between ${shouldShowScrolled ? 'pt-6' : 'h-16'}`}>
+          {shouldShowScrolled ? (
             /* Scrolled state - Floating capsule header */
             <motion.div 
               className="flex items-center bg-white/5 dark:bg-gray-900/5 backdrop-blur-3xl shadow-2xl border border-white/40 dark:border-white/30 rounded-full px-8 py-4 gap-10 relative overflow-hidden mx-auto"
@@ -95,13 +104,13 @@ export function Navigation() {
               {/* Desktop Navigation */}
               <div className="relative z-10 hidden md:flex items-center gap-8">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
                     href={item.href}
                     className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium text-base"
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
 
@@ -144,13 +153,13 @@ export function Navigation() {
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
                     href={item.href}
                     className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium"
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
 
@@ -210,14 +219,14 @@ export function Navigation() {
           >
             <div className="px-4 py-4 space-y-4">
               {navigation.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium"
                   onClick={() => setIsOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                 <Button
