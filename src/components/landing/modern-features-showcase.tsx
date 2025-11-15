@@ -53,7 +53,7 @@ export function ModernFeaturesShowcase() {
                 Upload Your Syllabus
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Drag & drop any syllabus (PDF, DOCX, TXT). Our AI instantly extracts topics, assignments, and exam dates.
+                Drag & drop any syllabus (PDF, DOCX, or TXT). Our AI instantly extracts topics, assignments, and exam dates.
               </p>
 
               {/* Visual Demo */}

@@ -184,11 +184,11 @@ export class FileAnalysisService {
   }
 
   private async extractTextFromPDF(file: File): Promise<string | null> {
-    // This is a simplified PDF text extraction
-    // In production, you'd use a library like pdf-parse or pdfjs-dist
     try {
-      // For now, return a placeholder - you'd implement actual PDF parsing here
-      return `PDF content extraction not yet implemented for ${file.name}. Please use text files or images for now.`;
+      // Use DocumentProcessorClient for PDF extraction
+      const { DocumentProcessorClient } = await import('@/lib/syllabus-parser/document-processor-client');
+      const result = await DocumentProcessorClient.extractFromPDF(file);
+      return result.text || null;
     } catch (error) {
       console.error('PDF extraction error:', error);
       return null;

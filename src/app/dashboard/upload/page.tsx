@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Sparkles, CheckCircle, ArrowRight } from "lucide-react";
+import { Upload, FileText, Sparkles, CheckCircle, ArrowRight, Zap, MessageSquare, Target } from "lucide-react";
 import InteractiveSyllabusDemo from "@/components/interactive-syllabus-demo";
 import { HowItWorksSlideshow } from "@/components/how-it-works-slideshow";
 
@@ -21,7 +21,7 @@ const features = [
   {
     icon: <CheckCircle className="size-5 text-green-500" />,
     title: "Auto-Class Detection",
-    description: "Automatically finds and joins relevant study groups"
+    description: "Automatically creates a dedicated chat for your course"
   }
 ];
 
@@ -127,24 +127,35 @@ export default function EnhancedSyllabusUploadPage() {
         </div>
 
         {/* Bottom Info Section - Centers the upload area */}
-        <div className="mt-12 mb-16 text-center space-y-6 px-4 sm:px-0">
-          <div className="max-w-2xl mx-auto">
-            <h3 className="text-lg font-semibold mb-4 text-muted-foreground">What happens after upload?</h3>
-            <div className="grid gap-4 sm:grid-cols-3 text-sm">
-              <div className="space-y-2">
-                <div className="text-3xl">⚡</div>
-                <p className="text-muted-foreground">Instant AI analysis of your course content</p>
+        <div className="mt-12 mb-16 px-4 sm:px-0">
+          <Card className="max-w-2xl mx-auto border-0 bg-gradient-to-br from-muted/20 to-muted/10">
+            <CardContent className="p-6 sm:p-8">
+              <h3 className="text-xl font-semibold mb-6 text-center">What happens after upload?</h3>
+              <div className="grid gap-6 sm:grid-cols-3">
+                <div className="flex flex-col items-center text-center space-y-3 group">
+                  <div className="p-3 rounded-xl bg-yellow-100 dark:bg-yellow-900/20 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-900/30 transition-colors">
+                    <Zap className="size-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Instant AI Analysis</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Your course content is analyzed automatically</p>
+                </div>
+                <div className="flex flex-col items-center text-center space-y-3 group">
+                  <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/20 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/30 transition-colors">
+                    <MessageSquare className="size-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Dedicated Chat</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">A personalized chat is created for your class</p>
+                </div>
+                <div className="flex flex-col items-center text-center space-y-3 group">
+                  <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30 transition-colors">
+                    <Target className="size-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Study Assistance</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Get personalized help tailored to your course</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-3xl">💬</div>
-                <p className="text-muted-foreground">Create a dedicated chat for your class</p>
-              </div>
-              <div className="space-y-2">
-                <div className="text-3xl">🎯</div>
-                <p className="text-muted-foreground">Get personalized study assistance</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Slideshow */}

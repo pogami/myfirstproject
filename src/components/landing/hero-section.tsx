@@ -49,7 +49,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-lg md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-md sm:max-w-2xl md:max-w-3xl mx-auto leading-relaxed"
           >
-            Upload your syllabus and get AI tutoring that knows your assignments and exam dates. No more confusion—just real help when you need it.
+            Upload your syllabus (PDF, DOCX, or TXT) and get AI tutoring that knows your assignments and exam dates. No more confusion—just real help when you need it.
           </motion.p>
 
           {/* CTA Buttons */}

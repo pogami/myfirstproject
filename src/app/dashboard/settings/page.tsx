@@ -129,7 +129,9 @@ export default function SettingsPage() {
     setIsChangingPassword(true);
     try {
       await updatePassword(user, newPassword);
-      toast.success("Password Updated Successfully", "Your password has been successfully updated.");
+      toast.success("Password Updated Successfully", {
+        description: "Your password has been successfully updated."
+      });
       setNewPassword("");
       setConfirmPassword("");
       // Close the dialog after successful password change
@@ -154,7 +156,9 @@ export default function SettingsPage() {
         errorMessage = error.message;
       }
       
-      toast.error("Error", errorMessage);
+      toast.error("Error", {
+        description: errorMessage
+      });
     } finally {
       setIsChangingPassword(false);
     }
@@ -246,69 +250,108 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to delete your account.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "You must be logged in to delete your account."
       });
       return;
     }
 
     if (deleteConfirm !== "DELETE") {
-      toast({
-        title: "Error",
-        description: "Please type 'DELETE' exactly to confirm account deletion.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Please type 'DELETE' exactly to confirm account deletion."
       });
       return;
     }
 
     setIsDeletingAccount(true);
     try {
-      toast({
-        title: "Deleting Account",
-        description: "This may take a moment. Please do not close this page.",
+      toast.info("Deleting Account", {
+        description: "This may take a moment. Please do not close this page."
       });
 
+      // Check if db is available
+      if (!db) {
+        throw new Error('Database not available. Please refresh the page and try again.');
+      }
+
       // Delete user's chats and all messages
-      const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
-      const chatsSnapshot = await getDocs(chatsQuery);
-      
-      for (const chatDoc of chatsSnapshot.docs) {
-        // Delete all messages in this chat
-        const messagesQuery = query(collection(db, 'messages'), where('chatId', '==', chatDoc.id));
-        const messagesSnapshot = await getDocs(messagesQuery);
-        for (const messageDoc of messagesSnapshot.docs) {
-          await deleteDoc(messageDoc.ref);
-        }
+      try {
+        const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
+        const chatsSnapshot = await getDocs(chatsQuery);
         
-        // Delete the chat itself
-        await deleteDoc(chatDoc.ref);
+        for (const chatDoc of chatsSnapshot.docs) {
+          // Delete all messages in this chat
+          try {
+            const messagesQuery = query(collection(db, 'messages'), where('chatId', '==', chatDoc.id));
+            const messagesSnapshot = await getDocs(messagesQuery);
+            for (const messageDoc of messagesSnapshot.docs) {
+              await deleteDoc(messageDoc.ref);
+            }
+          } catch (msgError) {
+            console.warn('Failed to delete some messages (non-critical):', msgError);
+          }
+          
+          // Delete the chat itself
+          try {
+            await deleteDoc(chatDoc.ref);
+          } catch (chatError) {
+            console.warn('Failed to delete chat (non-critical):', chatError);
+          }
+        }
+      } catch (chatsError) {
+        console.warn('Failed to delete some chats (non-critical):', chatsError);
       }
 
       // Delete user's notifications
-      const notificationsQuery = query(collection(db, 'notifications'), where('userId', '==', user.uid));
-      const notificationsSnapshot = await getDocs(notificationsQuery);
-      for (const notificationDoc of notificationsSnapshot.docs) {
-        await deleteDoc(notificationDoc.ref);
+      try {
+        const notificationsQuery = query(collection(db, 'notifications'), where('userId', '==', user.uid));
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+        for (const notificationDoc of notificationsSnapshot.docs) {
+          await deleteDoc(notificationDoc.ref);
+        }
+      } catch (notifError) {
+        console.warn('Failed to delete some notifications (non-critical):', notifError);
       }
 
       // Delete user's uploaded files
-      const filesQuery = query(collection(db, 'files'), where('userId', '==', user.uid));
-      const filesSnapshot = await getDocs(filesQuery);
-      for (const fileDoc of filesSnapshot.docs) {
-        await deleteDoc(fileDoc.ref);
+      try {
+        const filesQuery = query(collection(db, 'files'), where('userId', '==', user.uid));
+        const filesSnapshot = await getDocs(filesQuery);
+        for (const fileDoc of filesSnapshot.docs) {
+          await deleteDoc(fileDoc.ref);
+        }
+      } catch (filesError) {
+        console.warn('Failed to delete some files (non-critical):', filesError);
       }
 
       // Delete user document
-      await deleteDoc(doc(db, 'users', user.uid));
+      try {
+        await deleteDoc(doc(db, 'users', user.uid));
+      } catch (userDocError) {
+        console.warn('Failed to delete user document (non-critical):', userDocError);
+      }
 
       // Delete Firebase Auth user (this will also sign them out)
-      await deleteUser(user);
+      try {
+        await deleteUser(user);
+      } catch (authError: any) {
+        // If auth deletion fails, still try to redirect
+        console.error('Failed to delete auth user:', authError);
+        if (authError.code === 'auth/requires-recent-login') {
+          throw new Error('For security, please sign out and sign back in before deleting your account.');
+        }
+        throw authError;
+      }
 
-      toast({
-        title: "Account Completely Deleted",
-        description: "Your account and all data have been permanently removed from our systems.",
+      // Clear localStorage
+      try {
+        localStorage.clear();
+      } catch (e) {
+        console.warn('Failed to clear localStorage:', e);
+      }
+
+      toast.success("Account Deleted", {
+        description: "Your account and all data have been permanently removed."
       });
 
       // Redirect to home page
@@ -316,12 +359,10 @@ export default function SettingsPage() {
         router.push('/');
       }, 2000);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete account. Please try again.",
-        variant: "destructive",
+      console.error('Account deletion error:', error);
+      toast.error("Error", {
+        description: error.message || "Failed to delete account. Please try again or contact support."
       });
-    } finally {
       setIsDeletingAccount(false);
     }
   };
@@ -463,92 +504,120 @@ export default function SettingsPage() {
 
   const handleAutoSyncChange = async (enabled: boolean) => {
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to change sync settings.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "You must be logged in to change sync settings."
       });
       return;
     }
 
+    // Update local state immediately for responsive UI
+    setSettings(prev => ({
+      ...prev,
+      data: { ...prev.data, autoSync: enabled }
+    }));
+
+    // Store in localStorage for immediate effect
     try {
+      localStorage.setItem('autoSyncEnabled', enabled.toString());
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+
+    try {
+      // Check if db is available
+      if (!db) {
+        throw new Error('Database not available');
+      }
+
       // Update user settings in Firestore
       await updateDoc(doc(db, 'users', user.uid), {
         'settings.data.autoSync': enabled,
         lastUpdated: new Date().toISOString()
       });
 
-      // Update local state
-      setSettings(prev => ({
-        ...prev,
-        data: { ...prev.data, autoSync: enabled }
-      }));
-
-      // Store in localStorage for immediate effect
-      localStorage.setItem('autoSyncEnabled', enabled.toString());
-
-      toast({
-        title: enabled ? "Auto Sync Enabled" : "Auto Sync Disabled",
+      toast.success(enabled ? "Auto Sync Enabled" : "Auto Sync Disabled", {
         description: enabled 
           ? "Your data will automatically sync across all your devices." 
-          : "Auto sync has been disabled. Data will only sync when you manually refresh.",
+          : "Auto sync has been disabled. Data will only sync when you manually refresh."
       });
 
       // If enabling auto sync, trigger an immediate sync
       if (enabled) {
-        await triggerDataSync();
+        try {
+          await triggerDataSync();
+        } catch (syncError) {
+          console.warn('Sync trigger failed (non-critical):', syncError);
+        }
       }
     } catch (error: any) {
-    toast({
-        title: "Error",
-        description: error.message || "Failed to update sync settings.",
-        variant: "destructive",
+      console.error('Failed to update sync settings:', error);
+      // Revert local state on error
+      setSettings(prev => ({
+        ...prev,
+        data: { ...prev.data, autoSync: !enabled }
+      }));
+      toast.error("Error", {
+        description: error.message || "Failed to update sync settings. Please try again."
       });
     }
   };
 
   const handleAnalyticsChange = async (enabled: boolean) => {
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to change analytics settings.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "You must be logged in to change analytics settings."
       });
       return;
     }
 
+    // Update local state immediately for responsive UI
+    setSettings(prev => ({
+      ...prev,
+      data: { ...prev.data, analytics: enabled }
+    }));
+
+    // Store in localStorage for immediate effect
     try {
+      localStorage.setItem('analyticsEnabled', enabled.toString());
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+
+    try {
+      // Check if db is available
+      if (!db) {
+        throw new Error('Database not available');
+      }
+
       // Update user settings in Firestore
       await updateDoc(doc(db, 'users', user.uid), {
         'settings.data.analytics': enabled,
         lastUpdated: new Date().toISOString()
       });
 
-      // Update local state
-      setSettings(prev => ({
-        ...prev,
-        data: { ...prev.data, analytics: enabled }
-      }));
-
-      // Store in localStorage for immediate effect
-      localStorage.setItem('analyticsEnabled', enabled.toString());
-
-      toast({
-        title: enabled ? "Analytics Enabled" : "Analytics Disabled",
+      toast.success(enabled ? "Analytics Enabled" : "Analytics Disabled", {
         description: enabled 
           ? "Thank you! Your usage data helps us improve CourseConnect." 
-          : "Analytics disabled. No usage data will be collected.",
+          : "Analytics disabled. No usage data will be collected."
       });
 
       // If enabling analytics, send current session data
       if (enabled) {
-        await sendAnalyticsData();
+        try {
+          await sendAnalyticsData();
+        } catch (analyticsError) {
+          console.warn('Analytics data send failed (non-critical):', analyticsError);
+        }
       }
     } catch (error: any) {
-    toast({
-        title: "Error",
-        description: error.message || "Failed to update analytics settings.",
-        variant: "destructive",
+      console.error('Failed to update analytics settings:', error);
+      // Revert local state on error
+      setSettings(prev => ({
+        ...prev,
+        data: { ...prev.data, analytics: !enabled }
+      }));
+      toast.error("Error", {
+        description: error.message || "Failed to update analytics settings. Please try again."
       });
     }
   };
@@ -638,7 +707,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Email Address</Label>
                 <div className="p-3 rounded-lg bg-muted/30 border flex items-center justify-between">
-                  <span className="text-sm">
+                  <span className="text-sm text-foreground dark:text-foreground">
                     {showEmail ? user?.email : '••••••••@•••••.com'}
                   </span>
                   <Button

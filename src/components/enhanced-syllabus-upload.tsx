@@ -499,7 +499,7 @@ export default function EnhancedSyllabusUpload() {
                         <div className="mt-4 p-3 rounded-md border bg-muted/30 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                                 <Shield className="h-5 w-5" />
-                                <span>Processed in your browser; only extracted text is sent for AI parsing, we never store the original file, and any parsed course data saved to your account can be deleted.</span>
+                                <span>Files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original files, and all parsed course data saved to your account can be deleted.</span>
                             </div>
                         </div>
                     </CardContent>

@@ -14,6 +14,7 @@ import { CTASection } from '@/components/landing/cta-section';
 import { Footer } from '@/components/landing/footer';
 // import { AIBot } from '@/components/ai-bot';
 import { EducationComparisonSection } from '@/components/landing/education-comparison-section';
+import TestPDF from '@/components/test-pdf-upload';
 
 export default function HomePage() {
   return (
@@ -22,6 +23,13 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <FeaturesSection />
+        
+        {/* PDF Upload Test Section */}
+        <section className="py-16 px-4 bg-gray-50 dark:bg-gray-800">
+          <div className="container mx-auto">
+            <TestPDF />
+          </div>
+        </section>
         
         {/* PricingSection removed from home page */}
         {/* SocialProofSection removed from home page */}

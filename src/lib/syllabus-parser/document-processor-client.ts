@@ -18,17 +18,9 @@ export interface DocumentText {
 export class DocumentProcessorClient {
   
   /**
-   * Extract text from PDF document (uses server-side API for reliability)
+   * Extract text from PDF document (uses server-side API)
    */
   static async extractFromPDF(file: File): Promise<DocumentText> {
-    // Use server-side extraction directly - it's more reliable and handles all PDF types
-    return await this.extractFromPDFServer(file);
-  }
-  
-  /**
-   * Server-side PDF extraction (uses pdf-parse library - works reliably)
-   */
-  private static async extractFromPDFServer(file: File): Promise<DocumentText> {
     try {
       // Ensure we're in a browser environment
       if (typeof window === 'undefined') {
@@ -40,49 +32,23 @@ export class DocumentProcessorClient {
         throw new Error('Invalid file object');
       }
       
-      // Convert file to base64 to avoid FormData issues
-      // Use chunked approach for large files to avoid "Maximum call stack size exceeded"
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const chunkSize = 8192; // Process in chunks
-      let base64 = '';
-      for (let i = 0; i < uint8Array.length; i += chunkSize) {
-        const chunk = uint8Array.slice(i, i + chunkSize);
-        base64 += String.fromCharCode(...chunk);
-      }
-      base64 = btoa(base64);
+      // Convert file to FormData for server
+      const formData = new FormData();
+      formData.append('file', file);
       
-      console.log('📤 Sending PDF to server:', { fileName: file.name, fileSize: file.size, base64Length: base64.length });
+      console.log('📤 Sending PDF to server:', { fileName: file.name, fileSize: file.size });
       
-      const response = await fetch('/api/pdf-extract', {
+      const response = await fetch('/api/parse-pdf', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file: base64,
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size
-        })
+        body: formData
       }).catch((fetchError) => {
         console.error('❌ Fetch error:', fetchError);
-        throw new Error(`Network error: ${fetchError.message}. Make sure the server is running on port 9002.`);
+        throw new Error(`Network error: ${fetchError.message}`);
       });
       
-      console.log('📥 Server response status:', response.status, response.statusText);
-      
       if (!response.ok) {
-        let errorData: any = {};
-        try {
-          const text = await response.text();
-          console.error('❌ Server error response:', text);
-          errorData = text ? JSON.parse(text) : {};
-        } catch (parseError) {
-          console.error('❌ Failed to parse error response:', parseError);
-          errorData = { error: `Server error: ${response.status} ${response.statusText}` };
-        }
-        throw new Error(errorData.error || `Server extraction failed: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
       
       const result = await response.json();

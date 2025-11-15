@@ -175,49 +175,80 @@ export class SmartDocumentAnalysisService {
   
   /**
    * Extract text from PDF using pdfjs-dist
+   * Works client-side in Next.js - no third-party service needed!
    */
   private async extractTextFromPDF(file: File): Promise<DocumentAnalysisResult> {
     try {
-      console.log('Starting PDF extraction for:', file.name);
+      console.log('Starting PDF extraction for:', file.name, 'Size:', file.size);
       const buffer = await file.arrayBuffer();
       
       // Dynamic import to avoid server-side issues
       const pdfjsLib = await import('pdfjs-dist');
       
-      // Set up the worker - use the local worker file
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      // Set up the worker - use CDN for reliability (works everywhere)
+      // This is the proper way to use pdfjs-dist in Next.js
+      const version = pdfjsLib.version || '3.11.174';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`;
+      
+      console.log('PDF.js worker configured, version:', version);
       
       // Load the PDF document
       const loadingTask = pdfjsLib.getDocument({ 
         data: buffer,
         useSystemFonts: true,
         disableFontFace: true,
-        disableRange: true,
-        disableStream: true
+        disableRange: false, // Enable range for better performance
+        disableStream: false // Enable stream for better performance
       });
+      
       const pdf = await loadingTask.promise;
+      console.log('PDF loaded successfully, pages:', pdf.numPages);
       
       let fullText = '';
       const pageCount = pdf.numPages;
       
-      // Extract text from each page
+      // Extract text from each page (handles large multi-page PDFs)
       for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        
-        fullText += pageText + '\n';
+        try {
+          console.log(`Extracting page ${pageNum}/${pageCount}...`);
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          
+          // Combine text items with proper spacing
+          const pageText = textContent.items
+            .map((item: any) => {
+              // Handle text items with proper spacing
+              if (item.str) {
+                // Add space if needed (check if next item is on same line)
+                return item.str;
+              }
+              return '';
+            })
+            .filter((str: string) => str.length > 0)
+            .join(' ');
+          
+          fullText += `\n--- Page ${pageNum} ---\n${pageText}\n`;
+          
+          // Log progress for large PDFs
+          if (pageNum % 10 === 0) {
+            console.log(`Processed ${pageNum}/${pageCount} pages...`);
+          }
+        } catch (pageError: any) {
+          console.warn(`Error extracting page ${pageNum}:`, pageError.message);
+          // Continue with other pages even if one fails
+          fullText += `\n--- Page ${pageNum} (extraction error) ---\n`;
+        }
       }
       
-      if (fullText.trim().length > 0) {
-        const wordCount = fullText.split(/\s+/).filter(word => word.length > 0).length;
+      const trimmedText = fullText.trim();
+      console.log('PDF extraction complete. Total text length:', trimmedText.length);
+      
+      if (trimmedText.length > 0) {
+        const wordCount = trimmedText.split(/\s+/).filter(word => word.length > 0).length;
         
         return {
           success: true,
-          extractedText: fullText.trim(),
+          extractedText: trimmedText,
           fileType: 'pdf',
           metadata: {
             pageCount,
@@ -230,15 +261,16 @@ export class SmartDocumentAnalysisService {
           success: false,
           extractedText: '',
           fileType: 'pdf',
-          error: 'No text content found in the PDF. This might be a scanned PDF.'
+          error: 'No text content found in the PDF. This might be a scanned PDF (image-based). Try uploading an image instead for OCR.'
         };
       }
     } catch (error: any) {
+      console.error('PDF extraction error:', error);
       return {
         success: false,
         extractedText: '',
         fileType: 'pdf',
-        error: `PDF processing failed: ${error.message}`
+        error: `PDF processing failed: ${error.message}. Make sure the PDF is not corrupted and contains text (not just images).`
       };
     }
   }

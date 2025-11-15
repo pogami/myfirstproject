@@ -12,13 +12,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    if (file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    // Validate file type (check both MIME type and file extension)
+    const isValidType = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                        file.name.toLowerCase().endsWith('.docx');
+    
+    if (!isValidType) {
+      console.error('❌ Invalid file type:', { 
+        fileType: file.type, 
+        fileName: file.name,
+        expected: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document or .docx'
+      });
       return NextResponse.json(
-        { success: false, error: 'Invalid file type. Please upload a DOCX file.' },
+        { success: false, error: `Invalid file type. Please upload a DOCX file. Received: ${file.type || 'unknown'}` },
         { status: 400 }
       );
     }
+    
+    console.log('✅ Valid DOCX file received:', { fileName: file.name, fileSize: file.size, fileType: file.type });
 
     // Validate file size (10MB limit)
     const maxSize = 10 * 1024 * 1024; // 10MB
@@ -33,14 +43,21 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      console.log('📄 Starting DOCX extraction...');
+      
       // Convert file to ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
+      console.log('📦 ArrayBuffer created:', { size: arrayBuffer.byteLength });
       
       // Use mammoth library to extract text
       const mammoth = await import('mammoth');
+      console.log('🔄 Calling mammoth.extractRawText...');
+      
       const result = await mammoth.extractRawText({ buffer: arrayBuffer });
+      console.log('✅ Mammoth extraction completed');
       
       const extractedText = result.value.trim();
+      console.log('📝 Extracted text length:', extractedText.length);
 
       if (!extractedText || extractedText.length === 0) {
         return NextResponse.json(

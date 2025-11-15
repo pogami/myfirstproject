@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
+export const maxDuration = 30; // 30 seconds max for AI extraction
 
 const SyllabusExtractionSchema = z.object({
   syllabusText: z.string(),
@@ -38,8 +39,17 @@ JSON:`;
     let selectedModel: string;
     
     try {
-      console.log('Using OpenAI for syllabus analysis...');
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      console.log('🤖 Using OpenAI for syllabus analysis...', { syllabusTextLength: syllabusText.length });
+      
+      // Add timeout to OpenAI API call (20 seconds)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 20000); // 20 seconds timeout
+      
+      let response: Response;
+      try {
+        response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -50,8 +60,17 @@ JSON:`;
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.1,
           max_tokens: 2000,
-        })
+          }),
+          signal: controller.signal
       });
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('OpenAI API request timed out after 20 seconds');
+        }
+        throw fetchError;
+      }
 
       if (response.ok) {
         const data = await response.json();

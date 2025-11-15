@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X, Home, MessageSquare, Upload, BookOpen, Users, Settings, LogOut, Bell } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -123,6 +123,7 @@ export function MobileNavigation({ user, className }: MobileNavigationProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">

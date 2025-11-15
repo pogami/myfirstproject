@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
-import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe, FileText } from "lucide-react";
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe, FileText, Sparkles, ScrollText } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
@@ -102,6 +102,10 @@ export default function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+    const [chatSummary, setChatSummary] = useState<string>('');
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [copiedSummary, setCopiedSummary] = useState(false);
     // New chat creation is disabled here (only via Upload Syllabus)
     const [unreadById, setUnreadById] = useState<Record<string, number>>({});
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
@@ -399,24 +403,81 @@ export default function ChatPage() {
             // No URL parameter, mark as processed
             urlProcessedRef.current = true;
         }
-    }, [searchParams, chats, setCurrentTab, isStoreLoading]);
+        
+        // Handle prefill parameter on initial load
+        const prefillParam = searchParams.get('prefill');
+        if (prefillParam && currentTab) {
+            setTimeout(() => {
+                setInputValue(decodeURIComponent(prefillParam));
+                // Focus the input so user can edit or send
+                const inputElement = document.querySelector('textarea[placeholder*="message"], input[placeholder*="message"]') as HTMLInputElement | HTMLTextAreaElement;
+                if (inputElement) {
+                    setTimeout(() => {
+                        inputElement.focus();
+                        // Move cursor to end
+                        if (inputElement.setSelectionRange) {
+                            const length = inputElement.value.length;
+                            inputElement.setSelectionRange(length, length);
+                        }
+                    }, 100);
+                }
+            }, 300);
+        }
+    }, [searchParams, chats, setCurrentTab, isStoreLoading, setInputValue]);
 
     // Respond to subsequent URL param changes to switch chats seamlessly
     useEffect(() => {
         const tabParam = searchParams.get('tab');
         const chatIdParam = searchParams.get('chatId');
+        const prefillParam = searchParams.get('prefill');
         let targetChatId = chatIdParam || tabParam;
         if (targetChatId === 'general') {
             const generalIds = ['private-general-chat', 'public-general-chat', 'private-general-chat-guest'];
             targetChatId = generalIds.find(id => !!chats[id]) || 'private-general-chat-guest';
         }
         if (!targetChatId) return;
-        if (currentTab === targetChatId) return;
+        if (currentTab === targetChatId) {
+            // If already on the correct tab, just set prefill if present
+            if (prefillParam) {
+                setInputValue(decodeURIComponent(prefillParam));
+                // Focus the input so user can edit or send
+                setTimeout(() => {
+                    const inputElement = document.querySelector('textarea[placeholder*="message"], input[placeholder*="message"]') as HTMLInputElement | HTMLTextAreaElement;
+                    if (inputElement) {
+                        inputElement.focus();
+                        // Move cursor to end
+                        if (inputElement.setSelectionRange) {
+                            const length = inputElement.value.length;
+                            inputElement.setSelectionRange(length, length);
+                        }
+                    }
+                }, 100);
+            }
+            return;
+        }
         if (chats[targetChatId] || !isStoreLoading) {
             setCurrentTab(targetChatId);
             try { localStorage.setItem('cc-active-tab', targetChatId); } catch {}
+            // Set prefill after tab switch
+            if (prefillParam) {
+                setTimeout(() => {
+                    setInputValue(decodeURIComponent(prefillParam));
+                    // Focus the input so user can edit or send
+                    setTimeout(() => {
+                        const inputElement = document.querySelector('textarea[placeholder*="message"], input[placeholder*="message"]') as HTMLInputElement | HTMLTextAreaElement;
+                        if (inputElement) {
+                            inputElement.focus();
+                            // Move cursor to end
+                            if (inputElement.setSelectionRange) {
+                                const length = inputElement.value.length;
+                                inputElement.setSelectionRange(length, length);
+                            }
+                        }
+                    }, 200);
+                }, 100);
+            }
         }
-    }, [searchParams, currentTab, chats, isStoreLoading, setCurrentTab]);
+    }, [searchParams, currentTab, chats, isStoreLoading, setCurrentTab, setInputValue]);
 
     // Ensure auth listener is initialized with offline handling
     useEffect(() => {
@@ -1308,6 +1369,7 @@ export default function ChatPage() {
     const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
         onAnalysisComplete: async (result, fileName) => {
             // Store the extracted text for chat context
+            // Support multiple documents per chat (for multiple lecture pages)
             const currentChatId = currentTab || 'private-general-chat';
             const storageKey = `document-content-${currentChatId}`;
             const documentData = {
@@ -1319,24 +1381,45 @@ export default function ChatPage() {
                 timestamp: Date.now()
             };
             
-            console.log('💾 STORING DOCUMENT DATA:', {
+            // Get existing documents (support both array and single document for backward compatibility)
+            const existingData = sessionStorage.getItem(storageKey);
+            let documents: any[] = [];
+            
+            if (existingData) {
+                try {
+                    const parsed = JSON.parse(existingData);
+                    documents = Array.isArray(parsed) ? parsed : [parsed];
+                } catch (e) {
+                    console.warn('Failed to parse existing documents, starting fresh');
+                    documents = [];
+                }
+            }
+            
+            // Add new document to the array
+            documents.push(documentData);
+            
+            console.log('💾 STORING DOCUMENT DATA (Multiple Documents Support):', {
                 fileName: documentData.fileName,
                 extractedTextLength: documentData.extractedText?.length || 0,
                 extractedTextPreview: documentData.extractedText?.substring(0, 300) || 'NO CONTENT',
                 summary: documentData.summary,
                 storageKey: storageKey,
-                chatId: currentChatId
+                chatId: currentChatId,
+                totalDocuments: documents.length
             });
             
-            sessionStorage.setItem(storageKey, JSON.stringify(documentData));
+            // Store as array to support multiple documents
+            sessionStorage.setItem(storageKey, JSON.stringify(documents));
 
             // Verify storage worked
             const verificationCheck = sessionStorage.getItem(storageKey);
             if (verificationCheck) {
                 const verifiedData = JSON.parse(verificationCheck);
+                const verifiedDocs = Array.isArray(verifiedData) ? verifiedData : [verifiedData];
                 console.log('✅ VERIFICATION: Document stored successfully');
-                console.log('Verified extracted text length:', verifiedData.extractedText?.length || 0);
-                console.log('Verified filename:', verifiedData.fileName);
+                console.log(`Total documents in storage: ${verifiedDocs.length}`);
+                console.log('Latest document:', verifiedDocs[verifiedDocs.length - 1]?.fileName);
+                console.log('Latest document text length:', verifiedDocs[verifiedDocs.length - 1]?.extractedText?.length || 0);
             } else {
                 console.error('❌ VERIFICATION FAILED: Document not stored in sessionStorage');
             }
@@ -1489,6 +1572,65 @@ export default function ChatPage() {
                 title: "Export Failed",
                 description: "Could not export the chat. Please try again.",
             });
+        }
+    };
+
+    const handleGenerateSummary = async () => {
+        if (!currentTab || !chats[currentTab]) return;
+        
+        setIsGeneratingSummary(true);
+        setShowSummaryDialog(true);
+        setChatSummary('');
+        
+        try {
+            const currentChat = chats[currentTab];
+            const messages = currentChat.messages || [];
+            
+            if (messages.length === 0) {
+                setChatSummary('This chat has no messages yet. Start a conversation to get a summary!');
+                setIsGeneratingSummary(false);
+                return;
+            }
+            
+            // Prepare chat content for summarization
+            const chatContent = messages
+                .map((msg: any) => {
+                    const sender = msg.sender === 'user' ? 'You' : 'AI';
+                    const text = msg.text || msg.content || '';
+                    return `${sender}: ${text}`;
+                })
+                .join('\n\n');
+            
+            const response = await fetch('/api/chat/summarize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chatId: currentTab,
+                    chatTitle: currentChat.title || getChatDisplayName(currentTab),
+                    messages: chatContent,
+                    courseData: currentChat.courseData,
+                    chatType: currentChat.chatType
+                }),
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to generate summary');
+            }
+            
+            const data = await response.json();
+            setChatSummary(data.summary || 'Unable to generate summary.');
+        } catch (error: any) {
+            console.error('Error generating summary:', error);
+            setChatSummary('Failed to generate summary. Please try again.');
+            toast({
+                variant: "destructive",
+                title: "Summary Failed",
+                description: "Could not generate chat summary. Please try again.",
+            });
+        } finally {
+            setIsGeneratingSummary(false);
         }
     };
 
@@ -1884,6 +2026,16 @@ export default function ChatPage() {
                                     <div className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5" />
                                         <span className="font-semibold">{currentTab ? getChatDisplayName(currentTab) : 'Loading...'}</span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleGenerateSummary}
+                                            className="h-8 px-3 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium"
+                                            disabled={isGeneratingSummary}
+                                        >
+                                            <ScrollText className="h-3.5 w-3.5 mr-1.5" />
+                                            {isGeneratingSummary ? 'Summarizing...' : 'AI Summary'}
+                                        </Button>
                                         <Badge variant="secondary" className="ml-auto mr-2">
                                             <Users className="h-3 w-3 mr-1" />
                                             All Users
@@ -2023,9 +2175,11 @@ export default function ChatPage() {
                                                 
                                                 return messagesToRender?.map((message, index) => {
                                                 const messageKey = message.id || `fallback-${index}-${message.timestamp}`;
+                                                // Ensure unique key by including index
+                                                const uniqueKey = `msg-${messageKey}-${index}`;
                                                 if (deletedMessageIds.has(messageKey)) {
                                                     return (
-                                                        <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} w-full px-4`}>
+                                                        <div key={uniqueKey} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} w-full px-4`}>
                                                             <div className={`flex gap-4 ${message.sender === 'user' ? 'max-w-[80%]' : 'max-w-[80%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                                 {message.sender === 'bot' ? (
                                                                     <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
@@ -2054,7 +2208,7 @@ export default function ChatPage() {
                                                 if (message.sender === 'system') {
                                                     return (
                                                         <JoinMessage 
-                                                            key={`join-${messageKey}`}
+                                                            key={`join-${messageKey}-${index}`}
                                                             message={message}
                                                         />
                                                     );
@@ -2066,7 +2220,7 @@ export default function ChatPage() {
                                                 }
                                                 
                                                 return (
-                                                <div key={`msg-${messageKey}`} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} w-full px-4`}>
+                                                <div key={uniqueKey} className={`flex gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} w-full px-4`}>
                                                     <div className={`flex gap-4 ${message.sender === 'user' ? 'max-w-[80%]' : 'max-w-[80%]'} min-w-0 ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                                                         {message.sender === 'bot' ? (
                                                             <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
@@ -2551,6 +2705,71 @@ export default function ChatPage() {
                     >
                         Delete Chat
                     </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* AI Summary Dialog */}
+        <Dialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-purple-500" />
+                        Chat Summary
+                    </DialogTitle>
+                    <DialogDescription>
+                        AI-generated summary of your conversation
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="pt-4">
+                    {isGeneratingSummary ? (
+                        <div className="flex items-center gap-3 py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Generating summary...</p>
+                        </div>
+                    ) : chatSummary ? (
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <div className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {chatSummary}
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No summary available.</p>
+                    )}
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowSummaryDialog(false)}
+                    >
+                        Close
+                    </Button>
+                    {chatSummary && (
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                navigator.clipboard.writeText(chatSummary);
+                                setCopiedSummary(true);
+                                setTimeout(() => setCopiedSummary(false), 2000);
+                                toast({
+                                    title: "Copied",
+                                    description: "Summary copied to clipboard",
+                                });
+                            }}
+                        >
+                            {copiedSummary ? (
+                                <>
+                                    <Check className="h-4 w-4 mr-2" />
+                                    Copied
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Copy
+                                </>
+                            )}
+                        </Button>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

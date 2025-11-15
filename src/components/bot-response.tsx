@@ -106,8 +106,17 @@ function renderMathLine(line: string, i: number) {
   // Split the line by math expressions and render each part appropriately
   const parts = line.split(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$|\\\[[\s\S]*?\\\]|\\\([^)]*?\\\)|\\boxed\{[^}]*\})/);
   
+  // Check if this line contains block math (which renders as <div>)
+  const hasBlockMath = parts.some(part => 
+    (part.startsWith('$$') && part.endsWith('$$')) || 
+    (part.startsWith('\\[') && part.endsWith('\\]'))
+  );
+  
+  // Use <div> instead of <p> if there's block math to avoid invalid HTML nesting
+  const ContainerTag = hasBlockMath ? 'div' : 'p';
+  
   return (
-    <p key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans">
+    <ContainerTag key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans">
       {parts.map((part, partIndex) => {
         // Block math ($$...$$)
         if (part.startsWith('$$') && part.endsWith('$$')) {
@@ -154,7 +163,7 @@ function renderMathLine(line: string, i: number) {
         }
         return null;
       })}
-    </p>
+    </ContainerTag>
   );
 }
 

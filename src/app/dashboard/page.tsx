@@ -21,6 +21,8 @@ import { MobileNavigation } from "@/components/mobile-navigation";
 import { MobileButton } from "@/components/ui/mobile-button";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import GeolocationGreeting from "@/components/geolocation-greeting";
+import { StudyFocusSuggestions } from "@/components/study-focus-suggestions";
+import { ChatSummariesDashboard } from "@/components/chat-summaries-dashboard";
 import dynamic from "next/dynamic";
 
 
@@ -325,7 +327,7 @@ export default function DashboardPage() {
           
           await NotificationService.createNotification({
             title: "💡 Pro Tip",
-            description: "Use the AI chat to ask questions about your courses and get personalized study help!",
+            description: "Use the chat to ask questions about your courses and get personalized study help.",
             type: "system",
             priority: "low",
             actionUrl: "/dashboard/chat"
@@ -521,7 +523,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent">
-
       <div className="space-y-8">
         {/* Modern Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -583,6 +584,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* What to Focus On - AI Study Suggestions */}
+        <StudyFocusSuggestions />
+
+        {/* Course Chat Summaries */}
+        <ChatSummariesDashboard />
 
         {/* Topics to Review (lightweight, signal-driven) */}
         {showTopicsReview && (
@@ -708,7 +714,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Unlock Pro Features</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Get access to advanced AI tutors, voice input, and more</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Get access to specialized tutors, voice input, and more</p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -723,23 +729,23 @@ export default function DashboardPage() {
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Crown className="h-5 w-5 text-purple-600" />
-                        Unlock Advanced Features
+                        Unlock Pro Features
                       </DialogTitle>
                       <DialogDescription>
-                        Get access to advanced AI tutors, voice input, image analysis, grade predictions, and more!
+                        Get access to specialized tutors, voice input, image analysis, grade predictions, and more.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
                         <h4 className="font-semibold mb-2 text-purple-900 dark:text-purple-100">Pro Features Include:</h4>
                         <ul className="text-sm text-purple-800 dark:text-purple-200 space-y-1">
-                          <li>• Advanced AI Tutor with specialized subjects</li>
+                          <li>• Specialized tutors for different subjects</li>
                           <li>• Voice input & image analysis</li>
                           <li>• Grade prediction system</li>
                           <li>• Google Calendar integration</li>
                           <li>• Spotify focus music</li>
                           <li>• Enhanced study groups</li>
-                          <li>• Smart break reminders</li>
+                          <li>• Break reminders</li>
                         </ul>
                       </div>
                       <div className="flex flex-col gap-3">
@@ -772,71 +778,69 @@ export default function DashboardPage() {
           </CardContent>
         </Card> */}
 
-        {/* Modern Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsLoading ? '...' : `${Math.floor(stats.studyTimeToday / 60)}h ${stats.studyTimeToday % 60}m`}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Study Time Today</p>
-                </div>
-                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/50">
-                  <Clock className="h-6 w-6 text-blue-600" />
+        {/* Stats Grid */}
+        <div className="w-full">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Study Time */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center rotate-[-2deg]">
+                  <Clock className="h-4 w-4 text-blue-700 dark:text-blue-300" strokeWidth={2.5} />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsLoading ? '...' : stats.assignmentsCompleted}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Assignments Done</p>
-                </div>
-                <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/50">
-                  <Target className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsLoading ? '...' : stats.studyStreak}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Day Streak</p>
-                </div>
-                <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/50">
-                  <Award className="h-6 w-6 text-purple-600" />
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Study Time</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : `${Math.floor(stats.studyTimeToday / 60)}h ${stats.studyTimeToday % 60}m`}
+            </p>
+          </div>
+
+          {/* Completed */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center rotate-[1deg]">
+                  <Target className="h-4 w-4 text-emerald-700 dark:text-emerald-300" strokeWidth={2.5} />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsLoading ? '...' : stats.upcomingDeadlines}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Due This Week</p>
-                </div>
-                <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/50">
-                  <Calendar className="h-6 w-6 text-orange-600" />
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Completed</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : stats.assignmentsCompleted}
+            </p>
+          </div>
+
+          {/* Streak */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center rotate-[-1deg]">
+                  <Award className="h-4 w-4 text-purple-700 dark:text-purple-300" strokeWidth={2.5} />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Streak</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : stats.studyStreak}
+            </p>
+          </div>
+
+          {/* Due Soon */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-orange-300 dark:hover:border-orange-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center rotate-[2deg]">
+                  <Calendar className="h-4 w-4 text-orange-700 dark:text-orange-300" strokeWidth={2.5} />
+                </div>
+              </div>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Due Soon</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : stats.upcomingDeadlines}
+            </p>
+          </div>
+            </div>
         </div>
 
         {/* Upload Syllabus Prompt - Show when no syllabi are uploaded */}

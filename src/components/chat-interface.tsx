@@ -669,6 +669,41 @@ export default function ChatInterface() {
 
     const { analyzeDocument, isAnalyzing } = useSmartDocumentAnalysis({
         onAnalysisComplete: async (result, fileName) => {
+            // Store the extracted text for chat context (support multiple documents)
+            const currentChatId = currentTab || 'private-general-chat';
+            const storageKey = `document-content-${currentChatId}`;
+            const documentData = {
+                fileName,
+                extractedText: result.extractedText,
+                summary: result.summary,
+                fileType: result.fileType,
+                metadata: result.metadata,
+                timestamp: Date.now()
+            };
+            
+            // Get existing documents (support both array and single document for backward compatibility)
+            const existingData = typeof window !== 'undefined' ? sessionStorage.getItem(storageKey) : null;
+            let documents: any[] = [];
+            
+            if (existingData) {
+                try {
+                    const parsed = JSON.parse(existingData);
+                    documents = Array.isArray(parsed) ? parsed : [parsed];
+                } catch (e) {
+                    console.warn('Failed to parse existing documents, starting fresh');
+                    documents = [];
+                }
+            }
+            
+            // Add new document to the array
+            documents.push(documentData);
+            
+            // Store as array to support multiple documents
+            if (typeof window !== 'undefined') {
+                sessionStorage.setItem(storageKey, JSON.stringify(documents));
+                console.log(`💾 Stored document ${documents.length} for chat ${currentChatId}:`, fileName);
+            }
+            
             // Add AI analysis as a message
             const analysisMessage = {
                 id: (Date.now() + 3).toString(),
@@ -882,6 +917,7 @@ export default function ChatInterface() {
             const context = chats[currentTab!]?.title || 'General Chat';
             
             // Check for stored document content and intelligently integrate it
+            // Support both single document (legacy) and multiple documents (new)
             let documentContext = '';
             const currentChatId = currentTab || 'private-general-chat';
             const storageKey = `document-content-${currentChatId}`;
@@ -890,18 +926,39 @@ export default function ChatInterface() {
             if (storedDocument) {
                 try {
                     const docData = JSON.parse(storedDocument);
-                    // Smart truncation: Keep document name, summary, and first 10000 chars of content
-                    const truncatedContent = docData.extractedText && docData.extractedText.length > 10000 
-                        ? docData.extractedText.substring(0, 10000) + "... [Content truncated for context window]"
-                        : docData.extractedText;
                     
-                    documentContext = `\n\nDOCUMENT CONTEXT - You have access to this document:\nDocument: ${docData.fileName}\nSummary: ${docData.summary}\nContent: ${truncatedContent}\n\nInstructions: You can reference this document content to answer questions about it. Use specific information from the document when relevant to the user's question. If you need to find specific information like professor name, look for it in the document content above.`;
-                    console.log('🔍 DOCUMENT DEBUG INFO:');
-                    console.log('Document name:', docData.fileName);
-                    console.log('Document summary:', docData.summary);
-                    console.log('Content length:', docData.extractedText?.length || 0);
-                    console.log('Content preview (first 200 chars):', docData.extractedText?.substring(0, 200) || 'No content');
-                    console.log('Full document context being sent:', documentContext.substring(0, 500) + '...');
+                    // Check if it's an array (multiple documents) or single document (legacy)
+                    const documents = Array.isArray(docData) ? docData : [docData];
+                    
+                    if (documents.length > 0) {
+                        let allDocumentContext = `\n\nLECTURE & DOCUMENT CONTEXT - You have access to ${documents.length} document(s) from this course:\n\n`;
+                        
+                        documents.forEach((doc: any, index: number) => {
+                            // Smart truncation: Keep document name, summary, and first 8000 chars per document
+                            const truncatedContent = doc.extractedText && doc.extractedText.length > 8000 
+                                ? doc.extractedText.substring(0, 8000) + "... [Content truncated for context window]"
+                                : doc.extractedText || '';
+                            
+                            allDocumentContext += `--- Document ${index + 1}: ${doc.fileName || 'Untitled'} ---\n`;
+                            if (doc.summary) {
+                                allDocumentContext += `Summary: ${doc.summary}\n`;
+                            }
+                            allDocumentContext += `Content: ${truncatedContent}\n\n`;
+                        });
+                        
+                        allDocumentContext += `Instructions: You can reference these lecture/document contents to answer questions. Use specific information from the documents when relevant. These documents contain course material, lecture notes, or study resources that the student has uploaded.`;
+                        
+                        documentContext = allDocumentContext;
+                        
+                        console.log('🔍 DOCUMENT DEBUG INFO:');
+                        console.log('Number of documents:', documents.length);
+                        documents.forEach((doc: any, idx: number) => {
+                            console.log(`Document ${idx + 1}:`, doc.fileName);
+                            console.log(`  Summary:`, doc.summary);
+                            console.log(`  Content length:`, doc.extractedText?.length || 0);
+                        });
+                        console.log('Full document context length:', documentContext.length);
+                    }
                 } catch (e) {
                     console.error('❌ Failed to parse stored document:', e);
                     console.log('Raw stored document:', storedDocument);

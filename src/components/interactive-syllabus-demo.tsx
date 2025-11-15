@@ -9,6 +9,7 @@ import { Upload, FileText, Sparkles, CheckCircle, ArrowRight, Calendar, User, Gr
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/hooks/use-chat-store';
 import { toast } from 'sonner';
+import { AnalyzingIcon } from '@/components/icons/analyzing-icon';
 
 interface ExtractedData {
   courseName?: string;
@@ -336,75 +337,153 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
 
       let text = '';
       
+      // Log file type for debugging
+      console.log('📄 File type detection:', {
+        fileType: file.type,
+        fileName: file.name,
+        fileExtension: file.name.split('.').pop()?.toLowerCase()
+      });
+      
       if (file.type === 'text/plain') {
+        console.log('✅ Detected as TXT file');
         text = await file.text();
-      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.toLowerCase().endsWith('.docx')) {
+        console.log('✅ Detected as DOCX file');
           try {
             setProcessingStep('Reading DOCX content...');
             setProgress(20);
             
             // Use server-side DOCX processing
-            console.log('Processing DOCX via server-side API...');
+            console.log('Processing DOCX via server-side API...', { fileName: file.name, fileSize: file.size });
             
             const formData = new FormData();
             formData.append('file', file);
             
-            const response = await fetch('/api/docx-extract', {
+            // Add timeout to prevent hanging (30 seconds for DOCX)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+              controller.abort();
+            }, 30000); // 30 seconds timeout
+            
+            try {
+              const response = await fetch('/api/docx-extract', {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server error: ${response.status}`);
+              }
+              
+              const result = await response.json();
+              
+              if (!result.success) {
+                // Handle DOCX processing limitations gracefully
+                if (result.alternatives) {
+                  const alternativesText = result.alternatives.map((alt: string, i: number) => `${i + 1}. ${alt}`).join('\n');
+                  const errorMessage = `${result.error}\n\nAlternatives:\n${alternativesText}${result.note ? `\n\n${result.note}` : ''}`;
+                  throw new Error(errorMessage);
+                } else {
+                  throw new Error(result.error || 'DOCX processing failed');
+                }
+              }
+              
+              text = result.text;
+              console.log('✅ DOCX extraction successful via server-side API:', {
+                textLength: text.length,
+                fileName: result.metadata?.fileName
+              });
+              setProgress(50);
+              
+            } catch (fetchError: any) {
+              clearTimeout(timeoutId);
+              if (fetchError.name === 'AbortError') {
+                throw new Error('DOCX processing timed out. The file may be too large or corrupted. Please try converting to TXT format.');
+              }
+              throw fetchError;
+            }
+            
+          } catch (docxError: any) {
+            console.error('❌ DOCX extraction error:', docxError);
+            setError(docxError.message || 'Failed to extract text from DOCX');
+            throw new Error(`Failed to extract text from DOCX: ${docxError.message}. Please try a TXT file instead.`);
+          }
+      } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+          try {
+            setProcessingStep('Sending PDF to server for parsing...');
+            setProgress(20);
+            
+            // Send PDF to server-side API route (pdf-parse runs on server only)
+            console.log('Sending PDF to server for parsing with pdf-parse...', { fileName: file.name, fileSize: file.size });
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            setProgress(30);
+            setProcessingStep('Server is parsing PDF...');
+            
+            const response = await fetch('/api/test-pdf-upload', {
               method: 'POST',
-              body: formData
+              body: formData,
             });
             
             if (!response.ok) {
-              const errorData = await response.json().catch(() => ({}));
-              throw new Error(errorData.error || `Server error: ${response.status}`);
+              // Try to get error details from response
+              let errorData: any = {};
+              const contentType = response.headers.get('content-type');
+              
+              if (contentType && contentType.includes('application/json')) {
+                try {
+                  errorData = await response.json();
+                } catch (e) {
+                  console.error('Failed to parse error JSON:', e);
+                }
+              } else {
+                // If not JSON, try to get text
+                try {
+                  const text = await response.text();
+                  console.error('Server returned non-JSON error:', text);
+                  errorData = { error: text };
+                } catch (e) {
+                  console.error('Failed to read error response:', e);
+                }
+              }
+              
+              console.error('❌ Server Error Response:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorData.error,
+                details: errorData.details,
+                stack: errorData.stack,
+                fullError: errorData
+              });
+              
+              const errorMessage = errorData.details || errorData.error || `Server error: ${response.status}`;
+              throw new Error(errorMessage);
             }
             
             const result = await response.json();
             
-            if (!result.success) {
-              // Handle DOCX processing limitations gracefully
-              if (result.alternatives) {
-                const alternativesText = result.alternatives.map((alt: string, i: number) => `${i + 1}. ${alt}`).join('\n');
-                const errorMessage = `${result.error}\n\nAlternatives:\n${alternativesText}${result.note ? `\n\n${result.note}` : ''}`;
-                throw new Error(errorMessage);
-              } else {
-                throw new Error(result.error || 'DOCX processing failed');
-              }
+            if (!result.text) {
+              throw new Error('No text extracted from PDF');
             }
             
             text = result.text;
-            console.log('DOCX extraction successful via server-side API:', {
+            
+            console.log('PDF extraction successful (server-side with pdf-parse):', {
               textLength: text.length,
-              fileName: result.metadata?.fileName
-            });
-            setProgress(50);
-            
-          } catch (docxError: any) {
-            console.error('DOCX extraction error:', docxError);
-            throw new Error(`Failed to extract text from DOCX: ${docxError.message}. Please try a TXT or PDF file instead.`);
-          }
-      } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-          try {
-            setProcessingStep('Extracting text from PDF...');
-            setProgress(20);
-            
-            // Use DocumentProcessorClient which has client-side + server-side fallback
-            console.log('Processing PDF...');
-            
-            const { DocumentProcessorClient } = await import('@/lib/syllabus-parser/document-processor-client');
-            const result = await DocumentProcessorClient.extractText(file);
-            
-            text = result.text;
-            console.log('PDF extraction successful:', {
-              textLength: text.length,
-              format: result.format,
-              pages: result.metadata?.pages
+              fileName: file.name
             });
             setProgress(50);
             
           } catch (pdfError: any) {
             console.error('PDF extraction error:', pdfError);
-            throw new Error(`Failed to extract text from PDF: ${pdfError.message}`);
+            setError(pdfError.message || 'Failed to extract text from PDF');
+            throw new Error(`Failed to extract text from PDF: ${pdfError.message}. Please try a TXT or DOCX file instead.`);
           }
       } else {
         throw new Error('Unsupported file format. Please upload a TXT, DOCX, or PDF file.');
@@ -445,16 +524,36 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
       setProgress(85);
       await new Promise(resolve => setTimeout(resolve, 400));
 
-      // Call AI extraction API
-      const response = await fetch('/api/extract-syllabus-context', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          syllabusText: text
-        })
-      });
+      // Call AI extraction API with timeout
+      console.log('🤖 Calling AI extraction API...', { textLength: text.length });
+      setProcessingStep('Extracting course information with AI...');
+      setProgress(85);
+      
+      const aiController = new AbortController();
+      const aiTimeoutId = setTimeout(() => {
+        aiController.abort();
+      }, 30000); // 30 seconds timeout for AI extraction
+      
+      let response: Response;
+      try {
+        response = await fetch('/api/extract-syllabus-context', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            syllabusText: text
+          }),
+          signal: aiController.signal
+        });
+        clearTimeout(aiTimeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(aiTimeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('AI extraction timed out. Please try again with a shorter syllabus or contact support.');
+        }
+        throw fetchError;
+      }
 
       setProcessingStep('Finalizing results...');
       setProgress(90);
@@ -497,8 +596,15 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
         console.log('TXT syllabus processing completed:', extractedData);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process syllabus. Please try again.');
-      console.error('Processing error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process syllabus. Please try again.';
+      console.error('❌ Processing error:', err);
+      console.error('❌ Error details:', {
+        message: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined
+      });
+      setError(errorMessage);
+      setProcessingStep('Error occurred');
+      setProgress(0);
     } finally {
       setIsProcessing(false);
     }
@@ -824,7 +930,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                 {isDragOver ? 'Drop to upload' : 'Drop syllabus or click to browse'}
               </h3>
               <p className="text-base text-muted-foreground">
-                DOCX, TXT, or PDF • Max 10MB
+                PDF, DOCX, or TXT • Max 10MB
               </p>
             </div>
           )}
@@ -863,73 +969,15 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
               {/* Processing Steps */}
               {isProcessing && (
                 <div className="space-y-6">
-                  {/* Step Animation */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex gap-2">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          progress >= 16 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {progress >= 16 ? <CheckCircle className="w-3 h-3" /> : '1'}
-                        </div>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          progress >= 33 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {progress >= 33 ? <CheckCircle className="w-3 h-3" /> : '2'}
-                        </div>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          progress >= 50 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {progress >= 50 ? <CheckCircle className="w-3 h-3" /> : '3'}
-                        </div>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          progress >= 66 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {progress >= 66 ? <CheckCircle className="w-3 h-3" /> : '4'}
-                        </div>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          progress >= 83 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {progress >= 83 ? <CheckCircle className="w-3 h-3" /> : '5'}
-                        </div>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
-                          progress >= 100 ? 'bg-green-500 text-white scale-110' : 'bg-gray-300 text-gray-600'
-                        }`}>
-                          {progress >= 100 ? <CheckCircle className="w-3 h-3" /> : '6'}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500 ease-out"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                  {/* Analyzing Animation */}
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="relative">
+                      <AnalyzingIcon className="w-32 h-32 md:w-40 md:h-40 text-blue-600 dark:text-blue-400" />
                     </div>
-                    
-                    {/* Current Step Description */}
                     <div className="text-center space-y-2">
-                      <h3 className="text-lg font-semibold text-primary">
-                        {progress < 16 ? '📁 Validating File' :
-                         progress < 33 ? '📄 Extracting Text' :
-                         progress < 50 ? '🧠 AI Analysis' :
-                         progress < 66 ? '🏗️ Structuring Data' :
-                         progress < 83 ? '✅ Validating Results' :
-                         progress < 100 ? '🎉 Finalizing...' : 'Complete!'}
-                      </h3>
+                      <p className="text-lg font-semibold text-primary">Analyzing...</p>
                       <p className="text-muted-foreground text-sm">{processingStep}</p>
                     </div>
-                  </div>
-                  
-                  {/* Progress Details */}
-                  <div className="flex items-center justify-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                      <span className="font-medium text-primary">{Math.round(progress)}%</span>
-                    </div>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{processingTime}s elapsed</span>
                   </div>
                 </div>
               )}
@@ -1301,7 +1349,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
               <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <div className="flex items-center gap-2 text-sm text-blue-900 dark:text-blue-100">
                   <Shield className="h-5 w-5" />
-                  <span>Processed in your browser; only extracted text is sent for AI parsing, we never store the original file, and any parsed course data saved to your account can be deleted.</span>
+                  <span>Files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original files, and all parsed course data saved to your account can be deleted.</span>
                 </div>
               </div>
             </div>

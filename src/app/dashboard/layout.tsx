@@ -689,8 +689,8 @@ export default function DashboardLayout({
             </div>
           </header>
           
-          <main className={`flex-1 bg-transparent relative min-h-screen ${pathname === '/dashboard/chat' ? '' : 'max-w-7xl mx-auto p-6 space-y-6'}`}>
-            {pathname === '/dashboard/chat' ? children : <div className="max-w-7xl mx-auto p-6 space-y-6">{children}</div>}
+          <main className={`flex-1 bg-transparent relative min-h-screen ${pathname === '/dashboard/chat' ? '' : 'p-6 space-y-6'}`}>
+            {pathname === '/dashboard/chat' ? children : <div className="w-full p-6 space-y-6">{children}</div>}
           </main>
         </SidebarInset>
 

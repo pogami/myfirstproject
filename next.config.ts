@@ -44,12 +44,35 @@ const nextConfig: NextConfig = {
   // Turbopack configuration (replaces webpack config)
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    serverComponentsExternalPackages: ['pdf2json', 'pdf-parse', 'pdfjs-dist'],  // Important: these need to be external
   },
   // External packages for server components
-  serverExternalPackages: ['pdf2json'],
+  serverExternalPackages: ['pdf-parse', 'pdfjs-dist'],
   // Exclude problematic test pages from build
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   output: 'standalone',
+  // Webpack configuration for canvas/pdfjs-dist compatibility
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    // Disable canvas on client-side (not needed in browser)
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+        fs: false,
+        path: false,
+        os: false,
+      };
+    } else {
+      // Externalize pdf-parse and pdfjs-dist on server-side to avoid bundling issues
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals.push('pdf-parse', 'pdf-parse/node', 'pdfjs-dist');
+      } else {
+        config.externals = [config.externals, 'pdf-parse', 'pdf-parse/node', 'pdfjs-dist'];
+      }
+    }
+    return config;
+  },
   turbopack: {
     rules: {
       '*.svg': {
