@@ -1,6 +1,6 @@
-export const runtime = "nodejs";
+import { extractTextFromPdfBuffer } from "@/lib/pdf-text-extractor";
 
-const { PDFParse } = require("pdf-parse");
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
@@ -12,12 +12,9 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    const { text } = await extractTextFromPdfBuffer(buffer);
 
-    // pdf-parse v2.4.5 exports PDFParse as a class, need to instantiate it
-    const parser = new PDFParse({ data: buffer });
-    const pdfData = await parser.getText();
-
-    return new Response(JSON.stringify({ text: pdfData.text }), { status: 200 });
+    return new Response(JSON.stringify({ text }), { status: 200 });
 
   } catch (err: any) {
     console.error("❌ PDF parsing error:", err);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
-import { ensurePdfNodeSupport, loadPdfParse } from '@/lib/pdf-node-utils';
+import { extractTextFromPdfBuffer } from '@/lib/pdf-text-extractor';
 
 // Import file parsing utilities (mammoth can be loaded at top level)
 const mammoth = require("mammoth");
@@ -54,9 +54,6 @@ export async function POST(request: NextRequest) {
       
       try {
         if (filename.endsWith('.pdf')) {
-          // Use the same robust PDF parsing as homepage (pdf-parse with proper configuration)
-          await ensurePdfNodeSupport();
-
           // Validate PDF magic bytes (%PDF)
           const pdfMagicBytes = buffer.slice(0, 4).toString();
           if (pdfMagicBytes !== '%PDF') {
@@ -70,29 +67,22 @@ export async function POST(request: NextRequest) {
             );
           }
           
-          // Load pdf-parse after environment is configured
-          const pdfParse = await loadPdfParse();
-          
-          // Convert Buffer to Uint8Array (pdf-parse requires Uint8Array)
-          const uint8Array = new Uint8Array(buffer);
-          
-          // Extract text using pdf-parse (same as homepage)
-          const data = await pdfParse(uint8Array);
-          extractedText = (data?.text || '').trim();
-          
-          if (!extractedText || extractedText.length === 0) {
+          try {
+            const { text } = await extractTextFromPdfBuffer(buffer);
+            extractedText = text;
+            console.log(`✅ PDF parsed successfully: ${extractedText.length} characters extracted from ${fileName}`);
+          } catch (pdfError: any) {
+            console.error('❌ PDF extraction failed:', pdfError);
             return NextResponse.json(
               { 
                 success: false,
-                error: 'No text content found in PDF',
-                isScannedPDF: true,
-                analysis: `I received your ${fileName} file, but I couldn't extract any text from it. This might be a scanned PDF (image-based). Please try a PDF with selectable text or convert it to a text-based format.`
+                error: 'PDF parsing failed',
+                analysis: `I received your ${fileName} file, but couldn't extract any text. Please upload a text-based PDF or convert it to DOCX/TXT.`,
+                details: pdfError?.message
               },
               { status: 400 }
             );
           }
-          
-          console.log(`✅ PDF parsed successfully: ${extractedText.length} characters extracted from ${fileName}`);
         } else if (filename.endsWith('.docx')) {
           // Use mammoth for DOCX (same as homepage)
           const result = await mammoth.extractRawText({ buffer });

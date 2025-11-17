@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   // External packages for server components
-  serverExternalPackages: ['pdf2json', 'pdf-parse', 'pdfjs-dist', '@napi-rs/canvas'],
+  serverExternalPackages: ['pdf2json', 'pdfjs-dist', '@napi-rs/canvas'],
   // Exclude problematic test pages from build
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   output: 'standalone',
@@ -62,12 +62,12 @@ const nextConfig: NextConfig = {
         os: false,
       };
     } else {
-      // Externalize pdf-parse and pdfjs-dist on server-side to avoid bundling issues
+      // Externalize pdfjs-dist on server-side to avoid bundling issues
       config.externals = config.externals || [];
       if (Array.isArray(config.externals)) {
-        config.externals.push('pdf-parse', 'pdf-parse/node', 'pdfjs-dist', '@napi-rs/canvas');
+        config.externals.push('pdfjs-dist', '@napi-rs/canvas');
       } else {
-        config.externals = [config.externals, 'pdf-parse', 'pdf-parse/node', 'pdfjs-dist', '@napi-rs/canvas'];
+        config.externals = [config.externals, 'pdfjs-dist', '@napi-rs/canvas'];
       }
     }
     return config;

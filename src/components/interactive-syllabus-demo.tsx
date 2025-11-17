@@ -429,8 +429,8 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
             setProcessingStep('Preparing PDF for parsing...');
             setProgress(20);
             
-            // Send PDF to server-side API route (pdf-parse runs on server only)
-            console.log('Sending PDF to server for parsing with pdf-parse...', { fileName: file.name, fileSize: file.size });
+            // Send PDF to server-side API route (pdf parsing runs on server only)
+            console.log('Sending PDF to server for parsing...', { fileName: file.name, fileSize: file.size });
             
             const formData = new FormData();
             formData.append('file', file);
@@ -486,7 +486,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
             
             text = result.text;
             
-            console.log('PDF extraction successful (server-side with pdf-parse):', {
+            console.log('PDF extraction successful (server-side parser):', {
               textLength: text.length,
               fileName: file.name
             });

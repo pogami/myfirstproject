@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensurePdfNodeSupport, loadPdfParse } from '@/lib/pdf-node-utils';
+import { extractTextFromPdfBuffer } from '@/lib/pdf-text-extractor';
 
 /**
- * Simple PDF text extraction using pdf-parse
+ * Simple PDF text extraction using pdf2json helper
  * Clean, reliable implementation for Next.js
  */
 export async function POST(request: NextRequest) {
@@ -51,26 +51,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Configure pdfjs-dist and load pdf-parse in an ESM-friendly way
-    await ensurePdfNodeSupport();
-    const pdfParse = await loadPdfParse();
-    
-    // Convert Buffer to Uint8Array (pdf-parse requires Uint8Array)
-    const uint8Array = new Uint8Array(buffer);
-    
-    // Extract text directly (pdf-parse v2.4.3 default export)
-    const result = await pdfParse(uint8Array);
-    
-    // Get extracted text and page count
-    // pdf-parse returns: { text: string, numpages: number, info: object, metadata: object }
-    const extractedText = (result?.text || '').trim();
-    const pageCount = result?.numpages || result?.numPages || 1;
+    const { text: extractedText, pageCount } = await extractTextFromPdfBuffer(buffer);
 
     if (!extractedText || extractedText.length === 0) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'No text content found in the PDF. This might be a scanned PDF (image-based).',
+        error: 'No text content found in the PDF. This might be a scanned PDF (image-based).',
           isScannedPDF: true
         },
         { status: 400 }

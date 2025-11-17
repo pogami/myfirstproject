@@ -1,11 +1,9 @@
 import type { NextRequest } from "next/server";
+import { extractTextFromPdfBuffer } from "@/lib/pdf-text-extractor";
 
 export const runtime = "nodejs";
 
 export const dynamic = "force-dynamic";
-
-// Require pdf-parse for Node.js
-const pdfParse = require("pdf-parse");
 
 const mammoth = require("mammoth"); // For DOCX
 
@@ -29,9 +27,8 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     if (filename.endsWith(".pdf")) {
-      const data = await pdfParse(buffer);
-
-      text = data.text;
+      const { text: pdfText } = await extractTextFromPdfBuffer(buffer);
+      text = pdfText;
     } else if (filename.endsWith(".docx")) {
       const result = await mammoth.extractRawText({ buffer });
 
