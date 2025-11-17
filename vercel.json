@@ -13,9 +13,6 @@
       "runtime": "nodejs22.x",
       "memory": 2048,
       "maxDuration": 60
-    },
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs22.x"
     }
   },
   "rewrites": [
