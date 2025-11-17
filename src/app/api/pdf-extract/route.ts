@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ensurePdfNodeSupport, loadPdfParse } from '@/lib/pdf-node-utils';
 
 /**
  * Simple PDF text extraction using pdf-parse
@@ -50,41 +51,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract text using pdf-parse
-    // CRITICAL: Configure pdfjs-dist worker BEFORE loading pdf-parse
-    // This prevents the "Cannot find module pdf.worker.mjs" error in Next.js
-    
-    // Set environment variable to disable worker
-    if (typeof process !== 'undefined' && process.env) {
-      process.env.PDFJS_DISABLE_WORKER = 'true';
-    }
-    
-    // Configure pdfjs-dist GlobalWorkerOptions to disable worker
-    // Must be done before pdf-parse loads pdfjs-dist
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfjs = require('pdfjs-dist');
-      if (pdfjs && pdfjs.GlobalWorkerOptions) {
-        // Set to null to completely disable worker
-        pdfjs.GlobalWorkerOptions.workerSrc = null as any;
-      }
-    } catch (e) {
-      // If pdfjs-dist isn't directly available, try legacy build
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const pdfjsLegacy = require('pdfjs-dist/legacy/build/pdf.js');
-        if (pdfjsLegacy && pdfjsLegacy.GlobalWorkerOptions) {
-          pdfjsLegacy.GlobalWorkerOptions.workerSrc = null as any;
-        }
-      } catch (e2) {
-        // Both failed, but we'll still try pdf-parse
-        console.log('Note: Could not configure pdfjs-dist worker (will try anyway)');
-      }
-    }
-    
-    // Now load pdf-parse (it should use the configured pdfjs-dist)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse');
+    // Configure pdfjs-dist and load pdf-parse in an ESM-friendly way
+    await ensurePdfNodeSupport();
+    const pdfParse = await loadPdfParse();
     
     // Convert Buffer to Uint8Array (pdf-parse requires Uint8Array)
     const uint8Array = new Uint8Array(buffer);

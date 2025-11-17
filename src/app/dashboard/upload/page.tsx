@@ -43,7 +43,7 @@ export default function EnhancedSyllabusUploadPage() {
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-center text-lg sm:text-xl">How It Works</CardTitle>
           <CardDescription className="text-center text-sm sm:text-base">
-            Simple steps to transform your syllabus into a powerful learning tool
+            Real workflow we support today — from upload to AI-powered course chat
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0">
@@ -52,18 +52,18 @@ export default function EnhancedSyllabusUploadPage() {
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <span className="text-base sm:text-lg font-bold text-primary">1</span>
               </div>
-              <h3 className="font-semibold text-sm sm:text-base">Upload File</h3>
+              <h3 className="font-semibold text-sm sm:text-base">Upload Syllabus</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Drag and drop your course syllabus (DOCX, TXT)
+                Drag a text-based PDF, DOCX, or TXT file right from your computer
               </p>
             </div>
             <div className="text-center space-y-2 sm:space-y-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <span className="text-base sm:text-lg font-bold text-primary">2</span>
               </div>
-              <h3 className="font-semibold text-sm sm:text-base">AI Analysis</h3>
+              <h3 className="font-semibold text-sm sm:text-base">AI Course Setup</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Our AI extracts key information and course details
+                We map assignments, schedules, and course context automatically
               </p>
             </div>
             <div className="text-center space-y-2 sm:space-y-3">
@@ -72,7 +72,7 @@ export default function EnhancedSyllabusUploadPage() {
               </div>
               <h3 className="font-semibold text-sm sm:text-base">Study Groups <span className="text-xs text-muted-foreground">(Coming Soon)</span></h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Connect with classmates and collaborate together
+                You’ll soon be able to match with classmates directly inside CourseConnect
               </p>
             </div>
           </div>
@@ -91,8 +91,8 @@ export default function EnhancedSyllabusUploadPage() {
             Upload Your Syllabus
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-            Transform your course syllabus into an interactive learning experience. Get AI-powered analysis, 
-            join study groups, and unlock personalized study tools.
+            Turn static syllabi into living course hubs. Every upload spins up a dedicated AI chat, 
+            pulls out due dates, and keeps all of your materials searchable in one place.
           </p>
           <div className="flex flex-wrap justify-center gap-2 px-4">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
@@ -137,21 +137,21 @@ export default function EnhancedSyllabusUploadPage() {
                     <Zap className="size-6 text-yellow-600 dark:text-yellow-400" />
                   </div>
                   <p className="text-sm font-medium text-foreground">Instant AI Analysis</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">Your course content is analyzed automatically</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">We detect meeting times, grading policies, and assignment milestones.</p>
                 </div>
                 <div className="flex flex-col items-center text-center space-y-3 group">
                   <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/20 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/30 transition-colors">
                     <MessageSquare className="size-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <p className="text-sm font-medium text-foreground">Dedicated Chat</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">A personalized chat is created for your class</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">A course-specific AI chat opens automatically, ready for questions.</p>
                 </div>
                 <div className="flex flex-col items-center text-center space-y-3 group">
                   <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30 transition-colors">
                     <Target className="size-6 text-green-600 dark:text-green-400" />
                   </div>
                   <p className="text-sm font-medium text-foreground">Study Assistance</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">Get personalized help tailored to your course</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Use the chat to generate summaries, practice questions, and study plans.</p>
                 </div>
               </div>
             </CardContent>

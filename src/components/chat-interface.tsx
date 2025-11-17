@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect, FormEvent } from "react";
+import { useState, useRef, useEffect, FormEvent, useCallback, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -103,6 +103,8 @@ export default function ChatInterface() {
     const [showRealTimeSearch, setShowRealTimeSearch] = useState(false);
     const [currentSearchQuery, setCurrentSearchQuery] = useState("");
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const autoScrollRef = useRef(true);
     const { toast } = useToast();
     const [user, setUser] = useState<any>(null);
     const [visitedChats, setVisitedChats] = useState<Set<string>>(new Set());
@@ -223,26 +225,47 @@ export default function ChatInterface() {
 
     }, [isGuest, chats, currentTab, setCurrentTab, addChat]);
 
-    useEffect(() => {
-        const scrollToBottom = () => {
-            if (scrollAreaRef.current) {
-                const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-                if (viewport) {
-                    // Use requestAnimationFrame to ensure DOM is updated
-                    requestAnimationFrame(() => {
-                        viewport.scrollTo({ 
-                            top: viewport.scrollHeight, 
-                            behavior: 'smooth' 
-                        });
-                    });
-                }
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth', force = false) => {
+        if (!force && !autoScrollRef.current) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            if (messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+            } else {
+                const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+                viewport?.scrollTo({
+                    top: viewport.scrollHeight,
+                    behavior
+                });
             }
+        });
+    }, []);
+
+    useEffect(() => {
+        const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+        if (!viewport) return;
+
+        const handleScroll = () => {
+            const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+            const isAtBottom = distanceFromBottom <= 120;
+            autoScrollRef.current = isAtBottom;
         };
-        
-        // Small delay to ensure message is rendered
-        const timeoutId = setTimeout(scrollToBottom, 100);
-        return () => clearTimeout(timeoutId);
-    }, [chats, currentTab]);
+
+        viewport.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+
+        return () => {
+            viewport.removeEventListener('scroll', handleScroll);
+        };
+    }, [currentTab]);
+
+    useEffect(() => {
+        if (!currentTab) return;
+        autoScrollRef.current = true;
+        scrollToBottom('auto', true);
+    }, [currentTab, scrollToBottom]);
 
     // Handle welcome notifications when user joins a chat
     useEffect(() => {
@@ -1112,6 +1135,26 @@ export default function ChatInterface() {
 
     const hasChats = Object.keys(chats).length > 0;
     const currentChat = currentTab ? chats[currentTab] : null;
+    const currentMessages = currentChat?.messages ?? [];
+
+    const lastMessageSignature = useMemo(() => {
+        if (!currentTab) return 'no-tab';
+        if (currentMessages.length === 0) return `${currentTab}-empty`;
+        const lastMessage = currentMessages[currentMessages.length - 1];
+        const textLength = lastMessage?.text ? lastMessage.text.length : 0;
+        return [
+            currentTab,
+            currentMessages.length,
+            textLength,
+            lastMessage?.sender ?? 'unknown',
+            lastMessage?.timestamp ?? 'no-ts'
+        ].join(':');
+    }, [currentTab, currentMessages]);
+
+    useEffect(() => {
+        if (!currentTab) return;
+        scrollToBottom('smooth');
+    }, [lastMessageSignature, currentTab, scrollToBottom]);
     
     // Debug logging
     console.log('ChatInterface render - isSending:', isSending, 'currentTab:', currentTab, 'lastMessageSender:', currentChat?.messages?.at(-1)?.sender);
@@ -1560,6 +1603,7 @@ export default function ChatInterface() {
                                                 </div>
                                             </div>
                                         )}
+                                        <div ref={messagesEndRef} />
                                      </div>
                                  </ScrollArea>
                                  

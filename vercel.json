@@ -9,6 +9,11 @@
     "NODE_ENV": "production"
   },
   "functions": {
+    "src/app/api/parse-pdf/route.ts": {
+      "runtime": "nodejs22.x",
+      "memory": 2048,
+      "maxDuration": 60
+    },
     "src/app/api/**/*.ts": {
       "runtime": "@vercel/node@3.0.0"
     }

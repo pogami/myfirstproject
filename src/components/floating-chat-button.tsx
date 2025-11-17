@@ -294,8 +294,13 @@ export function FloatingChatButton() {
     setShowCourseDropdown(!showCourseDropdown);
   };
 
-  const handleSelectChat = (chatId: string) => {
-    setSelectedChatId(chatId);
+  const handleSelectChat = (chatId: string | null) => {
+    setSelectedChatId((prev) => {
+      if (chatId === null) {
+        return null;
+      }
+      return prev === chatId ? null : chatId;
+    });
     setShowCourseDropdown(false);
     // Focus the textarea after selection
     setTimeout(() => {
@@ -375,25 +380,49 @@ export function FloatingChatButton() {
                 </div>
               ) : (
                 <div className="p-1">
-                  {classChats.map((chat) => (
-                    <button
-                      key={chat.id}
-                      onClick={() => handleSelectChat(chat.id)}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
-                        "hover:bg-gray-100 dark:hover:bg-gray-700",
-                        selectedChatId === chat.id &&
-                          "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {chat.courseData?.courseCode || chat.title || 'Untitled Course'}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                  {classChats.map((chat) => {
+                    const isSelected = selectedChatId === chat.id;
+                    return (
+                      <button
+                        key={chat.id}
+                        onClick={() => handleSelectChat(chat.id)}
+                        className={cn(
+                          "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                          "hover:bg-gray-100 dark:hover:bg-gray-700",
+                          isSelected &&
+                            "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                        )}
+                        aria-pressed={isSelected}
+                      >
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {chat.courseData?.courseCode || chat.title || 'Untitled Course'}
+                          </span>
+                          {isSelected && (
+                            <span className="text-xs text-blue-600 dark:text-blue-200">
+                              (selected)
+                            </span>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <p className="text-[11px] text-blue-500 dark:text-blue-300 mt-1">
+                            Click again to deselect
+                          </p>
+                        )}
+                      </button>
+                    );
+                  })}
+                  {selectedChatId && (
+                    <div className="mt-1 border-t border-gray-200 dark:border-gray-700 pt-2">
+                      <button
+                        onClick={() => handleSelectChat(null)}
+                        className="w-full text-left px-3 py-1.5 rounded-md text-xs font-medium text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        Clear selection
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

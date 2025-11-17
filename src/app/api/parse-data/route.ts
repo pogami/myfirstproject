@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as pdfjsLib from 'pdfjs-dist';
+import { ensurePdfNodeSupport, loadPdfjsDist } from "@/lib/pdf-node-utils";
 
 // CRITICAL: This route MUST run on Node.js runtime only (not Edge runtime)
 // pdfjs-dist requires Node.js APIs that are not available in Edge runtime
 export const runtime = 'nodejs';
-
-// Configure pdfjs-dist for Node.js (disable worker) - do this at module level
-if (typeof process !== 'undefined') {
-  (process.env as any).PDFJS_DISABLE_WORKER = 'true';
-}
-pdfjsLib.GlobalWorkerOptions.workerSrc = null as any;
 
 // Force dynamic rendering (no static generation)
 export const dynamic = 'force-dynamic';
@@ -55,6 +49,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse PDF using pdfjs-dist (matching the exact pattern from the example)
+    await ensurePdfNodeSupport();
+    const pdfjsLib = await loadPdfjsDist();
     const arrayBuffer = await uploadedFile.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 

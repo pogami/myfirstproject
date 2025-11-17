@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import PDFParser from 'pdf2json';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import { createWorker } from 'tesseract.js';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import { createCanvas } from 'canvas';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import * as pdfjsLib from 'pdfjs-dist';
+import { ensurePdfNodeSupport, loadPdfParse } from '@/lib/pdf-node-utils';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -71,7 +67,7 @@ export async function POST(request: NextRequest) {
 
       let extractedText = '';
       let pageCount = 1;
-      let usedOCR = false;
+      let extractionMethod: 'pdf2json' | 'pdf-parse' = 'pdf2json';
 
       // Step 1: Try pdf2json first (fastest method for text-based PDFs)
       // Use file-based approach (loadPDF) as documented - more reliable than parseBuffer
@@ -187,97 +183,31 @@ export async function POST(request: NextRequest) {
         }
 
       } catch (pdf2jsonError: any) {
-        // Step 2: ALWAYS fallback to OCR if pdf2json fails (for any reason)
+        // Step 2: Fallback to pdf-parse for text-based extraction (no OCR)
         const errorMessage = pdf2jsonError.message || '';
-        console.log('⚠️ pdf2json failed, falling back to OCR...', { error: errorMessage });
+        console.log('⚠️ pdf2json failed, trying pdf-parse fallback...', { error: errorMessage });
         
         try {
-          // Configure pdfjs-dist for Node.js (disable worker)
-          // Set environment variable to disable worker
-      if (typeof process !== 'undefined' && process.env) {
-        process.env.PDFJS_DISABLE_WORKER = 'true';
-      }
-      
-          // Disable worker for server-side rendering
-          if (pdfjsLib.GlobalWorkerOptions) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = null as any;
-        }
-          
-          // Load PDF using pdfjs-dist
-          const loadingTask = pdfjsLib.getDocument({
-            data: buffer,
-            useSystemFonts: true,
-            disableFontFace: true,
-            disableRange: true,
-            disableStream: true
-          });
-          
-          const pdf = await loadingTask.promise;
-          pageCount = pdf.numPages;
-          console.log(`📄 PDF loaded with ${pageCount} pages, converting to images for OCR...`);
+          await ensurePdfNodeSupport();
+          const pdfParse = await loadPdfParse();
+          const uint8Array = new Uint8Array(buffer);
+          const parseResult = await pdfParse(uint8Array);
 
-          if (pageCount === 0) {
-            throw new Error('PDF has no pages');
+          extractedText = (parseResult?.text || '').trim();
+          pageCount = parseResult?.numpages || parseResult?.numPages || pageCount;
+          extractionMethod = 'pdf-parse';
+
+          if (!extractedText) {
+            throw new Error('No selectable text found in the PDF. Please upload a text-based PDF or convert scans to text (TXT/DOCX).');
           }
 
-          // Initialize Tesseract OCR worker
-          const worker = await createWorker('eng', 1, {
-            logger: (m) => {
-              if (m.status === 'recognizing text') {
-                console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-              }
-            }
-          });
-
-          // OCR each page and combine text
-          const ocrTexts: string[] = [];
-          
-          for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-            console.log(`🖼️ Rendering page ${pageNum}/${pageCount} to image...`);
-            
-            // Get PDF page
-            const page = await pdf.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for better OCR accuracy
-            
-            // Create canvas with same dimensions as viewport
-            const canvas = createCanvas(viewport.width, viewport.height);
-            const context = canvas.getContext('2d');
-      
-            // Render PDF page to canvas
-            await page.render({
-              canvasContext: context as any,
-              viewport: viewport
-            }).promise;
-            
-            // Convert canvas to buffer (PNG format)
-            const imageBuffer = canvas.toBuffer('image/png');
-            console.log(`🔍 OCR processing page ${pageNum}/${pageCount}...`);
-            
-            // Run OCR on the image buffer
-            const { data: { text } } = await worker.recognize(imageBuffer);
-            const cleanedText = text.trim();
-            
-            if (cleanedText.length > 0) {
-              ocrTexts.push(`--- Page ${pageNum} ---\n${cleanedText}\n`);
-            }
-          }
-
-          // Terminate worker
-          await worker.terminate();
-
-          // Combine all OCR'd text
-          extractedText = ocrTexts.join('\n\n').trim();
-          usedOCR = true;
-
-          console.log(`✅ OCR extraction successful: ${extractedText.length} characters from ${pageCount} pages`);
-
-      if (!extractedText || extractedText.length === 0) {
-            throw new Error('OCR extraction returned no text');
-          }
-
-        } catch (ocrError: any) {
-          console.error('OCR fallback error:', ocrError);
-          throw new Error(`PDF text extraction failed. pdf2json failed: ${pdf2jsonError.message}. OCR fallback also failed: ${ocrError.message}`);
+          console.log('✅ pdf-parse extraction successful:', { textLength: extractedText.length, pageCount });
+        } catch (fallbackError: any) {
+          console.error('pdf-parse fallback error:', fallbackError);
+          throw new Error(
+            fallbackError?.message ||
+              'Unable to extract text from this PDF. Make sure it contains selectable text (not just images).'
+          );
         }
       }
 
@@ -292,7 +222,7 @@ export async function POST(request: NextRequest) {
           extractedAt: new Date().toISOString(),
           textLength: extractedText.length,
           pageCount: pageCount,
-          extractionMethod: usedOCR ? 'ocr' : 'pdf2json'
+          extractionMethod
         }
       });
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
+import { ensurePdfNodeSupport, loadPdfParse } from '@/lib/pdf-node-utils';
 
 // Import file parsing utilities (mammoth can be loaded at top level)
 const mammoth = require("mammoth");
-// pdf-parse must be loaded AFTER configuring pdfjs-dist worker
 
 // Increase timeout for OCR processing (can take 60-120 seconds for images, especially first run)
 export const maxDuration = 120; // 120 seconds (2 minutes) for OCR
@@ -55,31 +55,8 @@ export async function POST(request: NextRequest) {
       try {
         if (filename.endsWith('.pdf')) {
           // Use the same robust PDF parsing as homepage (pdf-parse with proper configuration)
-          // Set environment variable to disable worker (prevents Next.js errors)
-          if (typeof process !== 'undefined' && process.env) {
-            process.env.PDFJS_DISABLE_WORKER = 'true';
-          }
-          
-          // Configure pdfjs-dist GlobalWorkerOptions to disable worker
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const pdfjs = require('pdfjs-dist');
-            if (pdfjs && pdfjs.GlobalWorkerOptions) {
-              pdfjs.GlobalWorkerOptions.workerSrc = null as any;
-            }
-          } catch (e) {
-            // If pdfjs-dist isn't directly available, try legacy build
-            try {
-              // eslint-disable-next-line @typescript-eslint/no-require-imports
-              const pdfjsLegacy = require('pdfjs-dist/legacy/build/pdf.js');
-              if (pdfjsLegacy && pdfjsLegacy.GlobalWorkerOptions) {
-                pdfjsLegacy.GlobalWorkerOptions.workerSrc = null as any;
-              }
-            } catch (e2) {
-              console.log('Note: Could not configure pdfjs-dist worker (will try anyway)');
-            }
-          }
-          
+          await ensurePdfNodeSupport();
+
           // Validate PDF magic bytes (%PDF)
           const pdfMagicBytes = buffer.slice(0, 4).toString();
           if (pdfMagicBytes !== '%PDF') {
@@ -93,9 +70,8 @@ export async function POST(request: NextRequest) {
             );
           }
           
-          // Now load pdf-parse (it should use the configured pdfjs-dist)
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const pdfParse = require('pdf-parse');
+          // Load pdf-parse after environment is configured
+          const pdfParse = await loadPdfParse();
           
           // Convert Buffer to Uint8Array (pdf-parse requires Uint8Array)
           const uint8Array = new Uint8Array(buffer);
