@@ -1,24 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import PDFParser from 'pdf2json';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import { ensurePdfNodeSupport, loadPdfParse } from '@/lib/pdf-node-utils';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 
 // CRITICAL: This route MUST run on Node.js runtime only (not Edge runtime)
-// pdf2json, pdfjs-dist, canvas, and Tesseract require Node.js APIs (Buffer, fs, etc.) and cannot run on Edge
+// pdf2json requires Node.js APIs (Buffer, fs, etc.) and cannot run on Edge
 // This is a server-side only API route - client code calls this via fetch()
 export const runtime = 'nodejs';
 
 // Force dynamic rendering (no static generation)
 export const dynamic = 'force-dynamic';
 
-// Set maximum duration to 60 seconds (OCR can take time for multi-page PDFs)
-// Next.js default is 10s for Hobby, 60s for Pro - this ensures OCR has enough time
-export const maxDuration = 60;
+// Set maximum duration to 30 seconds for PDF parsing
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,7 +64,7 @@ export async function POST(request: NextRequest) {
 
       let extractedText = '';
       let pageCount = 1;
-      let extractionMethod: 'pdf2json' | 'pdf-parse' = 'pdf2json';
+      const extractionMethod = 'pdf2json';
 
       // Step 1: Try pdf2json first (fastest method for text-based PDFs)
       // Use file-based approach (loadPDF) as documented - more reliable than parseBuffer
@@ -183,32 +180,14 @@ export async function POST(request: NextRequest) {
         }
 
       } catch (pdf2jsonError: any) {
-        // Step 2: Fallback to pdf-parse for text-based extraction (no OCR)
+        // pdf2json failed - return clear error message
         const errorMessage = pdf2jsonError.message || '';
-        console.log('⚠️ pdf2json failed, trying pdf-parse fallback...', { error: errorMessage });
+        console.error('❌ pdf2json extraction failed:', errorMessage);
         
-        try {
-          await ensurePdfNodeSupport();
-          const pdfParse = await loadPdfParse();
-          const uint8Array = new Uint8Array(buffer);
-          const parseResult = await pdfParse(uint8Array);
-
-          extractedText = (parseResult?.text || '').trim();
-          pageCount = parseResult?.numpages || parseResult?.numPages || pageCount;
-          extractionMethod = 'pdf-parse';
-
-          if (!extractedText) {
-            throw new Error('No selectable text found in the PDF. Please upload a text-based PDF or convert scans to text (TXT/DOCX).');
-          }
-
-          console.log('✅ pdf-parse extraction successful:', { textLength: extractedText.length, pageCount });
-        } catch (fallbackError: any) {
-          console.error('pdf-parse fallback error:', fallbackError);
-          throw new Error(
-            fallbackError?.message ||
-              'Unable to extract text from this PDF. Make sure it contains selectable text (not just images).'
-          );
-        }
+        throw new Error(
+          'Unable to extract text from this PDF. This might be a scanned PDF (image-based) or the file may be corrupted. ' +
+          'Please try uploading a text-based PDF, or convert it to TXT or DOCX format.'
+        );
       }
 
       // Return success response

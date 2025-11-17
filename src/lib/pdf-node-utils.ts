@@ -59,8 +59,35 @@ export async function ensurePdfNodeSupport() {
 }
 
 export async function loadPdfParse() {
+  // Disable pdf-parse workers for serverless environments
+  if (typeof process !== 'undefined' && process.env) {
+    process.env.PDFJS_DISABLE_WORKER = 'true';
+    // Prevent pdf-parse from trying to load worker files
+    process.env.PDF_PARSE_DISABLE_WORKER = 'true';
+  }
+  
+  // Set worker path to undefined to prevent loading
+  if (typeof globalThis !== 'undefined') {
+    (globalThis as any).__PDF_PARSE_WORKER_DISABLED__ = true;
+  }
+  
   const pdfParseModule: any = await import('pdf-parse');
-  return pdfParseModule.default ?? pdfParseModule;
+  const pdfParse = pdfParseModule.default ?? pdfParseModule;
+  
+  // If pdf-parse has worker options, disable them
+  if (pdfParse && typeof pdfParse === 'function') {
+    // Wrap to ensure no worker is used
+    return async (data: any, options?: any) => {
+      const safeOptions = {
+        ...options,
+        // Disable any worker-related options
+        max: options?.max || 0,
+      };
+      return await pdfParse(data, safeOptions);
+    };
+  }
+  
+  return pdfParse;
 }
 
 export async function loadPdfjsDist() {
