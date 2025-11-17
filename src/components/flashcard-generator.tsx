@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, X, Loader2, Bot, GraduationCap, Sparkles, BookUser, PencilLine, BrainCircuit, Save, TrendingUp, Target } from "lucide-react";
+import { Upload, FileText, X, Loader2, Bot, GraduationCap, BookUser, PencilLine, BrainCircuit, Save, TrendingUp, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 // Removed direct import of generateFlashcards - now using API route
 import { Flashcard } from "@/ai/schemas/flashcard-schemas";
@@ -43,52 +43,92 @@ export default function FlashcardGenerator() {
     const [mcqOptions, setMcqOptions] = useState<string[]>([]); // Store MCQ options
     const { toast } = useToast();
 
-    // Function to generate MCQ options
-    const generateOptionsForFlashcard = (answer: string, question: string = ''): string[] => {
+    // Function to generate realistic MCQ options using AI
+    const generateOptionsForFlashcard = async (answer: string, question: string = ''): Promise<string[]> => {
+        try {
+            // Call API to generate realistic distractors
+            const response = await fetch('/api/flashcards/generate-options', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question,
+                    correctAnswer: answer,
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.options && data.options.length >= 4) {
+                    return data.options;
+                }
+            }
+        } catch (error) {
+            console.error('Error generating options:', error);
+        }
+
+        // Fallback: Generate simple but realistic options
         const answerLower = answer.toLowerCase().trim();
         const questionLower = question.toLowerCase();
-        const options: string[] = [];
-        options.push(answer); // Correct answer
+        const options: string[] = [answer]; // Start with correct answer
 
-        // Generate contextually relevant wrong options
-        if (questionLower.includes('photosynthesis')) {
-            // Photosynthesis-specific wrong answers (without giving away they're wrong!)
-            options.push('CO₂ + H₂O → C₆H₁₂O₆ + O₂');
-            options.push('6CO₂ + 6H₂O → C₆H₁₂O₆ + 3O₂');
-            options.push('3CO₂ + 3H₂O → C₆H₁₂O₆ + 3O₂');
-        } else if (questionLower.includes('water') || questionLower.includes('h2o') || questionLower.includes('h₂o')) {
-            // Water-related wrong answers
-            options.push('H₂O₂');
-            options.push('H₂');
-            options.push('O₂');
-        } else if (questionLower.includes('chemical') || questionLower.includes('formula')) {
-            // Chemical formula wrong answers
-            options.push('CO₂');
-            options.push('CH₄');
-            options.push('NH₃');
-        } else if (!isNaN(parseFloat(answerLower)) && isFinite(parseFloat(answerLower))) {
-            // Numeric answer: generate variations
+        // For numeric answers, create realistic variations
+        if (!isNaN(parseFloat(answerLower)) && isFinite(parseFloat(answerLower))) {
             const numAnswer = parseFloat(answer);
-            options.push((numAnswer + 1).toString());
-            options.push((numAnswer - 1).toString());
-            options.push((numAnswer * 2).toString());
-        } else if (answerLower.split(' ').length <= 2) {
-            // Short phrase/word: generate related terms
-            options.push(`Not ${answer}`);
-            options.push(`Alternative to ${answer}`);
-            options.push(`Different from ${answer}`);
+            const variations = [
+                (numAnswer * 0.5).toString(),
+                (numAnswer * 1.5).toString(),
+                (numAnswer + (numAnswer * 0.1)).toString(),
+            ];
+            options.push(...variations);
         } else {
-            // For complex answers, create meaningful variations
-            const answerWords = answerLower.split(' ');
-            if (answerWords.length > 2) {
-                // Create variations that make sense
-                options.push(answer.replace(/is/g, 'was').replace(/are/g, 'were'));
-                options.push(answer.replace(/the/g, 'a').replace(/a/g, 'the'));
-                options.push(answer.replace(/and/g, 'or').replace(/or/g, 'and'));
+            // For text answers, create plausible alternatives
+            // Extract key terms from the answer
+            const keyTerms = answer.split(/[,\s]+/).filter(term => term.length > 3).slice(0, 3);
+            
+            // Create variations by modifying key concepts
+            if (answerLower.includes('primarily') || answerLower.includes('mainly')) {
+                options.push(answer.replace(/primarily|mainly/g, 'occasionally'));
+                options.push(answer.replace(/primarily|mainly/g, 'rarely'));
+                options.push(answer.replace(/primarily|mainly/g, 'never'));
+            } else if (answerLower.includes('all') || answerLower.includes('every')) {
+                options.push(answer.replace(/all|every/g, 'some'));
+                options.push(answer.replace(/all|every/g, 'most'));
+                options.push(answer.replace(/all|every/g, 'few'));
+            } else if (answerLower.includes('always')) {
+                options.push(answer.replace(/always/g, 'sometimes'));
+                options.push(answer.replace(/always/g, 'rarely'));
+                options.push(answer.replace(/always/g, 'never'));
             } else {
-                options.push(`Not ${answer}`);
-                options.push(`Alternative to ${answer}`);
-                options.push(`Different from ${answer}`);
+                // Generic realistic alternatives
+                const answerLength = answer.length;
+                if (answerLength > 50) {
+                    // For long answers, create shorter plausible alternatives
+                    const sentences = answer.split(/[.!?]+/).filter(s => s.trim().length > 10);
+                    if (sentences.length > 1) {
+                        options.push(sentences[0].trim() + '.');
+                        options.push(sentences[sentences.length - 1].trim() + '.');
+                        options.push(sentences.slice(0, 2).join(' ').trim() + '.');
+                    } else {
+                        // Create variations by changing key words
+                        options.push(answer.replace(/\b(is|are|was|were)\b/g, 'was'));
+                        options.push(answer.replace(/\b(the|a|an)\b/g, 'a'));
+                        options.push(answer.replace(/\b(and|or)\b/g, 'or'));
+                    }
+                } else {
+                    // For shorter answers, create related but different options
+                    options.push(answer.replace(/\b(primary|main|key)\b/gi, 'secondary'));
+                    options.push(answer.replace(/\b(first|initial)\b/gi, 'final'));
+                    options.push(answer.replace(/\b(high|low|large|small)\b/gi, (match) => {
+                        const opposites: Record<string, string> = {
+                            'high': 'low', 'low': 'high',
+                            'large': 'small', 'small': 'large',
+                            'big': 'small', 'small': 'big'
+                        };
+                        return opposites[match.toLowerCase()] || match;
+                    }));
+                }
             }
         }
 
@@ -97,7 +137,12 @@ export default function FlashcardGenerator() {
         
         // Ensure correct answer is always present
         if (!uniqueOptions.includes(answer)) {
-            uniqueOptions[Math.floor(Math.random() * uniqueOptions.length)] = answer;
+            uniqueOptions[0] = answer;
+        }
+        
+        // Fill to 4 options if needed
+        while (uniqueOptions.length < 4) {
+            uniqueOptions.push(`Option ${uniqueOptions.length + 1}`);
         }
         
         // Take exactly 4 options
@@ -123,7 +168,20 @@ export default function FlashcardGenerator() {
             setAnswerType('text'); // Default to text input
             setMcqOptions([]);
         }
-    }, [flashcards, currentCard]);
+    }, [flashcards]);
+
+    // Generate MCQ options when card changes in MCQ mode
+    useEffect(() => {
+        if (isQuizMode && answerType === 'mcq' && flashcards.length > 0 && flashcards[currentCard]) {
+            const currentFlashcard = flashcards[currentCard];
+            generateOptionsForFlashcard(currentFlashcard.answer, currentFlashcard.question)
+                .then(options => setMcqOptions(options))
+                .catch(error => console.error('Error generating options:', error));
+        } else if (!isQuizMode || answerType !== 'mcq') {
+            setMcqOptions([]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentCard, isQuizMode, answerType]);
 
 
     // Function to generate wrong options for MCQ
@@ -207,9 +265,29 @@ export default function FlashcardGenerator() {
         setIsFlipped(false);
         
         try {
-            const chatHistory = chat.messages
-                .map(m => `${m.name}: ${m.text}`)
+            // Filter out system messages and ensure we have enough messages
+            const validMessages = (chat.messages || []).filter(m => 
+                m.text && 
+                m.text.trim().length > 0 && 
+                !m.text.includes('🚧') && 
+                !m.text.includes('Welcome to')
+            );
+            
+            if (validMessages.length < 3) {
+                toast({
+                    variant: "default",
+                    title: "Not Enough Chat History",
+                    description: "You need at least 3 messages in this chat to generate flashcards. Try chatting more first!",
+                });
+                setIsGenerating(false);
+                return;
+            }
+            
+            const chatHistory = validMessages
+                .map(m => `${m.name || m.sender}: ${m.text}`)
                 .join('\n');
+
+            console.log('Generating flashcards for:', chat.name, 'with', validMessages.length, 'messages');
 
             const response = await fetch('/api/flashcards/generate', {
                 method: 'POST',
@@ -217,19 +295,21 @@ export default function FlashcardGenerator() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    className: chat.name,
+                    className: chat.courseData?.courseName || chat.name,
                     chatHistory,
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`API call failed: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `API call failed: ${response.status}`);
             }
 
             const result = await response.json();
+            console.log('Flashcard generation result:', result);
 
-            if (result.flashcards.length === 0) {
-                 toast({
+            if (!result.flashcards || result.flashcards.length === 0) {
+                toast({
                     variant: "default",
                     title: "Not Enough Context",
                     description: "There wasn't enough chat history to generate flashcards. Try again after more discussion!",
@@ -242,12 +322,12 @@ export default function FlashcardGenerator() {
                 });
             }
 
-        } catch (aiError) {
+        } catch (aiError: any) {
             console.error("AI Error:", aiError);
             toast({
                 variant: "destructive",
                 title: "AI Generation Failed",
-                description: "The AI could not generate flashcards. Please try again.",
+                description: aiError.message || "The AI could not generate flashcards. Please try again.",
             });
         } finally {
             setIsGenerating(false);
@@ -677,7 +757,7 @@ export default function FlashcardGenerator() {
                     <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2"><Sparkles/> Your Flashcards</CardTitle>
+                        <CardTitle className="flex items-center gap-2">Your Flashcards</CardTitle>
                             <Button 
                                 variant={isQuizMode ? "default" : "outline"}
                                 disabled={!isQuizMode && hasSeenAnswer}
@@ -765,13 +845,13 @@ export default function FlashcardGenerator() {
                                     <Button
                                         size="sm"
                                         variant={answerType === 'mcq' ? 'default' : 'outline'}
-                                        onClick={() => {
+                                        onClick={async () => {
                                             setAnswerType('mcq');
                                             // Generate MCQ options when switching to MCQ
                                             if (flashcards.length > 0 && flashcards[currentCard]) {
                                                 const currentFlashcard = flashcards[currentCard];
                                                 const correctAnswer = currentFlashcard.answer;
-                                                const options = generateOptionsForFlashcard(correctAnswer, currentFlashcard.question);
+                                                const options = await generateOptionsForFlashcard(correctAnswer, currentFlashcard.question);
                                                 setMcqOptions(options);
                                             }
                                         }}
@@ -879,44 +959,51 @@ export default function FlashcardGenerator() {
                                                                 return String.fromCharCode(65 + correctIndex); // Convert to A, B, C, D
                                                             })()
                                                         }</strong>.</p>
-                                                        <p className="text-muted-foreground">
-                                                            {(() => {
-                                                                const question = flashcards[currentCard].question.toLowerCase();
-                                                                const correctAnswer = flashcards[currentCard].answer.toLowerCase();
-                                                                
-                                                                console.log('Debug MCQ explanation:');
-                                                                console.log('Question:', question);
-                                                                console.log('Correct Answer:', correctAnswer);
-                                                                
-                                                                if (question.includes('photosynthesis') && question.includes('equation')) {
-                                                                    return "The balanced chemical equation for photosynthesis is 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂. This shows that 6 carbon dioxide molecules and 6 water molecules produce 1 glucose molecule and 6 oxygen molecules.";
-                                                                } else if (question.includes('photosynthesis') && question.includes('stages')) {
-                                                                    return "Photosynthesis occurs in two main stages: light-dependent reactions (in thylakoids) and light-independent reactions/Calvin cycle (in stroma).";
-                                                                } else if (question.includes('photosynthesis') && question.includes('outputs')) {
-                                                                    return "The primary outputs of photosynthesis are glucose (C₆H₁₂O₆) and oxygen (O₂). Glucose is used for energy storage, while oxygen is released as a byproduct.";
-                                                                } else if (question.includes('photosynthesis')) {
-                                                                    return "Photosynthesis is the process by which plants convert light energy into chemical energy, producing glucose and oxygen from carbon dioxide and water.";
-                                                                } else if (question.includes('water') || question.includes('h2o') || question.includes('h₂o')) {
-                                                                    return "Water has the chemical formula H₂O, meaning each water molecule contains 2 hydrogen atoms and 1 oxygen atom bonded together.";
-                                                                } else if (question.includes('chemical') || question.includes('formula')) {
-                                                                    return "Chemical formulas use element symbols (like H, O, C) with subscripts to show the exact number of each atom in a molecule.";
-                                                                } else if (question.includes('balanced') || question.includes('equation')) {
-                                                                    return "A balanced chemical equation has the same number of each type of atom on both sides of the arrow, following the law of conservation of mass.";
-                                                                } else if (correctAnswer.includes('co₂') || correctAnswer.includes('carbon dioxide')) {
-                                                                    return "Carbon dioxide (CO₂) is a gas composed of one carbon atom and two oxygen atoms, essential for photosynthesis.";
-                                                                } else if (correctAnswer.includes('glucose') || correctAnswer.includes('c₆h₁₂o₆')) {
-                                                                    return "Glucose (C₆H₁₂O₆) is a simple sugar produced during photosynthesis, serving as the primary energy source for plants.";
-                                                                } else if (correctAnswer.includes('oxygen') || correctAnswer.includes('o₂')) {
-                                                                    return "Oxygen (O₂) is a gas produced during photosynthesis and is essential for cellular respiration in most living organisms.";
-                                                                } else if (correctAnswer.includes('atp')) {
-                                                                    return "ATP (adenosine triphosphate) is the primary energy currency of cells, storing and transferring energy for cellular processes.";
-                                                                } else if (correctAnswer.includes('nadph')) {
-                                                                    return "NADPH is a reducing agent that provides electrons and hydrogen ions for the Calvin cycle during photosynthesis.";
-                                                                } else {
-                                                                    return `The correct answer "${flashcards[currentCard].answer}" is the most accurate response to this question about ${question.split(' ').slice(0, 3).join(' ')}.`;
-                                                                }
-                                                            })()}
-                                                        </p>
+                                                        <div className="text-muted-foreground space-y-2">
+                                                            <p className="font-medium">Explanation:</p>
+                                                            <p className="text-sm leading-relaxed">
+                                                                {(() => {
+                                                                    const question = flashcards[currentCard].question;
+                                                                    const correctAnswer = flashcards[currentCard].answer;
+                                                                    const questionLower = question.toLowerCase();
+                                                                    const answerLower = correctAnswer.toLowerCase();
+                                                                    
+                                                                    // Generate a comprehensive explanation
+                                                                    let explanation = `The correct answer is: "${correctAnswer}". `;
+                                                                    
+                                                                    // Add context-specific explanations
+                                                                    if (questionLower.includes('primarily') || questionLower.includes('mainly') || answerLower.includes('primarily') || answerLower.includes('mainly')) {
+                                                                        explanation += `This answer is correct because it accurately identifies the primary or main focus of the topic. The word "primarily" indicates the most important or most common aspect, which makes this the most precise answer. `;
+                                                                    }
+                                                                    
+                                                                    if (answerLower.includes('commercial vessels') || answerLower.includes('cargo ships')) {
+                                                                        explanation += `This answer correctly identifies the specific types of targets. Commercial vessels, cargo ships, and oil tankers were indeed the primary targets because they carried valuable cargo and were vulnerable in international waters. The mention of the Gulf of Aden and Indian Ocean is accurate as these were the key areas where piracy occurred. `;
+                                                                    }
+                                                                    
+                                                                    if (questionLower.includes('why') || questionLower.includes('reason') || questionLower.includes('because')) {
+                                                                        explanation += `This answer provides the correct reasoning by explaining the underlying cause or mechanism. `;
+                                                                    }
+                                                                    
+                                                                    if (questionLower.includes('what') || questionLower.includes('which') || questionLower.includes('who')) {
+                                                                        explanation += `This answer correctly identifies the specific subject, object, or person being asked about in the question. `;
+                                                                    }
+                                                                    
+                                                                    if (questionLower.includes('how') || questionLower.includes('process')) {
+                                                                        explanation += `This answer correctly describes the process, method, or mechanism by which something occurs. `;
+                                                                    }
+                                                                    
+                                                                    // Add general explanation if no specific pattern matches
+                                                                    if (explanation.length < 100) {
+                                                                        explanation += `This answer is correct because it directly addresses the question asked and provides accurate information. The answer "${correctAnswer}" is the most appropriate response based on the context and facts related to "${question}". `;
+                                                                    }
+                                                                    
+                                                                    // Ensure explanation is complete and not cut off
+                                                                    explanation += `This makes it the best choice among the options provided.`;
+                                                                    
+                                                                    return explanation;
+                                                                })()}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -1103,7 +1190,7 @@ export default function FlashcardGenerator() {
                             className="text-base"
                         />
                         <Button onClick={handleGenerateFromTopic} disabled={isGenerating || !topic.trim()} className="w-full hover:bg-primary/90 disabled:hover:bg-primary">
-                            {isGenerating ? <Loader2 className="animate-spin" /> : <> <Sparkles className="mr-2"/> Generate Flashcards </>}
+                            {isGenerating ? <Loader2 className="animate-spin" /> : <>Generate Flashcards</>}
                         </Button>
                     </TabsContent>
                 </Tabs>

@@ -20,12 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { message, image, mimeType } = await request.json();
+    const { message, image, mimeType, courseData } = await request.json();
     console.log('Request data:', { 
       hasMessage: !!message, 
       hasImage: !!image, 
       imageLength: image?.length || 0,
-      mimeType 
+      mimeType,
+      hasCourseData: !!courseData
     });
     
     if (!image) {
@@ -38,6 +39,73 @@ export async function POST(request: NextRequest) {
     const prompt = message || "What's in this image? Describe it in detail.";
     console.log(`📝 Prompt: ${prompt}`);
     console.log(`📸 Sending to GPT-4o Vision...`);
+    
+    // If courseData exists, first validate if image is related to the course
+    if (courseData && courseData.courseName) {
+      const courseName = courseData.courseName;
+      const courseCode = courseData.courseCode || '';
+      
+      const validationPrompt = `You are analyzing an image uploaded in a class chat for "${courseName}"${courseCode ? ` (${courseCode})` : ''}.
+
+CRITICAL: You must be VERY STRICT. Analyze what's in this image and determine if it's related to ${courseName} or not.
+
+If the image contains ANY of the following, it is NOT_RELATED:
+- Programming code (Python, Java, JavaScript, C++, etc.)
+- Computer science concepts, software development, or coding
+- Math problems that are NOT related to ${courseName} topics
+- Content from a completely different academic subject
+- Random photos, memes, or unrelated images
+- Screenshots of code editors, terminals, or programming tools
+- Any technical content unrelated to ${courseName}
+
+The course "${courseName}" is about: ${courseName.toLowerCase().includes('biology') ? 'biological concepts, cells, organisms, life sciences' : courseName.toLowerCase().includes('chemistry') ? 'chemical reactions, molecules, compounds' : courseName.toLowerCase().includes('physics') ? 'physical laws, forces, energy' : courseName.toLowerCase().includes('math') ? 'mathematical concepts and problems' : 'the subject matter of this course'}.
+
+If the image IS clearly related to ${courseName} topics, respond with: "RELATED: [brief description]"
+If the image is NOT related (including code, unrelated subjects, etc.), respond with: "NOT_RELATED: [brief description of what it is]"
+
+Be VERY strict - only mark as RELATED if it's clearly and directly relevant to ${courseName}.`;
+
+      try {
+        const validationResponse = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: validationPrompt },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:${mimeType || 'image/jpeg'};base64,${image}`,
+                    detail: "low" // Use low detail for faster validation
+                  },
+                },
+              ],
+            },
+          ],
+          max_tokens: 200,
+        });
+        
+        const validationText = validationResponse.choices[0]?.message?.content || '';
+        console.log('🔍 Validation response:', validationText);
+        
+        if (validationText.startsWith('NOT_RELATED:')) {
+          const detectedContent = validationText.replace('NOT_RELATED:', '').trim();
+          const courseName = courseData.courseName || 'this class';
+          
+          return NextResponse.json({
+            response: `❌ **Image Not Allowed**\n\nThis image appears to be about ${detectedContent}, which is not related to ${courseName}.\n\n**To upload this image, please go to [General Chat](/dashboard/chat?tab=private-general-chat) where you can get help with any topic.**\n\nOr upload content related to ${courseName} here.`,
+            isNotRelated: true,
+            detectedContent: detectedContent,
+            model: "gpt-4o",
+            provider: "OpenAI"
+          });
+        }
+      } catch (validationError) {
+        console.error('Validation error, proceeding with normal analysis:', validationError);
+        // Continue with normal analysis if validation fails
+      }
+    }
     
     // Enhanced system prompt for better formatting
            const systemPrompt = `You are a helpful academic assistant analyzing images for students.

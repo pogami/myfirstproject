@@ -61,8 +61,16 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true); // Start as true to wait for auth to restore
   const [error, setError] = useState<any>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
+  // Set mounted flag on client side only
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return; // Don't run until mounted on client
+    
     // Increased timeout to 5 seconds to allow Firebase auth to propagate
     const authTimeout = setTimeout(() => {
       console.warn('Dashboard: Auth initialization timeout, proceeding without auth');
@@ -148,7 +156,7 @@ export default function DashboardLayout({
       setLoading(false);
       setError(authError);
     }
-  }, []);
+  }, [mounted]);
   
   // Close sidebar on navigation (mobile)
   useEffect(() => {
@@ -344,7 +352,8 @@ export default function DashboardLayout({
   // Guest users can now upload unlimited syllabi without restrictions
 
 
-   if (loading) {
+   // Only show loading on client side to prevent hydration mismatch
+   if (!mounted || loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-transparent">
         <div className="text-center">

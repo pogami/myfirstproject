@@ -20,19 +20,27 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
+    // Only set mounted and scroll state after hydration is complete
+    // This ensures the initial client render matches the server render
     setIsMounted(true);
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
 
-    // Set initial scroll state
-    handleScroll();
+    // Use requestAnimationFrame to ensure this runs after React hydration
+    requestAnimationFrame(() => {
+      handleScroll();
+    });
     
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Prevent hydration mismatch by ensuring consistent initial render
+  // Only show scrolled state after component has mounted (post-hydration)
   const shouldShowScrolled = isMounted && isScrolled;
 
   return (
@@ -43,8 +51,8 @@ export function Navigation() {
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       suppressHydrationWarning
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center justify-between ${shouldShowScrolled ? 'pt-6' : 'h-16'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" suppressHydrationWarning>
+        <div className={`flex items-center justify-between ${shouldShowScrolled ? 'pt-6' : 'h-16'}`} suppressHydrationWarning>
           {shouldShowScrolled ? (
             /* Scrolled state - Floating capsule header */
             <motion.div 
@@ -102,12 +110,13 @@ export function Navigation() {
               </Link>
 
               {/* Desktop Navigation */}
-              <div className="relative z-10 hidden md:flex items-center gap-8">
+              <div className="relative z-10 hidden md:flex items-center gap-8" suppressHydrationWarning>
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
                     className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium text-base"
+                    suppressHydrationWarning
                   >
                     {item.name}
                   </Link>
@@ -151,12 +160,13 @@ export function Navigation() {
               </Link>
 
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-8 ml-auto mr-8">
+              <div className="hidden md:flex items-center gap-8 ml-auto mr-8" suppressHydrationWarning>
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
                     className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium"
+                    suppressHydrationWarning
                   >
                     {item.name}
                   </Link>
@@ -217,13 +227,14 @@ export function Navigation() {
             transition={{ duration: 0.3 }}
             className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 safe-bottom"
           >
-            <div className="px-4 py-4 space-y-4">
+            <div className="px-4 py-4 space-y-4" suppressHydrationWarning>
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className="block text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 font-medium"
                   onClick={() => setIsOpen(false)}
+                  suppressHydrationWarning
                 >
                   {item.name}
                 </Link>

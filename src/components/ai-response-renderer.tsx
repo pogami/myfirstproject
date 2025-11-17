@@ -391,9 +391,21 @@ export function AIResponseRenderer({ content, className = "", sources }: AIRespo
     }
   };
 
+  // Simple hash function for stable block IDs
+  const hashString = (str: string): string => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+  };
+
   const renderCode = (code: string, language: string) => {
-    const blockId = `code-${Math.random().toString(36).substr(2, 9)}`;
-    const isCopied = copiedStates[blockId];
+    // Use hash of code content for stable block ID
+    const blockId = `code-${hashString(code)}`;
+    const isCopied = copiedStates[blockId] || false;
 
     const copyToClipboard = async () => {
       try {
@@ -421,19 +433,24 @@ export function AIResponseRenderer({ content, className = "", sources }: AIRespo
         >
           {code}
         </SyntaxHighlighter>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="absolute top-2 right-2 h-8 w-8 p-0 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        <button
+          className="absolute top-2 right-2 h-6 w-6 p-0 bg-transparent hover:bg-muted-foreground/10 rounded-md z-10 flex items-center justify-center transition-all duration-200 ease-in-out"
           onClick={copyToClipboard}
           title="Copy code"
         >
-          {isCopied ? (
-            <Check className="h-4 w-4 text-green-600" />
-          ) : (
-            <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-          )}
-        </Button>
+          <div className="relative">
+            <Copy 
+              className={`h-3.5 w-3.5 text-muted-foreground transition-all duration-300 ease-in-out ${
+                isCopied ? 'opacity-0 scale-0 rotate-180' : 'opacity-100 scale-100 rotate-0'
+              }`} 
+            />
+            <Check 
+              className={`absolute inset-0 h-3.5 w-3.5 text-green-600 transition-all duration-300 ease-in-out ${
+                isCopied ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-180'
+              }`} 
+            />
+          </div>
+        </button>
       </div>
     );
   };

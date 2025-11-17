@@ -584,11 +584,80 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Stats Grid - Right below "Next up" message */}
+        <div className="w-full">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Study Time */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center rotate-[-2deg]">
+                  <Clock className="h-4 w-4 text-blue-700 dark:text-blue-300" strokeWidth={2.5} />
+                </div>
+              </div>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Study Time</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : `${Math.floor(stats.studyTimeToday / 60)}h ${stats.studyTimeToday % 60}m`}
+            </p>
+          </div>
+
+          {/* Completed */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center rotate-[1deg]">
+                  <Target className="h-4 w-4 text-emerald-700 dark:text-emerald-300" strokeWidth={2.5} />
+                </div>
+              </div>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Completed</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : stats.assignmentsCompleted}
+            </p>
+          </div>
+
+          {/* Streak */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center rotate-[-1deg]">
+                  <Award className="h-4 w-4 text-purple-700 dark:text-purple-300" strokeWidth={2.5} />
+                </div>
+              </div>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Streak</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : stats.studyStreak}
+            </p>
+          </div>
+
+          {/* Due Soon */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-orange-300 dark:hover:border-orange-600 transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-md bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center rotate-[2deg]">
+                  <Calendar className="h-4 w-4 text-orange-700 dark:text-orange-300" strokeWidth={2.5} />
+                </div>
+              </div>
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Due Soon</p>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+              {statsLoading ? '...' : stats.upcomingDeadlines}
+            </p>
+          </div>
+            </div>
+        </div>
+
         {/* What to Focus On - AI Study Suggestions */}
-        <StudyFocusSuggestions />
+        <div className="space-y-6">
+          <StudyFocusSuggestions />
+        </div>
 
         {/* Course Chat Summaries */}
-        <ChatSummariesDashboard />
+        <div className="space-y-6">
+          <ChatSummariesDashboard />
+        </div>
 
         {/* Topics to Review (lightweight, signal-driven) */}
         {showTopicsReview && (
@@ -599,7 +668,7 @@ export default function DashboardPage() {
                 <div className="p-2 rounded-lg bg-pink-50 dark:bg-pink-950/40">
                   <TrendingUp className="h-5 w-5 text-pink-600" />
                 </div>
-                Topics to review
+                Topics waiting for you
               </CardTitle>
               <CardDescription>Based on your syllabus and recent chat activity</CardDescription>
             </CardHeader>
@@ -622,9 +691,11 @@ export default function DashboardPage() {
                   const topics = Array.from(topicSet);
                   if (topics.length === 0) {
                     return (
-                      <p className="text-sm text-muted-foreground">
-                        Upload a syllabus to see suggested topics to review.
-                      </p>
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">
+                          Upload a syllabus to see topics waiting for you. Once you start chatting, I'll highlight what to focus on.
+                        </p>
+                      </div>
                     );
                   }
 
@@ -672,9 +743,11 @@ export default function DashboardPage() {
 
                   if (topicScores.length === 0) {
                     return (
-                      <p className="text-sm text-muted-foreground">
-                        No priority topics detected yet. Ask questions in chat or add assignments to see suggestions.
-                      </p>
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">
+                          No priority topics detected yet. Ask questions in chat or add assignments, and I'll highlight what needs your attention.
+                        </p>
+                      </div>
                     );
                   }
 
@@ -778,70 +851,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card> */}
 
-        {/* Stats Grid */}
-        <div className="w-full">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Study Time */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
-            <div className="flex items-start justify-between mb-4">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center rotate-[-2deg]">
-                  <Clock className="h-4 w-4 text-blue-700 dark:text-blue-300" strokeWidth={2.5} />
-                </div>
-              </div>
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Study Time</p>
-            </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {statsLoading ? '...' : `${Math.floor(stats.studyTimeToday / 60)}h ${stats.studyTimeToday % 60}m`}
-            </p>
-          </div>
-
-          {/* Completed */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors">
-            <div className="flex items-start justify-between mb-4">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center rotate-[1deg]">
-                  <Target className="h-4 w-4 text-emerald-700 dark:text-emerald-300" strokeWidth={2.5} />
-                </div>
-              </div>
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Completed</p>
-            </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {statsLoading ? '...' : stats.assignmentsCompleted}
-            </p>
-          </div>
-
-          {/* Streak */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-purple-300 dark:hover:border-purple-600 transition-colors">
-            <div className="flex items-start justify-between mb-4">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-md bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center rotate-[-1deg]">
-                  <Award className="h-4 w-4 text-purple-700 dark:text-purple-300" strokeWidth={2.5} />
-                </div>
-              </div>
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Streak</p>
-            </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {statsLoading ? '...' : stats.studyStreak}
-            </p>
-          </div>
-
-          {/* Due Soon */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:border-orange-300 dark:hover:border-orange-600 transition-colors">
-            <div className="flex items-start justify-between mb-4">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-md bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center rotate-[2deg]">
-                  <Calendar className="h-4 w-4 text-orange-700 dark:text-orange-300" strokeWidth={2.5} />
-                </div>
-              </div>
-              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Due Soon</p>
-            </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {statsLoading ? '...' : stats.upcomingDeadlines}
-            </p>
-          </div>
-            </div>
-        </div>
 
         {/* Upload Syllabus Prompt - Show when no syllabi are uploaded */}
         {Object.values(chats).filter((chat: any) => chat.chatType === 'class').length === 0 && (
@@ -926,19 +935,18 @@ export default function DashboardPage() {
                           let status = manualStatus || assignment.status || 'Not Started';
                           let statusColor = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
                           
+                          // Check if assignment has been started (always calculate this)
+                          const hasStarted = assignment.startedAt || assignment.lastViewed || 
+                            (chat.messages && chat.messages.some(msg => 
+                              msg.content?.toLowerCase().includes(assignment.name?.toLowerCase() || '') ||
+                              msg.content?.toLowerCase().includes('homework') ||
+                              msg.content?.toLowerCase().includes('assignment')
+                            ));
+                          
                           // Auto-update assignment statuses based on user activity if no status set
-                          if (!assignment.status) {
-                            const hasStarted = assignment.startedAt || assignment.lastViewed || 
-                              (chat.messages && chat.messages.some(msg => 
-                                msg.content?.toLowerCase().includes(assignment.name?.toLowerCase() || '') ||
-                                msg.content?.toLowerCase().includes('homework') ||
-                                msg.content?.toLowerCase().includes('assignment')
-                              ));
-                            
-                            if (hasStarted) {
-                              status = 'In Progress';
-                              statusColor = 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
-                            }
+                          if (!assignment.status && hasStarted) {
+                            status = 'In Progress';
+                            statusColor = 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
                           }
                           
                           // Set colors based on status
@@ -955,7 +963,7 @@ export default function DashboardPage() {
                               status = 'Overdue';
                               statusColor = 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300';
                             } else if (daysUntil <= 2 && !manualStatus) {
-                              status = hasStarted ? 'Due Soon' : 'Due Soon';
+                              status = 'Due Soon';
                               statusColor = 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300';
                             } else if (daysUntil <= 7 && !hasStarted && !manualStatus) {
                               status = 'Upcoming';
@@ -1194,3 +1202,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

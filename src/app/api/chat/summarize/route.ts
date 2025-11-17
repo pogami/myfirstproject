@@ -57,7 +57,6 @@ Write a natural, conversational summary that captures the essence of the convers
     });
 
   } catch (error: any) {
-    console.error('Error generating chat summary:', error);
     return NextResponse.json({
       success: false,
       error: error.message || 'Failed to generate summary'

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isMathOrPhysicsContent } from '@/utils/math-detection';
 import { AIResponse } from '@/components/ai-response';
-import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe, FileText, Sparkles, ScrollText } from "lucide-react";
+import { MessageSquare, Users, MoreVertical, Download, RotateCcw, Upload, BookOpen, Trash2, Brain, Copy, Check, Globe, FileText, Sparkles, ScrollText, BookUser } from "lucide-react";
 import { useChatStore } from "@/hooks/use-chat-store";
 import { useTextExtraction } from "@/hooks/use-text-extraction";
 import { useSmartDocumentAnalysis } from "@/hooks/use-smart-document-analysis";
@@ -90,6 +90,9 @@ export default function ChatPage() {
     const [inputValue, setInputValue] = useState("");
     const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
     const [isLoading, setIsLoading] = useState(false);
+    const [streamingResponse, setStreamingResponse] = useState("");
+    const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+    const [isStreamingComplete, setIsStreamingComplete] = useState(false);
     // Animated analyzing steps for AI response while processing images/files
     const analyzingSteps = ["Analyzing...", "Extracting...", "Preparing response..."];
     const [analyzingStepIndex, setAnalyzingStepIndex] = useState(0);
@@ -919,9 +922,9 @@ export default function ChatPage() {
                 // Get AI response via API call with enhanced error handling
                 let aiResponse;
                 try {
-                    // Determine if this is a class chat and use appropriate endpoint
-                    const apiEndpoint = isClassChat ? '/api/chat/class' : '/api/chat';
-                    console.log(`Making API call to ${apiEndpoint}...`, { isClassChat, hasCourseData: !!currentChat?.courseData });
+                    // Use streaming endpoint for all chats (real-time responses)
+                    const apiEndpoint = '/api/chat/stream';
+                    console.log(`Making streaming API call to ${apiEndpoint}...`, { isClassChat, hasCourseData: !!currentChat?.courseData });
                     
                     // Get userId from logged-in user (notifications only work for authenticated users)
                     const effectiveUserId = user?.uid;
@@ -948,12 +951,12 @@ export default function ChatPage() {
                         isSearchRequest: searchModeEnabledBeforeAPI
                     };
 
-                    // Add course data for class chats
+                    // Add course data for class chats (stream endpoint will handle it)
                     if (isClassChat && currentChat?.courseData) {
                         requestBody.courseData = currentChat.courseData;
                         requestBody.chatId = currentTab;
-                        requestBody.metadata = currentChat.metadata; // Send metadata for persistent memory
-                        console.log('Including course data:', {
+                        requestBody.metadata = currentChat.metadata;
+                        console.log('Including course data in streaming request:', {
                             courseName: currentChat.courseData.courseName,
                             courseCode: currentChat.courseData.courseCode,
                             hasMetadata: !!currentChat.metadata
@@ -979,6 +982,12 @@ export default function ChatPage() {
                         }
                     }
                     
+                    // Create streaming message ID
+                    const tempMessageId = generateMessageId();
+                    setStreamingMessageId(tempMessageId);
+                    setStreamingResponse("");
+                    setIsStreamingComplete(false);
+                    
                     const response = await fetch(apiEndpoint, {
                         method: 'POST',
                         headers: {
@@ -998,16 +1007,93 @@ export default function ChatPage() {
                         throw new Error(`API call failed: ${response.status} - ${errorText}`);
                     }
 
-                    const data = await response.json();
-                    console.log('API response data:', { 
-                        success: data.success, 
-                        provider: data.provider, 
-                        answerLength: data.answer?.length || 0,
-                        sourcesCount: data.sources?.length || 0,
-                        sources: data.sources,
-                        metadata: data.metadata
-                    });
-                    
+                    // Handle streaming response
+                    const reader = response.body?.getReader();
+                    const decoder = new TextDecoder();
+
+                    if (!reader) {
+                        throw new Error('No reader available for streaming');
+                    }
+
+                    let fullResponse = "";
+                    let sources: any[] = [];
+                    let metadata: any = null;
+                    let buffer = "";
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+
+                        if (done) {
+                            break;
+                        }
+
+                        const chunk = decoder.decode(value, { stream: true });
+                        buffer += chunk;
+                        const lines = buffer.split("\n");
+                        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
+                            
+                            try {
+                                // Handle SSE format: "data: {...}"
+                                let data;
+                                if (line.startsWith("data: ")) {
+                                    const jsonStr = line.slice(6).trim();
+                                    if (jsonStr === "[DONE]") {
+                                        continue;
+                                    }
+                                    data = JSON.parse(jsonStr);
+                                } else {
+                                    // Handle JSON lines format
+                                    data = JSON.parse(line);
+                                }
+
+                                // Handle different response formats - prioritize streaming format
+                                if (data.type === "content" && data.content) {
+                                    // Stream content chunks incrementally
+                                    fullResponse += data.content;
+                                    setStreamingResponse(fullResponse);
+                                } else if (data.type === "done") {
+                                    // Finalize - don't replace the streamed text, just collect metadata
+                                    // fullResponse already contains all the streamed chunks, keep it as-is
+                                    // Only use fullResponse/answer from done message if we somehow got no chunks
+                                    if (fullResponse.trim() === '') {
+                                        // Fallback: use done message content only if we got no chunks
+                                        if (data.fullResponse) {
+                                            fullResponse = data.fullResponse;
+                                            setStreamingResponse(fullResponse);
+                                        } else if (data.answer) {
+                                            fullResponse = data.answer;
+                                            setStreamingResponse(fullResponse);
+                                        }
+                                    }
+                                    // fullResponse already has the accumulated streamed text, don't replace it
+                                    if (data.sources) sources = data.sources;
+                                    if (data.metadata) metadata = data.metadata;
+                                } else if (data.type === "status") {
+                                    // Update status if needed
+                                    console.log('Streaming status:', data.message);
+                                } else if (data.answer && !data.type) {
+                                    // Handle legacy SSE format with answer field (only if no type)
+                                    fullResponse = data.answer;
+                                    setStreamingResponse(fullResponse);
+                                    if (data.sources) sources = data.sources;
+                                    if (data.metadata) metadata = data.metadata;
+                                } else if (data.success === false && data.error) {
+                                    // Handle error responses
+                                    console.error('Streaming API error:', data.error);
+                                    throw new Error(data.error || 'Failed to generate response');
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON lines, but log for debugging
+                                if (line.trim() && !line.startsWith("data: ")) {
+                                    console.warn('Failed to parse streaming line:', line.substring(0, 100));
+                                }
+                            }
+                        }
+                    }
+
                     // Disable search mode after successful API call
                     if (searchModeEnabled) {
                         document.body.removeAttribute('data-search-mode');
@@ -1015,21 +1101,21 @@ export default function ChatPage() {
                     }
                     
                     // Track conversation metadata for class chats
-                    if (isClassChat && data.metadata && currentTab) {
+                    if (isClassChat && metadata && currentTab) {
                         const currentMetadata = currentChat.metadata || {};
                         
                         // Update topics covered
                         const existingTopics = currentMetadata.topicsCovered || [];
-                        const newTopics = data.metadata.topicsCovered || [];
+                        const newTopics = metadata.topicsCovered || [];
                         const mergedTopics = Array.from(new Set([...existingTopics, ...newTopics]));
                         
                         // Update complexity level
                         const updatedMetadata = {
                             ...currentMetadata,
                             topicsCovered: mergedTopics,
-                            questionComplexityLevel: data.metadata.questionComplexity || currentMetadata.questionComplexityLevel,
+                            questionComplexityLevel: metadata.questionComplexity || currentMetadata.questionComplexityLevel,
                             // Add struggling topics if confusion detected
-                            strugglingWith: data.metadata.isConfused && newTopics.length > 0
+                            strugglingWith: metadata.isConfused && newTopics.length > 0
                                 ? Array.from(new Set([...(currentMetadata.strugglingWith || []), ...newTopics]))
                                 : currentMetadata.strugglingWith
                         };
@@ -1038,9 +1124,52 @@ export default function ChatPage() {
                         console.log('Updated conversation metadata:', updatedMetadata);
                     }
                     
-                    aiResponse = data;
+                    // Use exactly what was streamed - fullResponse has been accumulating chunks
+                    // Don't replace it with anything from the done message
+                    // Ensure we have a valid response
+                    if (!fullResponse || fullResponse.trim() === '') {
+                        console.warn('Streaming response was empty, using fallback');
+                        fullResponse = "I'm having some trouble processing your request right now. Please try again in a moment.";
+                    }
+                    // fullResponse already contains exactly what was streamed, use it as-is
+                    
+                    // Use the streaming message ID if we have one, otherwise generate new one
+                    const messageId = streamingMessageId || generateMessageId();
+                    
+                    const aiMessage = {
+                        id: messageId,
+                        text: fullResponse,
+                        sender: 'bot' as const,
+                        name: 'CourseConnect AI',
+                        timestamp: Date.now(),
+                        sources: sources || undefined,
+                        isSearchRequest: searchModeEnabledBeforeAPI || false
+                    };
+
+                    // Mark streaming as complete - this will show all UI elements
+                    setIsStreamingComplete(true);
+                    
+                    // Add message to chat store so it persists (won't disappear when new message is sent)
+                    await addMessage(currentTab || 'private-general-chat', aiMessage);
+                    
+                    // Clear streaming state after a brief delay to allow the message to appear in the list
+                    // This ensures smooth transition from streaming display to message in list
+                    setTimeout(() => {
+                        setStreamingResponse("");
+                        setStreamingMessageId(null);
+                        setIsStreamingComplete(false);
+                    }, 100);
+                    
+                    // Update metadata if provided
+                    if (metadata && currentTab) {
+                        updateChatMetadata(currentTab, metadata);
+                    }
                 } catch (apiError) {
                     console.warn("API call failed, using enhanced fallback:", apiError);
+                    
+                    // Clear streaming state on error
+                    setStreamingResponse("");
+                    setStreamingMessageId(null);
                     
                     // Enhanced fallback based on error type
                     let fallbackMessage = "I'm having some trouble connecting right now, but don't worry! 🤔\n\n**Here's what you can do:**\n\n📚 Review your syllabus and course materials in the sidebar\n📝 Check your upcoming assignments and exam dates\n🔍 Browse through your course topics\n⏰ Try asking me again in a moment\n\nI'll be back up and running soon!";
@@ -1053,46 +1182,19 @@ export default function ChatPage() {
                         }
                     }
                     
-                    aiResponse = {
-                        answer: fallbackMessage,
-                        provider: 'fallback',
-                        success: true
+                    const aiMessage = {
+                        id: generateMessageId(),
+                        text: fallbackMessage,
+                        sender: 'bot' as const,
+                        name: 'CourseConnect AI',
+                        timestamp: Date.now(),
+                        sources: undefined,
+                        isSearchRequest: false
                     };
+
+                    // Add fallback AI response
+                    await addMessage(currentTab || 'private-general-chat', aiMessage);
                 }
-                
-                // Debug logging to see what aiResponse contains
-                console.log('ChatPage - aiResponse:', aiResponse, 'type:', typeof aiResponse, 'answer type:', typeof (aiResponse as any)?.answer);
-
-                // Ensure we always have a string for the message text
-                let responseText = 'I apologize, but I couldn\'t generate a response.';
-                
-                if (aiResponse && typeof aiResponse === 'object') {
-                    const responseObj = aiResponse as any;
-                    if (responseObj.answer && typeof responseObj.answer === 'string') {
-                        responseText = responseObj.answer;
-                    } else if (responseObj.response && typeof responseObj.response === 'string') {
-                        responseText = responseObj.response;
-                    } else {
-                        responseText = 'I apologize, but I couldn\'t generate a proper response.';
-                    }
-                } else if (typeof aiResponse === 'string') {
-                    responseText = aiResponse;
-                }
-                
-                const aiMessage = {
-                    id: generateMessageId(),
-                    text: responseText || 'I apologize, but I couldn\'t generate a response.',
-                    sender: 'bot' as const,
-                    name: 'CourseConnect AI',
-                    timestamp: Date.now(),
-                    sources: aiResponse?.sources || undefined,
-                    isSearchRequest: (aiResponse as any)?.isSearchRequest || false // Flag to indicate web search was requested
-                };
-
-                // Add AI response
-                await addMessage(currentTab || 'private-general-chat', aiMessage);
-
-                // Real-time AI response broadcasting is now handled in the chat store
             } catch (error) {
                 console.error('AI Error:', error);
                 const errorMessage = {
@@ -1253,7 +1355,8 @@ export default function ChatPage() {
                     });
                     
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || errorData.details || `HTTP error! status: ${response.status}`);
                     }
                     
                     const data = await response.json();
@@ -1263,6 +1366,11 @@ export default function ChatPage() {
                         provider: data.provider,
                         sources: data.sources?.length || 0
                     });
+                    
+                    // Check if the response has an error field
+                    if (data.error) {
+                        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
+                    }
                     
                     // Update conversation metadata if available
                     if (data.metadata) {
@@ -1307,11 +1415,20 @@ export default function ChatPage() {
                 
                 if (aiResponse && typeof aiResponse === 'object') {
                     const responseObj = aiResponse as any;
-                    if (responseObj.answer && typeof responseObj.answer === 'string') {
+                    // Check for error first
+                    if (responseObj.error) {
+                        // If we have an error, use a helpful message instead of the generic one
+                        responseText = `I'm having trouble processing your request right now. ${responseObj.details ? responseObj.details : 'Please try again in a moment.'}`;
+                    } else if (responseObj.answer && typeof responseObj.answer === 'string') {
                         responseText = responseObj.answer;
                     } else if (responseObj.response && typeof responseObj.response === 'string') {
                         responseText = responseObj.response;
+                    } else if (responseObj.success === false) {
+                        // API explicitly returned failure
+                        responseText = 'I apologize, but I couldn\'t generate a proper response. Please try rephrasing your question.';
                     } else {
+                        // Log for debugging
+                        console.warn('Unexpected response structure:', responseObj);
                         responseText = 'I apologize, but I couldn\'t generate a proper response.';
                     }
                 } else if (typeof aiResponse === 'string') {
@@ -1452,9 +1569,133 @@ export default function ChatPage() {
         try {
             // Check if the file is an image
             const isImage = file.type.startsWith('image/');
-            const fileUrl = URL.createObjectURL(file);
             
-            // Get the user's message text (if any)
+            // Get current chat's course data for context validation
+            const currentChat = currentTab ? chats[currentTab] : null;
+            const courseData = currentChat?.courseData || null;
+            const isClassChat = currentChat?.chatType === 'class';
+            
+            // For class chats with images, validate BEFORE uploading
+            if (isImage && isClassChat && courseData) {
+                setIsLoading(true);
+                
+                // Convert image to base64 for validation
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const base64Image = e.target?.result as string;
+                        const base64Data = base64Image.split(',')[1];
+                        
+                        // Validate image relevance first
+                        const validationResponse = await fetch('/api/chat/vision', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: 'Validate image relevance',
+                                image: base64Data,
+                                mimeType: file.type,
+                                courseData: courseData,
+                            }),
+                        });
+                        
+                        if (!validationResponse.ok) {
+                            throw new Error('Validation failed');
+                        }
+                        
+                        const validationData = await validationResponse.json();
+                        
+                        // If image is not related, show error and don't upload
+                        if (validationData.isNotRelated) {
+                            setIsLoading(false);
+                            toast({
+                                variant: "destructive",
+                                title: "Image Not Related to Course",
+                                description: validationData.response,
+                                duration: 5000,
+                            });
+                            
+                            // Offer to navigate to General Chat
+                            const errorMessage = {
+                                id: generateMessageId(),
+                                text: validationData.response,
+                                sender: 'bot' as const,
+                                name: 'CourseConnect AI',
+                                timestamp: Date.now()
+                            };
+                            await addMessage(currentTab || 'private-general-chat', errorMessage);
+                            return;
+                        }
+                        
+                        // Image is related, proceed with upload
+                        const fileUrl = URL.createObjectURL(file);
+                        const userText = inputValue.trim();
+                        
+                        const uploadMessage = {
+                            id: generateMessageId(),
+                            text: userText,
+                            sender: 'user' as const,
+                            name: isGuest ? getGuestDisplayName() : (user?.displayName || 'Anonymous'),
+                            timestamp: Date.now(),
+                            file: {
+                                name: file.name,
+                                size: file.size,
+                                type: file.type,
+                                url: fileUrl
+                            }
+                        };
+                        
+                        setInputValue('');
+                        await addMessage(currentTab || 'private-general-chat', uploadMessage);
+                        
+                        // Now do full analysis
+                        const analysisPrompt = userText || 'Solve this problem or explain what is shown. Use LaTeX for all math.';
+                        const analysisResponse = await fetch('/api/chat/vision', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: analysisPrompt,
+                                image: base64Data,
+                                mimeType: file.type,
+                                courseData: courseData,
+                            }),
+                        });
+                        
+                        if (!analysisResponse.ok) {
+                            throw new Error('Analysis failed');
+                        }
+                        
+                        const analysisData = await analysisResponse.json();
+                        
+                        const analysisMessage = {
+                            id: generateMessageId(),
+                            text: analysisData.response,
+                            sender: 'bot' as const,
+                            name: 'CourseConnect AI',
+                            timestamp: Date.now()
+                        };
+                        await addMessage(currentTab || 'private-general-chat', analysisMessage);
+                        setIsLoading(false);
+                        
+                    } catch (error) {
+                        console.error('🚨 Image processing error:', error);
+                        setIsLoading(false);
+                        toast({
+                            variant: "destructive",
+                            title: "Processing Failed",
+                            description: "Could not process the image. Please try again.",
+                        });
+                    }
+                };
+                reader.readAsDataURL(file);
+                return; // Exit early for class chat image validation
+            }
+            
+            // For non-class chats or non-image files, proceed normally
+            const fileUrl = URL.createObjectURL(file);
             const userText = inputValue.trim();
 
             // Create message with both image and text
@@ -1478,7 +1719,7 @@ export default function ChatPage() {
             // Add upload message immediately (non-blocking)
             await addMessage(currentTab || 'private-general-chat', uploadMessage);
 
-            // Handle image files with GPT-4o Vision
+            // Handle image files with GPT-4o Vision (for non-class chats)
             if (isImage) {
                 // Show loading state only for AI analysis
                 setIsLoading(true);
@@ -1495,7 +1736,7 @@ export default function ChatPage() {
                         // Use user's text as prompt if provided, otherwise use default
                         const analysisPrompt = userText || 'Solve this problem or explain what is shown. Use LaTeX for all math.';
 
-                        // Call vision API
+                        // Call vision API (no courseData for general chats)
                         const response = await fetch('/api/chat/vision', {
                             method: 'POST',
                             headers: {
@@ -1778,7 +2019,9 @@ export default function ChatPage() {
                         <div>
                             <h1 className="text-3xl font-bold mb-2">{currentTab === 'public-general-chat' ? 'Community' : 'Class Chat'}</h1>
                             <p className="text-muted-foreground">
-                                Get AI help with your coursework (Student collaboration coming soon)
+                                {currentTab === 'public-general-chat' 
+                                    ? 'Connect with classmates and get AI-powered help. Student collaboration features coming soon!'
+                                    : 'Get personalized AI tutoring tailored to your course syllabus. Student collaboration coming soon!'}
                             </p>
                         </div>
                         {/* Real-time status indicator */}
@@ -2022,31 +2265,45 @@ export default function ChatPage() {
                     {/* Chat Content */}
                     <div className="flex-1 flex flex-col">
                         <div className="flex-1 flex flex-col overflow-hidden">
-                                <div className="pb-3 flex-shrink-0 px-4">
-                                    <div className="flex items-center gap-2">
-                                        <MessageSquare className="h-5 w-5" />
-                                        <span className="font-semibold">{currentTab ? getChatDisplayName(currentTab) : 'Loading...'}</span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleGenerateSummary}
-                                            className="h-8 px-3 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium"
-                                            disabled={isGeneratingSummary}
-                                        >
-                                            <ScrollText className="h-3.5 w-3.5 mr-1.5" />
-                                            {isGeneratingSummary ? 'Summarizing...' : 'AI Summary'}
-                                        </Button>
-                                        <Badge variant="secondary" className="ml-auto mr-2">
-                                            <Users className="h-3 w-3 mr-1" />
-                                            All Users
-                                        </Badge>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0 hover:bg-transparent hover:text-current">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                    <span className="sr-only">Chat options</span>
-                                                </Button>
-                                            </DropdownMenuTrigger>
+                                <div className="pb-3 flex-shrink-0 px-4 border-b border-border/50">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 rounded-lg bg-primary/10">
+                                                <MessageSquare className="h-4 w-4 text-primary" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-base">{currentTab ? getChatDisplayName(currentTab) : 'Loading...'}</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {currentChat?.chatType === 'class' 
+                                                        ? 'AI-powered course assistance' 
+                                                        : 'Get help with any topic'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleGenerateSummary}
+                                                className="h-8 px-3 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium"
+                                                disabled={isGeneratingSummary}
+                                            >
+                                                <ScrollText className="h-3.5 w-3.5 mr-1.5" />
+                                                {isGeneratingSummary ? 'Generating...' : 'Generate AI Summary'}
+                                            </Button>
+                                            {currentChat?.chatType === 'class' && (
+                                                <Badge variant="secondary" className="text-xs">
+                                                    <BookUser className="h-3 w-3 mr-1" />
+                                                    Class Chat
+                                                </Badge>
+                                            )}
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="outline" size="sm" className="h-8 w-8 p-0 hover:bg-transparent hover:text-current">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                        <span className="sr-only">Chat options</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onClick={handleExportChat}>
                                                     <Download className="h-4 w-4 mr-2" />
@@ -2069,6 +2326,7 @@ export default function ChatPage() {
                                                 )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
@@ -2443,14 +2701,66 @@ export default function ChatPage() {
                                             {/* Scroll target for auto-scroll */}
                                             <div ref={messagesEndRef} />
                                             
-                                            {/* AI Thinking Animation - Blue ripple text */}
-                                            {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && (
-                                                <div className="flex items-start gap-3 w-full px-4 animate-in slide-in-from-bottom-2 duration-300">
-                                                    <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
-                                                    <div className="text-left min-w-0">
-                                                        <div className="text-xs text-muted-foreground mb-1">CourseConnect AI</div>
-                                                        <div className="bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 shadow-sm">
-                                                            <RippleText text="thinking…" className="text-sm" />
+                                            {/* AI Thinking Animation - Integrated text (no bubble) */}
+                                            {isLoading && generalChat?.messages?.at(-1)?.sender !== 'bot' && !streamingResponse && (
+                                                <div className="flex gap-3 justify-start w-full px-4 animate-in slide-in-from-bottom-2 duration-300">
+                                                    <div className="flex gap-4 max-w-[80%] min-w-0 flex-row">
+                                                        {/* Avatar - show while thinking */}
+                                                        <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
+                                                        <div className="text-left min-w-0 group">
+                                                            {/* Name - show while thinking */}
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <div className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                                                                    CourseConnect AI
+                                                                </div>
+                                                            </div>
+                                                            <RippleText text="thinking…" className="text-sm text-muted-foreground italic" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Streaming Response - Show with full UI when complete */}
+                                            {/* Only show if message doesn't exist in store yet (to avoid duplicates) */}
+                                            {streamingResponse && !(() => {
+                                                const currentChat = chats[currentTab || 'private-general-chat'];
+                                                const lastMessage = currentChat?.messages?.[currentChat.messages.length - 1];
+                                                // Hide streaming if we already have this message in the store
+                                                return lastMessage && lastMessage.sender === 'bot' && lastMessage.id === streamingMessageId;
+                                            })() && (
+                                                <div className={`flex gap-3 justify-start w-full px-4 ${isStreamingComplete ? '' : 'animate-in slide-in-from-bottom-2 duration-300'}`}>
+                                                    <div className="flex gap-4 max-w-[80%] min-w-0 flex-row">
+                                                        {/* Avatar - always show during streaming */}
+                                                        <img src="/favicon-32x32.png" alt="AI" className="w-10 h-10 flex-shrink-0 object-contain rounded-full" />
+                                                        <div className="text-left min-w-0 group">
+                                                            {/* Name and timestamp - always show during streaming */}
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <div className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                                                                    CourseConnect AI
+                                                                </div>
+                                                                {isStreamingComplete && <MessageTimestamp timestamp={Date.now()} />}
+                                                            </div>
+                                                            {/* BotResponse with copy and feedback buttons */}
+                                                            <BotResponse 
+                                                                content={streamingResponse}
+                                                                className="text-[15px] ai-response leading-relaxed max-w-full overflow-hidden"
+                                                                messageId={streamingMessageId || undefined}
+                                                                onFeedback={(feedback) => {
+                                                                    console.log('📊 Feedback callback triggered:', feedback);
+                                                                    try {
+                                                                        const existingFeedback = JSON.parse(localStorage.getItem('cc-ai-feedback') || '[]');
+                                                                        const newFeedback = [...existingFeedback, {
+                                                                            ...feedback,
+                                                                            chatId: currentTab,
+                                                                            timestamp: Date.now()
+                                                                        }];
+                                                                        localStorage.setItem('cc-ai-feedback', JSON.stringify(newFeedback));
+                                                                        window.dispatchEvent(new CustomEvent('feedbackAdded', { detail: newFeedback }));
+                                                                    } catch (e) {
+                                                                        console.error('❌ Failed to save feedback:', e);
+                                                                    }
+                                                                }}
+                                                            />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2581,21 +2891,75 @@ export default function ChatPage() {
                                                                 }
                                                             }
                                                             
-                                                            // Try document analysis API for supported file types
-                                                            if (fileType.includes('pdf') || fileType.includes('word') || fileType.includes('document') || fileType.includes('text') || fileType.includes('plain')) {
+                                                            // Try document analysis API for supported file types (PDF, DOCX, TXT)
+                                                            if (fileType.includes('pdf') || fileType.includes('word') || fileType.includes('document') || fileType.includes('text') || fileType.includes('plain') || first.name.toLowerCase().endsWith('.pdf') || first.name.toLowerCase().endsWith('.docx') || first.name.toLowerCase().endsWith('.txt')) {
                                                                 const formData = new FormData();
                                                                 formData.append('file', first);
                                                                 formData.append('prompt', analysisPrompt);
                                                                 
-                                                                await fetch('/api/ai/analyze-document', {
-                                                                    method: 'POST',
-                                                                    body: formData
-                                                                }).then(res => res.json()).then(async (data) => {
+                                                                // Add course data if this is a class chat
+                                                                const currentChat = chats[currentTab || 'private-general-chat'];
+                                                                const isClassChat = currentChat?.chatType === 'class';
+                                                                if (isClassChat && currentChat?.courseData) {
+                                                                    formData.append('courseData', JSON.stringify(currentChat.courseData));
+                                                                }
+                                                                
+                                                                try {
+                                                                    const response = await fetch('/api/ai/analyze-document', {
+                                                                        method: 'POST',
+                                                                        body: formData
+                                                                    });
+                                                                    
+                                                                    if (!response.ok) {
+                                                                        const errorText = await response.text().catch(() => 'Unknown error');
+                                                                        let errorData;
+                                                                        try {
+                                                                            errorData = JSON.parse(errorText);
+                                                                        } catch {
+                                                                            errorData = { analysis: `I received your ${first.name} file. I'm processing it now - you can ask me questions about it!` };
+                                                                        }
+                                                                        const aiText = errorData?.analysis || `I received your ${first.name} file. I can help you with questions about it!`;
+                                                                        await addMessage(currentTab || 'private-general-chat', { 
+                                                                            id: generateMessageId(), 
+                                                                            text: aiText, 
+                                                                            sender: 'bot', 
+                                                                            name: 'CourseConnect AI', 
+                                                                            timestamp: Date.now() 
+                                                                        });
+                                                                        return;
+                                                                    }
+                                                                    
+                                                                    const responseText = await response.text();
+                                                                    if (!responseText || responseText.trim() === '') {
+                                                                        throw new Error('Empty response from server');
+                                                                    }
+                                                                    
+                                                                    let data;
+                                                                    try {
+                                                                        data = JSON.parse(responseText);
+                                                                    } catch (parseError) {
+                                                                        console.error('JSON parse error:', parseError, 'Response:', responseText.substring(0, 200));
+                                                                        throw new Error('Invalid JSON response from server');
+                                                                    }
+                                                                    
                                                                     const aiText = data?.analysis || data?.response || `I analyzed the ${first.name} file.`;
-                                                                    await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: aiText, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
-                                                                }).catch(async () => {
-                                                                    await addMessage(currentTab || 'private-general-chat', { id: generateMessageId(), text: `I received your ${first.name} file. I can help you with questions about it!`, sender: 'bot', name: 'CourseConnect AI', timestamp: Date.now() });
-                                                                });
+                                                                    await addMessage(currentTab || 'private-general-chat', { 
+                                                                        id: generateMessageId(), 
+                                                                        text: aiText, 
+                                                                        sender: 'bot', 
+                                                                        name: 'CourseConnect AI', 
+                                                                        timestamp: Date.now() 
+                                                                    });
+                                                                } catch (fetchError) {
+                                                                    console.error('Document analysis fetch error:', fetchError);
+                                                                    await addMessage(currentTab || 'private-general-chat', { 
+                                                                        id: generateMessageId(), 
+                                                                        text: `I received your ${first.name} file. I'm processing it now - you can ask me questions about it!`, 
+                                                                        sender: 'bot', 
+                                                                        name: 'CourseConnect AI', 
+                                                                        timestamp: Date.now() 
+                                                                    });
+                                                                }
                                                             } else {
                                                                 // For unsupported file types, provide a helpful message
                                                                 await addMessage(currentTab || 'private-general-chat', { 
@@ -2606,10 +2970,11 @@ export default function ChatPage() {
                                                                     timestamp: Date.now() 
                                                                 });
                                                             }
-                                                        } catch {
+                                                        } catch (fileError) {
+                                                            console.error('File processing error:', fileError);
                                                             await addMessage(currentTab || 'private-general-chat', { 
                                                                 id: generateMessageId(), 
-                                                                text: `I received your ${first.name} file. I can help you with questions about it!`, 
+                                                                text: `I received your ${first.name} file. I'm processing it now - you can ask me questions about it!`, 
                                                                 sender: 'bot', 
                                                                 name: 'CourseConnect AI', 
                                                                 timestamp: Date.now() 
@@ -2714,7 +3079,7 @@ export default function ChatPage() {
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-purple-500" />
+                        <ScrollText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         Chat Summary
                     </DialogTitle>
                     <DialogDescription>
@@ -2723,9 +3088,9 @@ export default function ChatPage() {
                 </DialogHeader>
                 <div className="pt-4">
                     {isGeneratingSummary ? (
-                        <div className="flex items-center gap-3 py-8">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Generating summary...</p>
+                        <div className="flex flex-col items-center justify-center gap-4 py-12">
+                            <div className="h-8 w-8 rounded-full border-2 border-muted border-t-primary animate-spin"></div>
+                            <p className="text-sm text-muted-foreground">Generating summary...</p>
                         </div>
                     ) : chatSummary ? (
                         <div className="prose prose-sm dark:prose-invert max-w-none">

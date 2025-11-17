@@ -65,10 +65,29 @@ export default function SyllabusUpload() {
     const isGuest = !user;
 
     // Function to check for duplicate courses
-    const checkForDuplicateCourse = (courseCode: string, courseName: string) => {
+    const checkForDuplicateCourse = (courseCode: string, courseName: string, fileName?: string) => {
         const existingChats = Object.values(chats).filter(chat => 
             chat.chatType === 'class' && chat.courseData
         );
+        
+        // First check for duplicate filename if provided
+        if (fileName) {
+            try {
+                const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+                const duplicateFile = uploadedSyllabi.find((s: any) => 
+                    s.fileName?.toLowerCase() === fileName.toLowerCase()
+                );
+                if (duplicateFile) {
+                    // Find the chat associated with this file
+                    const chatForFile = existingChats.find(chat => chat.id === duplicateFile.chatId);
+                    if (chatForFile) {
+                        return { chat: chatForFile, reason: 'file' };
+                    }
+                }
+            } catch (e) {
+                console.warn('Error checking uploaded syllabi:', e);
+            }
+        }
         
         // Check for exact course code match
         const exactMatch = existingChats.find(chat => 
@@ -76,7 +95,7 @@ export default function SyllabusUpload() {
         );
         
         if (exactMatch) {
-            return exactMatch;
+            return { chat: exactMatch, reason: 'course' };
         }
         
         // Check for similar course name (fuzzy matching)
@@ -89,7 +108,11 @@ export default function SyllabusUpload() {
             return similarity > 0.8;
         });
         
-        return similarMatch || null;
+        if (similarMatch) {
+            return { chat: similarMatch, reason: 'course' };
+        }
+        
+        return null;
     };
 
     // Helper function to calculate string similarity
@@ -169,6 +192,40 @@ export default function SyllabusUpload() {
 
     const handleAnalyze = async () => {
         if (!file) return;
+
+        // IMMEDIATE duplicate check before any processing
+        try {
+            const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+            const duplicateFile = uploadedSyllabi.find((s: any) => 
+                s.fileName?.toLowerCase() === file.name.toLowerCase()
+            );
+            
+            if (duplicateFile) {
+                const existingChat = Object.values(chats).find(chat => chat.id === duplicateFile.chatId);
+                if (existingChat) {
+                    toast({
+                        title: "File Already Uploaded",
+                        description: `The file "${file.name}" has already been uploaded. This course already exists in your sidebar.`,
+                        variant: "destructive",
+                        action: (
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                    router.push(`/dashboard/chat?tab=${existingChat.id}`);
+                                }}
+                            >
+                                Go to Chat
+                            </Button>
+                        )
+                    });
+                    setFile(null);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Error checking for duplicate file:', e);
+        }
 
         setIsAnalyzing(true);
         setParsingResult(null);
@@ -366,14 +423,19 @@ export default function SyllabusUpload() {
             // No matching groups found, create new one
             const chatName = `${classCode}: ${className}`;
             
-            // Check for duplicate courses before creating chat
-            const existingChat = checkForDuplicateCourse(classCode, className);
+            // Check for duplicate courses before creating chat (including filename check)
+            const duplicateCheck = checkForDuplicateCourse(classCode, className, file?.name);
             
-            if (existingChat) {
-                // Show Sonar notification warning for duplicate
+            if (duplicateCheck) {
+                const { chat: existingChat, reason } = duplicateCheck;
+                const errorMessage = reason === 'file' 
+                    ? `The file "${file?.name}" has already been uploaded. This course already exists in your sidebar.`
+                    : `You already have a chat for ${classCode} - ${className}.`;
+                
                 toast({
-                    title: "Course Already Exists!",
-                    description: `You already have a chat for ${classCode} - ${className}. Would you like to go to the existing chat?`,
+                    title: "File Already Uploaded",
+                    description: errorMessage,
+                    variant: "destructive",
                     action: (
                         <Button 
                             variant="outline" 
@@ -387,6 +449,7 @@ export default function SyllabusUpload() {
                     )
                 });
                 setIsAnalyzing(false);
+                setFile(null);
                 return;
             }
             
@@ -406,6 +469,25 @@ export default function SyllabusUpload() {
 
             // Create class group
             await createClassGroup(syllabusData, chatId, chatPreference);
+
+            // Save uploaded syllabus to localStorage for duplicate checking
+            if (file) {
+                try {
+                    const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+                    const uploadedSyllabus = {
+                        id: chatId,
+                        fileName: file.name,
+                        courseName: className,
+                        courseCode: classCode,
+                        uploadDate: new Date().toISOString(),
+                        chatId: chatId
+                    };
+                    const updatedList = [...uploadedSyllabi, uploadedSyllabus];
+                    localStorage.setItem('uploaded-syllabi', JSON.stringify(updatedList));
+                } catch (e) {
+                    console.warn('Error saving uploaded syllabus:', e);
+                }
+            }
 
             console.log('Created class chat:', { chatName, chatId, syllabusData });
 
@@ -648,7 +730,7 @@ export default function SyllabusUpload() {
                     <div className="mt-3 p-3 rounded-md border bg-muted/30 text-xs sm:text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <Shield className="h-5 w-5" />
-                            <span>Files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original files, and all parsed course data saved to your account can be deleted.</span>
+                            <span>Syllabus files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original syllabus files, and all parsed course data saved to your account can be deleted.</span>
                         </div>
                     </div>
                 )}

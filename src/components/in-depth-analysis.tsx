@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import { isMathOrPhysicsContent } from '@/utils/math-detection';
 
 interface InDepthAnalysisProps {
   question: string;
@@ -80,6 +81,13 @@ export function InDepthAnalysis({ question, conversationHistory, userName }: InD
     setIsOpen(false);
     setAnalysis('');
   };
+
+  // Only show button if question contains math
+  const hasMath = isMathOrPhysicsContent(question);
+
+  if (!hasMath) {
+    return null;
+  }
 
   return (
     <>

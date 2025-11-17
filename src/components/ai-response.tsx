@@ -7,7 +7,6 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from 'next-themes';
 import { Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -29,6 +28,17 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
   // For Programming AI Tutor, always use markdown rendering
   // For general chat, only use markdown if there are code blocks
   const shouldUseMarkdown = alwaysHighlight || hasCodeBlocks;
+
+  // Simple hash function for stable block IDs
+  const hashString = (str: string): string => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
+  };
 
   const copyToClipboard = async (text: string, blockId: string) => {
     try {
@@ -75,9 +85,10 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
-            const blockId = `code-${Math.random().toString(36).substr(2, 9)}`;
             const codeText = String(children).replace(/\n$/, '');
-            const isCopied = copiedStates[blockId];
+            // Use hash of code content for stable block ID
+            const blockId = `code-${hashString(codeText)}`;
+            const isCopied = copiedStates[blockId] || false;
             
             if (!inline && language) {
               // Code block with language
@@ -105,19 +116,24 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   >
                     {codeText}
                   </SyntaxHighlighter>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  <button
+                    className="absolute top-2 right-2 h-6 w-6 p-0 bg-transparent hover:bg-muted-foreground/10 rounded-md z-10 flex items-center justify-center transition-all duration-200 ease-in-out"
                     onClick={() => copyToClipboard(codeText, blockId)}
                     title="Copy code"
                   >
-                    {isCopied ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    )}
-                  </Button>
+                    <div className="relative">
+                      <Copy 
+                        className={`h-3.5 w-3.5 text-muted-foreground transition-all duration-300 ease-in-out ${
+                          isCopied ? 'opacity-0 scale-0 rotate-180' : 'opacity-100 scale-100 rotate-0'
+                        }`} 
+                      />
+                      <Check 
+                        className={`absolute inset-0 h-3.5 w-3.5 text-green-600 transition-all duration-300 ease-in-out ${
+                          isCopied ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-180'
+                        }`} 
+                      />
+                    </div>
+                  </button>
                 </div>
               );
             } else if (!inline) {
@@ -146,19 +162,24 @@ export function AIResponse({ content, className = "", alwaysHighlight = false }:
                   >
                     {codeText}
                   </SyntaxHighlighter>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="absolute top-2 right-2 h-8 w-8 p-0 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  <button
+                    className="absolute top-2 right-2 h-6 w-6 p-0 bg-transparent hover:bg-muted-foreground/10 rounded-md z-10 flex items-center justify-center transition-all duration-200 ease-in-out"
                     onClick={() => copyToClipboard(codeText, blockId)}
                     title="Copy code"
                   >
-                    {isCopied ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    )}
-                  </Button>
+                    <div className="relative">
+                      <Copy 
+                        className={`h-3.5 w-3.5 text-muted-foreground transition-all duration-300 ease-in-out ${
+                          isCopied ? 'opacity-0 scale-0 rotate-180' : 'opacity-100 scale-100 rotate-0'
+                        }`} 
+                      />
+                      <Check 
+                        className={`absolute inset-0 h-3.5 w-3.5 text-green-600 transition-all duration-300 ease-in-out ${
+                          isCopied ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-180'
+                        }`} 
+                      />
+                    </div>
+                  </button>
                 </div>
               );
             } else {

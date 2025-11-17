@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { X, MessageSquare, Users, Brain, BookOpen, Sparkles, Zap, Calendar, Target, GraduationCap } from "lucide-react";
+import { X, MessageSquare, Users, Brain, BookOpen, Sparkles, Zap, Calendar, Target, GraduationCap, Award, BookText } from "lucide-react";
 
 interface WelcomeCardProps {
   chatType: 'general' | 'community' | 'class';
@@ -81,13 +81,13 @@ export function WelcomeCard({ chatType, courseData, onDismiss, onQuickAction }: 
       // Study help with course context
       if (topics.length > 0) {
         actions.push({
-          icon: BookOpen,
+          icon: GraduationCap,
           label: "Study Help",
           action: `help me understand ${topics[0]} in ${courseName}`
         });
       } else {
         actions.push({
-          icon: BookOpen,
+          icon: GraduationCap,
           label: "Study Help",
           action: `help me study for ${courseName}`
         });
@@ -97,13 +97,13 @@ export function WelcomeCard({ chatType, courseData, onDismiss, onQuickAction }: 
       if (exams.length > 0) {
         const nextExam = exams[0];
         actions.push({
-          icon: Target,
+          icon: Award,
           label: "Exam Prep",
           action: `help me prepare for ${nextExam.name} in ${courseName}`
         });
       } else {
         actions.push({
-          icon: Target,
+          icon: Award,
           label: "Exam Prep",
           action: `help me prepare for exams in ${courseName}`
         });
@@ -119,7 +119,7 @@ export function WelcomeCard({ chatType, courseData, onDismiss, onQuickAction }: 
         });
       } else {
         actions.push({
-          icon: Brain,
+          icon: Sparkles,
           label: "Ask AI",
           action: `help me with ${courseName}`
         });
@@ -134,9 +134,9 @@ export function WelcomeCard({ chatType, courseData, onDismiss, onQuickAction }: 
       ];
     } else {
       return [
-        { icon: Brain, label: "Ask AI", action: "help me understand calculus" },
-        { icon: BookOpen, label: "Study Help", action: "explain photosynthesis" },
-        { icon: Sparkles, label: "Exam Prep", action: "best way to study for exams" }
+        { icon: Sparkles, label: "Ask AI", action: "help me understand calculus" },
+        { icon: GraduationCap, label: "Study Help", action: "explain photosynthesis" },
+        { icon: Award, label: "Exam Prep", action: "best way to study for exams" }
       ];
     }
   };

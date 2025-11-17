@@ -484,14 +484,25 @@ export default function ChatInterface() {
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Chat API failed');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || errorData.details || 'Chat API failed');
                 }
                 
                 const result = await response.json();
                 
+                // Check if the response has an error field
+                if (result.error) {
+                    throw new Error(result.error + (result.details ? `: ${result.details}` : ''));
+                }
+                
+                // Ensure we have a valid answer
+                if (!result.answer && result.success !== false) {
+                    console.warn('API response missing answer field:', result);
+                }
+                
                 const assistanceMessage: Message = {
                     sender: "bot",
-                    text: result.answer || 'I apologize, but I couldn\'t generate a response.',
+                    text: result.answer || result.response || 'I apologize, but I couldn\'t generate a response.',
                     name: "AI",
                     timestamp: Date.now(),
                     sources: result.sources

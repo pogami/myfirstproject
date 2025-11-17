@@ -43,10 +43,29 @@ export default function EnhancedSyllabusUpload() {
     const [user] = useAuthState(auth);
 
     // Function to check for duplicate courses
-    const checkForDuplicateCourse = (courseCode: string, courseName: string) => {
+    const checkForDuplicateCourse = (courseCode: string, courseName: string, fileName?: string) => {
         const existingChats = Object.values(chats).filter(chat => 
             chat.chatType === 'class' && chat.courseData
         );
+        
+        // First check for duplicate filename if provided
+        if (fileName) {
+            try {
+                const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+                const duplicateFile = uploadedSyllabi.find((s: any) => 
+                    s.fileName?.toLowerCase() === fileName.toLowerCase()
+                );
+                if (duplicateFile) {
+                    // Find the chat associated with this file
+                    const chatForFile = existingChats.find(chat => chat.id === duplicateFile.chatId);
+                    if (chatForFile) {
+                        return { chat: chatForFile, reason: 'file' };
+                    }
+                }
+            } catch (e) {
+                console.warn('Error checking uploaded syllabi:', e);
+            }
+        }
         
         // Check for exact course code match
         const exactMatch = existingChats.find(chat => 
@@ -54,7 +73,7 @@ export default function EnhancedSyllabusUpload() {
         );
         
         if (exactMatch) {
-            return exactMatch;
+            return { chat: exactMatch, reason: 'course' };
         }
         
         // Check for similar course name (fuzzy matching)
@@ -67,7 +86,11 @@ export default function EnhancedSyllabusUpload() {
             return similarity > 0.8;
         });
         
-        return similarMatch || null;
+        if (similarMatch) {
+            return { chat: similarMatch, reason: 'course' };
+        }
+        
+        return null;
     };
 
     // Helper function to calculate string similarity
@@ -120,6 +143,38 @@ export default function EnhancedSyllabusUpload() {
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
         if (selectedFile) {
+            // Check for duplicate filename immediately
+            try {
+                const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+                const duplicateFile = uploadedSyllabi.find((s: any) => 
+                    s.fileName?.toLowerCase() === selectedFile.name.toLowerCase()
+                );
+                
+                if (duplicateFile) {
+                    toast.error("File Already Uploaded", {
+                        description: `The file "${selectedFile.name}" has already been uploaded. This course already exists in your sidebar.`,
+                        duration: 6000,
+                        action: {
+                            label: 'Go to Chat',
+                            onClick: () => {
+                                const existingChat = Object.values(chats).find(chat => chat.id === duplicateFile.chatId);
+                                if (existingChat) {
+                                    setCurrentTab(existingChat.id);
+                                    router.push(`/dashboard/chat?tab=${existingChat.id}`);
+                                }
+                            }
+                        }
+                    });
+                    // Clear the file input
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                    return;
+                }
+            } catch (e) {
+                console.warn('Error checking for duplicate file:', e);
+            }
+            
             setFile(selectedFile);
         }
     };
@@ -128,6 +183,34 @@ export default function EnhancedSyllabusUpload() {
         event.preventDefault();
         const droppedFile = event.dataTransfer.files[0];
         if (droppedFile) {
+            // Check for duplicate filename immediately
+            try {
+                const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+                const duplicateFile = uploadedSyllabi.find((s: any) => 
+                    s.fileName?.toLowerCase() === droppedFile.name.toLowerCase()
+                );
+                
+                if (duplicateFile) {
+                    toast.error("File Already Uploaded", {
+                        description: `The file "${droppedFile.name}" has already been uploaded. This course already exists in your sidebar.`,
+                        duration: 6000,
+                        action: {
+                            label: 'Go to Chat',
+                            onClick: () => {
+                                const existingChat = Object.values(chats).find(chat => chat.id === duplicateFile.chatId);
+                                if (existingChat) {
+                                    setCurrentTab(existingChat.id);
+                                    router.push(`/dashboard/chat?tab=${existingChat.id}`);
+                                }
+                            }
+                        }
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.warn('Error checking for duplicate file:', e);
+            }
+            
             setFile(droppedFile);
         }
     };
@@ -147,6 +230,39 @@ export default function EnhancedSyllabusUpload() {
 
     const processSyllabus = async () => {
         if (!file || !user) return;
+
+        // IMMEDIATE duplicate check before any processing
+        try {
+            const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+            const duplicateFile = uploadedSyllabi.find((s: any) => 
+                s.fileName?.toLowerCase() === file.name.toLowerCase()
+            );
+            
+            if (duplicateFile) {
+                const existingChat = Object.values(chats).find(chat => chat.id === duplicateFile.chatId);
+                if (existingChat) {
+                    toast.error("File Already Uploaded", {
+                        description: `The file "${file.name}" has already been uploaded. This course already exists in your sidebar.`,
+                        duration: 6000,
+                        action: {
+                            label: 'Go to Chat',
+                            onClick: () => {
+                                setCurrentTab(existingChat.id);
+                                router.push(`/dashboard/chat?tab=${existingChat.id}`);
+                            }
+                        }
+                    });
+                    // Clear the file input
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                    setFile(null);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Error checking for duplicate file:', e);
+        }
 
         setIsAnalyzing(true);
         setProgress(0);
@@ -211,20 +327,32 @@ export default function EnhancedSyllabusUpload() {
             // Check for duplicate courses before creating chat
             const courseCode = data.courseInfo.courseCode || 'UNKNOWN';
             const courseName = data.courseInfo.title || 'New Course';
-            const existingChat = checkForDuplicateCourse(courseCode, courseName);
+            const duplicateCheck = checkForDuplicateCourse(courseCode, courseName, file?.name);
             
-            if (existingChat) {
-                // Show Sonar notification warning for duplicate
-                toast.warning('Course Already Exists!', {
-                    description: `You already have a chat for ${courseCode} - ${courseName}. Would you like to go to the existing chat?`,
+            if (duplicateCheck) {
+                const { chat: existingChat, reason } = duplicateCheck;
+                const errorMessage = reason === 'file' 
+                    ? `The file "${file?.name}" has already been uploaded. This course already exists in your sidebar.`
+                    : `You already have a chat for ${courseCode} - ${courseName}.`;
+                
+                toast.error("File Already Uploaded", {
+                    description: errorMessage,
                     duration: 8000,
                     action: {
                         label: 'Go to Chat',
                         onClick: () => {
                             setCurrentTab(existingChat.id);
+                            router.push(`/dashboard/chat?tab=${existingChat.id}`);
                         }
                     }
                 });
+                // Reset file state
+                setFile(null);
+                setParsingResult(null);
+                setShowReview(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
                 return;
             }
 
@@ -270,6 +398,25 @@ export default function EnhancedSyllabusUpload() {
             );
 
             setCurrentTab(chatId);
+
+            // Save uploaded syllabus to localStorage for duplicate checking
+            if (file) {
+                try {
+                    const uploadedSyllabi = JSON.parse(localStorage.getItem('uploaded-syllabi') || '[]');
+                    const uploadedSyllabus = {
+                        id: chatId,
+                        fileName: file.name,
+                        courseName: courseName,
+                        courseCode: courseCode,
+                        uploadDate: new Date().toISOString(),
+                        chatId: chatId
+                    };
+                    const updatedList = [...uploadedSyllabi, uploadedSyllabus];
+                    localStorage.setItem('uploaded-syllabi', JSON.stringify(updatedList));
+                } catch (e) {
+                    console.warn('Error saving uploaded syllabus:', e);
+                }
+            }
 
             toast.success("Course Created Successfully! 📚", {
                 description: `Your course "${courseTitle}" has been set up with all parsed information.`,
@@ -499,7 +646,7 @@ export default function EnhancedSyllabusUpload() {
                         <div className="mt-4 p-3 rounded-md border bg-muted/30 text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
                                 <Shield className="h-5 w-5" />
-                                <span>Files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original files, and all parsed course data saved to your account can be deleted.</span>
+                                <span>Syllabus files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original syllabus files, and all parsed course data saved to your account can be deleted.</span>
                             </div>
                         </div>
                     </CardContent>

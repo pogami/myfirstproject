@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Settings as SettingsIcon, 
   Database, 
@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/client-simple";
 import { updatePassword, deleteUser } from "firebase/auth";
-import { doc, getDoc, deleteDoc, collection, getDocs, query, where, updateDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, deleteDoc, collection, getDocs, query, where, updateDoc, setDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client-simple";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -37,11 +37,13 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [isClearingChats, setIsClearingChats] = useState(false);
   const [isClearingNotifications, setIsClearingNotifications] = useState(false);
   const [isClearingFiles, setIsClearingFiles] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const autoSyncUnsubscribesRef = useRef<Array<() => void>>([]);
   
   const [settings, setSettings] = useState({
     data: {
@@ -264,6 +266,8 @@ export default function SettingsPage() {
     }
 
     setIsDeletingAccount(true);
+    setShowDeleteAccountDialog(true); // Ensure dialog stays open
+    setShowDeleteAccountDialog(true); // Ensure dialog stays open
     try {
       toast.info("Deleting Account", {
         description: "This may take a moment. Please do not close this page."
@@ -324,6 +328,83 @@ export default function SettingsPage() {
         console.warn('Failed to delete some files (non-critical):', filesError);
       }
 
+      // Delete user's flashcard sets
+      try {
+        const flashcardSetsQuery = query(collection(db, 'flashcardSets'), where('userId', '==', user.uid));
+        const flashcardSetsSnapshot = await getDocs(flashcardSetsQuery);
+        for (const flashcardSetDoc of flashcardSetsSnapshot.docs) {
+          await deleteDoc(flashcardSetDoc.ref);
+        }
+      } catch (flashcardError) {
+        console.warn('Failed to delete some flashcard sets (non-critical):', flashcardError);
+      }
+
+      // Delete user's study sessions
+      try {
+        const studySessionsQuery = query(collection(db, 'studySessions'), where('userId', '==', user.uid));
+        const studySessionsSnapshot = await getDocs(studySessionsQuery);
+        for (const studySessionDoc of studySessionsSnapshot.docs) {
+          await deleteDoc(studySessionDoc.ref);
+        }
+      } catch (studySessionError) {
+        console.warn('Failed to delete some study sessions (non-critical):', studySessionError);
+      }
+
+      // Delete user's whiteboard sessions
+      try {
+        const whiteboardSessionsQuery = query(collection(db, 'whiteboardSessions'), where('userId', '==', user.uid));
+        const whiteboardSessionsSnapshot = await getDocs(whiteboardSessionsQuery);
+        for (const whiteboardSessionDoc of whiteboardSessionsSnapshot.docs) {
+          await deleteDoc(whiteboardSessionDoc.ref);
+        }
+      } catch (whiteboardError) {
+        console.warn('Failed to delete some whiteboard sessions (non-critical):', whiteboardError);
+      }
+
+      // Delete user's scanned documents
+      try {
+        const scannedDocsQuery = query(collection(db, 'scannedDocuments'), where('userId', '==', user.uid));
+        const scannedDocsSnapshot = await getDocs(scannedDocsQuery);
+        for (const scannedDoc of scannedDocsSnapshot.docs) {
+          await deleteDoc(scannedDoc.ref);
+        }
+      } catch (scannedDocsError) {
+        console.warn('Failed to delete some scanned documents (non-critical):', scannedDocsError);
+      }
+
+      // Delete user's courses
+      try {
+        const coursesQuery = query(collection(db, 'courses'), where('userId', '==', user.uid));
+        const coursesSnapshot = await getDocs(coursesQuery);
+        for (const courseDoc of coursesSnapshot.docs) {
+          await deleteDoc(courseDoc.ref);
+        }
+      } catch (coursesError) {
+        console.warn('Failed to delete some courses (non-critical):', coursesError);
+      }
+
+      // Delete user's study schedules
+      try {
+        const studySchedulesQuery = query(collection(db, 'studySchedules'), where('userId', '==', user.uid));
+        const studySchedulesSnapshot = await getDocs(studySchedulesQuery);
+        for (const scheduleDoc of studySchedulesSnapshot.docs) {
+          await deleteDoc(scheduleDoc.ref);
+        }
+      } catch (schedulesError) {
+        console.warn('Failed to delete some study schedules (non-critical):', schedulesError);
+      }
+
+      // Delete user's analytics data (optional - you may want to keep aggregated data)
+      try {
+        const analyticsQuery = query(collection(db, 'analytics'), where('userId', '==', user.uid));
+        const analyticsSnapshot = await getDocs(analyticsQuery);
+        for (const analyticsDoc of analyticsSnapshot.docs) {
+          await deleteDoc(analyticsDoc.ref);
+        }
+      } catch (analyticsError) {
+        console.warn('Failed to delete some analytics data (non-critical):', analyticsError);
+      }
+
       // Delete user document
       try {
         await deleteDoc(doc(db, 'users', user.uid));
@@ -364,6 +445,8 @@ export default function SettingsPage() {
         description: error.message || "Failed to delete account. Please try again or contact support."
       });
       setIsDeletingAccount(false);
+      // Allow closing dialog on error
+      setShowDeleteAccountDialog(false);
     }
   };
 
@@ -541,13 +624,18 @@ export default function SettingsPage() {
           : "Auto sync has been disabled. Data will only sync when you manually refresh."
       });
 
-      // If enabling auto sync, trigger an immediate sync
+      // If enabling auto sync, trigger an immediate sync and set up real-time listeners
       if (enabled) {
         try {
           await triggerDataSync();
+          // Set up real-time sync listeners
+          setupAutoSyncListeners();
         } catch (syncError) {
           console.warn('Sync trigger failed (non-critical):', syncError);
         }
+      } else {
+        // Clean up listeners when disabling
+        cleanupAutoSyncListeners();
       }
     } catch (error: any) {
       console.error('Failed to update sync settings:', error);
@@ -623,19 +711,141 @@ export default function SettingsPage() {
   };
 
   const triggerDataSync = async () => {
+    if (!user || !db) return;
+    
     try {
-      // This would trigger a real sync operation
-      // For now, we'll simulate it by updating the user's last sync time
-      await updateDoc(doc(db, 'users', user!.uid), {
+      toast.info("Syncing Data", {
+        description: "Syncing your data across devices..."
+      });
+
+      // Sync chats from Firestore (only if user is authenticated)
+      try {
+        if (user && user.uid) {
+          const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
+          const chatsSnapshot = await getDocs(chatsQuery);
+          
+          // Dispatch event to chat store to sync chats
+          window.dispatchEvent(new CustomEvent('sync-chats-from-firestore', {
+            detail: { chats: chatsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) }
+          }));
+        }
+      } catch (error: any) {
+        console.warn('Failed to sync chats:', error);
+        // Don't show error if it's a permissions issue - just log it
+        if (error.code !== 'permission-denied') {
+          toast.error("Sync Warning", {
+            description: "Could not sync all chats. Some data may be missing.",
+          });
+        }
+      }
+
+      // Sync user settings
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.settings) {
+            setSettings(prev => ({
+              ...prev,
+              ...userData.settings
+            }));
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to sync settings:', error);
+      }
+
+      // Update last sync time
+      await updateDoc(doc(db, 'users', user.uid), {
         lastSyncTime: new Date().toISOString(),
         syncStatus: 'completed'
+      });
+
+      toast.success("Sync Complete", {
+        description: "Your data has been synced across all devices."
       });
 
       console.log('Data sync completed');
     } catch (error) {
       console.error('Data sync failed:', error);
+      toast.error("Sync Failed", {
+        description: "Could not sync data. Please try again."
+      });
     }
   };
+
+  const setupAutoSyncListeners = () => {
+    if (!user || !db) return;
+    
+    // Clean up existing listeners
+    cleanupAutoSyncListeners();
+    
+    try {
+      // Listen to user document changes for settings sync
+      const userDocRef = doc(db, 'users', user.uid);
+      const unsubscribeUser = onSnapshot(userDocRef, (snap) => {
+        if (snap.exists()) {
+          const userData = snap.data();
+          if (userData.settings) {
+            setSettings(prev => ({
+              ...prev,
+              ...userData.settings
+            }));
+          }
+        }
+      }, (error: any) => {
+        // Silently handle permission errors - don't show toasts for expected permission issues
+        if (error?.code !== 'permission-denied') {
+          console.warn('Auto sync listener error:', error);
+        }
+      });
+      
+      autoSyncUnsubscribesRef.current.push(unsubscribeUser);
+      
+      // Listen to chats collection for real-time sync
+      const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
+      const unsubscribeChats = onSnapshot(chatsQuery, (snapshot) => {
+        // Dispatch event to chat store to sync chats
+        const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        window.dispatchEvent(new CustomEvent('sync-chats-from-firestore', {
+          detail: { chats }
+        }));
+      }, (error: any) => {
+        // Silently handle permission errors - don't show toasts for expected permission issues
+        if (error?.code !== 'permission-denied') {
+          console.warn('Auto sync chats listener error:', error);
+        }
+      });
+      
+      autoSyncUnsubscribesRef.current.push(unsubscribeChats);
+      
+      console.log('Auto sync listeners set up');
+    } catch (error) {
+      console.error('Failed to set up auto sync listeners:', error);
+    }
+  };
+
+  const cleanupAutoSyncListeners = () => {
+    autoSyncUnsubscribesRef.current.forEach(unsubscribe => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('Error cleaning up auto sync listener:', error);
+      }
+    });
+    autoSyncUnsubscribesRef.current = [];
+  };
+
+  // Set up auto sync listeners when component mounts and auto sync is enabled
+  useEffect(() => {
+    if (user && settings.data.autoSync) {
+      setupAutoSyncListeners();
+    }
+    
+    return () => {
+      cleanupAutoSyncListeners();
+    };
+  }, [user, settings.data.autoSync]);
 
   const sendAnalyticsData = async () => {
     try {
@@ -701,14 +911,32 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Display Name</Label>
                 <div className="p-3 rounded-lg bg-muted/30 border">
-                  <span className="text-sm">{user?.displayName || 'Not set'}</span>
+                  <span className="text-sm">
+                    {(() => {
+                      const isGuest = user?.isGuest || user?.isAnonymous;
+                      if (isGuest) {
+                        return user?.displayName || 'Guest User';
+                      }
+                      return user?.displayName || 'Not set';
+                    })()}
+                  </span>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Email Address</Label>
                 <div className="p-3 rounded-lg bg-muted/30 border flex items-center justify-between">
                   <span className="text-sm text-foreground dark:text-foreground">
-                    {showEmail ? user?.email : '••••••••@•••••.com'}
+                    {(() => {
+                      const isGuest = user?.isGuest || user?.isAnonymous || !user?.email;
+                      if (isGuest) {
+                        return showEmail ? (
+                          <span className="text-muted-foreground italic">No email address (Guest account)</span>
+                        ) : (
+                          '••••••••@•••••.com'
+                        );
+                      }
+                      return showEmail ? user?.email : '••••••••@•••••.com';
+                    })()}
                   </span>
                   <Button
                     variant="ghost"
@@ -855,6 +1083,9 @@ export default function SettingsPage() {
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">Auto Sync</Label>
                   <p className="text-xs text-muted-foreground">Automatically sync your data across devices</p>
+                  <p className={`text-xs italic mt-1 ${settings.data.autoSync ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {settings.data.autoSync ? '✓ Active - syncing data in real-time' : '○ Disabled - manual sync only'}
+                  </p>
                 </div>
                 <Switch
                   checked={settings.data.autoSync}
@@ -865,6 +1096,9 @@ export default function SettingsPage() {
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">Analytics</Label>
                   <p className="text-xs text-muted-foreground">Help improve CourseConnect by sharing usage data</p>
+                  <p className={`text-xs italic mt-1 ${settings.data.analytics ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {settings.data.analytics ? '✓ Enabled - helps us improve the platform' : '○ Disabled - no data collected'}
+                  </p>
                  <div className="text-xs text-muted-foreground mt-2 space-y-1">
                    <p><strong>Privacy Protection:</strong></p>
                    <p>• No Personal Info: We don't collect your name, email, or personal details</p>
@@ -885,18 +1119,49 @@ export default function SettingsPage() {
                 <Download className="size-4 mr-2" />
                 Export My Data
               </Button>
-              <Dialog>
+              <Dialog open={showDeleteAccountDialog} onOpenChange={(open) => {
+                // Prevent closing if deletion is in progress
+                if (!isDeletingAccount) {
+                  setShowDeleteAccountDialog(open);
+                }
+              }}>
                 <DialogTrigger asChild>
                   <div className="delete-account-btn flex-1 rounded-md px-4 py-2 cursor-pointer flex items-center justify-center hover:opacity-90 transition-opacity">
                 <Trash2 className="size-4 mr-2" />
                 Delete Account
                   </div>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent onInteractOutside={(e) => {
+                  // Prevent closing by clicking outside if deletion is in progress
+                  if (isDeletingAccount) {
+                    e.preventDefault();
+                  }
+                }} onEscapeKeyDown={(e) => {
+                  // Prevent closing with Escape key if deletion is in progress
+                  if (isDeletingAccount) {
+                    e.preventDefault();
+                  }
+                }}>
                   <DialogHeader>
-                    <DialogTitle className="text-red-600">Delete Account</DialogTitle>
+                    {!isDeletingAccount && (
+                      <button
+                        onClick={() => setShowDeleteAccountDialog(false)}
+                        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-10"
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                      </button>
+                    )}
+                    <DialogTitle className="text-red-600 flex items-center gap-2">
+                      {isDeletingAccount && (
+                        <div className="h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                      )}
+                      Delete Account
+                    </DialogTitle>
                     <DialogDescription>
-                      This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                      {isDeletingAccount 
+                        ? "Deleting your account and all data. Please wait..."
+                        : "This action cannot be undone. This will permanently delete your account and remove all your data from our servers."}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">

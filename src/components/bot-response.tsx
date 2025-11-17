@@ -174,20 +174,37 @@ function breakIntoParagraphs(text: string): string[] {
   
   // If no paragraph breaks, try to create them from long sentences
   if (paragraphs.length === 1) {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    // Use a regex that captures both the sentence and its punctuation
+    // This preserves exclamation marks, question marks, and periods
+    const sentenceRegex = /([^.!?]+)([.!?]+)/g;
+    const sentences: Array<{text: string, punctuation: string}> = [];
+    let match;
+    
+    while ((match = sentenceRegex.exec(text)) !== null) {
+      const sentenceText = match[1].trim();
+      const punctuation = match[2];
+      if (sentenceText.length > 0) {
+        sentences.push({ text: sentenceText, punctuation });
+      }
+    }
+    
+    // If no matches found, return the original text
+    if (sentences.length === 0) {
+      return [text];
+    }
+    
     const result: string[] = [];
     let currentParagraph = '';
     
-    for (const sentence of sentences) {
-      const trimmedSentence = sentence.trim();
-      if (trimmedSentence.length === 0) continue;
+    for (const { text: sentenceText, punctuation } of sentences) {
+      const fullSentence = sentenceText + punctuation;
       
       // If adding this sentence would make the paragraph too long, start a new one
-      if (currentParagraph.length + trimmedSentence.length > 200 && currentParagraph.length > 0) {
+      if (currentParagraph.length + fullSentence.length > 200 && currentParagraph.length > 0) {
         result.push(currentParagraph.trim());
-        currentParagraph = trimmedSentence;
+        currentParagraph = fullSentence + ' ';
       } else {
-        currentParagraph += (currentParagraph ? '. ' : '') + trimmedSentence;
+        currentParagraph += (currentParagraph ? ' ' : '') + fullSentence;
       }
     }
     
@@ -241,16 +258,16 @@ export default function BotResponse({ content, className = "", sources, isSearch
     return (
       <div className={`relative ${className}`}>
         {cleanContent && (
-          <div className="relative bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group shadow-sm mb-4">
+          <div className="relative leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group mb-4">
             {breakIntoParagraphs(cleanContent).map((paragraph, i) => (
               <div key={i} className="mb-3 last:mb-0">
                 {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
               </div>
             ))}
             
-            {/* AI Feedback for text portion */}
+            {/* AI Feedback for text portion - Inline */}
             {messageId && onFeedback && (
-              <div className="absolute bottom-2 right-2 z-10">
+              <div className="inline-block ml-2 mt-2">
                 <AIFeedback messageId={messageId} aiContent={content} onFeedback={onFeedback} />
               </div>
             )}
@@ -291,16 +308,16 @@ export default function BotResponse({ content, className = "", sources, isSearch
     return (
       <div className={`relative ${className}`}>
         {cleanContent && (
-          <div className="relative bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group shadow-sm mb-4">
+          <div className="relative leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group mb-4">
             {breakIntoParagraphs(cleanContent).map((paragraph, i) => (
               <div key={i} className="mb-3 last:mb-0">
                 {paragraph.split("\n").map((line, j) => renderMathLine(line, j))}
               </div>
             ))}
             
-            {/* AI Feedback for text portion */}
+            {/* AI Feedback for text portion - Inline */}
             {messageId && onFeedback && (
-              <div className="absolute bottom-2 right-2 z-10">
+              <div className="inline-block ml-2 mt-2">
                 <AIFeedback messageId={messageId} aiContent={content} onFeedback={onFeedback} />
               </div>
             )}
@@ -345,7 +362,7 @@ export default function BotResponse({ content, className = "", sources, isSearch
   if (isGraph) {
     const data = JSON.parse(content);
     return (
-      <div className={`p-5 bg-muted/50 dark:bg-muted/30 rounded-2xl rounded-tl-md border border-border/40 shadow-sm ${className}`}>
+      <div className={`p-5 ${className}`}>
         <h3 className="text-lg font-semibold mb-2">Graph Output:</h3>
         <LineChart width={400} height={300} data={data}>
           <Line type="monotone" dataKey="y" stroke="#4F46E5" strokeWidth={2} />
@@ -370,9 +387,9 @@ export default function BotResponse({ content, className = "", sources, isSearch
   // const isWebSearch = isSearchRequest === true || (sources && sources.length > 0);
   const isWebSearch = false; // Temporarily disabled
   
-  // Otherwise treat as text + math (original behavior)
+  // Otherwise treat as text + math (original behavior) - NO BUBBLE, integrated text
   return (
-    <div className={`relative bg-muted/50 dark:bg-muted/30 px-5 py-3 rounded-2xl rounded-tl-md border border-border/40 leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group shadow-sm ${className}`}>
+    <div className={`relative leading-relaxed text-sm max-w-full overflow-hidden break-words ai-response group ${className}`}>
       
       {/* Header with Badge - Temporarily hidden */}
       {/* <div className="flex items-center justify-between mb-2">
@@ -400,14 +417,14 @@ export default function BotResponse({ content, className = "", sources, isSearch
         )}
       </div> */}
       
-      {/* Source Icon */}
-      <div className="absolute top-2 right-10 z-10">
+      {/* Source Icon - Inline */}
+      <div className="inline-block ml-2">
         <SourceIcon sources={sources || []} />
       </div>
       
-      {/* Copy Button */}
+      {/* Copy Button - Inline */}
       <button
-        className="absolute top-2 right-2 h-6 w-6 p-0 bg-transparent hover:bg-muted-foreground/10 rounded-md z-10 flex items-center justify-center transition-all duration-200 ease-in-out"
+        className="inline-block ml-2 h-6 w-6 p-0 bg-transparent hover:bg-muted-foreground/10 rounded-md z-10 flex items-center justify-center transition-all duration-200 ease-in-out"
         onClick={copyToClipboard}
         title="Copy message"
       >
@@ -425,9 +442,9 @@ export default function BotResponse({ content, className = "", sources, isSearch
         </div>
       </button>
 
-      {/* AI Feedback */}
+      {/* AI Feedback - Inline */}
       {messageId && onFeedback && (
-        <div className="absolute bottom-2 right-2 z-10">
+        <div className="inline-block ml-2">
           <AIFeedback messageId={messageId} aiContent={content} onFeedback={onFeedback} />
         </div>
       )}

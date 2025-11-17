@@ -203,6 +203,12 @@ CourseConnect AI:`;
         isSearchRequest: isSearchRequest
       });
       
+      // Ensure we have a valid answer
+      if (!aiResult || !aiResult.answer || typeof aiResult.answer !== 'string') {
+        console.warn('AI service returned invalid response:', aiResult);
+        throw new Error('AI service returned invalid response');
+      }
+      
       aiResponse = aiResult.answer;
       selectedModel = aiResult.provider;
       sources = aiResult.sources || []; // Sources come from AI service when it performs search
@@ -237,6 +243,13 @@ CourseConnect AI:`;
       }
     };
 
+    // Ensure aiResponse is always a valid string
+    if (!aiResponse || typeof aiResponse !== 'string') {
+      console.error('aiResponse is invalid:', aiResponse);
+      aiResponse = "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.";
+      selectedModel = 'fallback';
+    }
+    
     aiResponse = sanitizeEmojis(aiResponse);
 
     console.log('Chat API result:', { 

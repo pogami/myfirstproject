@@ -40,6 +40,7 @@ interface InteractiveSyllabusDemoProps {
 
 export default function InteractiveSyllabusDemo({ className, redirectToSignup = true }: InteractiveSyllabusDemoProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +159,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
     if (file.type === 'application/pdf') return 'PDF';
     if (file.type === 'text/plain') return 'TXT';
     if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'DOCX';
+    if (file.type.startsWith('image/')) return 'IMAGE';
     return 'FILE';
   };
 
@@ -173,6 +175,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
     if (file.type === 'application/pdf') return 'bg-red-100 text-red-700 border-red-200';
     if (file.type === 'text/plain') return 'bg-blue-100 text-blue-700 border-blue-200';
     if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'bg-green-100 text-green-700 border-green-200';
+    if (file.type.startsWith('image/')) return 'bg-purple-100 text-purple-700 border-purple-200';
     return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
@@ -222,14 +225,21 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
       'text/plain', 
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/pdf'
+      // Image support temporarily disabled - OCR is slow and unreliable
+      // 'image/jpeg',
+      // 'image/jpg',
+      // 'image/png',
+      // 'image/gif',
+      // 'image/webp'
     ];
     const allowedExtensions = ['.txt', '.docx', '.pdf'];
+    // '.jpg', '.jpeg', '.png', '.gif', '.webp'
     const maxSize = 10 * 1024 * 1024; // 10MB
     
     const fileExtension = selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf('.'));
     
     if (!allowedTypes.includes(selectedFile.type) && !allowedExtensions.includes(fileExtension)) {
-      setError('Please upload a TXT, DOCX, or PDF file. Supported formats: TXT, DOCX, PDF');
+      setError('Please upload a TXT, DOCX, or PDF file.');
       return;
     }
 
@@ -241,6 +251,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
     setFile(selectedFile);
     setError(null);
     setExtractedData(null);
+    setImagePreview(null); // Image support disabled
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -297,6 +308,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
 
   const removeFile = () => {
     setFile(null);
+    setImagePreview(null);
     setExtractedData(null);
     setError(null);
     if (fileInputRef.current) {
@@ -414,7 +426,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
           }
       } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
           try {
-            setProcessingStep('Sending PDF to server for parsing...');
+            setProcessingStep('Preparing PDF for parsing...');
             setProgress(20);
             
             // Send PDF to server-side API route (pdf-parse runs on server only)
@@ -424,7 +436,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
             formData.append('file', file);
             
             setProgress(30);
-            setProcessingStep('Server is parsing PDF...');
+            setProcessingStep('Course Connect is parsing PDF...');
             
             const response = await fetch('/api/test-pdf-upload', {
               method: 'POST',
@@ -485,6 +497,79 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
             setError(pdfError.message || 'Failed to extract text from PDF');
             throw new Error(`Failed to extract text from PDF: ${pdfError.message}. Please try a TXT or DOCX file instead.`);
           }
+      } else if (false && (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|bmp|tiff)$/i.test(file.name))) {
+        // Image support temporarily disabled - OCR is slow and unreliable
+          // Handle images with OCR
+          let timeoutId: NodeJS.Timeout | null = null;
+          try {
+            console.log('✅ Detected as image file, using OCR');
+            setProcessingStep('Extracting text from image with OCR...');
+            setProgress(20);
+            
+            // Use dedicated OCR endpoint for faster, more reliable text extraction
+            const ocrFormData = new FormData();
+            ocrFormData.append('file', file);
+            
+            setProgress(30);
+            setProcessingStep('Extracting text with OCR... (this may take 1-2 minutes, especially on first use)');
+            
+            // Create abort controller with longer timeout for OCR (120 seconds - OCR can be slow)
+            const controller = new AbortController();
+            timeoutId = setTimeout(() => {
+              controller.abort();
+            }, 120000); // 120 seconds timeout for OCR (2 minutes)
+            
+            // Step 1: Extract text using dedicated OCR endpoint
+            const ocrResponse = await fetch('/api/ocr/extract-text', {
+              method: 'POST',
+              body: ocrFormData,
+              signal: controller.signal,
+            });
+            
+            if (timeoutId) clearTimeout(timeoutId);
+            
+            if (!ocrResponse.ok) {
+              let errorData: any = {};
+              try {
+                errorData = await ocrResponse.json();
+              } catch (e) {
+                errorData = { error: `Server error: ${ocrResponse.status}` };
+              }
+              throw new Error(errorData.error || 'Failed to extract text from image');
+            }
+            
+            const ocrResult = await ocrResponse.json();
+            
+            if (!ocrResult.success || !ocrResult.text || ocrResult.text.trim().length === 0) {
+              throw new Error(ocrResult.error || 'No text extracted from image. Please try a clearer image.');
+            }
+            
+            text = ocrResult.text;
+            
+            console.log('✅ Image OCR extraction successful:', {
+              textLength: text.length,
+              fileName: file.name,
+              confidence: ocrResult.confidence,
+              preview: text.substring(0, 100) + '...'
+            });
+            setProgress(50);
+            
+          } catch (imageError: any) {
+            if (timeoutId) clearTimeout(timeoutId);
+            console.error('❌ Image OCR extraction error:', imageError);
+            
+            let errorMessage = 'Failed to extract text from image';
+            if (imageError.name === 'AbortError') {
+              errorMessage = 'OCR processing timed out. The image might be too large or complex. Please try a smaller or simpler image.';
+            } else if (imageError.message.includes('Failed to fetch')) {
+              errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+            } else {
+              errorMessage = imageError.message || 'Failed to extract text from image';
+            }
+            
+            setError(errorMessage);
+            throw new Error(`${errorMessage} Please try a clearer image, smaller file size, or a PDF/DOCX file.`);
+          }
       } else {
         throw new Error('Unsupported file format. Please upload a TXT, DOCX, or PDF file.');
       }
@@ -495,7 +580,8 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
       }
 
       // Process all supported file types with AI
-      if (file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+      if (file.type === 'text/plain' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf') || isImage) {
       // Step 2: Validate syllabus content (with bypass option for testing)
       setProcessingStep('Validating syllabus content...');
       setProgress(60);
@@ -941,7 +1027,17 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
               <div className="p-4 bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg border border-border/50">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="text-sm font-semibold text-primary">{getFileTypeText(file)}</div>
+                    {imagePreview ? (
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-border/50 flex-shrink-0">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-sm font-semibold text-primary">{getFileTypeText(file)}</div>
+                    )}
                     <div>
                       <p className="font-medium text-foreground">{file.name}</p>
                       <div className="flex items-center gap-2 mt-1">
@@ -958,6 +1054,17 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                     Remove
                   </Button>
                 </div>
+                
+                {/* Full Image Preview for images */}
+                {imagePreview && (
+                  <div className="mt-4 rounded-lg overflow-hidden border border-border/50 bg-muted/20">
+                    <img 
+                      src={imagePreview} 
+                      alt="Syllabus preview" 
+                      className="w-full h-auto max-h-96 object-contain"
+                    />
+                  </div>
+                )}
                 
                 {/* Processing Time Estimate */}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1004,7 +1111,6 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
               >
                 {isProcessing ? (
                   <>
-                    <Sparkles className="size-4 mr-2 animate-spin" />
                     Processing...
                   </>
                 ) : (
@@ -1290,7 +1396,6 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                           <span className="relative z-10 flex items-center gap-3">
-                            <Sparkles className="size-6" />
                             Get Started Free
                             <ArrowRight className="size-6" />
                           </span>
@@ -1349,7 +1454,7 @@ export default function InteractiveSyllabusDemo({ className, redirectToSignup = 
               <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <div className="flex items-center gap-2 text-sm text-blue-900 dark:text-blue-100">
                   <Shield className="h-5 w-5" />
-                  <span>Files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original files, and all parsed course data saved to your account can be deleted.</span>
+                  <span>Syllabus files are processed on our server to extract text; only the extracted text is sent for AI parsing. We never store original syllabus files, and all parsed course data saved to your account can be deleted.</span>
                 </div>
               </div>
             </div>

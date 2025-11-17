@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles, LogOut, Globe, Zap, UserPlus } from "lucide-react";
+import { Upload, BookUser, MessageSquare, Users, Calendar, TrendingUp, ArrowRight, Sparkles, LogOut, Globe, Zap, UserPlus, Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
 import { useChatStore } from "@/hooks/use-chat-store";
@@ -21,10 +21,10 @@ export default function ClassOverviewPage() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [transitioningTo, setTransitioningTo] = useState("");
     const [liveStats, setLiveStats] = useState({
-        totalUsers: 0,
-        activeNow: 0,
+        totalClasses: 0,
+        upcomingExams: 0,
         totalMessages: 0,
-        newJoins: 0
+        assignmentsDue: 0
     });
     const [recentJoins, setRecentJoins] = useState<Array<{name: string, time: string, class: string}>>([]);
 
@@ -49,28 +49,51 @@ export default function ClassOverviewPage() {
                 ).length;
             }, 0);
 
-            // Total unique users (estimate based on chat members)
-            const totalUsers = Object.values(chats).reduce((total, chat) => {
-                return total + (chat.members?.length || 1); // At least 1 user per chat
-            }, 0);
+            // Count class chats
+            const totalClasses = classChats.length;
 
-            // Active users (users who sent messages in last hour)
-            const oneHourAgo = Date.now() - (60 * 60 * 1000);
-            const activeUsers = Object.values(chats).reduce((total, chat) => {
-                const recentMessages = (chat.messages || []).filter(msg => 
-                    msg.timestamp && msg.timestamp > oneHourAgo
-                );
-                return total + new Set(recentMessages.map(msg => msg.sender)).size;
-            }, 0);
+            // Count upcoming exams (within next 30 days)
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+            const now = new Date();
+            
+            let upcomingExams = 0;
+            Object.values(chats).forEach(chat => {
+                if (chat.chatType === 'class' && chat.courseData?.exams) {
+                    chat.courseData.exams.forEach(exam => {
+                        if (exam.date) {
+                            const examDate = new Date(exam.date);
+                            if (examDate >= now && examDate <= thirtyDaysFromNow) {
+                                upcomingExams++;
+                            }
+                        }
+                    });
+                }
+            });
 
-            // New joins (estimate based on recent chat activity)
-            const newJoins = Math.max(0, Math.floor(Math.random() * 3)); // Keep minimal random for demo
+            // Count assignments due (within next 7 days)
+            const sevenDaysFromNow = new Date();
+            sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+            
+            let assignmentsDue = 0;
+            Object.values(chats).forEach(chat => {
+                if (chat.chatType === 'class' && chat.courseData?.assignments) {
+                    chat.courseData.assignments.forEach(assignment => {
+                        if (assignment.dueDate) {
+                            const dueDate = new Date(assignment.dueDate);
+                            if (dueDate >= now && dueDate <= sevenDaysFromNow) {
+                                assignmentsDue++;
+                            }
+                        }
+                    });
+                }
+            });
 
             setLiveStats({
-                totalUsers: Math.max(totalUsers, 1),
-                activeNow: Math.max(activeUsers, 1),
+                totalClasses: totalClasses,
+                upcomingExams: upcomingExams,
                 totalMessages: totalMessagesToday,
-                newJoins: newJoins
+                assignmentsDue: assignmentsDue
             });
         };
 
@@ -78,7 +101,7 @@ export default function ClassOverviewPage() {
         const interval = setInterval(calculateRealStats, 5000); // Update every 5 seconds
 
         return () => clearInterval(interval);
-    }, [chats]);
+    }, [chats, classChats.length]);
 
     // Subscribe to public chat for real stats
     useEffect(() => {
@@ -172,25 +195,72 @@ export default function ClassOverviewPage() {
             msg.timestamp && new Date(msg.timestamp) >= todayStart
         ).length;
 
-        // Last active time
+        // Last active time and status
         const lastMessage = chat.messages?.[chat.messages.length - 1];
         let lastActive = '—';
+        let status: 'active' | 'recent' | 'inactive' = 'inactive';
+        let statusText = 'Inactive';
+        let statusClass = 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400';
+        
         if (lastMessage?.timestamp) {
             const timeDiff = Date.now() - lastMessage.timestamp;
-            if (timeDiff < 60000) lastActive = 'just now';
-            else if (timeDiff < 3600000) lastActive = `${Math.floor(timeDiff / 60000)}m ago`;
-            else if (timeDiff < 86400000) lastActive = `${Math.floor(timeDiff / 3600000)}h ago`;
-            else lastActive = `${Math.floor(timeDiff / 86400000)}d ago`;
+            if (timeDiff < 60000) {
+                lastActive = 'just now';
+                status = 'active';
+                statusText = 'Active';
+                statusClass = 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+            } else if (timeDiff < 3600000) {
+                lastActive = `${Math.floor(timeDiff / 60000)}m ago`;
+                status = 'active';
+                statusText = 'Active';
+                statusClass = 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
+            } else if (timeDiff < 86400000) {
+                lastActive = `${Math.floor(timeDiff / 3600000)}h ago`;
+                status = 'recent';
+                statusText = 'Recent';
+                statusClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+            } else if (timeDiff < 604800000) {
+                lastActive = `${Math.floor(timeDiff / 86400000)}d ago`;
+                status = 'recent';
+                statusText = 'Recent';
+                statusClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
+            } else {
+                lastActive = `${Math.floor(timeDiff / 86400000)}d ago`;
+                status = 'inactive';
+                statusText = 'Inactive';
+                statusClass = 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400';
+            }
         }
 
-        // Estimate students enrolled (based on unique senders + some buffer)
-        const uniqueSenders = new Set((chat.messages || []).map((msg: any) => msg.sender)).size;
-        const studentsEnrolled = Math.max(uniqueSenders + Math.floor(Math.random() * 5), 1);
+        // Calculate real students enrolled (use members array or count unique user IDs from messages)
+        let studentsEnrolled = 1; // Default to 1 (at least the current user)
+        
+        if (chat.members && Array.isArray(chat.members)) {
+            // Use actual members array if available
+            studentsEnrolled = Math.max(chat.members.length, 1);
+        } else {
+            // Count unique user IDs from messages (excluding bot messages)
+            const uniqueUserIds = new Set(
+                (chat.messages || [])
+                    .filter((msg: any) => msg.sender === 'user' && msg.userId)
+                    .map((msg: any) => msg.userId)
+            );
+            // Also count unique senders who are users (for backward compatibility)
+            const uniqueUserSenders = new Set(
+                (chat.messages || [])
+                    .filter((msg: any) => msg.sender === 'user')
+                    .map((msg: any) => msg.userId || msg.name || msg.sender)
+            );
+            studentsEnrolled = Math.max(uniqueUserIds.size || uniqueUserSenders.size, 1);
+        }
 
         return {
             students: studentsEnrolled,
             activity: messagesToday,
-            lastActive: lastActive
+            lastActive: lastActive,
+            status: status,
+            statusText: statusText,
+            statusClass: statusClass
         };
     };
 
@@ -236,7 +306,7 @@ export default function ClassOverviewPage() {
                                     <BookUser className="size-4 sm:size-5 text-indigo-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-indigo-600">{classChats.length}</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-indigo-600">{liveStats.totalClasses}</p>
                                     <p className="text-xs sm:text-sm text-muted-foreground">Your Classes</p>
                                 </div>
                             </div>
@@ -247,11 +317,11 @@ export default function ClassOverviewPage() {
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
-                                    <Zap className="size-4 sm:size-5 text-green-600" />
+                                    <Calendar className="size-4 sm:size-5 text-green-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-green-600">{liveStats.activeNow}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Active Now</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-green-600">{liveStats.upcomingExams}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Upcoming Exams</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -275,11 +345,11 @@ export default function ClassOverviewPage() {
                         <CardContent className="p-4 sm:p-6">
                             <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="p-1.5 sm:p-2 rounded-lg bg-orange-500/10">
-                                    <UserPlus className="size-4 sm:size-5 text-orange-600" />
+                                    <FileText className="size-4 sm:size-5 text-orange-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-orange-600">+{liveStats.newJoins}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">New Joins</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-orange-600">{liveStats.assignmentsDue}</p>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">Due This Week</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -292,9 +362,12 @@ export default function ClassOverviewPage() {
                 {/* Classes Grid */}
                 {classChats.length > 0 ? (
                     <div>
-                        <div className="flex items-center gap-3 mb-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-6">
                             <h2 className="text-2xl font-bold tracking-tight">Your Classes</h2>
-                            <Badge variant="outline" className="text-xs">Click to Join</Badge>
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">Click to Join</Badge>
+                                <p className="text-xs text-muted-foreground hidden sm:block">Click any class card to open its chat</p>
+                            </div>
                         </div>
                         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                             {classChats.map(([id, chat]) => {
@@ -320,8 +393,8 @@ export default function ClassOverviewPage() {
                                                         </CardDescription>
                                                     </div>
                                                 </div>
-                                                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                                                    Active
+                                                <Badge variant="secondary" className={stats.statusClass}>
+                                                    {stats.statusText}
                                                 </Badge>
                                             </div>
                                         </CardHeader>
@@ -337,10 +410,10 @@ export default function ClassOverviewPage() {
                                                 
                                                 <div className="flex items-center justify-between text-sm">
                                                     <div className="flex items-center gap-2">
-                                                        <Users className="size-4 text-muted-foreground" />
-                                                        <span className="text-muted-foreground">Activity</span>
+                                                        <MessageSquare className="size-4 text-muted-foreground" />
+                                                        <span className="text-muted-foreground">Messages Today</span>
                                                     </div>
-                                                    <span className="font-medium">{stats.activity} today</span>
+                                                    <span className="font-medium">{stats.activity}</span>
                                                 </div>
                                                 
                                                 <div className="flex items-center justify-between text-sm">
@@ -416,12 +489,12 @@ export default function ClassOverviewPage() {
                         <CardContent className="p-8 text-center">
                             <div className="flex justify-center mb-4">
                                 <div className="p-3 rounded-xl bg-primary/10">
-                                    <Sparkles className="size-8 text-primary" />
+                                    <Plus className="size-8 text-primary" />
                                 </div>
                             </div>
                             <h3 className="text-xl font-bold mb-2">Want to Add More Classes?</h3>
                             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                                Upload additional syllabi to discover more study groups and connect with more classmates.
+                                Upload additional syllabi to create course-specific AI chats, track assignments and exams, and get personalized study help for each class.
                             </p>
                             <Button asChild size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
                                 <Link href="/dashboard/upload">

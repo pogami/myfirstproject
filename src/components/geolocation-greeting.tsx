@@ -7,43 +7,66 @@ interface GeolocationGreetingProps {
   fallbackName?: string;
 }
 
-const motivationalMessages = [
-  "Ready to study",
-  "Let's get started",
-  "Time to learn",
-  "You've got this",
-  "Let's make progress",
-  "Ready to ace it",
-  "Time to shine",
-  "Let's do this",
-  "Ready to conquer",
-  "Let's level up",
-  "Time to excel",
-  "Ready to succeed",
-  "Let's crush it",
-  "Time to grow",
-  "Ready to learn",
-  "Let's build knowledge",
-  "Time to focus",
-  "Ready to achieve",
-  "Let's make it happen",
-  "Ready to succeed"
-];
+// More engaging, ChatGPT-style greetings based on time of day
+const getEngagingGreeting = (timeGreeting: string, displayName: string): string => {
+  const hour = new Date().getHours();
+  const name = displayName === 'Guest' ? '' : ` ${displayName}`;
+  
+  // Morning (5 AM - 12 PM)
+  if (hour >= 5 && hour < 12) {
+    const morningGreetings = [
+      `Good morning${name}! Ready to tackle today's studies?`,
+      `Good morning${name}! What would you like to learn today?`,
+      `Good morning${name}! How can I help you succeed today?`,
+      `Good morning${name}! Let's make today productive.`,
+      `Good morning${name}! What's on your study agenda?`,
+    ];
+    return morningGreetings[Math.floor(Math.random() * morningGreetings.length)];
+  }
+  
+  // Afternoon (12 PM - 5 PM)
+  if (hour >= 12 && hour < 17) {
+    const afternoonGreetings = [
+      `Good afternoon${name}! How can I help you learn?`,
+      `Good afternoon${name}! What would you like to explore?`,
+      `Good afternoon${name}! Ready to dive into your studies?`,
+      `Good afternoon${name}! How can I assist you today?`,
+      `Good afternoon${name}! What's on your mind?`,
+    ];
+    return afternoonGreetings[Math.floor(Math.random() * afternoonGreetings.length)];
+  }
+  
+  // Evening (5 PM - 9 PM)
+  if (hour >= 17 && hour < 21) {
+    const eveningGreetings = [
+      `Good evening${name}! How can I help you study?`,
+      `Good evening${name}! What would you like to work on?`,
+      `Good evening${name}! Ready to continue learning?`,
+      `Good evening${name}! How can I assist you tonight?`,
+      `Good evening${name}! What's your focus for this evening?`,
+    ];
+    return eveningGreetings[Math.floor(Math.random() * eveningGreetings.length)];
+  }
+  
+  // Night (9 PM - 5 AM)
+  const nightGreetings = [
+    `Good evening${name}! Still studying? I'm here to help.`,
+    `Good evening${name}! What would you like to learn?`,
+    `Good evening${name}! How can I assist you?`,
+    `Good evening${name}! Ready to continue?`,
+    `Good evening${name}! What's on your mind?`,
+  ];
+  return nightGreetings[Math.floor(Math.random() * nightGreetings.length)];
+};
 
 export default function GeolocationGreeting({ 
   userName, 
   fallbackName = 'Guest' 
 }: GeolocationGreetingProps) {
-  const [greeting, setGreeting] = useState('Welcome back');
-  const [motivationalMessage, setMotivationalMessage] = useState('Ready to study');
+  const [greeting, setGreeting] = useState('Good morning');
+  const [displayText, setDisplayText] = useState('Good morning! How can I help you today?');
   const [isLoading, setIsLoading] = useState(true);
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
-
-  // Select a random motivational message on mount
-  useEffect(() => {
-    const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
-    setMotivationalMessage(randomMessage);
-  }, []);
 
   // Get user's current time based on their location
   const getCurrentTime = async (lat: number, lon: number) => {
@@ -86,6 +109,8 @@ export default function GeolocationGreeting({
       const localTime = new Date();
       const timeBasedGreeting = getGreeting(localTime);
       setGreeting(timeBasedGreeting);
+      const displayName = userName || fallbackName;
+      setDisplayText(getEngagingGreeting(timeBasedGreeting, displayName));
       setIsLoading(false);
       return;
     }
@@ -99,12 +124,16 @@ export default function GeolocationGreeting({
           const currentTime = await getCurrentTime(latitude, longitude);
           const timeBasedGreeting = getGreeting(currentTime);
           setGreeting(timeBasedGreeting);
+          const displayName = userName || fallbackName;
+          setDisplayText(getEngagingGreeting(timeBasedGreeting, displayName));
         } catch (error) {
           console.warn('Error getting time-based greeting, using local time:', error);
           // Fallback to local time
           const localTime = new Date();
           const timeBasedGreeting = getGreeting(localTime);
           setGreeting(timeBasedGreeting);
+          const displayName = userName || fallbackName;
+          setDisplayText(getEngagingGreeting(timeBasedGreeting, displayName));
         }
         
         setIsLoading(false);
@@ -115,6 +144,8 @@ export default function GeolocationGreeting({
         const localTime = new Date();
         const timeBasedGreeting = getGreeting(localTime);
         setGreeting(timeBasedGreeting);
+        const displayName = userName || fallbackName;
+        setDisplayText(getEngagingGreeting(timeBasedGreeting, displayName));
         setIsLoading(false);
       },
       {
@@ -129,12 +160,16 @@ export default function GeolocationGreeting({
     getCurrentLocation();
   }, []);
 
-  const displayName = userName || fallbackName;
-
-  const displayText = `${motivationalMessage}, ${displayName}?`;
+  // Update display text when userName changes
+  useEffect(() => {
+    if (!isLoading) {
+      const displayName = userName || fallbackName;
+      setDisplayText(getEngagingGreeting(greeting, displayName));
+    }
+  }, [userName, fallbackName, greeting, isLoading]);
 
   return (
-    <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mb-1 sm:mb-2 leading-tight">
+    <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-tight mb-1 sm:mb-2 leading-tight text-gray-900 dark:text-white">
       {displayText}
     </h1>
   );

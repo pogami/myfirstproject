@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { OllamaModelManager } from '@/lib/ollama-model-manager';
+import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
 
 // Enhanced web search function for real-time information
 async function searchWeb(query: string): Promise<string> {
@@ -120,56 +120,32 @@ CourseConnect AI:`;
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Try Ollama first with smart model selection
           let aiResponse: string;
           let selectedModel: string;
+          let sources: any[] = [];
           
           try {
-            // Smart model selection - automatically picks best available model
-            selectedModel = OllamaModelManager.getBestGeneralModel();
+            // Use the same AI service as the regular endpoint (Gemini + OpenAI fallback)
+            console.log('Streaming: Using Gemini + OpenAI fallback system');
             
-            if (!selectedModel) {
-              throw new Error('No Ollama models available');
-            }
-
-            console.log(`Streaming with Ollama model: ${selectedModel}`);
-            
-            // Add timeout to prevent slow responses
-            const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Ollama timeout')), 15000); // 15 second timeout
+            const aiResult = await provideStudyAssistanceWithFallback({
+              question: cleanedQuestion,
+              context: context || 'General Chat',
+              conversationHistory: conversationHistory || [],
+              isSearchRequest: needsCurrentInfo
             });
             
-            const ollamaPromise = fetch('http://localhost:11434/api/generate', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: selectedModel,
-                prompt: prompt,
-                stream: false,
-                options: {
-                  temperature: 0.7, // Slightly less random, faster response
-                  num_tokens: 500, // Shorter responses, much faster
-                  num_ctx: 2048, // Smaller context window, faster processing
-                  top_p: 0.9, // Slightly less sampling, faster
-                  top_k: 20, // Reduce choices, faster generation
-                  num_batch: 1, // Process in smaller batches
-                  num_thread: 4 // Use fewer threads for faster response
-                }
-              })
-            });
-
-            const ollamaResponse = await Promise.race([ollamaPromise, timeoutPromise]) as Response;
-            
-            if (ollamaResponse.ok) {
-              const ollamaResult = await ollamaResponse.json();
-              aiResponse = ollamaResult.response;
-            } else {
-              throw new Error('Ollama not available or failed');
+            // Ensure we have a valid answer
+            if (!aiResult || !aiResult.answer || typeof aiResult.answer !== 'string') {
+              throw new Error('AI service returned invalid response');
             }
+            
+            aiResponse = aiResult.answer;
+            selectedModel = aiResult.provider || 'fallback';
+            sources = aiResult.sources || [];
+            
           } catch (error) {
-            console.log('Ollama failed in stream, using intelligent fallback response');
+            console.log('AI service failed in stream, using intelligent fallback response:', error);
             
             // Intelligent fallback that can handle current events if search succeeded
             const lowerQuestion = cleanedQuestion.toLowerCase();
@@ -190,18 +166,50 @@ CourseConnect AI:`;
             } else {
               aiResponse = "That's an interesting question! I'd normally chat about this with you, but I'm having some technical issues right now. Want to talk about academics, ask about homework, or try asking something else? I'm here to help once we get this sorted out!";
             }
+            selectedModel = 'fallback';
+          }
+          
+          // Ensure aiResponse is always a valid string
+          if (!aiResponse || typeof aiResponse !== 'string') {
+            console.error('aiResponse is invalid, using fallback');
+            aiResponse = "I'm having trouble processing your request right now. Please try again in a moment.";
+            selectedModel = 'fallback';
           }
 
-          // Send the complete response
-          const responseData = {
-            success: true,
-            answer: aiResponse,
-            provider: selectedModel || 'fallback',
-            shouldRespond: true,
-            timestamp: new Date().toISOString()
-          };
+          // Stream the response character by character for real-time typing effect
+          const chunkSize = 3; // Send 3 characters at a time for smooth streaming
+          let index = 0;
+          
+          // Send initial status
+          controller.enqueue(new TextEncoder().encode(
+            JSON.stringify({ type: 'status', message: 'Generating response...' }) + '\n'
+          ));
 
-          controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(responseData)}\n\n`));
+          // Stream response in chunks
+          while (index < aiResponse.length) {
+            const chunk = aiResponse.slice(index, index + chunkSize);
+            index += chunkSize;
+            
+            // Send content chunk
+            controller.enqueue(new TextEncoder().encode(
+              JSON.stringify({ type: 'content', content: chunk }) + '\n'
+            ));
+            
+            // Small delay to simulate real-time streaming (adjust for speed)
+            await new Promise(resolve => setTimeout(resolve, 20)); // 20ms delay = ~50 chars/sec
+          }
+
+          // Send completion with full response and metadata
+          controller.enqueue(new TextEncoder().encode(
+            JSON.stringify({ 
+              type: 'done', 
+              fullResponse: aiResponse,
+              answer: aiResponse,
+              provider: selectedModel || 'fallback',
+              sources: sources.length > 0 ? sources : undefined
+            }) + '\n'
+          ));
+          
           controller.close();
 
         } catch (error) {
