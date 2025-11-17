@@ -438,7 +438,7 @@ export default function AboutPage() {
               {
                 year: "Aug 2025",
                 title: "The Beginning",
-                description: "Started CourseConnect as a solo developer, inspired by students' struggles to find study partners, get help with difficult concepts, and stay organized in their academic journey. Built the foundation with AI-powered chat and syllabus analysis.",
+                description: "CourseConnect was born from a real classroom experience: a course with inconsistent instruction, fragmented communication where students were left on read, and low engagement due to non-mandatory attendance. Facing these challenges firsthand, I built CourseConnect to provide reliable AI-powered support, ensuring every student has access to quality tutoring and study resources regardless of class dynamics.",
                 icon: Lightbulb,
                 side: "left"
               },

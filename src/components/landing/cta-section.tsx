@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Users, BarChart3 } from 'lucide-react';
+import { ArrowRight, Users } from 'lucide-react';
 
 export function CTASection() {
   return (
@@ -25,7 +25,6 @@ export function CTASection() {
         >
           {/* Badge */}
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
-            <Sparkles className="h-4 w-4 mr-2" />
             AI-Powered Study Platform
           </div>
 
@@ -73,18 +72,6 @@ export function CTASection() {
               <Users className="mr-2 h-5 w-5" />
               Join Now
             </Button>
-          </div>
-
-          {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-xl mx-auto">
-            <div className="flex items-center justify-center gap-2 text-white/90">
-              <Sparkles className="h-5 w-5" />
-              <span className="text-sm">AI-Powered Tutoring</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 text-white/90">
-              <BarChart3 className="h-5 w-5" />
-              <span className="text-sm">Study Analytics</span>
-            </div>
           </div>
         </motion.div>
       </div>

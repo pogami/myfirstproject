@@ -149,7 +149,7 @@ export function Footer() {
               <span className="text-xl font-bold">CourseConnect <span className="text-blue-600 dark:text-blue-500">AI</span></span>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-              Upload your syllabus, chat with AI tutors, get assignment reminders, and create flashcards to ace your courses.
+              Get instant AI help, analyze your syllabus, and ace your courses with personalized study tools.
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social) => (

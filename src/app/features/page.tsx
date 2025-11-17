@@ -835,7 +835,7 @@ export default function FeaturesPage() {
               className="flex flex-wrap justify-center gap-8 mb-12"
             >
               {[
-                { number: "AI", label: "Powered", icon: Sparkles },
+                { number: "24/7", label: "Tutoring", icon: MessageCircle },
                 { number: "Syllabus", label: "Upload", icon: Upload },
                 { number: "Instant", label: "Chat", icon: MessageSquare },
                 { number: "Smart", label: "Notifications", icon: Bell }
