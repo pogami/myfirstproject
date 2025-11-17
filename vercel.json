@@ -10,7 +10,7 @@
   },
   "functions": {
     "src/app/api/parse-pdf/route.ts": {
-      "runtime": "nodejs22.x",
+      "runtime": "@vercel/node@3.0.0",
       "memory": 2048,
       "maxDuration": 60
     }
