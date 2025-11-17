@@ -15,7 +15,7 @@
       "maxDuration": 60
     },
     "src/app/api/**/*.ts": {
-      "runtime": "@vercel/node@3.0.0"
+      "runtime": "nodejs22.x"
     }
   },
   "rewrites": [
