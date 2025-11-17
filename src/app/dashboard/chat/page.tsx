@@ -103,6 +103,8 @@ export default function ChatPage() {
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const autoScrollRef = useRef(true);
+    const lastScrollTimeRef = useRef(0);
     const [showResetDialog, setShowResetDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showSummaryDialog, setShowSummaryDialog] = useState(false);
@@ -226,6 +228,86 @@ export default function ChatPage() {
         // For logged-in users, we could add similar logic here
         // but we'd need to use the useNotifications hook
     }, [chats, isGuest]);
+
+    // Track scroll position to determine if we should auto-scroll
+    useEffect(() => {
+        const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+        if (!viewport) return;
+
+        const handleScroll = () => {
+            const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+            // User is at bottom if within 150px
+            autoScrollRef.current = distanceFromBottom <= 150;
+        };
+
+        viewport.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // Check initial position
+        
+        return () => {
+            viewport.removeEventListener('scroll', handleScroll);
+        };
+    }, [currentTab]);
+
+    // Enable auto-scroll when streaming starts
+    useEffect(() => {
+        if (streamingMessageId && !streamingResponse) {
+            // Just started streaming, enable auto-scroll
+            autoScrollRef.current = true;
+        }
+    }, [streamingMessageId, streamingResponse]);
+
+    // Auto-scroll during streaming - only if user is at bottom
+    useEffect(() => {
+        if (!streamingResponse) return;
+        
+        // Only scroll if user is at bottom
+        if (!autoScrollRef.current) return;
+        
+        const now = Date.now();
+        const timeSinceLastScroll = now - lastScrollTimeRef.current;
+        
+        // Throttle: only scroll if at least 150ms have passed since last scroll
+        if (timeSinceLastScroll < 150) return;
+        
+        lastScrollTimeRef.current = now;
+        
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+            // Double-check user hasn't scrolled up
+            if (!autoScrollRef.current) return;
+            
+            const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+            if (viewport) {
+                // Check if we're already at bottom (within 10px) to avoid unnecessary scrolls
+                const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+                if (distanceFromBottom > 10) {
+                    viewport.scrollTo({
+                        top: viewport.scrollHeight,
+                        behavior: 'auto'
+                    });
+                }
+            } else if (messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+            }
+        });
+    }, [streamingResponse]);
+
+    // Clear streaming display when message appears in store to prevent overlap
+    useEffect(() => {
+        if (!streamingMessageId || !streamingResponse) return;
+        
+        const currentChat = chats[currentTab || 'private-general-chat'];
+        const messageExists = currentChat?.messages?.some(
+            msg => msg.id === streamingMessageId && msg.sender === 'bot'
+        );
+        
+        if (messageExists) {
+            // Message is now in store, clear streaming state immediately
+            setStreamingResponse("");
+            setStreamingMessageId(null);
+            setIsStreamingComplete(false);
+        }
+    }, [chats, currentTab, streamingMessageId, streamingResponse]);
 
     // Pusher integration disabled - real-time features coming soon
     const pusherConnected = false;
@@ -1146,19 +1228,16 @@ export default function ChatPage() {
                         isSearchRequest: searchModeEnabledBeforeAPI || false
                     };
 
-                    // Mark streaming as complete - this will show all UI elements
-                    setIsStreamingComplete(true);
-                    
-                    // Add message to chat store so it persists (won't disappear when new message is sent)
+                    // Add message to chat store first so it appears in the list
                     await addMessage(currentTab || 'private-general-chat', aiMessage);
                     
-                    // Clear streaming state after a brief delay to allow the message to appear in the list
-                    // This ensures smooth transition from streaming display to message in list
-                    setTimeout(() => {
+                    // Clear streaming state immediately to prevent overlap
+                    // Use requestAnimationFrame to ensure DOM has updated
+                    requestAnimationFrame(() => {
                         setStreamingResponse("");
                         setStreamingMessageId(null);
                         setIsStreamingComplete(false);
-                    }, 100);
+                    });
                     
                     // Update metadata if provided
                     if (metadata && currentTab) {
@@ -1834,13 +1913,40 @@ export default function ChatPage() {
             }
             
             // Prepare chat content for summarization
+            // Include all messages except system messages and empty messages
+            console.log('📝 Generating summary for chat:', currentTab, 'Messages count:', messages.length);
+            console.log('📝 Message senders:', messages.map((m: any) => m.sender));
+            
             const chatContent = messages
+                .filter((msg: any) => {
+                    // Filter out system messages and welcome messages
+                    if (msg.sender === 'system') {
+                        console.log('⏭️ Filtering out system message');
+                        return false;
+                    }
+                    if (msg.sender === 'bot' && msg.text?.includes('Welcome')) {
+                        console.log('⏭️ Filtering out welcome message');
+                        return false;
+                    }
+                    
+                    // Include messages with actual content
+                    const text = msg.text || msg.content || '';
+                    const hasContent = text.trim().length > 0;
+                    if (!hasContent) {
+                        console.log('⏭️ Filtering out empty message from sender:', msg.sender);
+                    }
+                    return hasContent;
+                })
                 .map((msg: any) => {
+                    // Include all message types: user, bot, ai
                     const sender = msg.sender === 'user' ? 'You' : 'AI';
                     const text = msg.text || msg.content || '';
+                    console.log('✅ Including message from:', msg.sender, 'Length:', text.length);
                     return `${sender}: ${text}`;
                 })
                 .join('\n\n');
+            
+            console.log('📝 Final chat content length:', chatContent.length, 'characters');
             
             const response = await fetch('/api/chat/summarize', {
                 method: 'POST',

@@ -106,58 +106,69 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="fixed bottom-6 right-6 z-[100] w-[320px] max-w-[85vw] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-6 right-6 z-[100] w-[360px] max-w-[85vw] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm p-5"
           >
             {!isSubmitted ? (
               <>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {rating === 'positive' ? '👍 Glad it helped!' : '👎 Help us improve'}
-                    </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    {rating === 'positive' ? (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                        <ThumbsUp className="w-5 h-5 text-white" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <ThumbsDown className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                        {rating === 'positive' ? 'Glad it helped!' : 'Help us improve'}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {rating === 'positive'
+                          ? 'What did you like? (optional)'
+                          : 'What could be better? (optional)'}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-1.5 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  {rating === 'positive'
-                    ? 'What did you like? (optional)'
-                    : 'What could be better? (optional)'}
-                </p>
 
                 <Textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder={
                     rating === 'positive'
-                      ? 'E.g., Clear explanation, good examples...'
-                      : 'E.g., Too complex, missing examples...'
+                      ? 'E.g., Clear explanation, helpful examples, saved me time...'
+                      : 'E.g., Too complex, missing context, could be clearer...'
                   }
-                  className="text-sm min-h-[60px] max-h-[100px] mb-2 resize-none bg-gray-50 dark:bg-gray-800"
+                  className="text-sm min-h-[80px] max-h-[120px] mb-4 resize-none bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   autoFocus
                 />
 
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
                   <Button
                     onClick={handleSubmit}
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/30 font-medium"
                   >
                     Submit Feedback
                   </Button>
                   <Button
                     onClick={handleSkip}
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     Skip
                   </Button>
@@ -167,16 +178,25 @@ export function AIFeedback({ messageId, aiContent, onFeedback }: AIFeedbackProps
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="py-4 flex items-center justify-center gap-3"
+                transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                className="py-6 flex flex-col items-center justify-center gap-4"
               >
-                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring", damping: 15, stiffness: 300 }}
+                  className="w-16 h-16 bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 rounded-full flex items-center justify-center shadow-xl shadow-green-500/40"
+                >
+                  <CheckCircle2 className="w-8 h-8 text-white" strokeWidth={2.5} />
+                </motion.div>
+                <div className="text-center">
+                  <p className="font-semibold text-lg text-gray-900 dark:text-white mb-1">
+                    Thank you!
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Your feedback helps us improve
+                  </p>
                 </div>
-                <p className="font-semibold text-base text-gray-900 dark:text-white">
-                  Thanks for your feedback and improving the site!
-                </p>
               </motion.div>
             )}
           </motion.div>

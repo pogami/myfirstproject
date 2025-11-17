@@ -14,13 +14,28 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Limit message length to avoid token limits
-    const maxMessages = 100;
-    const messageText = typeof messages === 'string' 
-      ? messages.substring(0, 10000) // Limit to 10k chars if it's a string
-      : Array.isArray(messages)
-      ? messages.slice(-maxMessages).join('\n\n')
-      : '';
+    // Log message info for debugging
+    const messageLength = typeof messages === 'string' ? messages.length : (Array.isArray(messages) ? messages.length : 0);
+    console.log(`📝 Summary request for chat: ${chatId}, Message type: ${typeof messages}, Length: ${messageLength}`);
+
+    // Limit message length to avoid token limits, but allow more content
+    const maxMessages = 200; // Increased from 100
+    const maxChars = 50000; // Increased from 10k to 50k to handle longer conversations
+    
+    let messageText: string;
+    if (typeof messages === 'string') {
+      // For strings, take the last portion if too long (most recent messages are most relevant)
+      if (messages.length > maxChars) {
+        messageText = messages.slice(-maxChars);
+        console.log(`⚠️ Message text truncated from ${messages.length} to ${maxChars} characters`);
+      } else {
+        messageText = messages;
+      }
+    } else if (Array.isArray(messages)) {
+      messageText = messages.slice(-maxMessages).join('\n\n');
+    } else {
+      messageText = '';
+    }
 
     // Build context for the summary
     const courseContext = courseData 
@@ -30,14 +45,22 @@ Assignments: ${(courseData.assignments || []).length} assignments
 Exams: ${(courseData.exams || []).length} exams`
       : '';
 
-    const summaryPrompt = `Provide a concise overall summary (2-4 sentences) of this chat conversation. Focus on the main points discussed and what the student has been working on.
+    // Concise summary prompt that captures essence without being verbose
+    const summaryPrompt = `Provide a concise, high-level summary of this chat conversation. The summary should:
+
+1. Capture the MAIN topics and themes discussed (not every single message)
+2. Group related discussions together rather than listing them chronologically
+3. Be 3-6 sentences maximum - focus on the big picture
+4. Highlight the most significant or interesting discussions
+5. Skip minor details, brief exchanges, and repetitive content
+6. Write in a natural, flowing style - not a play-by-play
 
 ${courseContext ? `\nContext:\n${courseContext}\n` : ''}
 
 Chat conversation:
 ${messageText}
 
-Write a natural, conversational summary that captures the essence of the conversation. Be specific about topics, questions, or concepts discussed. Keep it brief but informative.`;
+Write a concise summary that captures the essence of the conversation. Focus on the main topics and themes, not every detail. Keep it brief and high-level.`;
 
     // Use the existing AI service
     const { provideStudyAssistanceWithFallback } = await import('@/ai/services/dual-ai-service');
