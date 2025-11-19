@@ -7,16 +7,17 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef } from "react";
-import { 
-  Settings as SettingsIcon, 
-  Database, 
-  Download, 
+import {
+  Settings as SettingsIcon,
+  Database,
+  Download,
   Trash2,
   User,
   Mail,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -44,7 +45,7 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const autoSyncUnsubscribesRef = useRef<Array<() => void>>([]);
-  
+
   const [settings, setSettings] = useState({
     data: {
       autoSync: true,
@@ -84,7 +85,7 @@ export default function SettingsPage() {
         [setting]: value
       }
     }));
-    
+
     toast({
       title: "Setting Updated",
       description: `${setting} has been ${value ? 'enabled' : 'disabled'}.`,
@@ -100,7 +101,7 @@ export default function SettingsPage() {
       });
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
@@ -109,7 +110,7 @@ export default function SettingsPage() {
       });
       return;
     }
-    
+
     if (newPassword.length < 6) {
       toast({
         title: "Error",
@@ -149,15 +150,15 @@ export default function SettingsPage() {
       }, 1500); // Close after 1.5 seconds
     } catch (error: any) {
       console.error('Password update error:', error);
-      
+
       let errorMessage = "Failed to update password.";
-      
+
       if (error.code === 'auth/requires-recent-login') {
         errorMessage = "For security, please sign out and sign back in before changing your password.";
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error("Error", {
         description: errorMessage
       });
@@ -190,15 +191,15 @@ export default function SettingsPage() {
       const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
       const chatsSnapshot = await getDocs(chatsQuery);
       const chats = [];
-      
+
       for (const chatDoc of chatsSnapshot.docs) {
         const chatData = { id: chatDoc.id, ...chatDoc.data() };
-        
+
         // Get all messages for this chat
         const messagesQuery = query(collection(db, 'messages'), where('chatId', '==', chatDoc.id));
         const messagesSnapshot = await getDocs(messagesQuery);
         const messages = messagesSnapshot.docs.map(msgDoc => ({ id: msgDoc.id, ...msgDoc.data() }));
-        
+
         chatData.messages = messages;
         chats.push(chatData);
       }
@@ -282,7 +283,7 @@ export default function SettingsPage() {
       try {
         const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
         const chatsSnapshot = await getDocs(chatsQuery);
-        
+
         for (const chatDoc of chatsSnapshot.docs) {
           // Delete all messages in this chat
           try {
@@ -294,7 +295,7 @@ export default function SettingsPage() {
           } catch (msgError) {
             console.warn('Failed to delete some messages (non-critical):', msgError);
           }
-          
+
           // Delete the chat itself
           try {
             await deleteDoc(chatDoc.ref);
@@ -470,10 +471,10 @@ export default function SettingsPage() {
       // Get all user's chats
       const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
       const chatsSnapshot = await getDocs(chatsQuery);
-      
+
       let deletedChats = 0;
       let deletedMessages = 0;
-      
+
       for (const chatDoc of chatsSnapshot.docs) {
         // Delete all messages in this chat
         const messagesQuery = query(collection(db, 'messages'), where('chatId', '==', chatDoc.id));
@@ -482,7 +483,7 @@ export default function SettingsPage() {
           await deleteDoc(messageDoc.ref);
           deletedMessages++;
         }
-        
+
         // Delete the chat itself
         await deleteDoc(chatDoc.ref);
         deletedChats++;
@@ -522,7 +523,7 @@ export default function SettingsPage() {
 
       const notificationsQuery = query(collection(db, 'notifications'), where('userId', '==', user.uid));
       const notificationsSnapshot = await getDocs(notificationsQuery);
-      
+
       let deletedCount = 0;
       for (const notificationDoc of notificationsSnapshot.docs) {
         await deleteDoc(notificationDoc.ref);
@@ -563,7 +564,7 @@ export default function SettingsPage() {
 
       const filesQuery = query(collection(db, 'files'), where('userId', '==', user.uid));
       const filesSnapshot = await getDocs(filesQuery);
-      
+
       let deletedCount = 0;
       for (const fileDoc of filesSnapshot.docs) {
         await deleteDoc(fileDoc.ref);
@@ -619,8 +620,8 @@ export default function SettingsPage() {
       });
 
       toast.success(enabled ? "Auto Sync Enabled" : "Auto Sync Disabled", {
-        description: enabled 
-          ? "Your data will automatically sync across all your devices." 
+        description: enabled
+          ? "Your data will automatically sync across all your devices."
           : "Auto sync has been disabled. Data will only sync when you manually refresh."
       });
 
@@ -684,8 +685,8 @@ export default function SettingsPage() {
       });
 
       toast.success(enabled ? "Analytics Enabled" : "Analytics Disabled", {
-        description: enabled 
-          ? "Thank you! Your usage data helps us improve CourseConnect." 
+        description: enabled
+          ? "Thank you! Your usage data helps us improve CourseConnect."
           : "Analytics disabled. No usage data will be collected."
       });
 
@@ -712,7 +713,7 @@ export default function SettingsPage() {
 
   const triggerDataSync = async () => {
     if (!user || !db) return;
-    
+
     try {
       toast.info("Syncing Data", {
         description: "Syncing your data across devices..."
@@ -723,7 +724,7 @@ export default function SettingsPage() {
         if (user && user.uid) {
           const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
           const chatsSnapshot = await getDocs(chatsQuery);
-          
+
           // Dispatch event to chat store to sync chats
           window.dispatchEvent(new CustomEvent('sync-chats-from-firestore', {
             detail: { chats: chatsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) }
@@ -776,10 +777,10 @@ export default function SettingsPage() {
 
   const setupAutoSyncListeners = () => {
     if (!user || !db) return;
-    
+
     // Clean up existing listeners
     cleanupAutoSyncListeners();
-    
+
     try {
       // Listen to user document changes for settings sync
       const userDocRef = doc(db, 'users', user.uid);
@@ -799,9 +800,9 @@ export default function SettingsPage() {
           console.warn('Auto sync listener error:', error);
         }
       });
-      
+
       autoSyncUnsubscribesRef.current.push(unsubscribeUser);
-      
+
       // Listen to chats collection for real-time sync
       const chatsQuery = query(collection(db, 'chats'), where('userId', '==', user.uid));
       const unsubscribeChats = onSnapshot(chatsQuery, (snapshot) => {
@@ -816,9 +817,9 @@ export default function SettingsPage() {
           console.warn('Auto sync chats listener error:', error);
         }
       });
-      
+
       autoSyncUnsubscribesRef.current.push(unsubscribeChats);
-      
+
       console.log('Auto sync listeners set up');
     } catch (error) {
       console.error('Failed to set up auto sync listeners:', error);
@@ -841,7 +842,7 @@ export default function SettingsPage() {
     if (user && settings.data.autoSync) {
       setupAutoSyncListeners();
     }
-    
+
     return () => {
       cleanupAutoSyncListeners();
     };
@@ -862,7 +863,7 @@ export default function SettingsPage() {
 
       // In a real implementation, this would send to your analytics service
       console.log('Analytics data:', analyticsData);
-      
+
       // For now, we'll store it in Firestore as a simple analytics event
       await setDoc(doc(db, 'analytics', `${user!.uid}_${Date.now()}`), analyticsData);
     } catch (error) {
@@ -889,7 +890,7 @@ export default function SettingsPage() {
               Settings
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Manage your account security and data. Change your password, export your data, 
+              Manage your account security and data. Change your password, export your data,
               or delete your account completely.
             </p>
           </div>
@@ -953,10 +954,10 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <Dialog>
                 <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Lock className="size-4 mr-2" />
-                Change Password
-              </Button>
+                  <Button variant="outline" size="sm">
+                    <Lock className="size-4 mr-2" />
+                    Change Password
+                  </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -965,7 +966,7 @@ export default function SettingsPage() {
                       Enter your new password below. Make sure it's at least 6 characters long.
                     </DialogDescription>
                   </DialogHeader>
-            <div className="space-y-4">
+                  <div className="space-y-4">
                     <div>
                       <Label htmlFor="newPassword">New Password</Label>
                       <div className="relative">
@@ -990,8 +991,8 @@ export default function SettingsPage() {
                             <Eye className="h-4 w-4" />
                           )}
                         </Button>
-              </div>
-                </div>
+                      </div>
+                    </div>
                     <div>
                       <Label htmlFor="confirmPassword">Confirm Password</Label>
                       <div className="relative">
@@ -1016,16 +1017,15 @@ export default function SettingsPage() {
                             <Eye className="h-4 w-4" />
                           )}
                         </Button>
-              </div>
-            </div>
+                      </div>
+                    </div>
                     <div className="flex gap-2">
-                      <div 
-                        onClick={handleChangePassword} 
-                        className={`update-password-btn flex-1 rounded-md px-4 py-2 cursor-pointer flex items-center justify-center transition-opacity ${
-                          isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6
-                            ? 'opacity-50 cursor-not-allowed' 
+                      <div
+                        onClick={handleChangePassword}
+                        className={`update-password-btn flex-1 rounded-md px-4 py-2 cursor-pointer flex items-center justify-center transition-opacity ${isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6
+                            ? 'opacity-50 cursor-not-allowed'
                             : 'hover:opacity-90'
-                        }`}
+                          }`}
                         style={{
                           backgroundColor: '#2563eb !important',
                           color: 'white !important',
@@ -1033,9 +1033,9 @@ export default function SettingsPage() {
                         }}
                       >
                         {isChangingPassword ? "Updating..." : "Update Password"}
-                </div>
-                      <Button 
-                        variant="outline" 
+                      </div>
+                      <Button
+                        variant="outline"
                         onClick={() => {
                           setNewPassword("");
                           setConfirmPassword("");
@@ -1046,7 +1046,7 @@ export default function SettingsPage() {
                       >
                         Cancel
                       </Button>
-              </div>
+                    </div>
                     <style jsx>{`
                       .update-password-btn {
                         background-color: #2563eb !important;
@@ -1057,7 +1057,7 @@ export default function SettingsPage() {
                         color: white !important;
                       }
                     `}</style>
-                </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
@@ -1099,17 +1099,17 @@ export default function SettingsPage() {
                   <p className={`text-xs italic mt-1 ${settings.data.analytics ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
                     {settings.data.analytics ? '✓ Enabled - helps us improve the platform' : '○ Disabled - no data collected'}
                   </p>
-                 <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                   <p><strong>Privacy Protection:</strong></p>
-                   <p>• No Personal Info: We don't collect your name, email, or personal details</p>
-                   <p>• Anonymous: Your user ID is just a random string</p>
-                   <p>• Aggregated: We look at patterns, not individual users</p>
-                   <p>• Optional: You can turn it off anytime</p>
-                 </div>
+                  <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                    <p><strong>Privacy Protection:</strong></p>
+                    <p>• No Personal Info: We don't collect your name, email, or personal details</p>
+                    <p>• Anonymous: Your user ID is just a random string</p>
+                    <p>• Aggregated: We look at patterns, not individual users</p>
+                    <p>• Optional: You can turn it off anytime</p>
+                  </div>
                 </div>
                 <Switch
                   checked={settings.data.analytics}
-                 onCheckedChange={(checked) => handleAnalyticsChange(checked)}
+                  onCheckedChange={(checked) => handleAnalyticsChange(checked)}
                 />
               </div>
             </div>
@@ -1127,8 +1127,8 @@ export default function SettingsPage() {
               }}>
                 <DialogTrigger asChild>
                   <div className="delete-account-btn flex-1 rounded-md px-4 py-2 cursor-pointer flex items-center justify-center hover:opacity-90 transition-opacity">
-                <Trash2 className="size-4 mr-2" />
-                Delete Account
+                    <Trash2 className="size-4 mr-2" />
+                    Delete Account
                   </div>
                 </DialogTrigger>
                 <DialogContent onInteractOutside={(e) => {
@@ -1159,7 +1159,7 @@ export default function SettingsPage() {
                       Delete Account
                     </DialogTitle>
                     <DialogDescription>
-                      {isDeletingAccount 
+                      {isDeletingAccount
                         ? "Deleting your account and all data. Please wait..."
                         : "This action cannot be undone. This will permanently delete your account and remove all your data from our servers."}
                     </DialogDescription>
@@ -1186,14 +1186,14 @@ export default function SettingsPage() {
                       />
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        onClick={handleDeleteAccount} 
+                      <Button
+                        onClick={handleDeleteAccount}
                         disabled={isDeletingAccount || deleteConfirm !== "DELETE"}
                         variant="destructive"
                         className="flex-1"
                       >
                         {isDeletingAccount ? "Deleting..." : "Permanently Delete Account"}
-              </Button>
+                      </Button>
                     </div>
                   </div>
                 </DialogContent>

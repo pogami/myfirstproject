@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Menu, X, ArrowRight, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useTheme } from '@/contexts/theme-context';
+import { Button } from '@/components/ui/button';
 import { CCLogo } from '@/components/icons/cc-logo';
+import { useTheme } from '@/contexts/theme-context';
+import { Sun, Moon, Menu, X, ArrowRight, Home, Layout, Info } from 'lucide-react';
 
 const navigation = [
   { name: 'Features', href: '/features' },
@@ -20,27 +20,15 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
-    // Only set mounted and scroll state after hydration is complete
-    // This ensures the initial client render matches the server render
     setIsMounted(true);
-    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-
-    // Use requestAnimationFrame to ensure this runs after React hydration
-    requestAnimationFrame(() => {
-      handleScroll();
-    });
-    
     window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Prevent hydration mismatch by ensuring consistent initial render
-  // Only show scrolled state after component has mounted (post-hydration)
+
   const shouldShowScrolled = isMounted && isScrolled;
 
   return (
@@ -267,28 +255,6 @@ export function Navigation() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Mobile bottom action bar (always visible when menu closed) */}
-      {!isOpen && (
-        <div className="mobile-nav md:hidden safe-bottom">
-          <div className="max-w-7xl mx-auto flex items-center gap-2 px-4">
-            <Button 
-              variant="outline" 
-              className="flex-1 h-10 text-sm"
-              onClick={() => window.location.href = '/login'}
-            >
-              Sign In
-            </Button>
-            <Button 
-              className="flex-1 h-10 text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-              onClick={() => window.location.href = '/login?state=signup'}
-            >
-              Get Started
-              <ArrowRight className="ml-1 h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      )}
     </motion.nav>
   );
 }

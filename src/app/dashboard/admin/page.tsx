@@ -91,7 +91,7 @@ export default function AdminDashboard() {
     darkMode: true
   });
 
-  const ADMIN_PASSWORD = 'courseconnect2025'; // TODO: Move to server-side auth
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'courseconnect2025';
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,15 +167,24 @@ export default function AdminDashboard() {
   const loadUsers = async () => {
     setLoadingUsers(true);
     try {
-      const usersRef = collection(db as any, 'users');
-      const usersSnapshot = await getDocs(usersRef);
-      const usersData = usersSnapshot.docs.map(doc => ({
-        uid: doc.id,
-        ...doc.data()
-      } as UserData));
-      setUsers(usersData);
-    } catch (error) {
+      // Use admin API endpoint to bypass Firestore security rules
+      const response = await fetch(`/api/admin/users?password=${encodeURIComponent(ADMIN_PASSWORD)}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch users`);
+      }
+      const data = await response.json();
+      setUsers(data.users || []);
+      
+      // Show info message if Admin SDK isn't configured
+      if (data.message && data.users?.length === 0) {
+        console.warn('Admin SDK not configured:', data.message);
+      }
+    } catch (error: any) {
       console.error('Failed to load users:', error);
+      setUsers([]);
+      // Show user-friendly error message
+      alert(`Failed to load users: ${error.message || "Unable to fetch user list. The Firebase Admin SDK may not be configured."}`);
     } finally {
       setLoadingUsers(false);
     }
@@ -246,22 +255,46 @@ export default function AdminDashboard() {
   const handleBanUser = async (uid: string) => {
     if (!confirm('Are you sure you want to ban this user?')) return;
     try {
-      const userRef = doc(db as any, 'users', uid);
-      await updateDoc(userRef, { banned: true });
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': ADMIN_PASSWORD
+        },
+        body: JSON.stringify({ uid, action: 'ban' })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to ban user');
+      }
+      
       setUsers(users.map(u => u.uid === uid ? { ...u, banned: true } : u));
     } catch (error) {
       console.error('Failed to ban user:', error);
+      alert('Failed to ban user. Please try again.');
     }
   };
 
   const handleDeleteUser = async (uid: string) => {
     if (!confirm('Are you sure you want to DELETE this user permanently? This cannot be undone.')) return;
     try {
-      const userRef = doc(db as any, 'users', uid);
-      await deleteDoc(userRef);
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': ADMIN_PASSWORD
+        },
+        body: JSON.stringify({ uid })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+      
       setUsers(users.filter(u => u.uid !== uid));
     } catch (error) {
       console.error('Failed to delete user:', error);
+      alert('Failed to delete user. Please try again.');
     }
   };
 

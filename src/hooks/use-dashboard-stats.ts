@@ -632,36 +632,59 @@ export function useDashboardStats(user: User | null) {
                 if (chatDoc.exists()) {
                   const chatData = chatDoc.data();
                   
-                  // Only process class chats with assignments
-                  if (chatData.chatType === 'class' && chatData.courseData?.assignments) {
-                    // Recalculate total completed assignments from ALL user chats
-                    let totalCompleted = 0;
-                    
-                    for (const id of userChatIds) {
-                      try {
-                        const chatRef = doc(db, 'chats', id);
-                        const chatSnap = await getDoc(chatRef);
-                        
-                        if (chatSnap.exists()) {
-                          const data = chatSnap.data();
-                          if (data.chatType === 'class' && data.courseData?.assignments) {
+                  // Recalculate ALL stats from ALL user chats when any chat changes
+                  let totalCompleted = 0;
+                  let upcomingCount = 0;
+                  const now = new Date();
+                  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                  
+                  for (const id of userChatIds) {
+                    try {
+                      const chatRef = doc(db, 'chats', id);
+                      const chatSnap = await getDoc(chatRef);
+                      
+                      if (chatSnap.exists()) {
+                        const data = chatSnap.data();
+                        if (data.chatType === 'class') {
+                          // Count completed assignments
+                          if (data.courseData?.assignments) {
                             data.courseData.assignments.forEach((assignment: any) => {
                               if (assignment.status === 'Completed') {
                                 totalCompleted++;
                               }
+                              // Count upcoming deadlines
+                              if (assignment.dueDate && assignment.dueDate !== 'null' && assignment.status !== 'Completed') {
+                                const dueDate = new Date(assignment.dueDate);
+                                if (dueDate >= now && dueDate <= nextWeek) {
+                                  upcomingCount++;
+                                }
+                              }
+                            });
+                          }
+                          
+                          // Count upcoming exams
+                          if (data.courseData?.exams) {
+                            data.courseData.exams.forEach((exam: any) => {
+                              if (exam.date && exam.date !== 'null') {
+                                const examDate = new Date(exam.date);
+                                if (examDate >= now && examDate <= nextWeek) {
+                                  upcomingCount++;
+                                }
+                              }
                             });
                           }
                         }
-                      } catch (error) {
-                        console.warn('Error reading chat:', id, error);
                       }
+                    } catch (error) {
+                      console.warn('Error reading chat:', id, error);
                     }
-                    
-                    setStats(prev => ({
-                      ...prev,
-                      assignmentsCompleted: totalCompleted
-                    }));
                   }
+                  
+                  setStats(prev => ({
+                    ...prev,
+                    assignmentsCompleted: totalCompleted,
+                    upcomingDeadlines: upcomingCount
+                  }));
                 }
               }, (error) => {
                 console.warn('Firebase offline, chat updates disabled:', error);
@@ -692,25 +715,12 @@ export function useDashboardStats(user: User | null) {
     };
   }, [user, chats]);
 
-  // Separate useEffect for guest user real-time updates
+  // Separate useEffect for guest user real-time updates - updates when chats change
   useEffect(() => {
     if (user && user.isGuest) {
       loadGuestStats();
     }
   }, [chats, user]);
-
-  // Add polling for guest users to update stats in real-time
-  useEffect(() => {
-    if (user && user.isGuest) {
-      const interval = setInterval(() => {
-        loadGuestStats();
-      }, 1000);
-      
-      return () => {
-        clearInterval(interval);
-      };
-    }
-  }, [user]);
 
   return {
     stats,

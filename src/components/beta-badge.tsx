@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bug, X, AlertCircle } from 'lucide-react';
+import { Bug, X, MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function BetaBadge() {
@@ -58,119 +58,144 @@ export default function BetaBadge() {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="flex justify-center mb-8"
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex justify-center mb-10"
       >
-        <div className="inline-flex items-center gap-4 px-6 py-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm">
-          {/* Beta Badge */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
-                Beta
+        <motion.div 
+          className="relative group cursor-pointer"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {/* Glow effect behind */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20 group-hover:opacity-40 blur-md transition-opacity duration-500" />
+          
+          {/* Badge Container */}
+          <div className="relative flex items-center gap-3 px-4 py-2 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-blue-100 dark:border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-300">
+            
+            {/* Status Indicator */}
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+              </span>
+              <span className="text-xs font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent uppercase tracking-wider">
+                Public Beta
               </span>
             </div>
-            <span className="text-sm text-gray-500 dark:text-gray-500">v1.0.0-beta</span>
+
+            <div className="w-px h-3.5 bg-gray-200 dark:bg-gray-700" />
+
+            {/* Action Text */}
+            <button
+              onClick={() => setShowReportForm(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+            >
+              <span>v1.0 • Give Feedback</span>
+            </button>
           </div>
-          
-          <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
-          
-          {/* Report Button */}
-          <button
-            onClick={() => setShowReportForm(true)}
-            className="group inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded transition-colors"
-          >
-            <Bug className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
-            <span>Report Issue or Feature</span>
-          </button>
-        </div>
+        </motion.div>
       </motion.div>
 
-      {/* Bug Report Modal */}
+      {/* Feedback Modal */}
       <AnimatePresence>
         {showReportForm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
             onClick={() => !showSuccess && setShowReportForm(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 max-w-md w-full"
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-0 max-w-md w-full overflow-hidden relative"
             >
               {!showSuccess ? (
                 <>
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
+                  {/* Decorative gradient header */}
+                  <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+                  
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-6">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                            <MessageSquare className="w-5 h-5" />
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                            Share Feedback
+                          </h3>
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 ml-1">
+                          Help us shape the future of CourseConnect.
+                        </p>
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        Submit Feedback
-                      </h3>
-                    </div>
-                    <button
-                      onClick={() => setShowReportForm(false)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Form */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Title *
-                      </label>
-                      <input
-                        type="text"
-                        value={bugTitle}
-                        onChange={(e) => setBugTitle(e.target.value)}
-                        placeholder="e.g., Chat not loading, AI response error, New study group feature..."
-                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Description (optional)
-                      </label>
-                      <textarea
-                        value={bugDescription}
-                        onChange={(e) => setBugDescription(e.target.value)}
-                        placeholder="What happened? What were you doing when the issue occurred? Or describe the feature you'd like to see..."
-                        rows={4}
-                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm resize-none"
-                      />
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex gap-3 pt-2">
-                      <Button
+                      <button
                         onClick={() => setShowReportForm(false)}
-                        variant="ghost"
-                        className="flex-1"
-                        disabled={isSubmitting}
+                        className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"
                       >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSubmitBug}
-                        disabled={!bugTitle.trim() || isSubmitting}
-                        className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                      >
-                        {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
-                      </Button>
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-5">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                          Subject
+                        </label>
+                        <input
+                          type="text"
+                          value={bugTitle}
+                          onChange={(e) => setBugTitle(e.target.value)}
+                          placeholder="What's on your mind?"
+                          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 text-sm transition-all"
+                          autoFocus
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                          Details
+                        </label>
+                        <textarea
+                          value={bugDescription}
+                          onChange={(e) => setBugDescription(e.target.value)}
+                          placeholder="Found a bug? Have a feature request? Tell us more..."
+                          rows={4}
+                          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white placeholder-gray-400 text-sm resize-none transition-all"
+                        />
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                        <Button
+                          onClick={() => setShowReportForm(false)}
+                          variant="ghost"
+                          className="flex-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+                          disabled={isSubmitting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleSubmitBug}
+                          disabled={!bugTitle.trim() || isSubmitting}
+                          className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/20"
+                        >
+                          {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              Sending...
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-2">
+                              <Send className="w-4 h-4" />
+                              Send Feedback
+                            </span>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -178,21 +203,21 @@ export default function BetaBadge() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="py-8 flex flex-col items-center justify-center gap-4"
+                  className="p-12 flex flex-col items-center justify-center text-center"
                 >
-                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+                  <div className="w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="font-bold text-lg text-gray-900 dark:text-white mb-1">
-                      Feedback Submitted!
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Thank you for helping us improve CourseConnect
-                    </p>
-                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    Message Received!
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                    Thanks for helping us make CourseConnect better. We read every piece of feedback.
+                  </p>
                 </motion.div>
               )}
             </motion.div>
@@ -202,4 +227,3 @@ export default function BetaBadge() {
     </>
   );
 }
-

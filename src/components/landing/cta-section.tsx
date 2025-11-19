@@ -3,78 +3,72 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Users } from 'lucide-react';
+import { ArrowRight, Upload, Sparkles, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 
 export function CTASection() {
   return (
-    <div className="py-20 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+    <section className="py-32 relative overflow-hidden bg-white dark:bg-gray-950">
+      {/* Background Gradients */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent dark:from-blue-950/20 dark:to-transparent rounded-full blur-3xl -translate-y-1/2 pointer-events-none" />
       
-      {/* Floating Elements */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute bottom-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-xl animate-pulse delay-1000"></div>
-      <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white/10 rounded-full blur-xl animate-pulse delay-500"></div>
-
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="space-y-8"
         >
-          {/* Badge */}
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
-            AI-Powered Study Platform
-          </div>
-
-          {/* Main Headline */}
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
-            Ready to ace your{' '}
-            <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-              courses?
-            </span>
+          <h2 className="text-5xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
+            Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">ace your classes?</span>
           </h2>
+          
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed font-medium">
+            Upload your syllabus, see every deadline in one dashboard, and get AI help that actually knows your course.
+          </p>
 
-          {/* Subheadline with Logo */}
-          <div className="flex flex-col items-center gap-4 mb-8 max-w-2xl mx-auto">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/pageicon.png" 
-                alt="CourseConnect Logo" 
-                className="h-10 w-auto md:h-12 md:w-auto"
-              />
-              <span className="text-xl md:text-2xl text-white font-bold">
-                CourseConnect AI
-              </span>
-            </div>
-            <p className="text-xl md:text-2xl text-white/90 leading-relaxed text-center">
-              Upload your syllabus, chat with AI tutors, get assignment reminders, and create flashcards to ace your courses.
-            </p>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button
+              asChild
               size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              onClick={() => window.location.href = '/login'}
+              className="w-full sm:w-auto h-14 px-8 text-lg rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 transition-all hover:-translate-y-1"
             >
-              Get Started Free
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <Link href="/dashboard/upload">
+                <Upload className="mr-2 h-5 w-5" />
+                Upload Your Syllabus
+              </Link>
             </Button>
+            
             <Button
+              asChild
               variant="outline"
               size="lg"
-              className="border-2 border-white text-white hover:bg-white/20 px-8 py-4 text-lg font-semibold rounded-full backdrop-blur-sm transition-all duration-300 shadow-lg bg-white/10"
-              onClick={() => window.location.href = '/login?state=signup'}
+              className="w-full sm:w-auto h-14 px-8 text-lg rounded-full border-2 border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-900 dark:text-white"
             >
-              <Users className="mr-2 h-5 w-5" />
-              Join Now
+              <Link href="/signup">
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
+          </div>
+
+          <div className="pt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>Upload any PDF, DOCX, or TXT syllabus</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>See every deadline inside one dashboard</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <span>Works with any syllabus</span>
+            </div>
           </div>
         </motion.div>
       </div>
-    </div>
+    </section>
   );
 }

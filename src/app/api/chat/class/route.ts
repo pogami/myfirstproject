@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Clean @ mentions from the question if present
     const cleanedQuestion = question.replace(/@ai\s*/gi, '').trim();
+    const lowerQuestion = cleanedQuestion.toLowerCase();
 
     // Content filtering for safety
     const filterResult = filterContent(cleanedQuestion);
@@ -97,8 +98,56 @@ export async function POST(request: NextRequest) {
     let specialInstructions = '';
     
     if (courseData) {
-      const { courseName, courseCode, professor, university, semester, year, topics, assignments, exams } = courseData;
-      
+      const { courseName, courseCode, professor, university, semester, year, classTime, topics, assignments, exams } = courseData;
+
+      const respondWith = (answer: string) => NextResponse.json({
+        success: true,
+        answer,
+        provider: 'syllabus-direct',
+        shouldRespond: true,
+        timestamp: new Date().toISOString()
+      });
+
+      const wantsProfessor = lowerQuestion.includes('who is my professor') ||
+        lowerQuestion.includes('professor') ||
+        lowerQuestion.includes('teacher');
+
+      const wantsClassTime = lowerQuestion.includes('what time is class') ||
+        lowerQuestion.includes('when does class meet') ||
+        lowerQuestion.includes('class time') ||
+        lowerQuestion.includes('schedule');
+
+      const wantsUniversity = lowerQuestion.includes('what school') ||
+        lowerQuestion.includes('what university') ||
+        lowerQuestion.includes('which campus');
+
+      const wantsCourseName = lowerQuestion.includes('what class is this') ||
+        lowerQuestion.includes('what course is this') ||
+        lowerQuestion.includes('which class is this') ||
+        lowerQuestion.includes('what course am i in');
+
+      if (wantsProfessor && professor) {
+        return respondWith(`Your professor for ${courseName || courseCode || 'this course'} is ${professor}.`);
+      }
+
+      if (wantsClassTime && classTime) {
+        return respondWith(`${courseName || courseCode || 'This class'} meets ${classTime}.`);
+      }
+
+      if (wantsUniversity && university) {
+        return respondWith(`${courseName || courseCode || 'This course'} is part of ${university}.`);
+      }
+
+      if (wantsCourseName && (courseName || courseCode)) {
+        const details = [
+          courseName ? `Course: ${courseName}` : null,
+          courseCode ? `Course Code: ${courseCode}` : null,
+          professor ? `Professor: ${professor}` : null,
+          classTime ? `Class Time: ${classTime}` : null
+        ].filter(Boolean).join(' — ');
+        return respondWith(details);
+      }
+
       // Add deadline awareness
       const deadlineContext = generateDeadlineContext(courseData);
       
@@ -110,7 +159,7 @@ export async function POST(request: NextRequest) {
       
       // Handle special request types
       if (wantsPracticeExam && topics && topics.length > 0) {
-        const nextExam = exams?.find(e => calculateDaysUntil(e.date || '') >= 0);
+        const nextExam = exams?.find((exam: any) => calculateDaysUntil(exam.date || '') >= 0);
         specialInstructions = `\n\n📝 PRACTICE EXAM MODE - INTERACTIVE:
 Generate a comprehensive practice exam${nextExam?.name ? ` for ${nextExam.name}` : ''}.
 
@@ -172,9 +221,9 @@ Requirements:
 The JSON must be valid and on ONE line after QUIZ_DATA:`;
       } else if (wantsStudyPlan && exams && exams.length > 0) {
         const nextExam = exams
-          .map(e => ({ ...e, daysUntil: calculateDaysUntil(e.date || '') }))
-          .filter(e => e.daysUntil >= 0)
-          .sort((a, b) => a.daysUntil - b.daysUntil)[0];
+          .map((exam: any) => ({ ...exam, daysUntil: calculateDaysUntil(exam.date || '') }))
+          .filter((exam: any) => exam.daysUntil >= 0)
+          .sort((a: any, b: any) => a.daysUntil - b.daysUntil)[0];
           
         if (nextExam && nextExam.date) {
           const studyPlan = generateStudyPlan(nextExam.name, nextExam.date, topics || []);
@@ -220,35 +269,36 @@ The student is struggling with this concept.
       });
 
       // Categorize exams as upcoming or past
-      const upcomingExams = exams?.filter(e => calculateDaysUntil(e.date || '') >= 0) || [];
-      const pastExams = exams?.filter(e => calculateDaysUntil(e.date || '') < 0) || [];
+      const upcomingExams = exams?.filter((exam: any) => calculateDaysUntil(exam.date || '') >= 0) || [];
+      const pastExams = exams?.filter((exam: any) => calculateDaysUntil(exam.date || '') < 0) || [];
 
       courseContext = `\n\nCOURSE CONTEXT - You are the AI assistant for ${courseName}${courseCode ? ` (${courseCode})` : ''}:
 
 📅 TODAY'S DATE: ${currentDate}
 
-${professor ? `👨‍🏫 Professor: ${professor}` : ''}
+${professor ? `👨‍🏫 PROFESSOR: ${professor} (IMPORTANT: Use this name when answering questions about the course or professor)` : '⚠️ No professor name found in syllabus'}
+${classTime ? `🕐 CLASS TIME: ${classTime} (IMPORTANT: Use this when answering questions about when class meets)` : '⚠️ No class time found in syllabus'}
 ${university ? `🏫 University: ${university}` : ''}
 ${semester && year ? `📅 Semester: ${semester} ${year}` : ''}
 
 📚 Course Topics (${topics?.length || 0} topics):
-${topics && topics.length > 0 ? topics.map(topic => `- ${topic}`).join('\n') : 'No topics listed'}
+${topics && topics.length > 0 ? topics.map((topic: string) => `- ${topic}`).join('\n') : 'No topics listed'}
 
 📝 Assignments (${assignments?.length || 0} assignments):
-${assignments && assignments.length > 0 ? assignments.map(assignment => {
+${assignments && assignments.length > 0 ? assignments.map((assignment: any) => {
   const daysUntil = assignment.dueDate ? calculateDaysUntil(assignment.dueDate) : null;
   const isPast = daysUntil !== null && daysUntil < 0;
   return `- ${assignment.name}${assignment.dueDate ? ` (Due: ${assignment.dueDate})` : ''}${isPast ? ' [PAST DUE]' : ''}${assignment.description ? ` - ${assignment.description}` : ''}`;
 }).join('\n') : 'No assignments listed'}
 
 📅 Upcoming Exams (${upcomingExams.length} exams):
-${upcomingExams.length > 0 ? upcomingExams.map(exam => {
+${upcomingExams.length > 0 ? upcomingExams.map((exam: any) => {
   const daysUntil = calculateDaysUntil(exam.date || '');
   return `- ${exam.name}${exam.date ? ` (Date: ${exam.date}, ${daysUntil} days from now)` : ''}`;
 }).join('\n') : 'No upcoming exams'}
 
 📋 Past Exams (${pastExams.length} exams):
-${pastExams.length > 0 ? pastExams.map(exam => 
+${pastExams.length > 0 ? pastExams.map((exam: any) => 
   `- ${exam.name}${exam.date ? ` (Was on: ${exam.date})` : ''} [COMPLETED]`
 ).join('\n') : 'No past exams yet'}
 ${deadlineContext}
@@ -262,6 +312,15 @@ You have access to this course's syllabus information and can help with:
 ${adaptiveInstructions}
 ${memoryContext}
 ${specialInstructions}
+
+CRITICAL - USE COURSE DETAILS:
+- You MUST use the professor name when it's provided above (e.g., "According to ${professor || 'your professor'}" or "As ${professor || 'your professor'} mentioned...")
+- You MUST use the class time when it's provided above (e.g., "Your class meets ${classTime || 'at the scheduled time'}")
+- NEVER say you don't have access to professor name, class time, or other course details if they're listed in the course context above
+- Reference specific course details: professor name, class time, course code, topics, assignments, exam dates
+- If the student asks "who is my professor" and the professor name is in the context above, tell them directly (e.g., "Your professor is ${professor}")
+- If the student asks "what time is class" or "when does class meet" and classTime is in the context above, tell them directly (e.g., "Class meets ${classTime}")
+- Use the actual course information provided - don't say you don't have access to it
 
 IMPORTANT: 
 - You have full access to the syllabus and course details above
@@ -287,7 +346,17 @@ IMPORTANT:
       : '';
 
     // Create course-aware prompt
-    const prompt = `You are CourseConnect AI, an enthusiastic and knowledgeable academic tutor for this specific course. You have full access to the syllabus and are ready to help!${courseContext}
+    const prompt = `You are CourseConnect AI, an enthusiastic and knowledgeable academic tutor for this specific course.
+
+🚨 CRITICAL INSTRUCTIONS - READ THIS FIRST:
+- You have COMPLETE ACCESS to the syllabus data below
+- If the student asks "who is my professor" and a professor name is listed below, answer DIRECTLY with that name (e.g., "Your professor is [NAME]")
+- If the student asks "what time is class" or "when does class meet" and class time is listed below, answer DIRECTLY (e.g., "Class meets [TIME]")
+- If the student asks about ANYTHING in the syllabus (school, topics, assignments, exams), use the EXACT information from below
+- NEVER say "I don't have access" or "check your syllabus" - you HAVE the syllabus data right here
+- The course information below is REAL and ACCURATE - use it directly in your answers
+
+${courseContext}
 
 Your personality and approach:
 - Talk like a friendly, knowledgeable study buddy - casual but smart
@@ -564,12 +633,20 @@ What would you like to dive into? What's challenging you right now?`;
       }
     }
 
+    // Generate sources for the UI (Memory pulled from)
+    const sources = courseData ? [{
+      title: courseData.courseName ? `${courseData.courseName} Syllabus` : 'Course Syllabus',
+      url: '#',
+      snippet: 'Syllabus Context'
+    }] : [];
+
     return NextResponse.json({
       success: true,
       answer: aiResponse,
       provider: selectedModel || 'fallback',
       shouldRespond: true,
       timestamp: new Date().toISOString(),
+      sources: sources, // Added sources
       courseContext: courseData ? {
         courseName: courseData.courseName,
         courseCode: courseData.courseCode

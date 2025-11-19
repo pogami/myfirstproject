@@ -629,6 +629,15 @@ body {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Glowing button effects */
 .glow-button {
   position: relative;
@@ -791,12 +800,95 @@ body {
   max-width: 100% !important;
 }
 
-/* Prevent horizontal scrollbars in AI responses */
-.ai-response * {
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  word-wrap: break-word !important;
+
+/* --- UI OVERHAUL START (Codeword: POP) --- */
+
+/* Premium Glassmorphism */
+.glass-panel {
+  background: rgba(20, 20, 25, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
+
+.glass-sidebar {
+  background: rgba(10, 10, 15, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Neon Glows */
+.neon-glow {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.neon-border {
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.2);
+}
+
+/* Floating Elements */
+.floating-bubble {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* Gradient Text */
+.gradient-text-premium {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 200%;
+  animation: gradient-move 5s ease infinite;
+}
+
+@keyframes gradient-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Modern Scrollbar (Thin & Sleek) */
+.sleek-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sleek-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sleek-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.sleek-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Animated Background Mesh */
+.mesh-bg {
+  background-color: #0f172a;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+}
+
+/* --- UI OVERHAUL END --- */
+
 
 /* Ensure math expressions don't create horizontal scroll */
 .katex-display {

@@ -3,14 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, BookOpen, Loader2, ChevronRight, Check, Clock, TrendingUp } from 'lucide-react';
+import { MessageSquare, BookOpen, Loader2, ChevronRight, Check, Clock, TrendingUp, FileText, BarChart3, MoreHorizontal } from 'lucide-react';
 import BotResponse from '@/components/bot-response';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/hooks/use-chat-store';
 import { auth } from '@/lib/firebase/client-simple';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Copy } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 interface ChatSummary {
   chatId: string;
@@ -24,12 +23,10 @@ export function ChatSummariesDashboard() {
   const [summaries, setSummaries] = useState<ChatSummary[]>([]);
   const [selectedSummary, setSelectedSummary] = useState<ChatSummary | null>(null);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
-  const [copiedSummary, setCopiedSummary] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { chats } = useChatStore();
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
-  const { toast } = useToast();
   const isFetchingRef = useRef(false);
   const lastChatsHashRef = useRef<string>('');
   const hasInitiallyFetchedRef = useRef(false);
@@ -318,104 +315,52 @@ export function ChatSummariesDashboard() {
     return () => clearTimeout(updateTimer);
   }, [chats['private-general-chat']?.messages?.length, chats['private-general-chat']?.messages?.[chats['private-general-chat']?.messages?.length - 1]?.timestamp]);
 
-  // Loading state with AI message - Card style same as study focus suggestions
+  // Show loading state with simple skeleton
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+            <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Course Summaries</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Quick overview of what you've been discussing in each course
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Recent Discussions
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Loading summaries...
             </p>
           </div>
         </div>
-        <Card className="border-2 border-dashed border-muted-foreground/30 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 relative overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-6 min-h-[200px]">
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 animate-pulse"></div>
-            
-            {/* Main animation */}
-            <div className="relative z-10 space-y-6">
-              {/* Elegant loading animation */}
-              <div className="relative">
-                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                  <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                </div>
-                <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-primary/20 to-primary/10 animate-ping"></div>
-              </div>
-              
-              {/* Text content */}
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-primary">Generating Your Summaries</h3>
-                <p className="text-muted-foreground">AI is analyzing your conversations to create helpful summaries...</p>
-              </div>
-              
-              {/* Progress dots */}
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
-  // Empty state - only show if not loading and actually empty
-  if (summaries.length === 0 && !isLoading) {
-    const classChats = Object.values(chats).filter((chat: any) => chat.chatType === 'class');
-    const hasClassChats = classChats.length > 0;
-    const hasMessages = classChats.some((chat: any) => (chat.messages || []).length > 0);
-    
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Course Summaries</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Quick overview of what you've been discussing in each course
-            </p>
-          </div>
-        </div>
-        <Card className="border-dashed border-2 border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-          <CardContent className="p-8 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <MessageSquare className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Your summaries will appear here soon
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
-                  Once you've had a few conversations in your class chats, I'll create helpful summaries of what you've discussed. Keep the conversations going!
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // Don't show if empty
+  if (summaries.length === 0) {
+    return null;
   }
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+              <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Course Summaries</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {summaries.length === 1 
-                ? "Here's what you've been discussing"
-                : `Here's what you've been discussing across ${summaries.length} ${summaries.length === 1 ? 'course' : 'courses'}`}
-            </p>
+              <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Recent Discussions
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                AI-generated summaries of your chats
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-5 md:gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
           {summaries.map((summary, idx) => {
             const isGeneralChat = summary.chatId === 'private-general-chat';
             // Get last message timestamp for recency
@@ -430,89 +375,85 @@ export function ChatSummariesDashboard() {
               const diffHours = Math.floor(diffMs / 3600000);
               const diffDays = Math.floor(diffMs / 86400000);
               
-              if (diffMins < 60) {
-                return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
-              }
-              if (diffHours < 24) {
-                const remainingMins = diffMins % 60;
-                if (remainingMins === 0) {
-                  return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-                }
-                return `${diffHours} hour${diffHours !== 1 ? 's' : ''} and ${remainingMins} min${remainingMins !== 1 ? 's' : ''} ago`;
-              }
-              if (diffDays < 7) {
-                return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-              }
-              return date.toLocaleDateString();
+              if (diffMins < 60) return `${diffMins}m ago`;
+              if (diffHours < 24) return `${diffHours}h ago`;
+              return `${diffDays}d ago`;
             };
             
-            // Add visual variety - different colors per course
-            const courseColors = [
-              { bg: 'bg-slate-100 dark:bg-slate-900/30', icon: 'text-slate-700 dark:text-slate-400', border: 'border-slate-200 dark:border-slate-800' },
-              { bg: 'bg-cyan-100 dark:bg-cyan-900/30', icon: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-200 dark:border-cyan-800' },
-              { bg: 'bg-violet-100 dark:bg-violet-900/30', icon: 'text-violet-700 dark:text-violet-400', border: 'border-violet-200 dark:border-violet-800' },
-              { bg: 'bg-teal-100 dark:bg-teal-900/30', icon: 'text-teal-700 dark:text-teal-400', border: 'border-teal-200 dark:border-teal-800' },
-              { bg: 'bg-indigo-100 dark:bg-indigo-900/30', icon: 'text-indigo-700 dark:text-indigo-400', border: 'border-indigo-200 dark:border-indigo-800' },
-              { bg: 'bg-pink-100 dark:bg-pink-900/30', icon: 'text-pink-700 dark:text-pink-400', border: 'border-pink-200 dark:border-pink-800' }
-            ];
-            const courseColor = isGeneralChat 
-              ? { bg: 'bg-purple-50/30 dark:bg-purple-950/20', icon: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800' }
-              : courseColors[idx % courseColors.length];
+            // Enhanced visual design with varied gradients
+            const styleConfig = isGeneralChat 
+              ? { 
+                  gradient: 'from-purple-500/5 to-indigo-500/5 dark:from-purple-500/10 dark:to-indigo-500/10', 
+                  iconColor: 'text-purple-600 dark:text-purple-400', 
+                  iconBg: 'bg-purple-100 dark:bg-purple-900/30',
+                  accentBorder: 'border-purple-200 dark:border-purple-800'
+                }
+              : { 
+                  gradient: 'from-blue-500/5 to-cyan-500/5 dark:from-blue-500/10 dark:to-cyan-500/10', 
+                  iconColor: 'text-blue-600 dark:text-blue-400', 
+                  iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+                  accentBorder: 'border-blue-200 dark:border-blue-800'
+                };
             
             return (
+              <motion.div
+                key={summary.chatId}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+              >
               <Card 
-                key={summary.chatId} 
-                className={`border ${isGeneralChat ? courseColor.border : courseColor.border} ${isGeneralChat ? courseColor.bg : ''} hover:shadow-lg transition-shadow duration-300 cursor-pointer flex flex-col h-full`}
+                  className={`group relative overflow-hidden border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col`}
                 onClick={() => {
                   setSelectedSummary(summary);
                   setShowSummaryDialog(true);
                 }}
               >
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <div className={`p-1.5 rounded-md ${courseColor.bg}`}>
-                      {isGeneralChat ? (
-                        <MessageSquare className={`h-4 w-4 ${courseColor.icon}`} />
-                      ) : (
-                        <BookOpen className={`h-4 w-4 ${courseColor.icon}`} />
-                      )}
+                  <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${isGeneralChat ? 'from-purple-500 to-indigo-500' : 'from-blue-500 to-cyan-500'} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  
+                  <CardHeader className="pb-3 relative">
+                    <div className="flex items-start justify-between mb-1">
+                      <div className={`p-2 rounded-xl ${styleConfig.iconBg} ${styleConfig.iconColor}`}>
+                        {isGeneralChat ? <MessageSquare className="h-5 w-5" /> : <BookOpen className="h-5 w-5" />}
                     </div>
-                    <span className="truncate">{summary.chatName}</span>
-                    {isGeneralChat && (
-                      <span className="ml-auto text-xs font-normal text-purple-600 dark:text-purple-400">General</span>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="text-xs flex items-center gap-2">
-                    <span>{summary.messageCount} message{summary.messageCount !== 1 ? 's' : ''}</span>
                     {lastMessageTime && (
-                      <>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
+                        <div className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {getTimeAgo(lastMessageTime)}
-                        </span>
-                      </>
-                    )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <CardTitle className="text-base font-bold text-gray-900 dark:text-white truncate pr-2">
+                        {summary.chatName}
+                      </CardTitle>
+                      <CardDescription className="text-xs mt-1">
+                        {summary.messageCount} messages
                   </CardDescription>
+                    </div>
                 </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-between">
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed mb-3">
-                  {summary.summary}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`w-full text-xs ${courseColor.icon} hover:opacity-80 mt-auto`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/dashboard/chat?tab=${summary.chatId}`);
-                  }}
-                >
-                  View Chat
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
+                  
+                  <CardContent className="relative flex-1 flex flex-col justify-between">
+                    <div className="mb-4">
+                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                        <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-300 line-clamp-3 font-medium">
+                          "{summary.summary}"
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 dark:border-gray-800">
+                      <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                        View Details
+                      </span>
+                      <div className={`p-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors ${styleConfig.iconColor}`}>
+                        <ChevronRight className="h-4 w-4" />
+                      </div>
+                    </div>
               </CardContent>
             </Card>
+              </motion.div>
           );
           })}
         </div>
@@ -520,104 +461,60 @@ export function ChatSummariesDashboard() {
 
       {/* Summary Detail Dialog */}
       <Dialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedSummary?.chatName} - Summary
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-gray-200 dark:border-gray-800">
+          <DialogHeader className="flex-shrink-0 pb-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                <FileText className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-xl font-bold">
+                {selectedSummary?.chatName}
             </DialogTitle>
-            <DialogDescription>
-              {(() => {
-                const chat = selectedSummary ? chats[selectedSummary.chatId] : null;
-                const lastMsg = chat?.messages?.[chat.messages.length - 1];
-                const lastTime = lastMsg?.timestamp ? new Date(lastMsg.timestamp) : null;
-                
-                if (selectedSummary && lastTime) {
-                  const getTimeAgo = (date: Date): string => {
-                    const now = new Date();
-                    const diffMs = now.getTime() - date.getTime();
-                    const diffMins = Math.floor(diffMs / 60000);
-                    const diffHours = Math.floor(diffMs / 3600000);
-                    const diffDays = Math.floor(diffMs / 86400000);
-                    
-                    if (diffMins < 60) {
-                      return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
-                    }
-                    if (diffHours < 24) {
-                      const remainingMins = diffMins % 60;
-                      if (remainingMins === 0) {
-                        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-                      }
-                      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} and ${remainingMins} min${remainingMins !== 1 ? 's' : ''} ago`;
-                    }
-                    if (diffDays < 7) {
-                      return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-                    }
-                    return date.toLocaleDateString();
-                  };
-                  return `Summary generated from ${selectedSummary.messageCount} messages. Last updated ${getTimeAgo(lastTime)}.`;
-                }
-                return "AI-generated summary of your conversation";
-              })()}
+            </div>
+            <DialogDescription className="flex items-center gap-2 text-sm">
+              {selectedSummary && (
+                <>
+                  <span className="font-medium text-gray-900 dark:text-white">{selectedSummary.messageCount} messages</span>
+                  <span>•</span>
+                  <span>Generated by AI</span>
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
-          <div className="pt-4">
-            {selectedSummary && (
+          
+          <div className="flex-1 overflow-y-auto pt-6 pr-2">
               <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 leading-relaxed text-sm text-gray-700 dark:text-gray-300">
                 <BotResponse 
-                  content={selectedSummary.summary} 
-                  className="text-sm text-gray-700 dark:text-gray-300"
+                  content={selectedSummary?.summary || ''} 
                 />
               </div>
-            )}
+            </div>
           </div>
-          <div className="flex justify-end gap-2 pt-4">
+          
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
             <Button
               variant="outline"
+              className="text-gray-500"
               onClick={() => setShowSummaryDialog(false)}
             >
               Close
             </Button>
-            {selectedSummary && (
-              <>
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(selectedSummary.summary);
-                    setCopiedSummary(true);
-                    setTimeout(() => setCopiedSummary(false), 2000);
-                    toast({
-                      title: "Copied",
-                      description: "Summary copied to clipboard",
-                    });
-                  }}
-                >
-                  {copiedSummary ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-                <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25"
                   onClick={() => {
                     setShowSummaryDialog(false);
+                if (selectedSummary) {
                     router.push(`/dashboard/chat?tab=${selectedSummary.chatId}`);
+                }
                   }}
                 >
-                  Open Chat
+              Continue Chat
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
-              </>
-            )}
           </div>
         </DialogContent>
       </Dialog>
     </>
   );
 }
-

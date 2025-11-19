@@ -50,12 +50,18 @@ try {
   } else {
     // Mock services for development
     adminDb = {
-      collection: () => ({
+      collection: (name: string) => ({
         add: () => Promise.resolve({ id: 'mock-id' }),
-        doc: () => ({
+        get: () => Promise.resolve({ 
+          docs: [],
+          empty: true,
+          size: 0
+        }),
+        doc: (id: string) => ({
           get: () => Promise.resolve({ exists: false, data: () => null }),
           set: () => Promise.resolve(),
           update: () => Promise.resolve(),
+          delete: () => Promise.resolve(),
         }),
       }),
     };
@@ -67,12 +73,18 @@ try {
   console.error('Firebase Admin services initialization failed:', error);
   // Create mock services
   adminDb = {
-    collection: () => ({
+    collection: (name: string) => ({
       add: () => Promise.resolve({ id: 'mock-id' }),
-      doc: () => ({
+      get: () => Promise.resolve({ 
+        docs: [],
+        empty: true,
+        size: 0
+      }),
+      doc: (id: string) => ({
         get: () => Promise.resolve({ exists: false, data: () => null }),
         set: () => Promise.resolve(),
         update: () => Promise.resolve(),
+        delete: () => Promise.resolve(),
       }),
     }),
   };

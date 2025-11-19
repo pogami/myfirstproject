@@ -32,7 +32,7 @@ export function FuturisticChatInput({
   isSending = false
 }: FuturisticChatInputProps) {
   const { theme } = useTheme();
-  
+
   // Debug logging
   console.log('FuturisticChatInput rendering with theme:', theme, 'isSending:', isSending, 'disabled:', disabled);
   const [isTyping, setIsTyping] = useState(false);
@@ -99,10 +99,10 @@ export function FuturisticChatInput({
         // Request microphone access
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setIsVoiceActive(true);
-        
+
         // TODO: Implement actual voice recording and speech-to-text functionality
         // For now, we'll just show the active state
-        
+
         // Clean up stream when stopping
         setTimeout(() => {
           stream.getTracks().forEach(track => track.stop());
@@ -123,20 +123,17 @@ export function FuturisticChatInput({
     <div className={cn("relative w-full h-10", className)}>
       {/* Main Input Container */}
       <div className={cn(
-        "chat-input-container relative flex items-center gap-2 p-2 rounded-lg border h-10",
-        isDark 
-          ? "bg-black border-white/20" 
-          : "bg-white border-gray-200"
-      )}
-      style={{ background: isDark ? '#000000' : '#ffffff' }}>
-        
+        "chat-input-container relative flex items-center gap-2 p-2 rounded-xl border h-12 glass-panel neon-border transition-all duration-300",
+        isTyping && "neon-glow"
+      )}>
+
         {/* File Upload Icon (Left) */}
         <div
           onClick={triggerFileInput}
           className={cn(
             "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation",
-            isDark 
-              ? "text-white/60" 
+            isDark
+              ? "text-white/60"
               : "text-gray-600",
             (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
@@ -175,11 +172,11 @@ export function FuturisticChatInput({
           className={cn(
             "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation",
             isVoiceActive
-              ? isDark 
-                ? "text-red-400" 
+              ? isDark
+                ? "text-red-400"
                 : "text-red-600"
-              : isDark 
-                ? "text-white/60" 
+              : isDark
+                ? "text-white/60"
                 : "text-gray-600",
             (disabled || isSending) && "opacity-50 cursor-not-allowed"
           )}
@@ -196,8 +193,8 @@ export function FuturisticChatInput({
           onClick={handleSend}
           className={cn(
             "relative z-10 h-7 w-7 flex items-center justify-center cursor-pointer flex-shrink-0 touch-manipulation",
-            isDark 
-              ? "text-purple-400" 
+            isDark
+              ? "text-purple-400"
               : "text-purple-600",
             (disabled || isSending || !value.trim()) && "opacity-50 cursor-not-allowed"
           )}

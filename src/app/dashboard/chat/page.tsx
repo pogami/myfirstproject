@@ -909,7 +909,7 @@ export default function ChatPage() {
             
             const botMessage = {
                 id: `system-${Date.now()}`,
-                text: "⚠️ **AI Chat is Currently Unavailable**\n\nOur AI assistant is temporarily disabled for maintenance. We're working to bring it back online as soon as possible.\n\nPlease check back later. Thank you for your patience! 🛠️",
+                text: "**AI Chat is Currently Unavailable** 🛠️\n\nThe AI assistant has been temporarily disabled for scheduled maintenance and updates. We're working behind the scenes to improve performance, add new features, and ensure everything runs smoothly for you.\n\n**What you can still do:**\n• Browse your course materials and uploaded syllabi\n• Review your chat history and previous conversations\n• Access your flashcards and study materials\n• Suggest new features or report bugs on our homepage\n• Upvote or downvote AI messages by hovering over them\n\nWe appreciate your patience and will have the AI assistant back online as soon as possible!",
                 sender: 'bot' as const,
                 name: 'System',
                 timestamp: Date.now(),

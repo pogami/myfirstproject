@@ -1,5 +1,5 @@
 
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -44,9 +44,10 @@ const nextConfig: NextConfig = {
   // Turbopack configuration (replaces webpack config)
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    serverComponentsExternalPackages: ["pdf-parse"],
   },
   // External packages for server components
-  serverExternalPackages: ['pdf2json', 'pdfjs-dist', '@napi-rs/canvas'],
+  serverExternalPackages: ['pdfjs-dist', '@napi-rs/canvas'],
   // Exclude problematic test pages from build
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   output: 'standalone',

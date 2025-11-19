@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Sparkles, CheckCircle, ArrowRight, Zap, MessageSquare, Target } from "lucide-react";
+import { Upload, FileText, Sparkles, CheckCircle, Zap, MessageSquare, Target, ArrowRight } from "lucide-react";
 import InteractiveSyllabusDemo from "@/components/interactive-syllabus-demo";
 import { HowItWorksSlideshow } from "@/components/how-it-works-slideshow";
+import { motion } from "framer-motion";
 
 const features = [
   {
@@ -25,6 +26,30 @@ const features = [
   }
 ];
 
+const steps = [
+  {
+    id: 1,
+    title: "Upload Syllabus",
+    description: "Drag & drop PDF, DOCX, or TXT",
+    icon: <Upload className="size-5 text-white" />,
+    color: "bg-blue-500"
+  },
+  {
+    id: 2,
+    title: "AI Processing",
+    description: "We map assignments & schedule",
+    icon: <Sparkles className="size-5 text-white" />,
+    color: "bg-purple-500"
+  },
+  {
+    id: 3,
+    title: "Start Studying",
+    description: "Chat with your course instantly",
+    icon: <MessageSquare className="size-5 text-white" />,
+    color: "bg-green-500"
+  }
+];
+
 export default function EnhancedSyllabusUploadPage() {
   const [showSlideshow, setShowSlideshow] = useState(false);
 
@@ -37,125 +62,120 @@ export default function EnhancedSyllabusUploadPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-transparent">
-      {/* How It Works Section - Moved to Top */}
-      <Card className="border-0 bg-gradient-to-br from-muted/20 to-muted/10 mb-6 sm:mb-8">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-center text-lg sm:text-xl">How It Works</CardTitle>
-          <CardDescription className="text-center text-sm sm:text-base">
-            Real workflow we support today — from upload to AI-powered course chat
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
-          <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
-            <div className="text-center space-y-2 sm:space-y-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-base sm:text-lg font-bold text-primary">1</span>
-              </div>
-              <h3 className="font-semibold text-sm sm:text-base">Upload Syllabus</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Drag a text-based PDF, DOCX, or TXT file right from your computer
-              </p>
-            </div>
-            <div className="text-center space-y-2 sm:space-y-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-base sm:text-lg font-bold text-primary">2</span>
-              </div>
-              <h3 className="font-semibold text-sm sm:text-base">AI Course Setup</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                We map assignments, schedules, and course context automatically
-              </p>
-            </div>
-            <div className="text-center space-y-2 sm:space-y-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <span className="text-base sm:text-lg font-bold text-primary">3</span>
-              </div>
-              <h3 className="font-semibold text-sm sm:text-base">Study Groups <span className="text-xs text-muted-foreground">(Coming Soon)</span></h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                You’ll soon be able to match with classmates directly inside CourseConnect
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-transparent relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-purple-500/5 blur-3xl" />
+      </div>
 
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Hero Section - Mobile Optimized */}
-        <div className="text-center space-y-4 py-6 sm:py-8">
-          <div className="flex justify-center mb-3 sm:mb-4">
-            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-              <Upload className="size-10 sm:size-12 text-primary" />
-            </div>
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12 space-y-12">
+        
+        {/* Hero Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-6"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-2">
+            <Sparkles className="size-3.5" />
+            <span>New: Enhanced AI Parsing</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Upload Your Syllabus
+          
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
+            <span className="block text-foreground">Transform Your Syllabus</span>
+            <span className="block mt-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Into an Interactive Tutor
+            </span>
           </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-            Turn static syllabi into living course hubs. Every upload spins up a dedicated AI chat, 
-            pulls out due dates, and keeps all of your materials searchable in one place.
+          
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Upload your course documents and let our AI instantly create a personalized study companion with deadlines, topics, and exam prep.
           </p>
-          <div className="flex flex-wrap justify-center gap-2 px-4">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
-              <Sparkles className="size-3 mr-1" />
-              AI-Powered
-            </Badge>
-            <Badge variant="outline" className="text-xs">Instant Results</Badge>
-            <Badge variant="outline" className="text-xs">Free to Use</Badge>
-          </div>
-        </div>
+        </motion.div>
 
-        {/* Features Grid - Mobile Optimized */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 mb-6 sm:mb-8 px-4 sm:px-0">
-          {features.map((feature, index) => (
-            <Card key={feature.title} className="border-0 bg-gradient-to-br from-card/50 to-card/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="flex justify-center mb-2 sm:mb-3">
-                  <div className="p-1.5 sm:p-2 rounded-lg bg-muted/50">
-                    {feature.icon}
-                  </div>
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Column: Upload Area */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-7 space-y-6"
+          >
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-purple-600/50 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
+              <div className="relative bg-card rounded-xl border shadow-sm overflow-hidden">
+                <InteractiveSyllabusDemo redirectToSignup={false} />
+              </div>
+            </div>
+
+            {/* Feature Badges */}
+            <div className="flex flex-wrap justify-center gap-3">
+              {features.map((feature, i) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border/50">
+                  {feature.icon}
+                  <span className="text-sm font-medium">{feature.title}</span>
                 </div>
-                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">{feature.title}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">{feature.description}</p>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right Column: How it works & Info */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="lg:col-span-5 space-y-6"
+          >
+            {/* How It Works Card */}
+            <Card className="border-0 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border border-white/10 shadow-lg overflow-hidden">
+              <CardContent className="p-6 sm:p-8">
+                <h3 className="text-xl font-semibold mb-6">How It Works</h3>
+                <div className="space-y-8 relative">
+                  {/* Connecting Line */}
+                  <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-border/50 -z-10" />
+                  
+                  {steps.map((step, index) => (
+                    <div key={step.id} className="flex gap-4 relative">
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-full ${step.color} flex items-center justify-center shadow-lg ring-4 ring-background`}>
+                        {step.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-base">{step.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
 
-        {/* Upload Component */}
-        <div className="mx-4 sm:mx-0">
-          <InteractiveSyllabusDemo redirectToSignup={false} />
-        </div>
-
-        {/* Bottom Info Section - Centers the upload area */}
-        <div className="mt-12 mb-16 px-4 sm:px-0">
-          <Card className="max-w-2xl mx-auto border-0 bg-gradient-to-br from-muted/20 to-muted/10">
-            <CardContent className="p-6 sm:p-8">
-              <h3 className="text-xl font-semibold mb-6 text-center">What happens after upload?</h3>
-              <div className="grid gap-6 sm:grid-cols-3">
-                <div className="flex flex-col items-center text-center space-y-3 group">
-                  <div className="p-3 rounded-xl bg-yellow-100 dark:bg-yellow-900/20 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-900/30 transition-colors">
-                    <Zap className="size-6 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">Instant AI Analysis</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">We detect meeting times, grading policies, and assignment milestones.</p>
+            {/* Value Props */}
+            <div className="grid gap-4">
+              <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex gap-4 items-start">
+                <div className="p-2 rounded-lg bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                  <Zap className="size-5" />
                 </div>
-                <div className="flex flex-col items-center text-center space-y-3 group">
-                  <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/20 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/30 transition-colors">
-                    <MessageSquare className="size-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">Dedicated Chat</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">A course-specific AI chat opens automatically, ready for questions.</p>
-                </div>
-                <div className="flex flex-col items-center text-center space-y-3 group">
-                  <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30 transition-colors">
-                    <Target className="size-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">Study Assistance</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">Use the chat to generate summaries, practice questions, and study plans.</p>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Instant Analysis</h4>
+                  <p className="text-xs text-muted-foreground">We detect meeting times, grading policies, and assignment milestones instantly.</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              
+              <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex gap-4 items-start">
+                <div className="p-2 rounded-lg bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                  <Target className="size-5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Study Assistance</h4>
+                  <p className="text-xs text-muted-foreground">Generate summaries, practice questions, and study plans directly from your syllabus.</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         {/* Slideshow */}

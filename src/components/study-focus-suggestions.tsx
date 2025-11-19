@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { BookOpen, Target, Lightbulb, ArrowRight, Loader2, TrendingUp, Check, Sparkles, Clock, MessageCircle } from 'lucide-react';
+import { BookOpen, Target, ArrowRight, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/hooks/use-chat-store';
 import { auth } from '@/lib/firebase/client-simple';
 import BotResponse from '@/components/bot-response';
+import { motion } from 'framer-motion';
 
 interface StudySuggestion {
   title: string;
@@ -160,94 +161,20 @@ export function StudyFocusSuggestions() {
     return () => clearTimeout(timer);
   }, [chats, user, currentMessageCount, lastMessageCount]);
 
-  // Loading state with AI message - Card style similar to flashcards
+  // Show loading state with simple skeleton
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-          <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Here's what's calling your attention
-          </h2>
-        </div>
-        <Card className="border-2 border-dashed border-muted-foreground/30 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 relative overflow-hidden">
-          <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-6 min-h-[200px]">
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 animate-pulse"></div>
-            
-            {/* Main animation */}
-            <div className="relative z-10 space-y-6">
-              {/* Elegant loading animation */}
-              <div className="relative">
-                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                  <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                </div>
-                <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-primary/20 to-primary/10 animate-ping"></div>
-              </div>
-              
-              {/* Text content */}
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-primary">Analyzing Your Conversations</h3>
-                <p className="text-muted-foreground">AI is generating personalized suggestions...</p>
-              </div>
-              
-              {/* Progress dots */}
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-3 animate-pulse">
+        <div className="h-4 w-48 bg-gray-200 dark:bg-gray-800 rounded-full" />
+        <div className="h-3 w-64 bg-gray-200 dark:bg-gray-800 rounded-full" />
       </div>
     );
   }
 
-  // Empty state - only show if not loading and actually empty
-  if (suggestions.length === 0 && !isLoading) {
-    const hasMessages = currentMessageCount > 0;
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-          <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Here's what's calling your attention
-          </h2>
-        </div>
-        <Card className="border-dashed border-2 border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-          <CardContent className="p-8 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <Lightbulb className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Your study suggestions will appear here soon
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
-                  Once you've had a few conversations, I'll highlight key topics and areas to focus on. Keep the chat going!
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // Don't show if empty
+  if (suggestions.length === 0) {
+    return null;
   }
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'review':
-        return <Target className="h-5 w-5 text-orange-500 dark:text-orange-400" />;
-      case 'topic':
-        return <BookOpen className="h-5 w-5 text-blue-500 dark:text-blue-400" />;
-      case 'focus':
-        return <Lightbulb className="h-5 w-5 text-purple-500 dark:text-purple-400" />;
-      default:
-        return <TrendingUp className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />;
-    }
-  };
 
   // Check if a topic has been discussed in any chat and get metadata
   const getTopicInfo = (topic: string): { discussed: boolean; lastDiscussed?: Date; frequency: number } => {
@@ -324,91 +251,102 @@ export function StudyFocusSuggestions() {
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+      <div className="space-y-6">
+        <div>
           <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Here's what's calling your attention
+            AI Study Recommendations
           </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Personalized focus areas based on your recent activity
+          </p>
         </div>
         
         <div className="grid gap-5 md:gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
           {suggestions.map((suggestion, idx) => {
-            const iconColors = [
-              { bg: 'bg-amber-50 dark:bg-amber-950/20', icon: 'text-amber-600 dark:text-amber-500' },
-              { bg: 'bg-emerald-50 dark:bg-emerald-950/20', icon: 'text-emerald-600 dark:text-emerald-500' },
-              { bg: 'bg-rose-50 dark:bg-rose-950/20', icon: 'text-rose-600 dark:text-rose-500' }
-            ];
-            const iconColor = iconColors[idx % 3];
+            const styleConfig = [
+              { 
+                gradient: 'from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20', 
+                border: 'border-amber-200 dark:border-amber-800', 
+                text: 'text-amber-700 dark:text-amber-400',
+                bg: 'bg-amber-50 dark:bg-amber-950/30'
+              },
+              { 
+                gradient: 'from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20', 
+                border: 'border-blue-200 dark:border-blue-800', 
+                text: 'text-blue-700 dark:text-blue-400',
+                bg: 'bg-blue-50 dark:bg-blue-950/30'
+              },
+              { 
+                gradient: 'from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20', 
+                border: 'border-emerald-200 dark:border-emerald-800', 
+                text: 'text-emerald-700 dark:text-emerald-400',
+                bg: 'bg-emerald-50 dark:bg-emerald-950/30'
+              }
+            ][idx % 3];
             
             return (
-            <Card 
+            <motion.div
               key={idx}
-              className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer group flex flex-col h-full"
-              onClick={() => {
-                setSelectedSuggestion(suggestion);
-                setIsDialogOpen(true);
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
             >
-              <CardHeader className="pb-3 flex-shrink-0">
-                <CardTitle className="flex items-center gap-3 text-base">
-                  <div className={`p-2 rounded-lg ${iconColor.bg}`}>
-                    <div className={iconColor.icon}>
-                      {getIcon(suggestion.type)}
+              <Card 
+                className={`relative overflow-hidden border ${styleConfig.border} bg-white dark:bg-gray-900 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group flex flex-col h-full`}
+                onClick={() => {
+                  setSelectedSuggestion(suggestion);
+                  setIsDialogOpen(true);
+                }}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${styleConfig.gradient} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                
+                <CardHeader className="pb-3 flex-shrink-0 relative z-10">
+                  <div className="flex items-start justify-between mb-2">
+                    <span className={`text-[11px] font-semibold uppercase tracking-[0.3em] ${styleConfig.text}`}>
+                      {suggestion.type === 'review' ? 'Review' : suggestion.type === 'topic' ? 'Concept' : 'Focus'}
+                    </span>
+                    <div className="px-2.5 py-1 rounded-full bg-white/80 dark:bg-black/20 backdrop-blur-sm border border-gray-100 dark:border-gray-800">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        {suggestion.course}
+                      </span>
                     </div>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors line-clamp-2">
+                  <CardTitle className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-tight">
                     {suggestion.title}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-between">
-                <div className="flex-1 flex flex-col">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed line-clamp-2">
-                    {suggestion.description}
-                  </p>
-                  
-                  {/* Bullet points for focus areas - show first 2 in card */}
-                  {suggestion.focusPoints && suggestion.focusPoints.length > 0 && (
-                    <ul className="space-y-1 mb-3 flex-1">
-                      {suggestion.focusPoints.slice(0, 2).map((point, idx) => (
-                        <li key={idx} className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2">
-                          <span className="text-blue-500 dark:text-blue-400 mt-1.5">•</span>
-                          <span className="line-clamp-1">{point}</span>
-                        </li>
-                      ))}
-                      {suggestion.focusPoints.length > 2 && (
-                        <li className="text-xs text-gray-400 dark:text-gray-500 italic">
-                          +{suggestion.focusPoints.length - 2} more
-                        </li>
-                      )}
-                    </ul>
-                  )}
-                </div>
+                  </CardTitle>
+                </CardHeader>
                 
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {suggestion.course}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-700 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (suggestion.actionUrl.startsWith('/')) {
-                        router.push(suggestion.actionUrl);
-                      } else {
-                        window.location.href = suggestion.actionUrl;
-                      }
-                    }}
-                  >
-                    Open Chat
-                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                <CardContent className="flex-1 flex flex-col justify-between relative z-10 pt-0">
+                  <div className="flex-1 flex flex-col">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed line-clamp-3">
+                      {suggestion.description}
+                    </p>
+                    
+                    {/* Interactive-looking focus points */}
+                    {suggestion.focusPoints && suggestion.focusPoints.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {suggestion.focusPoints.slice(0, 2).map((point, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-white/60 dark:bg-black/20 p-2 rounded-lg border border-gray-100/50 dark:border-gray-800/50">
+                            <div className={`w-1.5 h-1.5 rounded-full ${styleConfig.text.replace('text-', 'bg-')}`} />
+                            <span className="line-clamp-1">{point}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100/50 dark:border-gray-800/50">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      {suggestion.course}
+                    </span>
+                    <div className="flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform">
+                      Open Chat
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
             );
           })}
         </div>
@@ -416,50 +354,56 @@ export function StudyFocusSuggestions() {
 
       {/* Dialog for full suggestion details */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-gray-200 dark:border-gray-800">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/20">
                 {selectedSuggestion && getIcon(selectedSuggestion.type)}
               </div>
               <span>{selectedSuggestion?.title}</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-base font-medium text-blue-600 dark:text-blue-400">
               {selectedSuggestion?.course}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 pt-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              {selectedSuggestion?.description}
-            </p>
+          <div className="flex-1 overflow-y-auto space-y-4 pt-4 pr-2">
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                {selectedSuggestion?.description}
+              </p>
+            </div>
             
-            {/* Full bullet points list */}
+            {/* Full bullet points list - compact */}
             {selectedSuggestion?.focusPoints && selectedSuggestion.focusPoints.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Key areas to focus on:
+                <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider flex items-center gap-2">
+                  <Target className="w-3.5 h-3.5" />
+                  Key Objectives
                 </h4>
-                <ul className="space-y-2">
+                <div className="space-y-2">
                   {selectedSuggestion.focusPoints.map((point, idx) => (
-                    <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2">
-                      <span className="text-blue-500 dark:text-blue-400 mt-1.5 flex-shrink-0">•</span>
-                      <div className="flex-1">
-                        <BotResponse content={point} />
+                    <div key={idx} className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                      <div className="mt-0.5 w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                        {idx + 1}
                       </div>
-                    </li>
+                      <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                        {point}
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
-            {/* Clickable undiscussed topics */}
+            {/* Clickable undiscussed topics - compact */}
             {selectedSuggestion?.undiscussedTopics && selectedSuggestion.undiscussedTopics.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                  Topics waiting for you:
+                <h4 className="text-xs font-bold text-gray-900 dark:text-white mb-2 uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Topics to Cover
                 </h4>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {selectedSuggestion.undiscussedTopics.map((topic, idx) => {
                     // Extract chatId from actionUrl
                     const chatIdMatch = selectedSuggestion.actionUrl.match(/tab=([^&]+)/);
@@ -470,149 +414,64 @@ export function StudyFocusSuggestions() {
                     const topicInfo = getTopicInfo(topic);
                     const discussed = topicInfo.discussed;
                     
-                    // Format time ago - show hours and minutes when > 60 minutes
-                    const getTimeAgo = (date: Date): string => {
-                      const now = new Date();
-                      const diffMs = now.getTime() - date.getTime();
-                      const diffMins = Math.floor(diffMs / 60000);
-                      const diffHours = Math.floor(diffMs / 3600000);
-                      const diffDays = Math.floor(diffMs / 86400000);
-                      
-                      if (diffMins < 60) {
-                        return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
-                      }
-                      if (diffHours < 24) {
-                        const remainingMins = diffMins % 60;
-                        if (remainingMins === 0) {
-                          return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-                        }
-                        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} and ${remainingMins} min${remainingMins !== 1 ? 's' : ''} ago`;
-                      }
-                      if (diffDays < 7) {
-                        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-                      }
-                      return date.toLocaleDateString();
-                    };
-                    
                     return (
-                      <div key={idx} className="relative group">
-                        <Button
-                          variant={discussed ? "default" : "outline"}
-                          size="sm"
-                          className={`text-xs transition-all relative ${
-                            discussed 
-                              ? "bg-green-600 hover:bg-green-700 text-white border-green-600 dark:bg-green-600 dark:hover:bg-green-700 dark:text-white" 
-                              : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                          }`}
-                          onClick={() => {
-                            setIsDialogOpen(false);
-                            router.push(topicUrl);
-                          }}
-                        >
-                          {discussed ? (
-                            <>
-                              <Check className="h-3 w-3 mr-1.5" />
-                              {topic}
-                              {topicInfo.frequency > 1 && (
-                                <span className="ml-1.5 text-xs opacity-90">({topicInfo.frequency}x)</span>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <BookOpen className="h-3 w-3 mr-1.5" />
-                              {topic}
-                            </>
+                      <button
+                        key={idx}
+                        className={`
+                          relative group px-2.5 py-1 rounded-lg text-xs font-medium transition-all border
+                          ${discussed 
+                            ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" 
+                            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700"
+                          }
+                        `}
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          router.push(topicUrl);
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          {discussed ? <Check className="w-3 h-3" /> : <div className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-500" />}
+                          <span className="truncate max-w-[120px]">{topic}</span>
+                          {topicInfo.frequency > 1 && (
+                            <span className="text-[10px] opacity-60">x{topicInfo.frequency}</span>
                           )}
-                        </Button>
-                      </div>
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                  {(() => {
-                    const discussedCount = selectedSuggestion.undiscussedTopics.filter(t => isTopicDiscussed(t)).length;
-                    const totalCount = selectedSuggestion.undiscussedTopics.length;
-                    
-                    if (discussedCount === 0) {
-                      return "You haven't chatted about these topics yet. Click any topic to start exploring!";
-                    } else if (discussedCount === totalCount) {
-                      return `Nice work! You've covered all ${totalCount} topics. Keep the momentum going! 🎉`;
-                    } else {
-                      return `You're making progress! ${discussedCount} of ${totalCount} topics covered. Keep going!`;
-                    }
-                  })()}
-                </p>
-                {/* Show last discussed topic info below progress message */}
-                {(() => {
-                  const discussedTopics = selectedSuggestion.undiscussedTopics
-                    .map(topic => ({ topic, info: getTopicInfo(topic) }))
-                    .filter(({ info }) => info.discussed && info.lastDiscussed)
-                    .sort((a, b) => (b.info.lastDiscussed?.getTime() || 0) - (a.info.lastDiscussed?.getTime() || 0));
-                  
-                  if (discussedTopics.length > 0) {
-                    const mostRecent = discussedTopics[0];
-                    const getTimeAgo = (date: Date): string => {
-                      const now = new Date();
-                      const diffMs = now.getTime() - date.getTime();
-                      const diffMins = Math.floor(diffMs / 60000);
-                      const diffHours = Math.floor(diffMs / 3600000);
-                      const diffDays = Math.floor(diffMs / 86400000);
-                      
-                      if (diffMins < 60) {
-                        return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
-                      }
-                      if (diffHours < 24) {
-                        const remainingMins = diffMins % 60;
-                        if (remainingMins === 0) {
-                          return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-                        }
-                        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} and ${remainingMins} min${remainingMins !== 1 ? 's' : ''} ago`;
-                      }
-                      if (diffDays < 7) {
-                        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-                      }
-                      return date.toLocaleDateString();
-                    };
-                    
-                    return (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Last discussed: <span className="font-medium">{mostRecent.topic}</span> {getTimeAgo(mostRecent.info.lastDiscussed!)} 
-                        {mostRecent.info.frequency > 1 && ` (${mostRecent.info.frequency}x)`}
-                      </p>
-                    );
-                  }
-                  return null;
-                })()}
               </div>
             )}
             
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Close
-              </Button>
-              <Button
-                onClick={() => {
-                  if (selectedSuggestion) {
-                    if (selectedSuggestion.actionUrl.startsWith('/')) {
-                      router.push(selectedSuggestion.actionUrl);
-                    } else {
-                      window.location.href = selectedSuggestion.actionUrl;
-                    }
-                    setIsDialogOpen(false);
+          </div>
+          
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsDialogOpen(false)}
+              className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            >
+              Close
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 rounded-xl px-6"
+              onClick={() => {
+                if (selectedSuggestion) {
+                  if (selectedSuggestion.actionUrl.startsWith('/')) {
+                    router.push(selectedSuggestion.actionUrl);
+                  } else {
+                    window.location.href = selectedSuggestion.actionUrl;
                   }
-                }}
-              >
-                Open Chat
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+                  setIsDialogOpen(false);
+                }
+              }}
+            >
+              Start Session
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
     </>
   );
 }
-

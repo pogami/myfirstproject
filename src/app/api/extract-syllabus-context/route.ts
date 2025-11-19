@@ -13,16 +13,23 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { syllabusText } = SyllabusExtractionSchema.parse(body);
 
-    const prompt = `Extract course information from this syllabus and return ONLY valid JSON. Use null for missing fields.
+const prompt = `Extract course information from this syllabus and return ONLY valid JSON. Use null for missing fields.
+
+IMPORTANT: Look carefully for the professor/instructor name. It might be listed as:
+- "Instructor:", "Professor:", "Instructor Name:", "Faculty:", "Teacher:"
+- In a header section or contact information
+- After "Dr.", "Prof.", "Mr.", "Ms.", or similar titles
+- In email addresses (extract the name before @)
 
 JSON format:
 {
   "courseName": "string or null",
   "courseCode": "string or null", 
-  "professor": "string or null",
+  "professor": "string or null (full name including title if present, e.g. 'Dr. Sarah Johnson' or 'Prof. John Smith')",
   "university": "string or null",
   "semester": "string or null",
   "year": "string or null",
+  "classTime": "string describing meeting days/times or null",
   "department": "string or null",
   "topics": ["array of strings"],
   "assignments": [{"name": "string", "dueDate": "YYYY-MM-DD or null"}],
@@ -132,11 +139,21 @@ JSON:`;
         university: null,
         semester: null,
         year: null,
+        classTime: null,
         department: null,
         topics: [],
         assignments: [],
         exams: []
       };
+    }
+
+    // Fallback extraction for professor if missing
+    if (!extractedData.professor) {
+      const fallbackProfessor = extractProfessorName(syllabusText);
+      if (fallbackProfessor) {
+        extractedData.professor = fallbackProfessor;
+        console.log('Professor extracted via fallback:', fallbackProfessor);
+      }
     }
 
     return NextResponse.json({ success: true, extractedData });
@@ -152,6 +169,7 @@ JSON:`;
         university: null,
         semester: null,
         year: null,
+        classTime: null,
         department: null,
         topics: [],
         assignments: [],
@@ -159,4 +177,25 @@ JSON:`;
       }
     }, { status: 500 });
   }
+}
+
+function extractProfessorName(text: string): string | null {
+  if (!text) return null;
+
+  const patterns = [
+    /(?:instructor|professor|teacher|faculty|course director)\s*[:\-–]\s*([^\r\n]+)/i,
+    /(Dr\.|Prof\.|Professor)\s+[A-Z][\w'.-]*(?:\s+[A-Z][\w'.-]*){0,2}/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      let result = match[1] || match[0];
+      result = result.replace(/(email|office hours|phone).*/i, '').trim();
+      result = result.replace(/[-–—:,]$/, '').trim();
+      return result;
+    }
+  }
+
+  return null;
 }

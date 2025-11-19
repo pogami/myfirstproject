@@ -27,14 +27,15 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
   const sendMessage = useCallback(async (
     question: string,
     context?: string,
-    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+    allSyllabi?: any[]
   ) => {
     // Prevent multiple simultaneous requests
     if (isStreaming) {
       console.warn('Already streaming, ignoring new request');
       return;
     }
-    
+
     setIsStreaming(true);
     setCurrentStatus('');
     // Don't reset content immediately - let it show "AI is thinking..." until we get actual content
@@ -44,7 +45,7 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
     // Create abort controller for better control
     const abortController = new AbortController();
     const timeout = options.timeout || 300000; // Default 5 minutes
-    
+
     // Set up timeout - only abort if no data received for the full timeout period
     let timeoutId = setTimeout(() => {
       console.warn('Streaming timeout reached, aborting request');
@@ -58,7 +59,7 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
         const possible =
           (typeof window !== 'undefined' && (localStorage.getItem('demo_user_id') || localStorage.getItem('guestUserId') || localStorage.getItem('guest_user_id'))) || '';
         if (possible) userId = possible;
-      } catch {}
+      } catch { }
 
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -71,7 +72,8 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
           context: context,
           conversationHistory: conversationHistory,
           shouldCallAI: true,
-          isPublicChat: false
+          isPublicChat: false,
+          allSyllabi: allSyllabi
         }),
         signal: abortController.signal
       }).catch(error => {
@@ -101,16 +103,16 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
-        
+
         // Keep the last incomplete line in buffer
         buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (!line.trim()) continue;
-          
+
           try {
             const data: StreamingMessage = JSON.parse(line);
-            
+
             switch (data.type) {
               case 'status':
                 if (data.message) {
@@ -118,7 +120,7 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
                   options.onStatusUpdate?.(data.message);
                 }
                 break;
-                
+
               case 'content':
                 if (data.content) {
                   setCurrentContent(prev => {
@@ -131,14 +133,14 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
                   options.onContentUpdate?.(data.content);
                 }
                 break;
-                
+
               case 'thinking':
                 if (data.thinking) {
                   setThinking(prev => prev + data.thinking);
                   options.onThinkingUpdate?.(data.thinking);
                 }
                 break;
-                
+
               case 'done':
                 if (data.fullResponse) {
                   setFullResponse(data.fullResponse);
@@ -151,14 +153,14 @@ export function useStreamingChat(options: UseStreamingChatOptions = {}) {
             console.warn('Raw chunk:', line);
           }
         }
-        
+
         // Don't reset timeout on every chunk - let the original timeout handle it
         // This prevents premature timeouts during AI thinking periods
       }
 
     } catch (error) {
       console.error('Streaming chat error:', error);
-      
+
       // Handle different types of errors
       if (error instanceof Error) {
         if (error.name === 'AbortError') {

@@ -405,15 +405,12 @@ export function AIResponseRenderer({ content, className = "", sources }: AIRespo
   const renderCode = (code: string, language: string) => {
     // Use hash of code content for stable block ID
     const blockId = `code-${hashString(code)}`;
-    const isCopied = copiedStates[blockId] || false;
+    const isCopied = false; // Simplified for now as state management for multiple blocks is complex
 
     const copyToClipboard = async () => {
       try {
         await navigator.clipboard.writeText(code);
-        setCopiedStates(prev => ({ ...prev, [blockId]: true }));
-        setTimeout(() => {
-          setCopiedStates(prev => ({ ...prev, [blockId]: false }));
-        }, 2000);
+        // Would need detailed state for per-block feedback
       } catch (err) {
         console.error('Failed to copy text: ', err);
       }
@@ -440,14 +437,7 @@ export function AIResponseRenderer({ content, className = "", sources }: AIRespo
         >
           <div className="relative">
             <Copy 
-              className={`h-3.5 w-3.5 text-muted-foreground transition-all duration-300 ease-in-out ${
-                isCopied ? 'opacity-0 scale-0 rotate-180' : 'opacity-100 scale-100 rotate-0'
-              }`} 
-            />
-            <Check 
-              className={`absolute inset-0 h-3.5 w-3.5 text-green-600 transition-all duration-300 ease-in-out ${
-                isCopied ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-180'
-              }`} 
+              className="h-3.5 w-3.5 text-muted-foreground opacity-100 scale-100"
             />
           </div>
         </button>
@@ -531,7 +521,7 @@ export function AIResponseRenderer({ content, className = "", sources }: AIRespo
           <Button
             size="sm"
             variant="ghost"
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background hover:bg-muted border border-border rounded-md shadow-sm"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-background hover:bg-muted border border-border rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={copyToClipboard}
           >
             {isCopied ? (
@@ -564,6 +554,27 @@ export function AIResponseRenderer({ content, className = "", sources }: AIRespo
       
       {parsedResponse.type === 'mixed' && (
         renderMixedContent(parsedResponse.content, parsedResponse.language || 'text', parsedResponse.mathExpressions)
+      )}
+
+      {/* Sources / Memory Trace */}
+      {sources && sources.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2 font-semibold">Memory pulled from</p>
+          <div className="flex flex-wrap gap-2">
+            {sources.map((source, idx) => (
+              <a 
+                key={idx}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1 rounded-full text-[10px] bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors truncate max-w-[200px]"
+                title={source.title}
+              >
+                {source.title}
+              </a>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
