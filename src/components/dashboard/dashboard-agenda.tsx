@@ -17,6 +17,7 @@ export function DashboardAgenda() {
   const { toast } = useToast();
   const [showAllDialog, setShowAllDialog] = useState(false);
   const [markingComplete, setMarkingComplete] = useState<string | null>(null);
+  const [localCompletions, setLocalCompletions] = useState<Record<string, boolean>>({});
 
   // Collect all items
   const allItems = React.useMemo(() => {
@@ -89,6 +90,7 @@ export function DashboardAgenda() {
           await updateDoc(chatRef, {
             'courseData.assignments': updatedAssignments
           });
+          setLocalCompletions(prev => ({ ...prev, [item.id]: true }));
           
           toast({
             title: "Assignment Completed!",
@@ -134,6 +136,7 @@ export function DashboardAgenda() {
           {items.map((item, idx) => {
             const isLast = idx === items.length - 1;
             const daysUntil = Math.ceil((item.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            const isCompleted = item.status === 'Completed' || localCompletions[item.id];
             
             let urgencyColor = 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
             if (daysUntil <= 2) urgencyColor = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
@@ -181,17 +184,27 @@ export function DashboardAgenda() {
 
                 {/* Action/Status */}
                 <div className="self-center">
-                  {item.type === 'assignment' ? (
+                    {item.type === 'assignment' ? (
                     <button
                       onClick={() => handleMarkComplete(item)}
-                      disabled={markingComplete === item.id || item.status === 'Completed'}
-                      className="h-8 w-8 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-300 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={markingComplete === item.id || isCompleted}
+                      className={`h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed ${
+                        isCompleted
+                          ? 'border-green-500 bg-green-50 text-green-600 shadow-inner dark:bg-green-900/20 dark:border-green-400 dark:text-green-200'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-300 hover:border-green-500 hover:text-green-500'
+                      }`}
                       title="Mark Complete"
                     >
                       {markingComplete === item.id ? (
                         <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <CheckCircle2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        <CheckCircle2
+                          className={`h-5 w-5 transition-transform ${
+                            isCompleted
+                              ? 'text-green-600 dark:text-green-200'
+                              : 'group-hover:scale-110'
+                          }`}
+                        />
                       )}
                     </button>
                   ) : (
@@ -225,6 +238,7 @@ export function DashboardAgenda() {
             ) : (
               allItems.map((item, idx) => {
                 const daysUntil = Math.ceil((item.date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                const isCompleted = item.status === 'Completed' || localCompletions[item.id];
                 
                 let urgencyColor = 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
                 if (daysUntil <= 2) urgencyColor = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
@@ -271,14 +285,24 @@ export function DashboardAgenda() {
                       {item.type === 'assignment' ? (
                         <button
                           onClick={() => handleMarkComplete(item)}
-                          disabled={markingComplete === item.id || item.status === 'Completed'}
-                          className="h-8 w-8 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-300 hover:border-green-500 hover:text-green-500 transition-colors cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={markingComplete === item.id || isCompleted}
+                          className={`h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isCompleted
+                              ? 'border-green-500 bg-green-50 text-green-600 shadow-inner dark:bg-green-900/20 dark:border-green-400 dark:text-green-200'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-300 hover:border-green-500 hover:text-green-500'
+                          }`}
                           title="Mark Complete"
                         >
                           {markingComplete === item.id ? (
                             <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <CheckCircle2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                            <CheckCircle2
+                            className={`h-5 w-5 transition-transform ${
+                                isCompleted
+                                  ? 'text-green-600 dark:text-green-200'
+                                  : 'group-hover:scale-110'
+                              }`}
+                            />
                           )}
                         </button>
                       ) : (

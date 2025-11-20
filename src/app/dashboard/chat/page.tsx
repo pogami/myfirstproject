@@ -44,6 +44,7 @@ import { JoinMessage } from "@/components/join-message";
 import { createWelcomeNotification, createAIResponseNotification, createStudyEncouragementNotification, createAssignmentReminderNotification, isFirstGuestVisit, markGuestAsVisited } from "@/lib/guest-notifications";
 import { useNotifications } from "@/hooks/use-notifications";
 import { WelcomeCard } from "@/components/welcome-card";
+import { ThinkingProcess } from '@/components/ui/thinking-process';
 
 // Lightweight debug flag to silence heavy client logs in production
 const DEBUG = false;
@@ -64,6 +65,29 @@ const getGuestDisplayName = (): string => {
   
   return 'Guest User';
 };
+
+function getSmartThinkingSteps(message: string): string[] {
+  const msg = (message || "").toLowerCase();
+  const steps = ["Analyzing request context..."];
+  
+  if (msg.includes("quiz") || msg.includes("test") || msg.includes("exam")) {
+    steps.push("Checking question bank...", "Formulating practice questions...", "Verifying answers...");
+  } else if (msg.includes("summar") || msg.includes("explain")) {
+    steps.push("Scanning course content...", "Extracting key points...", "Synthesizing summary...");
+  } else if (msg.includes("code") || msg.includes("function") || msg.includes("react") || msg.includes("java") || msg.includes("python") || msg.includes("html") || msg.includes("css") || msg.includes("javascript")) {
+    steps.push("Analyzing code structure...", "Checking syntax patterns...", "Generating code examples...");
+  } else if (msg.includes("math") || msg.includes("calculus") || msg.includes("algebra") || msg.includes("equation")) {
+    steps.push("Parsing mathematical expression...", "Applying solving algorithms...", "Verifying step-by-step solution...");
+  } else if (msg.includes("essay") || msg.includes("write") || msg.includes("paper")) {
+    steps.push("Structuring argument flow...", "Gathering supporting evidence...", "Drafting outlines...");
+  } else if (msg.includes("schedule") || msg.includes("plan") || msg.includes("time")) {
+     steps.push("Checking calendar events...", "Optimizing study blocks...", "Generating timeline...");
+  } else {
+    steps.push("Retrieving relevant knowledge...", "Formulating response...", "Formatting output...");
+  }
+  
+  return steps;
+}
 
 export default function ChatPage() {
     const searchParams = useSearchParams();
@@ -115,6 +139,49 @@ export default function ChatPage() {
     const [unreadById, setUnreadById] = useState<Record<string, number>>({});
     const [prevLengths, setPrevLengths] = useState<Record<string, number>>({});
     const { toast } = useToast();
+
+    // Thinking process state
+    const [thinkingSteps, setThinkingSteps] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (isLoading && !streamingResponse) {
+             const currentChat = currentTab ? chats[currentTab] : undefined;
+             const lastMessage = currentChat?.messages?.at(-1);
+             
+             // Only generate thinking steps if the last message was from the user (waiting for bot)
+             // OR if we just sent a message and are waiting
+             const userMessageText = lastMessage?.sender === 'user' ? lastMessage.text : "";
+             
+             if (userMessageText) {
+                 const steps = getSmartThinkingSteps(typeof userMessageText === 'string' ? userMessageText : JSON.stringify(userMessageText));
+                 
+                 setThinkingSteps([steps[0]]);
+                 
+                 let i = 1;
+                 // Clear any existing interval first
+                 const interval = setInterval(() => {
+                    if (i < steps.length) {
+                        const nextStep = steps[i];
+                        setThinkingSteps(prev => {
+                            if (prev.includes(nextStep)) return prev;
+                            return [...prev, nextStep];
+                        });
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                    }
+                 }, 2000);
+                 
+                 return () => clearInterval(interval);
+             }
+        } else {
+            // Don't clear steps immediately on loading false so they can be saved to the message
+            if (!streamingResponse) {
+                 // Only clear if we are truly resetting, not transitioning to streaming/complete
+            }
+        }
+    }, [isLoading, streamingResponse, currentTab, chats]); // Re-run when loading state changes
+
 
     // Helper function to get clean chat display name
     const getChatDisplayName = (chatId: string) => {
@@ -909,7 +976,7 @@ export default function ChatPage() {
             
             const botMessage = {
                 id: `system-${Date.now()}`,
-                text: "**AI Chat is Currently Unavailable** 🛠️\n\nThe AI assistant has been temporarily disabled for scheduled maintenance and updates. We're working behind the scenes to improve performance, add new features, and ensure everything runs smoothly for you.\n\n**What you can still do:**\n• Browse your course materials and uploaded syllabi\n• Review your chat history and previous conversations\n• Access your flashcards and study materials\n• Suggest new features or report bugs on our homepage\n• Upvote or downvote AI messages by hovering over them\n\nWe appreciate your patience and will have the AI assistant back online as soon as possible!",
+                text: "⚠️ **AI Chat is Currently Unavailable**\n\nOur AI assistant is temporarily disabled for maintenance. We're working to bring it back online as soon as possible.\n\nPlease check back later. Thank you for your patience! 🛠️",
                 sender: 'bot' as const,
                 name: 'System',
                 timestamp: Date.now(),
@@ -1046,7 +1113,7 @@ export default function ChatPage() {
                     }
                     
                     // For General Chat: Include ALL syllabi from all class chats
-                    if (currentTab === 'private-general-chat') {
+                    if (currentTab?.includes('private-general-chat')) {
                         const allClassChats = Object.values(chats).filter(chat => chat.chatType === 'class' && chat.courseData);
                         if (allClassChats.length > 0) {
                             requestBody.allSyllabi = allClassChats.map(chat => ({
@@ -1225,7 +1292,8 @@ export default function ChatPage() {
                         name: 'CourseConnect AI',
                         timestamp: Date.now(),
                         sources: sources || undefined,
-                        isSearchRequest: searchModeEnabledBeforeAPI || false
+                        isSearchRequest: searchModeEnabledBeforeAPI || false,
+                        thinkingSteps: thinkingSteps // Save thinking steps to message history
                     };
 
                     // Add message to chat store first so it appears in the list
@@ -1401,7 +1469,7 @@ export default function ChatPage() {
                     }
                     
                     // For General Chat: Include ALL syllabi from all class chats
-                    if (currentTab === 'private-general-chat') {
+                    if (currentTab?.includes('private-general-chat')) {
                         const allClassChats = Object.values(chats).filter(chat => chat.chatType === 'class' && chat.courseData);
                         if (allClassChats.length > 0) {
                             requestBody.allSyllabi = allClassChats.map(chat => ({
@@ -2085,6 +2153,7 @@ export default function ChatPage() {
     // Get class chats (non-general chats)
     const classChats = Object.entries(chats).filter(([id, chat]) => id !== 'private-general-chat' && id !== 'public-general-chat');
     const generalChat = chats[currentTab || 'private-general-chat'];
+    const pageHeaderTitle = currentTab ? getChatDisplayName(currentTab) : 'Chat';
 
     // Debug logging
     if (DEBUG) {
@@ -2374,9 +2443,6 @@ export default function ChatPage() {
                                 <div className="pb-3 flex-shrink-0 px-4 border-b border-border/50">
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-1.5 rounded-lg bg-primary/10">
-                                                <MessageSquare className="h-4 w-4 text-primary" />
-                                            </div>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-base">{currentTab ? getChatDisplayName(currentTab) : 'Loading...'}</span>
                                                 <span className="text-xs text-muted-foreground">
@@ -2391,10 +2457,10 @@ export default function ChatPage() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={handleGenerateSummary}
-                                                className="h-8 px-3 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-medium"
+                                                className="h-9 px-4 text-xs font-semibold bg-gradient-to-r from-sky-500/10 via-blue-500/10 to-indigo-500/10 hover:from-sky-500/20 hover:via-blue-500/20 hover:to-indigo-500/20 border border-blue-200/70 dark:border-blue-900/60 text-blue-700 dark:text-blue-200 shadow-sm hover:shadow-md transition-all duration-200 rounded-full"
                                                 disabled={isGeneratingSummary}
                                             >
-                                                <ScrollText className="h-3.5 w-3.5 mr-1.5" />
+                                                <ScrollText className="h-3.5 w-3.5 mr-1.5 text-blue-600 dark:text-blue-300" />
                                                 {isGeneratingSummary ? 'Generating...' : 'Generate AI Summary'}
                                             </Button>
                                             {currentChat?.chatType === 'class' && (
@@ -2679,6 +2745,18 @@ export default function ChatPage() {
                                                                     </div>
                                                                     {message.timestamp && <MessageTimestamp timestamp={message.timestamp} />}
                                                                 </div>
+                                                                
+                                                                {/* Show completed thought process if available */}
+                                                                {(message as any).thinkingSteps && (message as any).thinkingSteps.length > 0 && (
+                                                                    <div className="mb-2 -mt-1">
+                                                                        <ThinkingProcess 
+                                                                            status="complete"
+                                                                            steps={(message as any).thinkingSteps}
+                                                                            defaultOpen={false}
+                                                                        />
+                                                                    </div>
+                                                                )}
+
                         <BotResponse 
                             content={typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}    
                                                                     className="text-[15px] ai-response leading-relaxed max-w-full overflow-hidden"
@@ -2740,12 +2818,13 @@ export default function ChatPage() {
                                 const data = await response.json();
                                 
                                 if (data.response) {
-                                  const aiMessage = {
+                                    const aiMessage = {
                                     id: generateMessageId(),
                                     text: data.response,
                                     sender: 'bot' as const,
                                     name: 'CourseConnect AI',
-                                    timestamp: Date.now()
+                                    timestamp: Date.now(),
+                                    thinkingSteps: thinkingSteps // Save thinking steps to message history
                                   };
                                   
                                   await addMessage(currentTab || 'private-general-chat', aiMessage);
@@ -2820,7 +2899,13 @@ export default function ChatPage() {
                                                                     CourseConnect AI
                                                                 </div>
                                                             </div>
-                                                            <RippleText text="thinking…" className="text-sm text-muted-foreground italic" />
+                                                            <div className="mb-2 mt-1">
+                                                                <ThinkingProcess 
+                                                                    status="thinking"
+                                                                    steps={thinkingSteps}
+                                                                    defaultOpen={true}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2846,6 +2931,15 @@ export default function ChatPage() {
                                                                 </div>
                                                                 {isStreamingComplete && <MessageTimestamp timestamp={Date.now()} />}
                                                             </div>
+                                                            {isStreamingComplete && (
+                                                              <div className="mb-4">
+                                                                <ThinkingProcess 
+                                                                    status="complete"
+                                                                    steps={thinkingSteps}
+                                                                    defaultOpen={false}
+                                                                />
+                                                              </div>
+                                                            )}
                                                             {/* BotResponse with copy and feedback buttons */}
                                                             <BotResponse 
                                                                 content={streamingResponse}

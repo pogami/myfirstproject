@@ -11,7 +11,7 @@ import { onAuthStateChanged, User, Auth } from 'firebase/auth';
 // Helper function to get guest display name from localStorage
 const getGuestDisplayName = (): string => {
   if (typeof window === 'undefined') return 'Guest User';
-
+  
   try {
     const guestUser = localStorage.getItem('guestUser');
     if (guestUser) {
@@ -21,76 +21,73 @@ const getGuestDisplayName = (): string => {
   } catch (error) {
     console.warn('Failed to parse guest user from localStorage:', error);
   }
-
+  
   return 'Guest User';
 };
 
 export type Message = {
-  id?: string;
-  sender: "user" | "bot" | "moderator" | "system";
-  text: string;
-  name: string;
-  timestamp: number;
-  userId?: string;
-  isJoinMessage?: boolean;
-  sources?: Array<{
-    title: string;
-    url: string;
-    snippet: string;
-  }>;
-  isSearchRequest?: boolean; // Flag to indicate web search was requested
-  file?: {
+    id?: string;
+    sender: "user" | "bot" | "moderator" | "system";
+    text: string;
     name: string;
-    size: number;
-    type: string;
-    url: string;
-  };
-  files?: Array<{
-    name: string;
-    size: number;
-    type: string;
-    url: string;
-  }>;
+    timestamp: number;
+    userId?: string;
+    isJoinMessage?: boolean;
+    sources?: Array<{
+        title: string;
+        url: string;
+        snippet: string;
+    }>;
+    isSearchRequest?: boolean; // Flag to indicate web search was requested
+    file?: {
+        name: string;
+        size: number;
+        type: string;
+        url: string;
+    };
+    files?: Array<{
+        name: string;
+        size: number;
+        type: string;
+        url: string;
+    }>;
+    thinkingSteps?: string[]; // Array of thinking steps
 };
 
 export type Chat = {
-  id: string;
-  title: string;
-  messages: Message[];
-  createdAt?: number;
-  updatedAt?: number;
-  chatType?: 'private' | 'public' | 'class';
-  classGroupId?: string;
-  members?: string[];
-  disabled?: boolean; // For coming soon features
-  courseData?: {
-    courseName?: string;
-    courseCode?: string;
-    professor?: string;
-    university?: string;
-    semester?: string;
-    year?: string;
-    classTime?: string;
-    department?: string;
-    topics?: string[];
-    assignments?: Array<{ name: string; dueDate?: string; description?: string }>;
-    exams?: Array<{ name: string; date?: string; daysUntil?: number }>;
-    syllabusText?: string;
-    fileName?: string;
-    uploadDate?: string;
-  };
-  // Conversation metadata for AI intelligence
-  metadata?: {
-    topicsCovered?: string[]; // Topics student has discussed
-    strugglingWith?: string[]; // Topics student seems confused about
-    quizzesGenerated?: Array<{
-      topic: string;
-      questions: Array<{ question: string; answer: string }>;
-      timestamp: number;
-    }>;
-    lastStudyPlanDate?: number;
-    questionComplexityLevel?: 'basic' | 'intermediate' | 'advanced';
-  };
+    id: string;
+    title: string;
+    messages: Message[];
+    createdAt?: number;
+    updatedAt?: number;
+    chatType?: 'private' | 'public' | 'class';
+    classGroupId?: string;
+    members?: string[];
+    disabled?: boolean; // For coming soon features
+    courseData?: {
+        courseName?: string;
+        courseCode?: string;
+        professor?: string;
+        university?: string;
+        semester?: string;
+        year?: string;
+        department?: string;
+        topics?: string[];
+        assignments?: Array<{ name: string; dueDate?: string; description?: string }>;
+        exams?: Array<{ name: string; date?: string; daysUntil?: number }>;
+    };
+    // Conversation metadata for AI intelligence
+    metadata?: {
+        topicsCovered?: string[]; // Topics student has discussed
+        strugglingWith?: string[]; // Topics student seems confused about
+        quizzesGenerated?: Array<{
+            topic: string;
+            questions: Array<{ question: string; answer: string }>;
+            timestamp: number;
+        }>;
+        lastStudyPlanDate?: number;
+        questionComplexityLevel?: 'basic' | 'intermediate' | 'advanced';
+    };
 };
 
 interface ChatState {
@@ -150,16 +147,16 @@ export const useChatStore = create<ChatState>()(
 
       initializeAuthListener: () => {
         console.log("initializeAuthListener called");
-
+        
         // Migrate old chats to add chatType if missing - ENHANCED VERSION
         const migrateOldChats = () => {
           const currentChats = get().chats;
           let needsUpdate = false;
           const updatedChats = { ...currentChats };
-
+          
           Object.keys(updatedChats).forEach(chatId => {
             const chat = updatedChats[chatId];
-
+            
             // Migrate missing chatType
             if (!chat.chatType) {
               console.log('🔧 Migrating old chat:', chatId, 'hasCourseData:', !!chat.courseData);
@@ -176,7 +173,7 @@ export const useChatStore = create<ChatState>()(
               needsUpdate = true;
               console.log('✅ Migrated chat to chatType:', chat.chatType);
             }
-
+            
             // FIX: If chatType is 'private' but it's clearly a class chat, fix it
             if (chat.chatType === 'private' && chatId.length > 20 && !chatId.includes('general-chat')) {
               // Check if the title contains course-like patterns
@@ -188,7 +185,7 @@ export const useChatStore = create<ChatState>()(
               }
             }
           });
-
+          
           if (needsUpdate) {
             console.log('✅ Migrated', Object.keys(updatedChats).filter(id => !currentChats[id]?.chatType).length, 'chats, updating store');
             set({ chats: updatedChats });
@@ -196,44 +193,44 @@ export const useChatStore = create<ChatState>()(
             console.log('✅ All chats already have chatType, no migration needed');
           }
         };
-
+        
         // Run migration immediately
         migrateOldChats();
-
+        
         // ALSO run migration after a short delay to catch any timing issues
         setTimeout(() => {
           console.log('🔄 Running delayed migration check...');
           migrateOldChats();
         }, 1000);
-
+        
         // Initialize general chats immediately for real-time functionality
         const initializeGeneralChats = (userId?: string) => {
           console.log("initializeGeneralChats called with userId:", userId);
           set((state) => {
-            console.log("Setting up chats in store, current state:", {
+            console.log("Setting up chats in store, current state:", { 
               chatsCount: Object.keys(state.chats).length,
               currentTab: state.currentTab,
-              isStoreLoading: state.isStoreLoading
+              isStoreLoading: state.isStoreLoading 
             });
-
+            
             const newState = { ...state };
-
+            
             // Create public-general-chat if it doesn't exist (DISABLED - Coming Soon)
             if (!newState.chats['public-general-chat']) {
               console.log("Creating public-general-chat (disabled)");
-
+              
               // Check if user is developer (replace with your actual user ID)
-              const isDeveloper = typeof window !== 'undefined' &&
-                (window.location.hostname === 'localhost' ||
-                  localStorage.getItem('dev-mode') === 'true');
-
+              const isDeveloper = typeof window !== 'undefined' && 
+                (window.location.hostname === 'localhost' || 
+                 localStorage.getItem('dev-mode') === 'true');
+              
               newState.chats['public-general-chat'] = {
                 id: 'public-general-chat',
                 title: 'Community',
                 messages: [{
                   sender: 'bot' as const,
                   name: 'CourseConnect AI',
-                  text: isDeveloper
+                  text: isDeveloper 
                     ? '👨‍💻 **Developer Mode: Community Chat Active**\n\nYou have developer access to Community Chat for testing. Regular users will see the "Coming Soon" message.\n\nThis chat is shared across all users for real-time collaboration testing.'
                     : '🚧 **Community Chat Coming Soon!**\n\nWe\'re building an amazing community space! While we finish up, here\'s what you can do:\n\n✅ **Use General Chat** - Get AI help with all your courses\n✅ **Upload Your Syllabus** - Unlock course-specific AI tutoring\n✅ **Report Issues** - Found a bug? Click your profile icon → "Report Issue"\n\nStay tuned for updates! 🎓',
                   timestamp: Date.now()
@@ -244,7 +241,7 @@ export const useChatStore = create<ChatState>()(
                 disabled: !isDeveloper
               } as Chat;
             }
-
+            
             // Create private-general-chat with user-specific ID
             const privateGeneralChatId = userId ? `private-general-chat-${userId}` : 'private-general-chat-guest';
             if (!newState.chats[privateGeneralChatId]) {
@@ -258,33 +255,33 @@ export const useChatStore = create<ChatState>()(
                 chatType: 'private'
               } as Chat;
             }
-
+            
             console.log("Chats initialized:", Object.keys(newState.chats));
             return newState;
           });
         };
-
+        
         // Initialize chats immediately with guest mode
         initializeGeneralChats(undefined); // Guest mode
-
+        
         // Immediately set loading to false, enable guest mode, and set default currentTab for real-time chat
         console.log("Setting isStoreLoading to false, isGuest to true, and currentTab to private-general-chat-guest");
-        set({
-          isStoreLoading: false,
+        set({ 
+          isStoreLoading: false, 
           isGuest: true,
           currentTab: 'private-general-chat-guest' // Set default tab to private guest chat
         });
-
+        
         console.log("Store initialization complete, new state:", {
           isStoreLoading: false,
           isGuest: true,
           currentTab: 'public-general-chat'
         });
-
+        
         // Initialize default chats with clean state (one-time per version)
         const CHAT_VERSION = 'v2.2'; // Changed to v2.2 to force clean reset with join times
         const lastInitVersion = localStorage.getItem('chat-init-version');
-
+        
         // CRITICAL: Set join times BEFORE subscribing to Firestore to prevent old messages from loading
         const currentTime = Date.now();
         if (!localStorage.getItem('chat-join-time-public-general-chat')) {
@@ -295,7 +292,7 @@ export const useChatStore = create<ChatState>()(
           localStorage.setItem('chat-join-time-private-general-chat-guest', currentTime.toString());
           console.log('⏰ Set default join time for Guest General Chat');
         }
-
+        
         if (lastInitVersion !== CHAT_VERSION) {
           console.log('🔄 Initializing default chats with clean state (v2.2)...');
           get().initializeDefaultChats().then(() => {
@@ -314,15 +311,15 @@ export const useChatStore = create<ChatState>()(
         } catch (error) {
           console.warn("Failed to establish Firestore subscriptions:", error);
         }
-
+        
         // Check if auth is properly initialized
         if (!auth || typeof auth !== 'object' || typeof auth.onAuthStateChanged !== 'function') {
           console.warn("Auth object not properly initialized, using guest mode for real-time chat");
-          return () => { }; // Return empty unsubscribe function
+          return () => {}; // Return empty unsubscribe function
         }
-
+        
         console.log("Auth object is properly initialized, setting up auth listener");
-
+        
         const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
           try {
             console.log("Auth state changed, user:", user ? "signed in" : "signed out");
@@ -330,79 +327,79 @@ export const useChatStore = create<ChatState>()(
               // User is signed in.
               console.log("User signed in, loading chats...");
               set({ isGuest: false, isStoreLoading: false }); // Keep loading false for real-time chat
-
+              
               // Create user-specific private general chat
               const privateGeneralChatId = `private-general-chat-${user.uid}`;
               initializeGeneralChats(user.uid);
-
+              
               // Set join time for user-specific chat BEFORE subscribing
               const userChatJoinTimeKey = `chat-join-time-${privateGeneralChatId}`;
               if (!localStorage.getItem(userChatJoinTimeKey)) {
                 localStorage.setItem(userChatJoinTimeKey, Date.now().toString());
                 console.log(`⏰ Set default join time for ${privateGeneralChatId}`);
               }
-
+              
               // Switch to user-specific chat
               set({ currentTab: privateGeneralChatId });
-
+              
               // Subscribe to user-specific chat
               get().subscribeToChat(privateGeneralChatId);
               console.log(`✅ Switched to user-specific chat: ${privateGeneralChatId}`);
-
+              
               try {
                 const userDocRef = doc(db as Firestore, 'users', user.uid);
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (userDocSnap.exists()) {
-                  const userData = userDocSnap.data();
-                  const chatIds: string[] = userData.chats || [];
-                  const chatsToLoad: Record<string, Chat> = {};
+                    const userData = userDocSnap.data();
+                    const chatIds: string[] = userData.chats || [];
+                    const chatsToLoad: Record<string, Chat> = {};
 
-                  for (const chatId of chatIds) {
-                    const chatDocRef = doc(db as Firestore, 'chats', chatId);
-                    const chatDocSnap = await getDoc(chatDocRef);
-                    if (chatDocSnap.exists()) {
-                      const chatData = chatDocSnap.data() as Omit<Chat, 'id'>;
-
-                      // SAFETY CHECK: Ensure chatType is set (for backward compatibility)
-                      let chatType = chatData.chatType;
-                      if (!chatType) {
-                        if (chatId === 'public-general-chat') {
-                          chatType = 'public';
-                        } else if (chatId.includes('private-general-chat')) {
-                          chatType = 'private';
-                        } else if (chatData.courseData) {
-                          chatType = 'class';
-                        } else {
-                          chatType = 'private';
-                        }
-                        console.log(`⚠️ Chat ${chatId} missing chatType on init, inferred as: ${chatType}`);
-                      }
-
-                      chatsToLoad[chatId] = { ...chatData, id: chatId, chatType };
+                    for (const chatId of chatIds) {
+                         const chatDocRef = doc(db as Firestore, 'chats', chatId);
+                         const chatDocSnap = await getDoc(chatDocRef);
+                         if (chatDocSnap.exists()) {
+                             const chatData = chatDocSnap.data() as Omit<Chat, 'id'>;
+                             
+                             // SAFETY CHECK: Ensure chatType is set (for backward compatibility)
+                             let chatType = chatData.chatType;
+                             if (!chatType) {
+                               if (chatId === 'public-general-chat') {
+                                 chatType = 'public';
+                               } else if (chatId.includes('private-general-chat')) {
+                                 chatType = 'private';
+                               } else if (chatData.courseData) {
+                                 chatType = 'class';
+                               } else {
+                                 chatType = 'private';
+                               }
+                               console.log(`⚠️ Chat ${chatId} missing chatType on init, inferred as: ${chatType}`);
+                             }
+                             
+                             chatsToLoad[chatId] = { ...chatData, id: chatId, chatType };
+                         }
                     }
-                  }
-                  // Merge with existing local chats to preserve any guest chats
-                  const currentState = get();
-                  const mergedChats = { ...currentState.chats, ...chatsToLoad };
-                  set({ chats: mergedChats, isStoreLoading: false });
+                    // Merge with existing local chats to preserve any guest chats
+                    const currentState = get();
+                    const mergedChats = { ...currentState.chats, ...chatsToLoad };
+                    set({ chats: mergedChats, isStoreLoading: false });
                 } else {
-                  // Don't overwrite existing chats if user has no Firestore chats yet
-                  const currentState = get();
-                  if (Object.keys(currentState.chats).length === 0) {
-                    set({ chats: {}, isStoreLoading: false });
-                  } else {
-                    set({ isStoreLoading: false });
-                  }
+                     // Don't overwrite existing chats if user has no Firestore chats yet
+                     const currentState = get();
+                     if (Object.keys(currentState.chats).length === 0) {
+                         set({ chats: {}, isStoreLoading: false });
+                     } else {
+                         set({ isStoreLoading: false });
+                     }
                 }
               } catch (error) {
                 console.warn("Failed to load user chats (offline mode):", error);
                 // Continue in offline mode - preserve existing chats
                 const currentState = get();
                 if (Object.keys(currentState.chats).length === 0) {
-                  set({ chats: {}, isStoreLoading: false });
+                    set({ chats: {}, isStoreLoading: false });
                 } else {
-                  set({ isStoreLoading: false });
+                    set({ isStoreLoading: false });
                 }
               }
             } else {
@@ -422,7 +419,7 @@ export const useChatStore = create<ChatState>()(
       addChat: async (chatName, initialMessage, customChatId?: string, chatType: 'private' | 'public' | 'class' = 'private', courseData?: Chat['courseData']) => {
         const chatId = customChatId || getChatId(chatName);
         const { isGuest } = get();
-
+        
         const newChat: Chat = {
           id: chatId,
           title: chatName,
@@ -451,50 +448,50 @@ export const useChatStore = create<ChatState>()(
         }
 
         if (isGuest) {
-          // For guest users, just add to local state
-          const newChatData = {
-            id: chatId,
-            title: chatName,
-            messages: [safeInitialMessage],
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            chatType: chatType || (courseData ? 'class' : 'private'), // FAILSAFE: Ensure chatType is set
-            courseData
-          };
-
-          set((state) => ({
-            chats: {
-              ...state.chats,
-              [chatId]: newChatData
-            },
-            currentTab: chatId
-          }));
-
-          // Verify the chat was added correctly
-          const addedChat = get().chats[chatId];
-          console.log('✅ Guest chat added:', {
-            chatId,
-            providedChatType: chatType,
-            finalChatType: addedChat?.chatType,
-            hasCourseData: !!addedChat?.courseData,
-            fullChat: addedChat
-          });
-
-          // DOUBLE CHECK: If chatType is STILL undefined, fix it immediately
-          if (!addedChat?.chatType) {
-            console.error('⚠️ ChatType missing after add! Fixing...');
+            // For guest users, just add to local state
+            const newChatData = {
+                id: chatId,
+                title: chatName,
+                messages: [safeInitialMessage],
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                chatType: chatType || (courseData ? 'class' : 'private'), // FAILSAFE: Ensure chatType is set
+                courseData
+            };
+            
             set((state) => ({
-              chats: {
-                ...state.chats,
-                [chatId]: {
-                  ...state.chats[chatId],
-                  chatType: courseData ? 'class' : 'private'
-                }
-              }
+                chats: {
+                    ...state.chats,
+                    [chatId]: newChatData
+                },
+                currentTab: chatId
             }));
-          }
-
-          return;
+            
+            // Verify the chat was added correctly
+            const addedChat = get().chats[chatId];
+            console.log('✅ Guest chat added:', {
+              chatId,
+              providedChatType: chatType,
+              finalChatType: addedChat?.chatType,
+              hasCourseData: !!addedChat?.courseData,
+              fullChat: addedChat
+            });
+            
+            // DOUBLE CHECK: If chatType is STILL undefined, fix it immediately
+            if (!addedChat?.chatType) {
+              console.error('⚠️ ChatType missing after add! Fixing...');
+              set((state) => ({
+                chats: {
+                  ...state.chats,
+                  [chatId]: {
+                    ...state.chats[chatId],
+                    chatType: courseData ? 'class' : 'private'
+                  }
+                }
+              }));
+            }
+            
+            return;
         }
 
         // Check if auth is properly initialized before accessing currentUser
@@ -502,7 +499,7 @@ export const useChatStore = create<ChatState>()(
           console.warn("Auth object not properly initialized, skipping Firestore operations");
           return;
         }
-
+        
         const user = (auth as Auth)?.currentUser;
         if (!user) {
           console.log('No authenticated user, skipping Firestore operations');
@@ -513,26 +510,26 @@ export const useChatStore = create<ChatState>()(
 
         // Optimistically update local state first
         const newChatData = {
-          id: chatId,
-          title: chatName,
-          messages: [safeInitialMessage],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          chatType: chatType || (courseData ? 'class' : 'private'), // FAILSAFE: Ensure chatType is set
-          courseData
+            id: chatId,
+            title: chatName,
+            messages: [safeInitialMessage],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            chatType: chatType || (courseData ? 'class' : 'private'), // FAILSAFE: Ensure chatType is set
+            courseData
         };
-
+        
         set((state) => {
-          console.log('Adding chat to local state:', { chatId, chatName, chatType: newChatData.chatType });
-          return {
-            chats: {
-              ...state.chats,
-              [chatId]: newChatData
-            },
-            currentTab: chatId
-          };
+            console.log('Adding chat to local state:', { chatId, chatName, chatType: newChatData.chatType });
+            return {
+                chats: {
+                    ...state.chats,
+                    [chatId]: newChatData
+                },
+                currentTab: chatId
+            };
         });
-
+        
         // Verify the chat was added correctly
         const addedChat = get().chats[chatId];
         console.log('✅ Logged-in user chat added:', {
@@ -541,7 +538,7 @@ export const useChatStore = create<ChatState>()(
           finalChatType: addedChat?.chatType,
           hasCourseData: !!addedChat?.courseData
         });
-
+        
         // DOUBLE CHECK: If chatType is STILL undefined, fix it immediately
         if (!addedChat?.chatType) {
           console.error('⚠️ ChatType missing after add! Fixing...');
@@ -558,35 +555,35 @@ export const useChatStore = create<ChatState>()(
 
         // Try to persist to Firestore (but don't fail if offline)
         try {
-          const chatDocRef = doc(db as Firestore, 'chats', chatId);
-          const chatDocSnap = await getDoc(chatDocRef);
+            const chatDocRef = doc(db as Firestore, 'chats', chatId);
+            const chatDocSnap = await getDoc(chatDocRef);
 
-          if (!chatDocSnap.exists()) {
-            const newChat: Omit<Chat, 'id'> = {
-              title: chatName,
-              messages: [safeInitialMessage],
-              createdAt: Date.now(),
-              updatedAt: Date.now(),
-              chatType: chatType || (courseData ? 'class' : 'private'),
-              courseData: courseData || undefined
-            };
-            console.log('💾 Saving chat to Firestore:', { chatId, chatType: newChat.chatType, hasCourseData: !!newChat.courseData });
-            await setDoc(chatDocRef, newChat);
-          }
+            if (!chatDocSnap.exists()) {
+                const newChat: Omit<Chat, 'id'> = {
+                    title: chatName,
+                    messages: [safeInitialMessage],
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    chatType: chatType || (courseData ? 'class' : 'private'),
+                    courseData: courseData || undefined
+                };
+                console.log('💾 Saving chat to Firestore:', { chatId, chatType: newChat.chatType, hasCourseData: !!newChat.courseData });
+                await setDoc(chatDocRef, newChat);
+            }
+            
+            const userDocRef = doc(db as Firestore, 'users', user.uid);
+            await updateDoc(userDocRef, {
+                chats: arrayUnion(chatId)
+            });
 
-          const userDocRef = doc(db as Firestore, 'users', user.uid);
-          await updateDoc(userDocRef, {
-            chats: arrayUnion(chatId)
-          });
-
-          // Start realtime subscription
-          await get().subscribeToChat(chatId);
+            // Start realtime subscription
+            await get().subscribeToChat(chatId);
         } catch (error) {
-          // Only log non-offline errors to reduce noise
-          if (error && typeof error === 'object' && 'code' in error && error.code !== 'unavailable') {
-            console.warn("Failed to save chat to firestore:", error);
-          }
-          // Chat is already saved locally, so continue working
+            // Only log non-offline errors to reduce noise
+            if (error && typeof error === 'object' && 'code' in error && error.code !== 'unavailable') {
+                console.warn("Failed to save chat to firestore:", error);
+            }
+            // Chat is already saved locally, so continue working
         }
       },
 
@@ -607,7 +604,7 @@ export const useChatStore = create<ChatState>()(
           }
           return state;
         });
-
+        
         // Generate unique ID for message if it doesn't have one
         const generateMessageId = () => {
           const timestamp = Date.now();
@@ -615,7 +612,7 @@ export const useChatStore = create<ChatState>()(
           const sessionId = Math.random().toString(36).substr(2, 4);
           return `${timestamp}-${random}-${sessionId}`;
         };
-
+        
         // Ensure message text is always a string and has a unique ID, filter out undefined values
         const safeMessage = {
           id: message.id || generateMessageId(), // Generate ID if missing
@@ -631,51 +628,52 @@ export const useChatStore = create<ChatState>()(
           ...(message.metadata && { metadata: message.metadata }),
           ...(message.file && { file: message.file }),
           ...(message.files && { files: message.files }),
-          ...(message.sources && { sources: message.sources })
+          ...(message.sources && { sources: message.sources }),
+          ...(message.thinkingSteps && { thinkingSteps: message.thinkingSteps })
         };
-
+        
         // Optimistic update for immediate UI response (with deduplication)
         set((state) => {
           if (!state.chats[chatId]) return state;
-
-          // Check if message already exists (by ID first, then by content)
-          const existingById = state.chats[chatId].messages.find(m => m.id === safeMessage.id);
-          const existingByContent = state.chats[chatId].messages.find(m =>
-            m.timestamp === safeMessage.timestamp &&
-            m.userId === safeMessage.userId &&
-            m.text === safeMessage.text
-          );
-
-          if (existingById) {
-            console.log('Message already exists by ID in addMessage, skipping duplicate:', {
-              id: safeMessage.id,
-              existingId: existingById.id,
-              text: safeMessage.text?.substring(0, 50) + '...',
-              totalMessages: state.chats[chatId].messages.length
-            });
-            return state;
-          }
-
-          if (existingByContent) {
-            console.log('Message already exists by content in addMessage, skipping duplicate:', {
-              id: safeMessage.id,
-              existingId: existingByContent.id,
-              text: safeMessage.text?.substring(0, 50) + '...',
-              totalMessages: state.chats[chatId].messages.length
-            });
-            return state;
-          }
-
-          console.log('Adding new message to chat:', {
-            id: safeMessage.id,
-            userId: safeMessage.userId,
+          
+        // Check if message already exists (by ID first, then by content)
+        const existingById = state.chats[chatId].messages.find(m => m.id === safeMessage.id);
+        const existingByContent = state.chats[chatId].messages.find(m => 
+          m.timestamp === safeMessage.timestamp && 
+          m.userId === safeMessage.userId && 
+          m.text === safeMessage.text
+        );
+        
+        if (existingById) {
+          console.log('Message already exists by ID in addMessage, skipping duplicate:', { 
+            id: safeMessage.id, 
+            existingId: existingById.id,
             text: safeMessage.text?.substring(0, 50) + '...',
-            totalMessages: state.chats[chatId].messages.length + 1
+            totalMessages: state.chats[chatId].messages.length
           });
-
+          return state;
+        }
+        
+        if (existingByContent) {
+          console.log('Message already exists by content in addMessage, skipping duplicate:', { 
+            id: safeMessage.id, 
+            existingId: existingByContent.id,
+            text: safeMessage.text?.substring(0, 50) + '...',
+            totalMessages: state.chats[chatId].messages.length
+          });
+          return state;
+        }
+        
+        console.log('Adding new message to chat:', { 
+          id: safeMessage.id, 
+          userId: safeMessage.userId,
+          text: safeMessage.text?.substring(0, 50) + '...',
+          totalMessages: state.chats[chatId].messages.length + 1
+        });
+          
           const messages = state.chats[chatId].messages;
           const newMessages = replaceLast ? [...messages.slice(0, -1), safeMessage] : [...messages, safeMessage];
-          return {
+           return {
             chats: {
               ...state.chats,
               [chatId]: {
@@ -687,43 +685,43 @@ export const useChatStore = create<ChatState>()(
         });
 
         // Message will be broadcasted via Pusher in the chat component
-        console.log('Message added to store:', {
-          messageId: safeMessage.id,
-          userId: safeMessage.userId,
+        console.log('Message added to store:', { 
+          messageId: safeMessage.id, 
+          userId: safeMessage.userId, 
           userName: safeMessage.name,
-          chatId
+          chatId 
         });
 
         // Persist to Firestore in background (non-blocking) - works for both guest and authenticated users
         try {
-          // Don't await this - let it run in background
-          const chatDocRef = doc(db as Firestore, 'chats', chatId);
-          getDoc(chatDocRef).then(chatDocSnap => {
-            if (chatDocSnap.exists()) {
-              const currentMessages = chatDocSnap.data().messages || [];
-              const newMessages = replaceLast ? [...currentMessages.slice(0, -1), safeMessage] : [...currentMessages, safeMessage];
-              return updateDoc(chatDocRef, { messages: newMessages });
-            } else {
-              // Create the chat doc if missing (especially for public-general-chat)
-              const newChat: Omit<Chat, 'id'> = {
-                title: chatId === 'public-general-chat' ? 'Community' : chatId,
-                messages: [safeMessage],
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-                chatType: chatId === 'public-general-chat' ? 'public' : 'private'
-              };
-              return setDoc(chatDocRef, newChat);
-            }
-          }).catch(e => {
-            // Only log non-offline errors to reduce noise
-            if (e && typeof e === 'object' && 'code' in e && e.code !== 'unavailable') {
-              console.warn("Failed to save message to firestore:", e);
-            }
-            // Continue working in offline mode - the message is already in local state
-          });
+            // Don't await this - let it run in background
+            const chatDocRef = doc(db as Firestore, 'chats', chatId);
+            getDoc(chatDocRef).then(chatDocSnap => {
+              if (chatDocSnap.exists()) {
+                const currentMessages = chatDocSnap.data().messages || [];
+                const newMessages = replaceLast ? [...currentMessages.slice(0, -1), safeMessage] : [...currentMessages, safeMessage];
+                return updateDoc(chatDocRef, { messages: newMessages });
+              } else {
+                // Create the chat doc if missing (especially for public-general-chat)
+                const newChat: Omit<Chat, 'id'> = {
+                  title: chatId === 'public-general-chat' ? 'Community' : chatId,
+                  messages: [safeMessage],
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                  chatType: chatId === 'public-general-chat' ? 'public' : 'private'
+                };
+                return setDoc(chatDocRef, newChat);
+              }
+            }).catch(e => {
+                // Only log non-offline errors to reduce noise
+                if (e && typeof e === 'object' && 'code' in e && e.code !== 'unavailable') {
+                    console.warn("Failed to save message to firestore:", e);
+                }
+                // Continue working in offline mode - the message is already in local state
+            });
         } catch (error) {
-          console.warn("Failed to save message to Firestore:", error);
-          // Continue in real-time mode even if Firestore fails
+            console.warn("Failed to save message to Firestore:", error);
+            // Continue in real-time mode even if Firestore fails
         }
       },
 
@@ -810,18 +808,18 @@ export const useChatStore = create<ChatState>()(
           }
 
           const chatDocRef = doc(db as Firestore, 'chats', chatId);
-
+          
           // Get user's join time for this chat
           const joinTimeKey = `chat-join-time-${chatId}`;
           const userJoinTime = localStorage.getItem(joinTimeKey);
           const currentTime = Date.now();
-
+          
           // If this is the first time joining this chat, set join time
           if (!userJoinTime) {
             localStorage.setItem(joinTimeKey, currentTime.toString());
             console.log(`First time joining ${chatId}, set join time: ${currentTime}`);
           }
-
+          
           const unsubscribe = onSnapshot(chatDocRef, (snap) => {
             if (snap.exists()) {
               const data = snap.data() as Omit<Chat, 'id'>;
@@ -830,11 +828,11 @@ export const useChatStore = create<ChatState>()(
                 ...m,
                 text: typeof m.text === 'string' ? m.text : JSON.stringify(m.text)
               }));
-
+              
               // Filter messages based on user's join time
               const savedJoinTime = localStorage.getItem(joinTimeKey);
               let filteredMessages = allMessages;
-
+              
               if (savedJoinTime) {
                 const joinTime = parseInt(savedJoinTime);
                 filteredMessages = allMessages.filter((msg: any) => {
@@ -842,9 +840,9 @@ export const useChatStore = create<ChatState>()(
                   return !msg.timestamp || msg.timestamp >= joinTime;
                 });
               }
-
+              
               console.log(`Received ${allMessages.length} total messages, showing ${filteredMessages.length} for ${chatId}`);
-
+              
               // SAFETY CHECK: Ensure chatType is set (for backward compatibility with old chats)
               let chatType = data.chatType;
               if (!chatType) {
@@ -859,7 +857,7 @@ export const useChatStore = create<ChatState>()(
                 }
                 console.log(`⚠️ Chat ${chatId} missing chatType, inferred as: ${chatType}`);
               }
-
+              
               set((state) => ({
                 chats: {
                   ...state.chats,
@@ -888,35 +886,35 @@ export const useChatStore = create<ChatState>()(
       },
       setShowUpgrade: (show) => set({ showUpgrade: show }),
       setIsDemoMode: (isDemo) => set({ isDemoMode: isDemo }),
-
+      
       // Trial management functions
       activateTrial: () => {
         const now = Date.now();
-        set({
-          trialActivated: true,
+        set({ 
+          trialActivated: true, 
           trialStartDate: now,
           trialDaysLeft: 14,
           isDemoMode: true // Enable demo mode when trial is activated
         });
         console.log("Trial activated! Started at:", new Date(now).toISOString());
       },
-
+      
       updateTrialDaysLeft: () => {
         const { trialActivated, trialStartDate } = get();
         if (!trialActivated || !trialStartDate) {
           return; // No trial active
         }
-
+        
         const now = Date.now();
         const trialEndTime = trialStartDate + (14 * 24 * 60 * 60 * 1000); // 14 days in milliseconds
         const timeRemaining = trialEndTime - now;
-
+        
         if (timeRemaining <= 0) {
           // Trial expired
-          set({
-            trialDaysLeft: 0,
+          set({ 
+            trialDaysLeft: 0, 
             isDemoMode: false,
-            trialActivated: false
+            trialActivated: false 
           });
         } else {
           // Calculate days remaining
@@ -924,7 +922,7 @@ export const useChatStore = create<ChatState>()(
           set({ trialDaysLeft: daysRemaining });
         }
       },
-
+      
       clearGuestData: () => {
         // Clear all local storage data
         try {
@@ -934,22 +932,22 @@ export const useChatStore = create<ChatState>()(
           localStorage.removeItem('cc-chat-store');
           localStorage.removeItem('cc-active-tab');
           localStorage.removeItem('cc-course-context-card');
-
+          
           // Clear guest-specific stats
           const today = new Date().toDateString();
           localStorage.removeItem(`guest-stats-${today}`);
-
+          
           // Clear any guest notifications
           localStorage.removeItem('guest-notifications');
-
+          
           console.log('✅ Cleared all guest data from localStorage');
         } catch (error) {
           console.warn('Failed to clear localStorage:', error);
         }
-
+        
         // Reset store state to initial values
-        set({
-          chats: {},
+        set({ 
+          chats: {}, 
           currentTab: undefined,
           isGuest: true,
           isDemoMode: false,
@@ -958,24 +956,24 @@ export const useChatStore = create<ChatState>()(
           trialDaysLeft: 14
         });
       },
-
+      
       // Reset Community chat to clean state (both local and Firestore)
       resetCommunityChat: async () => {
         // Check if developer
-        const isDeveloper = typeof window !== 'undefined' &&
-          (window.location.hostname === 'localhost' ||
-            localStorage.getItem('dev-mode') === 'true');
+        const isDeveloper = typeof window !== 'undefined' && 
+          (window.location.hostname === 'localhost' || 
+           localStorage.getItem('dev-mode') === 'true');
 
         const welcomeMessage = {
           id: `welcome-${Date.now()}`,
           sender: 'bot' as const,
           name: 'CourseConnect AI',
-          text: isDeveloper
+          text: isDeveloper 
             ? '👨‍💻 **Developer Mode: Community Chat Active**\n\nYou have developer access to Community Chat for testing. Regular users will see the "Coming Soon" message.\n\nThis chat is shared across all users for real-time collaboration testing.'
             : '🚧 **Community Chat Coming Soon!**\n\nWe\'re building an amazing community space! While we finish up, here\'s what you can do:\n\n✅ **Use General Chat** - Get AI help with all your courses\n✅ **Upload Your Syllabus** - Unlock course-specific AI tutoring\n✅ **Report Issues** - Found a bug? Click your profile icon → "Report Issue"\n\nStay tuned for updates! 🎓',
           timestamp: Date.now()
         };
-
+        
         // Update local state
         set((state) => ({
           chats: {
@@ -992,12 +990,12 @@ export const useChatStore = create<ChatState>()(
             }
           }
         }));
-
+        
         // Clear from Firestore - DELETE then recreate to ensure clean state
         try {
           const db = getFirestore();
           const chatDocRef = doc(db, 'chats', 'public-general-chat');
-
+          
           // First, delete the document completely
           try {
             await deleteDoc(chatDocRef);
@@ -1005,10 +1003,10 @@ export const useChatStore = create<ChatState>()(
           } catch (e) {
             console.log('No existing Community Chat document to delete');
           }
-
+          
           // Wait a moment for deletion to propagate
           await new Promise(resolve => setTimeout(resolve, 100));
-
+          
           // Then create fresh document
           await setDoc(chatDocRef, {
             title: 'Community',
@@ -1022,7 +1020,7 @@ export const useChatStore = create<ChatState>()(
         } catch (error) {
           console.warn('Failed to reset Community chat in Firestore:', error);
         }
-
+        
         console.log('✅ Community chat reset to clean state');
       },
 
@@ -1035,7 +1033,7 @@ export const useChatStore = create<ChatState>()(
           text: `Welcome to your personal AI tutor! I'm here to help you with any questions about your courses. Upload a syllabus to get started, or ask me anything!`,
           timestamp: Date.now()
         };
-
+        
         // Update local state
         set((state) => ({
           chats: {
@@ -1051,7 +1049,7 @@ export const useChatStore = create<ChatState>()(
             }
           }
         }));
-
+        
         // Clear from Firestore
         try {
           const db = getFirestore();
@@ -1067,24 +1065,24 @@ export const useChatStore = create<ChatState>()(
         } catch (error) {
           console.warn('Failed to reset General chat in Firestore:', error);
         }
-
+        
         console.log('✅ General chat reset to clean state');
       },
 
       // Initialize default chats with clean state (clears old messages from Firestore)
       initializeDefaultChats: async () => {
         // Check if developer
-        const isDeveloper = typeof window !== 'undefined' &&
-          (window.location.hostname === 'localhost' ||
-            localStorage.getItem('dev-mode') === 'true');
+        const isDeveloper = typeof window !== 'undefined' && 
+          (window.location.hostname === 'localhost' || 
+           localStorage.getItem('dev-mode') === 'true');
 
         const resetTime = Date.now();
-
+        
         const communityWelcome = {
           id: `welcome-${resetTime}`,
           sender: 'bot' as const,
           name: 'CourseConnect AI',
-          text: isDeveloper
+          text: isDeveloper 
             ? '👨‍💻 **Developer Mode: Community Chat Active**\n\nYou have developer access to Community Chat for testing. Regular users will see the "Coming Soon" message.\n\nThis chat is shared across all users for real-time collaboration testing.'
             : '🚧 **Community Chat Coming Soon!**\n\nWe\'re building an amazing community space! While we finish up, here\'s what you can do:\n\n✅ **Use General Chat** - Get AI help with all your courses\n✅ **Upload Your Syllabus** - Unlock course-specific AI tutoring\n✅ **Report Issues** - Found a bug? Click your profile icon → "Report Issue"\n\nStay tuned for updates! 🎓',
           timestamp: resetTime
@@ -1100,10 +1098,10 @@ export const useChatStore = create<ChatState>()(
 
         try {
           const db = getFirestore();
-
+          
           // Reset Community Chat in Firestore
           const communityDocRef = doc(db, 'chats', 'public-general-chat');
-
+          
           // First, delete the document to clear all old data
           try {
             await deleteDoc(communityDocRef);
@@ -1111,7 +1109,7 @@ export const useChatStore = create<ChatState>()(
           } catch (e) {
             console.log('No existing Community Chat document to delete');
           }
-
+          
           // Then create fresh document
           await setDoc(communityDocRef, {
             title: 'Community',
@@ -1121,11 +1119,11 @@ export const useChatStore = create<ChatState>()(
             chatType: 'public',
             disabled: !isDeveloper
           });
-
+          
           // Update join time for Community Chat to NOW (so old messages won't show)
           localStorage.setItem('chat-join-time-public-general-chat', resetTime.toString());
           console.log(`✅ Set join time for Community Chat to ${resetTime}`);
-
+          
           // Reset Guest General Chat in Firestore
           const guestGeneralDocRef = doc(db, 'chats', 'private-general-chat-guest');
           await setDoc(guestGeneralDocRef, {
@@ -1135,21 +1133,21 @@ export const useChatStore = create<ChatState>()(
             updatedAt: resetTime,
             chatType: 'private'
           });
-
+          
           // Update join time for Guest General Chat to NOW
           localStorage.setItem('chat-join-time-private-general-chat-guest', resetTime.toString());
           console.log(`✅ Set join time for Guest General Chat to ${resetTime}`);
-
+          
           console.log('✅ Default chats initialized in Firestore with clean state');
         } catch (error) {
           console.warn('Failed to initialize default chats in Firestore:', error);
         }
       },
-
+      
       // Complete reset of all chats (both local and Firestore)
       resetAllChats: async () => {
         const { isGuest } = get();
-
+        
         if (isGuest) {
           // For guest users, clear all local storage
           get().clearGuestData();
@@ -1164,12 +1162,12 @@ export const useChatStore = create<ChatState>()(
               console.warn(`Failed to reset chat ${chatId}:`, error);
             }
           });
-
+          
           await Promise.all(resetPromises);
           console.log('✅ All chats reset in Firestore');
         }
       },
-
+      
       resetChat: async (chatId) => {
         const { isGuest } = get();
         const chat = get().chats[chatId];
@@ -1177,7 +1175,7 @@ export const useChatStore = create<ChatState>()(
 
         // Clear all messages and add new welcome message based on chat type
         let newWelcomeMessage;
-
+        
         if (chatId === 'public-general-chat') {
           newWelcomeMessage = {
             id: `welcome-${Date.now()}`,
@@ -1201,10 +1199,10 @@ export const useChatStore = create<ChatState>()(
           // General private chat reset
           // Count how many class chats exist to personalize the message
           const classChats = Object.values(get().chats).filter(c => c.chatType === 'class');
-          const syllabusText = classChats.length > 0
+          const syllabusText = classChats.length > 0 
             ? ` I have access to all ${classChats.length} of your course ${classChats.length === 1 ? 'syllabus' : 'syllabi'}, so I can help with any of your classes!`
             : '';
-
+          
           newWelcomeMessage = {
             id: `welcome-${Date.now()}`,
             sender: 'bot' as const,
@@ -1213,7 +1211,7 @@ export const useChatStore = create<ChatState>()(
             timestamp: Date.now()
           };
         }
-
+        
         const resetMessages = [newWelcomeMessage];
 
         // Update local state immediately
@@ -1227,9 +1225,9 @@ export const useChatStore = create<ChatState>()(
             }
           }
         };
-
+        
         set(newState);
-
+        
         // Force persist to save immediately
         if (typeof window !== 'undefined' && window.localStorage) {
           try {
@@ -1252,7 +1250,7 @@ export const useChatStore = create<ChatState>()(
         // Update Firestore - CRITICAL for persistence across reloads
         // Always reset public/private general chats in Firestore, even for guests
         const shouldUpdateFirestore = !isGuest || chatId === 'public-general-chat' || chatId === 'private-general-chat';
-
+        
         if (shouldUpdateFirestore) {
           // First, unsubscribe from Firestore listener to prevent it from overriding our reset
           const anyState = get() as any;
@@ -1261,7 +1259,7 @@ export const useChatStore = create<ChatState>()(
             anyState._chatSubscriptions[chatId]();
             delete anyState._chatSubscriptions[chatId];
           }
-
+          
           const chatDocRef = doc(db as Firestore, 'chats', chatId);
           try {
             // Completely replace the chat document with only the welcome message
@@ -1274,21 +1272,21 @@ export const useChatStore = create<ChatState>()(
               courseData: chat.courseData,
               members: chat.members || []
             }, { merge: false }); // merge: false ensures complete replacement
-
+            
             console.log(`✅ Chat ${chatId} reset successfully in Firestore with only welcome message`);
-
+            
             // Update join time to NOW so only future messages appear
             const joinTimeKey = `chat-join-time-${chatId}`;
             const resetTime = Date.now();
             localStorage.setItem(joinTimeKey, resetTime.toString());
             console.log(`✅ Updated join time for ${chatId} to ${resetTime}`);
-
+            
             // Wait a moment, then re-subscribe to Firestore
             setTimeout(async () => {
               console.log(`📌 Re-subscribing to ${chatId} after reset`);
               await get().subscribeToChat(chatId);
             }, 500);
-
+            
           } catch (error) {
             console.warn("Failed to reset chat in firestore:", error);
             // Even if Firestore fails, local state is already updated
@@ -1332,31 +1330,25 @@ export const useChatStore = create<ChatState>()(
 
       deleteChat: async (chatId) => {
         const { isGuest, currentTab } = get();
-
+        
         // Prevent deletion of general chat
         if (chatId === 'general-chat') {
           console.log('Cannot delete general chat');
           return;
         }
-
+        
         // Update local state
         set((state) => {
           const newChats = { ...state.chats };
           delete newChats[chatId];
-
+          
           // If we're deleting the current tab, switch to another chat or undefined
           let newCurrentTab = currentTab;
           if (currentTab === chatId) {
-            if (newChats['private-general-chat']) {
-              newCurrentTab = 'private-general-chat';
-            } else if (newChats['public-general-chat']) {
-              newCurrentTab = 'public-general-chat';
-            } else {
-              const remainingChats = Object.keys(newChats);
-              newCurrentTab = remainingChats.length > 0 ? remainingChats[0] : undefined;
-            }
+            const remainingChats = Object.keys(newChats);
+            newCurrentTab = remainingChats.length > 0 ? remainingChats[0] : undefined;
           }
-
+          
           return {
             chats: newChats,
             currentTab: newCurrentTab
@@ -1371,7 +1363,7 @@ export const useChatStore = create<ChatState>()(
               console.warn("Auth object not properly initialized, skipping Firestore operations");
               return;
             }
-
+            
             // Remove chat from user's chat list
             const user = (auth as Auth)?.currentUser;
             if (user) {
@@ -1389,10 +1381,10 @@ export const useChatStore = create<ChatState>()(
           }
         }
       },
-
+      
       initializeGeneralChats: () => {
         const { chats } = get();
-
+        
         // Create Private General Chat
         if (!chats['private-general-chat']) {
           const privateGeneralMessage = {
@@ -1401,7 +1393,7 @@ export const useChatStore = create<ChatState>()(
             text: `Welcome to General Chat! 👋 I'm your personal AI assistant, ready to help with any academic questions. I can help with study support, homework, academic guidance, and any subject. Simply type your question below and I'll provide detailed responses. Ready to learn? Ask me anything! 🚀`,
             timestamp: Date.now()
           };
-
+          
           set((state) => ({
             chats: {
               ...state.chats,
@@ -1426,7 +1418,7 @@ export const useChatStore = create<ChatState>()(
             text: `Welcome to Community Chat! 🚧 Student collaboration features are coming soon. For now, type @ai to get personalized AI tutoring help!`,
             timestamp: Date.now()
           };
-
+          
           set((state) => ({
             chats: {
               ...state.chats,
@@ -1445,45 +1437,45 @@ export const useChatStore = create<ChatState>()(
       },
 
       // Real-time messaging methods (Pusher handles this directly)
-
+      
       sendRealtimeMessage: (chatId, message) => {
         // Real-time messaging is now handled by Pusher in the chat component
         console.log('Real-time message handled by Pusher:', { chatId, messageId: message.id });
       },
-
+      
       startTyping: (chatId) => {
         // Typing indicators are now handled by Pusher in the chat component
         console.log('Typing start handled by Pusher:', { chatId });
       },
-
+      
       stopTyping: (chatId) => {
         // Typing indicators are now handled by Pusher in the chat component
         console.log('Typing stop handled by Pusher:', { chatId });
       },
-
+      
       receiveRealtimeMessage: (chatId, message) => {
         // Skip messages from the current user to avoid duplicates
         const { isGuest } = get();
         const currentUserId = isGuest ? 'guest' : (auth as Auth)?.currentUser?.uid;
-
+        
         if (message.userId === currentUserId) {
           return; // Skip silently for performance
         }
-
+        
         // Generate unique ID for incoming message if it doesn't have one
         const generateMessageId = () => {
           const timestamp = Date.now();
           const random = Math.random().toString(36).substr(2, 9);
           return `${timestamp}-${random}`;
         };
-
+        
         // Ensure message text is always a string and has a unique ID
         const safeMessage = {
           ...message,
           id: message.id || generateMessageId(),
           text: typeof message.text === 'string' ? message.text : JSON.stringify(message.text)
         };
-
+        
         // Add message to local state (optimized for speed)
         set((state) => {
           // Ensure chat exists
@@ -1497,13 +1489,13 @@ export const useChatStore = create<ChatState>()(
               chatType: chatId === 'public-general-chat' ? 'public' : 'private'
             } as Chat;
           }
-
+          
           // Quick duplicate check by ID only (faster than content check)
           const existingById = state.chats[chatId].messages.find(m => m.id === safeMessage.id);
           if (existingById) {
             return state; // Skip duplicate silently
           }
-
+          
           return {
             chats: {
               ...state.chats,
@@ -1526,8 +1518,8 @@ export const useChatStore = create<ChatState>()(
         // Fallback for server-side rendering
         return {
           getItem: () => null,
-          setItem: () => { },
-          removeItem: () => { },
+          setItem: () => {},
+          removeItem: () => {},
         };
       }),
       // Only persist specific fields, not the entire state (exclude Socket.IO objects)

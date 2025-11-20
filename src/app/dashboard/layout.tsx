@@ -681,15 +681,17 @@ export default function DashboardLayout({
             {/* User profile moved to header */}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white/90 to-blue-50/70 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/40">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_55%)] dark:bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.15),_transparent_60%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 mx-auto h-[600px] w-[600px] -translate-y-40 rounded-full bg-primary/5 blur-3xl dark:bg-primary/10"
-          />
+        <SidebarInset className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white/90 to-blue-50/70 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/40">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_55%)] dark:bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.15),_transparent_60%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-y-0 mx-auto h-[600px] w-[600px] -translate-y-40 rounded-full bg-primary/5 blur-3xl dark:bg-primary/10"
+            />
+          </div>
           {/* Header with Hamburger Menu - Always Visible */}
           <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
             <div className="flex h-16 items-center justify-between px-6">

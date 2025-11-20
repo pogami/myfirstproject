@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { provideStudyAssistanceWithFallback } from '@/ai/services/dual-ai-service';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/server'; 
 
 // Enhanced web search function for real-time information
 async function searchWeb(query: string): Promise<string> {
@@ -43,9 +45,58 @@ async function searchWeb(query: string): Promise<string> {
   }
 }
 
+// Helper to highlight key terms in the response
+function highlightKeyTerms(text: string, terms: string[]): string {
+  if (!text || terms.length === 0) return text;
+  
+  let processedText = text;
+  
+  // Sort terms by length (descending) to handle multi-word terms first
+  const sortedTerms = [...terms].sort((a, b) => b.length - a.length);
+  
+  // Use a Set to track what we've already highlighted to avoid double highlighting
+  const highlighted = new Set();
+  
+  for (const term of sortedTerms) {
+    if (term.length < 3) continue; // Skip very short terms
+    if (highlighted.has(term.toLowerCase())) continue;
+    
+    // Escape special regex characters
+    const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Create regex that matches the term (case insensitive) but NOT inside existing brackets [[...]]
+    // and ensures whole word boundaries
+    try {
+      const regex = new RegExp(`\\b(${escapedTerm})\\b(?!(?:[^\\[]*\\]\\]))`, 'gi');
+      
+      // Only replace if we haven't replaced this specific instance yet
+      // This is a simple approach; for perfect nested handling we'd need a parser
+      processedText = processedText.replace(regex, (match) => {
+        return `[[${match}]]`;
+      });
+      
+      highlighted.add(term.toLowerCase());
+    } catch (e) {
+      // Skip invalid regex
+    }
+  }
+  
+  return processedText;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { question, context, conversationHistory, shouldCallAI = true, isPublicChat = false } = await request.json();
+    const { 
+      question, 
+      context, 
+      conversationHistory, 
+      shouldCallAI = true, 
+      isPublicChat = false,
+      courseData,
+      allSyllabi,
+      thinkingMode = false,
+      userId
+    } = await request.json();
     
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -69,8 +120,24 @@ export async function POST(request: NextRequest) {
       conversationHistory: conversationHistory?.length || 0, 
       shouldCallAI, 
       isPublicChat,
+      hasCourseData: !!courseData,
+      hasAllSyllabi: !!allSyllabi,
+      thinkingMode,
       timestamp: new Date().toISOString()
     });
+
+    // Get user learning profile if userId is provided
+    let userLearningProfile = null;
+    if (userId && userId !== 'guest') {
+        try {
+             // Import dynamically to avoid circular deps if any
+             const { getUserLearningProfile } = await import('@/lib/learning-profile');
+             userLearningProfile = await getUserLearningProfile(userId);
+             console.log('Loaded user learning profile:', userLearningProfile?.strugglingWith?.length || 0, 'topics');
+        } catch (e) {
+            console.warn('Failed to load learning profile:', e);
+        }
+    }
 
     // Check if we need current information and search for it
     let currentInfo = '';
@@ -89,6 +156,76 @@ export async function POST(request: NextRequest) {
       currentInfo = searchResults ? `\n\nCurrent information:\n${searchResults}\n` : '';
     }
 
+    // 1. DYNAMIC DATE/TIME CONTEXT
+    const now = new Date();
+    const timeContext = `
+Current Date: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+Current Time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+`;
+
+    // 2. SYLLABUS CONTEXT
+    let courseContext = '';
+    let highlightTermsList: string[] = [];
+    
+    // Add common academic terms to highlight list
+    const commonTerms = [
+      "hypothesis", "mitochondria", "photosynthesis", "derivative", "integral", 
+      "velocity", "momentum", "equilibrium", "metaphor", "simile", "alliteration",
+      "democracy", "republic", "inflation", "gdp", "supply and demand",
+      "stoichiometry", "osmosis", "evolution", "plate tectonics", "big bang"
+    ];
+    highlightTermsList.push(...commonTerms);
+
+    if (courseData) {
+      courseContext += `\nSPECIFIC COURSE CONTEXT (Use this to answer questions about the course):\n`;
+      if (courseData.courseName) courseContext += `- Course Name: ${courseData.courseName}\n`;
+      if (courseData.courseCode) courseContext += `- Course Code: ${courseData.courseCode}\n`;
+      if (courseData.professor) courseContext += `- Professor: ${courseData.professor}\n`;
+      if (courseData.location) courseContext += `- Location: ${courseData.location}\n`;
+      if (courseData.schedule) courseContext += `- Schedule: ${courseData.schedule}\n`;
+      if (courseData.officeHours) courseContext += `- Office Hours: ${courseData.officeHours}\n`;
+      
+      if (courseData.topics && courseData.topics.length > 0) {
+        courseContext += `- Topics: ${courseData.topics.join(', ')}\n`;
+        highlightTermsList.push(...courseData.topics);
+      }
+      
+      if (courseData.assignments && courseData.assignments.length > 0) {
+        courseContext += `- Upcoming Assignments: ${courseData.assignments.map((a: any) => `${a.name} (Due: ${a.dueDate || 'TBA'})`).join(', ')}\n`;
+      }
+      
+      if (courseData.exams && courseData.exams.length > 0) {
+        courseContext += `- Exams: ${courseData.exams.map((e: any) => `${e.name} (Date: ${e.date || 'TBA'})`).join(', ')}\n`;
+      }
+      
+      if (courseData.gradingPolicy) {
+        courseContext += `- Grading Policy: ${JSON.stringify(courseData.gradingPolicy)}\n`;
+      }
+    }
+
+    // Handle all syllabi (General Chat)
+    if (allSyllabi && allSyllabi.length > 0) {
+      courseContext += `\n\nSTUDENT'S ENROLLED COURSES:\n`;
+      allSyllabi.forEach((course: any, index: number) => {
+        courseContext += `${index + 1}. ${course.courseName || 'Unknown Course'} (${course.courseCode || 'No Code'})\n`;
+        if (course.professor) courseContext += `   - Professor: ${course.professor}\n`;
+        if (course.topics && course.topics.length > 0) {
+           courseContext += `   - Key Topics: ${course.topics.slice(0, 5).join(', ')}\n`;
+        }
+        if (course.schedule) courseContext += `   - Schedule: ${course.schedule}\n`;
+      });
+      courseContext += `\nIf the user asks about their schedule or professors, use this information.\n`;
+    }
+
+    // Filter duplicates from highlight list
+    highlightTermsList = [...new Set(highlightTermsList)].filter(t => t && t.length > 2);
+
+    // 3. LEARNING PROFILE CONTEXT
+    let profileContext = '';
+    if (userLearningProfile && userLearningProfile.strugglingWith && userLearningProfile.strugglingWith.length > 0) {
+        profileContext = `\nUSER LEARNING PROFILE:\nThe user has previously struggled with: ${userLearningProfile.strugglingWith.join(', ')}. \nPlease adjust your explanations for these topics to be simpler and more foundational.\n`;
+    }
+
     // Build natural, human-like prompt with file information
     const convoContext = conversationHistory?.length > 0 
       ? `\n\nPrevious chat:\n${conversationHistory.map((msg: any) => {
@@ -104,17 +241,13 @@ export async function POST(request: NextRequest) {
         }).join('\n')}\n\n`
       : '';
 
-    const prompt = `You're CourseConnect AI, a friendly and helpful study buddy! Respond naturally like you're chatting with a friend. Be conversational, engaging, and helpful.
-
-Context: ${context || 'General Chat'}
-
-When talking about current events or news, be conversational but factual. You can reference the information provided to give context.
-
+    const fullContext = `
+${context || 'General Chat'}
+${timeContext}
+${courseContext}
+${profileContext}
 ${currentInfo}
-
-${convoContext}User: ${cleanedQuestion}
-
-CourseConnect AI:`;
+`;
 
     // Create a readable stream for real-time response
     const stream = new ReadableStream({
@@ -123,6 +256,8 @@ CourseConnect AI:`;
           let aiResponse: string;
           let selectedModel: string;
           let sources: any[] = [];
+          let thinkingSteps: string[] = [];
+          let thinkingSummary: string = '';
           
           try {
             // Use the same AI service as the regular endpoint (Gemini + OpenAI fallback)
@@ -130,9 +265,10 @@ CourseConnect AI:`;
             
             const aiResult = await provideStudyAssistanceWithFallback({
               question: cleanedQuestion,
-              context: context || 'General Chat',
+              context: fullContext, // Pass the enhanced context
               conversationHistory: conversationHistory || [],
-              isSearchRequest: needsCurrentInfo
+              isSearchRequest: needsCurrentInfo,
+              thinkingMode: thinkingMode // Pass thinking mode flag
             });
             
             // Ensure we have a valid answer
@@ -144,14 +280,32 @@ CourseConnect AI:`;
             selectedModel = aiResult.provider || 'fallback';
             sources = aiResult.sources || [];
             
+            // Extract thinking data if available (Gemini 2.5 Flash Thinking)
+            if (aiResult.thoughts) {
+                thinkingSteps = aiResult.thoughts;
+            }
+            if (aiResult.thinkingSummary) {
+                thinkingSummary = aiResult.thinkingSummary;
+            }
+            
+            // If in thinking mode but no specific thoughts returned, generate synthetic ones for UX
+            if (thinkingMode && thinkingSteps.length === 0) {
+                thinkingSteps = [
+                    "Analyzing user question and context...",
+                    "Checking syllabus and course materials...",
+                    "Formulating response based on academic level...",
+                    "Verifying facts and explanations..."
+                ];
+                thinkingSummary = "I've analyzed your question against the provided course context and formulated a response.";
+            }
+            
           } catch (error) {
             console.log('AI service failed in stream, using intelligent fallback response:', error);
             
-            // Intelligent fallback that can handle current events if search succeeded
+            // Intelligent fallback
             const lowerQuestion = cleanedQuestion.toLowerCase();
             
             if (currentInfo) {
-              // We have current info from search, provide a smart response
               if (lowerQuestion.includes('trump') && lowerQuestion.includes('tylenol')) {
                 aiResponse = `${currentInfo}\n\nYeah, that's been a big topic lately! The science on this is pretty clear though - the claims made don't hold up to medical evidence. What specific aspect of this story are you curious about?`;
               } else {
@@ -159,10 +313,12 @@ CourseConnect AI:`;
               }
             } else if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {
               aiResponse = "Hey there! I'm CourseConnect AI, your friendly study buddy! I'm here to help with academics, homework questions, study strategies, or just chat about whatever's on your mind. What's up today?";
-            } else if (lowerQuestion.includes('who are you')) {
-              aiResponse = "I'm CourseConnect AI, your friendly study buddy! I was created by a solo developer who built CourseConnect as a unified platform for college students. I'm here to help you with studies, answer questions, or just chat about whatever's on your mind. What's up?";
-            } else if (lowerQuestion.includes('news') || lowerQuestion.includes('current')) {
-              aiResponse = "I'd love to help with current events! Unfortunately I'm having trouble accessing real-time info right now. Feel free to ask me about academic topics, or try asking something like 'what's the latest news about...' specifically.";
+            } else if (lowerQuestion.includes('professor') || lowerQuestion.includes('who is my professor')) {
+              if (courseData && courseData.professor) {
+                 aiResponse = `According to your syllabus, your professor for ${courseData.courseName || 'this course'} is **${courseData.professor}**. Is there anything specific you need to know about them or their office hours?`;
+              } else {
+                 aiResponse = "I don't see a professor listed in the syllabus information you've uploaded. You might want to check the document again or your university portal. Anything else I can help with?";
+              }
             } else {
               aiResponse = "That's an interesting question! I'd normally chat about this with you, but I'm having some technical issues right now. Want to talk about academics, ask about homework, or try asking something else? I'm here to help once we get this sorted out!";
             }
@@ -176,15 +332,30 @@ CourseConnect AI:`;
             selectedModel = 'fallback';
           }
 
-          // Stream the response character by character for real-time typing effect
-          const chunkSize = 3; // Send 3 characters at a time for smooth streaming
-          let index = 0;
-          
+          // FORCE HIGHLIGHTING OF KEY TERMS
+          // Even if the AI didn't add [[brackets]], we do it here for known terms
+          aiResponse = highlightKeyTerms(aiResponse, highlightTermsList);
+
           // Send initial status
           controller.enqueue(new TextEncoder().encode(
             JSON.stringify({ type: 'status', message: 'Generating response...' }) + '\n'
           ));
 
+          // Send thinking steps if enabled
+          if (thinkingMode && thinkingSteps.length > 0) {
+             // Stream thinking steps with delays
+             for (const step of thinkingSteps) {
+                 controller.enqueue(new TextEncoder().encode(
+                    JSON.stringify({ type: 'thinking', thinking: step + '\n' }) + '\n'
+                 ));
+                 await new Promise(resolve => setTimeout(resolve, 500));
+             }
+          }
+
+          // Stream the response character by character for real-time typing effect
+          const chunkSize = 3; // Send 3 characters at a time for smooth streaming
+          let index = 0;
+          
           // Stream response in chunks
           while (index < aiResponse.length) {
             const chunk = aiResponse.slice(index, index + chunkSize);
@@ -206,7 +377,9 @@ CourseConnect AI:`;
               fullResponse: aiResponse,
               answer: aiResponse,
               provider: selectedModel || 'fallback',
-              sources: sources.length > 0 ? sources : undefined
+              sources: sources.length > 0 ? sources : undefined,
+              thinkingSteps: thinkingSteps,
+              thinkingSummary: thinkingSummary
             }) + '\n'
           ));
           

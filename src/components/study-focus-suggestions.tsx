@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { BookOpen, Target, ArrowRight, Check } from 'lucide-react';
+import { BookOpen, Target, ArrowRight, Check, AlertCircle, Lightbulb } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/hooks/use-chat-store';
 import { auth } from '@/lib/firebase/client-simple';
@@ -33,6 +33,19 @@ export function StudyFocusSuggestions() {
   const router = useRouter();
   const isFetchingRef = useRef(false);
   const lastChatsHashRef = useRef<string>('');
+  const getIcon = (type: StudySuggestion['type']) => {
+    switch (type) {
+      case 'assignment':
+        return <AlertCircle className="w-5 h-5 text-orange-500 dark:text-orange-400" />;
+      case 'review':
+        return <BookOpen className="w-5 h-5 text-purple-500 dark:text-purple-300" />;
+      case 'focus':
+        return <Target className="w-5 h-5 text-blue-500 dark:text-blue-300" />;
+      case 'topic':
+      default:
+        return <Lightbulb className="w-5 h-5 text-amber-500 dark:text-amber-300" />;
+    }
+  };
 
   useEffect(() => {
     if (auth && typeof (auth as any).onAuthStateChanged === 'function') {

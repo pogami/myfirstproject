@@ -36,6 +36,8 @@ export interface AIResponse {
     snippet: string;
   }[];
   isSearchRequest?: boolean; // Flag to indicate web search was requested
+  thoughts?: string[]; // Internal thinking steps (Gemini 2.5)
+  thinkingSummary?: string; // Summary of thinking process
 }
 
 export interface StudyAssistanceInput {
@@ -51,6 +53,7 @@ export interface StudyAssistanceInput {
     fileContent?: string;
   };
   isSearchRequest?: boolean; // Flag to indicate web search was requested
+  thinkingMode?: boolean; // Flag to enable thinking/reasoning mode
 }
 
 /**

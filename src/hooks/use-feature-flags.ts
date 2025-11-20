@@ -22,6 +22,13 @@ const DEFAULT_FLAGS: FeatureFlags = {
   darkMode: true,
 };
 
+// We occasionally need to force-enable AI chat in production regardless of any
+// stale localStorage flag state. This is controlled via an env override but
+// defaults to "on" so that users can always reach the assistant unless we
+// explicitly set NEXT_PUBLIC_FORCE_ENABLE_AI_CHAT="false".
+const FORCE_ENABLE_AI_CHAT =
+  process.env.NEXT_PUBLIC_FORCE_ENABLE_AI_CHAT !== 'false';
+
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
   const [loading, setLoading] = useState(true);
@@ -66,6 +73,9 @@ export function useFeatureFlags() {
   }, []);
 
   const isFeatureEnabled = (feature: keyof FeatureFlags): boolean => {
+    if (feature === 'aiChat' && FORCE_ENABLE_AI_CHAT) {
+      return true;
+    }
     return flags[feature] !== false; // Default to true if not set
   };
 

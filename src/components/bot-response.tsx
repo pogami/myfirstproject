@@ -81,6 +81,15 @@ const convertMarkdownLinks = (text: string) => {
   });
 };
 
+// Convert [[Term]] into highlighted spans
+const convertHighlightedTerms = (text: string) => {
+  return text.replace(/\[\[([^\]]+)\]\]/g, (_, term) => {
+    const cleaned = term.trim();
+    if (!cleaned) return term;
+    return `<span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-100/80 text-amber-900 dark:bg-amber-400/20 dark:text-amber-100 font-medium transition-colors">${cleaned}</span>`;
+  });
+};
+
 // Detect math and render with KaTeX
 function renderMathLine(line: string, i: number) {
   // Check if line contains any math delimiters
@@ -97,6 +106,7 @@ function renderMathLine(line: string, i: number) {
     
     // Convert markdown links to clickable HTML links
     processedLine = convertMarkdownLinks(processedLine);
+    processedLine = convertHighlightedTerms(processedLine);
     
     return (
       <p key={i} className="text-sm not-italic break-words max-w-full overflow-hidden leading-7 font-sans" dangerouslySetInnerHTML={{ __html: processedLine }} />
@@ -158,6 +168,7 @@ function renderMathLine(line: string, i: number) {
             .replace(/\*([^\*]+)\*/g, '<strong>$1</strong>'); // Convert italic to bold instead
           
           processedPart = convertMarkdownLinks(processedPart);
+          processedPart = convertHighlightedTerms(processedPart);
           
           return <span key={`${i}-${partIndex}`} dangerouslySetInnerHTML={{ __html: processedPart }} />;
         }
