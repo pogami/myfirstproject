@@ -276,80 +276,83 @@ export default function ClassOverviewPage() {
             )}
             <div className="space-y-8 animate-in fade-in-50">
                 {/* Hero Section - Mobile Optimized */}
-                <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-6 md:p-8 border border-primary/20">
-                    <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-                    <div className="relative">
-                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                            <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10">
-                                <BookUser className="size-5 sm:size-6 text-primary" />
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 dark:from-gray-900 dark:via-blue-950/20 dark:to-indigo-950/20 p-6 sm:p-10 border border-white/60 dark:border-white/10 shadow-sm">
+                    <div className="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03] dark:opacity-[0.08]"></div>
+                    <div className="relative z-10">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
+                            <div className="p-3 rounded-2xl bg-blue-600/10 dark:bg-blue-500/20 w-fit">
+                                <BookUser className="size-8 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm">
-                                {classChats.length} Active Classes
-                            </Badge>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+                                        Class Overview
+                                    </h1>
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-200 dark:border-blue-800 px-3 py-1 text-xs sm:text-sm font-medium">
+                                        {classChats.length} Active {classChats.length === 1 ? 'Class' : 'Classes'}
+                                    </Badge>
+                                </div>
+                                <p className="text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
+                                    Track your academic progress, access study groups, and manage your assignments all in one place.
+                                </p>
+                            </div>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2 sm:mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            Class Overview
-                        </h1>
-                        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl">
-                            Upload your syllabi to create AI-powered class chats. Get personalized help, 
-                            track assignments, and access course-specific study tools.
-                        </p>
                     </div>
                 </div>
 
                 {/* Live Stats Overview - Real-time Updates */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-0 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/20 dark:to-indigo-900/10">
-                        <CardContent className="p-4 sm:p-6">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-1.5 sm:p-2 rounded-lg bg-indigo-500/10">
-                                    <BookUser className="size-4 sm:size-5 text-indigo-600" />
+                    <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md hover:-translate-y-0.5">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/20">
+                                    <BookUser className="size-6 text-indigo-600 dark:text-indigo-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-indigo-600">{liveStats.totalClasses}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Your Classes</p>
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{liveStats.totalClasses}</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Enrolled Classes</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     
-                    <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
-                        <CardContent className="p-4 sm:p-6">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-1.5 sm:p-2 rounded-lg bg-green-500/10">
-                                    <Calendar className="size-4 sm:size-5 text-green-600" />
+                    <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md hover:-translate-y-0.5">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-green-500/10 dark:bg-green-500/20">
+                                    <Calendar className="size-6 text-green-600 dark:text-green-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-green-600">{liveStats.upcomingExams}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Upcoming Exams</p>
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{liveStats.upcomingExams}</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Upcoming Exams</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                     
-                    <Card className="border-0 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10">
-                        <CardContent className="p-4 sm:p-6">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-1.5 sm:p-2 rounded-lg bg-purple-500/10">
-                                    <MessageSquare className="size-4 sm:size-5 text-purple-600" />
+                    <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md hover:-translate-y-0.5">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-purple-500/10 dark:bg-purple-500/20">
+                                    <MessageSquare className="size-6 text-purple-600 dark:text-purple-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-purple-600">{liveStats.totalMessages}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Messages Today</p>
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{liveStats.totalMessages}</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Activity Today</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10">
-                        <CardContent className="p-4 sm:p-6">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="p-1.5 sm:p-2 rounded-lg bg-orange-500/10">
-                                    <FileText className="size-4 sm:size-5 text-orange-600" />
+                    <Card className="border-0 shadow-sm bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-100 dark:border-gray-800 transition-all duration-300 hover:bg-white/80 dark:hover:bg-gray-900/60 hover:shadow-md hover:-translate-y-0.5">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-orange-500/10 dark:bg-orange-500/20">
+                                    <FileText className="size-6 text-orange-600 dark:text-orange-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xl sm:text-2xl font-bold text-orange-600">{liveStats.assignmentsDue}</p>
-                                    <p className="text-xs sm:text-sm text-muted-foreground">Due This Week</p>
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{liveStats.assignmentsDue}</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Due This Week</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -362,88 +365,86 @@ export default function ClassOverviewPage() {
                 {/* Classes Grid */}
                 {classChats.length > 0 ? (
                     <div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-6">
-                            <h2 className="text-2xl font-bold tracking-tight">Your Classes</h2>
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">Click to Join</Badge>
-                                <p className="text-xs text-muted-foreground hidden sm:block">Click any class card to open its chat</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Your Classes</h2>
+                                <p className="text-muted-foreground">Manage your enrolled courses and study groups</p>
                             </div>
+                            <Button asChild variant="outline" className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border-gray-200 dark:border-gray-800 hover:bg-white/80 dark:hover:bg-gray-900/80 transition-all shadow-sm">
+                                <Link href="/dashboard/upload">
+                                    <Plus className="size-4 mr-2" />
+                                    Add New Class
+                                </Link>
+                            </Button>
                         </div>
-                        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                             {classChats.map(([id, chat]) => {
                                 const stats = getRealTimeStats(chat);
                                 return (
                                     <Card 
                                         key={id} 
                                         onClick={() => handleCardClick(id, chat.title)}
-                                        className="group cursor-pointer border-0 bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:bg-card/80"
+                                        className="group cursor-pointer relative overflow-hidden border-0 bg-white/70 dark:bg-gray-900/50 backdrop-blur-xl transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-1 ring-1 ring-gray-200/50 dark:ring-gray-800/50 hover:ring-blue-500/30 dark:hover:ring-blue-400/30"
                                     >
-                                        <CardHeader className="pb-4">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5">
-                                                        <BookUser className="size-6 text-primary"/>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                                                        {getChatDisplayName(chat, id)}
-                                                        </CardTitle>
-                                                        <CardDescription className="mt-1">
-                                                            {stats.students} students enrolled
-                                                        </CardDescription>
-                                                    </div>
+                                        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-transparent dark:from-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                        
+                                        <CardHeader className="pb-4 relative">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="p-2.5 rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 group-hover:scale-105 transition-transform duration-300">
+                                                    <BookUser className="size-6 text-blue-600 dark:text-blue-400"/>
                                                 </div>
-                                                <Badge variant="secondary" className={stats.statusClass}>
+                                                <Badge variant="secondary" className={`${stats.statusClass} shadow-sm border-0`}>
                                                     {stats.statusText}
                                                 </Badge>
                                             </div>
+                                            <div>
+                                                <CardTitle className="text-xl mb-1 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {getChatDisplayName(chat, id)}
+                                                </CardTitle>
+                                                <CardDescription className="flex items-center gap-2">
+                                                    <Users className="size-3.5" />
+                                                    {stats.students} students enrolled
+                                                </CardDescription>
+                                            </div>
                                         </CardHeader>
-                                        <CardContent className="pt-0">
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <MessageSquare className="size-4 text-muted-foreground" />
-                                                        <span className="text-muted-foreground">Messages</span>
-                                                    </div>
-                                                    <span className="font-medium">{chat.messages.length}</span>
+                                        
+                                        <CardContent className="relative pt-0">
+                                            <div className="grid grid-cols-2 gap-3 py-4 border-t border-gray-100 dark:border-gray-800/50">
+                                                <div className="space-y-1">
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                                        <MessageSquare className="size-3.5" />
+                                                        Activity
+                                                    </p>
+                                                    <p className="font-semibold text-sm">{stats.activity} today</p>
                                                 </div>
-                                                
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <MessageSquare className="size-4 text-muted-foreground" />
-                                                        <span className="text-muted-foreground">Messages Today</span>
-                                                    </div>
-                                                    <span className="font-medium">{stats.activity}</span>
-                                                </div>
-                                                
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="size-4 text-muted-foreground" />
-                                                        <span className="text-muted-foreground">Last active</span>
-                                                    </div>
-                                                    <span className="font-medium">{stats.lastActive}</span>
+                                                <div className="space-y-1">
+                                                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                                        <Calendar className="size-3.5" />
+                                                        Last Active
+                                                    </p>
+                                                    <p className="font-semibold text-sm">{stats.lastActive}</p>
                                                 </div>
                                             </div>
                                             
-                                            <div className="mt-4 pt-4 border-t border-border/50">
-                                                <div className="flex gap-2">
-                                                    <Button 
-                                                        className="flex-1 bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary border-primary/20 hover:border-primary/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
-                                                        variant="outline"
-                                                        onClick={() => handleCardClick(id, getChatDisplayName(chat, id))}
-                                                    >
-                                                        Join Chat
-                                                        <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                                                    </Button>
-                                                    <Button 
-                                                        className="bg-gradient-to-r from-red-500/10 to-red-500/5 hover:from-red-500/20 hover:to-red-500/10 text-red-500 border-red-500/20 hover:border-red-500/30 transition-all duration-300 hover:scale-[1.02] shadow-sm hover:shadow-md font-medium" 
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={(e) => handleLeaveClass(id, getChatDisplayName(chat, id), e)}
-                                                    >
-                                                        <LogOut className="size-4" />
-                                                    </Button>
-                                                </div>
+                                            <div className="flex gap-3 mt-2">
+                                                <Button 
+                                                    className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 shadow-sm hover:shadow transition-all"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleCardClick(id, getChatDisplayName(chat, id));
+                                                    }}
+                                                >
+                                                    Join Chat
+                                                    <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                                </Button>
+                                                <Button 
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                    onClick={(e) => handleLeaveClass(id, getChatDisplayName(chat, id), e)}
+                                                >
+                                                    <LogOut className="size-4" />
+                                                </Button>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -452,26 +453,29 @@ export default function ClassOverviewPage() {
                         </div>
                     </div>
                 ) : (
-                    <Card className="border-0 bg-gradient-to-br from-card to-card/50">
-                        <CardContent className="py-16">
-                            <div className="text-center space-y-6">
-                                <div className="p-6 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 w-fit mx-auto border border-primary/20">
-                                    <BookUser className="size-16 text-primary" />
+                    <Card className="border-0 shadow-lg bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl ring-1 ring-gray-200/50 dark:ring-gray-800/50">
+                        <CardContent className="py-20">
+                            <div className="text-center space-y-8">
+                                <div className="relative w-fit mx-auto">
+                                    <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full" />
+                                    <div className="relative p-8 rounded-3xl bg-white dark:bg-gray-800 shadow-xl ring-1 ring-gray-100 dark:ring-gray-700">
+                                        <BookUser className="size-12 text-blue-600 dark:text-blue-400" />
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-bold">No Classes Found</h3>
-                                    <p className="text-muted-foreground max-w-md mx-auto">
+                                <div className="space-y-3 max-w-lg mx-auto">
+                                    <h3 className="text-2xl font-bold tracking-tight">No Classes Found</h3>
+                                    <p className="text-muted-foreground text-lg">
                                         Get started by uploading your first syllabus to discover and join study groups for your classes.
                                     </p>
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                    <Button asChild size="lg" className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-0 font-medium">
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                                    <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all hover:scale-105">
                                         <Link href="/dashboard/upload">
                                             <Upload className="mr-2 h-5 w-5" />
                                             Upload Syllabus
                                         </Link>
                                     </Button>
-                                    <Button asChild variant="outline" size="lg" className="bg-gradient-to-r from-background to-background/80 hover:from-primary/5 hover:to-primary/10 text-foreground border-border hover:border-primary/30 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md font-medium">
+                                    <Button asChild variant="outline" size="lg" className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105">
                                         <Link href="/dashboard/chat">
                                             <MessageSquare className="mr-2 h-5 w-5" />
                                             Browse General Chat
@@ -485,25 +489,22 @@ export default function ClassOverviewPage() {
 
                 {/* Call to Action */}
                 {classChats.length > 0 && (
-                    <Card className="border-0 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20">
-                        <CardContent className="p-8 text-center">
-                            <div className="flex justify-center mb-4">
-                                <div className="p-3 rounded-xl bg-primary/10">
-                                    <Plus className="size-8 text-primary" />
-                                </div>
+                    <div className="mt-8 relative overflow-hidden rounded-2xl border border-border bg-background/50 dark:bg-background/20 p-6 sm:p-8">
+                        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                            <div className="space-y-2 text-center sm:text-left max-w-2xl">
+                                <h3 className="text-xl sm:text-2xl font-bold">Ready to add more classes?</h3>
+                                <p className="text-muted-foreground">
+                                    Upload additional syllabi to create course-specific AI chats, track assignments, and unlock personalized study tools.
+                                </p>
                             </div>
-                            <h3 className="text-xl font-bold mb-2">Want to Add More Classes?</h3>
-                            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                                Upload additional syllabi to create course-specific AI chats, track assignments and exams, and get personalized study help for each class.
-                            </p>
-                            <Button asChild size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                            <Button asChild size="lg" className="shadow-sm whitespace-nowrap min-w-[180px]">
                                 <Link href="/dashboard/upload">
-                                    <Upload className="mr-2 h-5 w-5" />
-                                    Upload Another Syllabus
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Upload Syllabus
                                 </Link>
                             </Button>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

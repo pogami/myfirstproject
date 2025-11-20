@@ -681,7 +681,15 @@ export default function DashboardLayout({
             {/* User profile moved to header */}
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="bg-gray-50/50 dark:bg-gray-950 min-h-screen">
+        <SidebarInset className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white/90 to-blue-50/70 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/40">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.08),_transparent_55%)] dark:bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.15),_transparent_60%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 mx-auto h-[600px] w-[600px] -translate-y-40 rounded-full bg-primary/5 blur-3xl dark:bg-primary/10"
+          />
           {/* Header with Hamburger Menu - Always Visible */}
           <header className="sticky top-0 z-40 w-full border-b border-gray-200/50 dark:border-gray-800/50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
             <div className="flex h-16 items-center justify-between px-6">
@@ -697,9 +705,20 @@ export default function DashboardLayout({
               </div>
             </div>
           </header>
-          
-          <main className={`flex-1 bg-transparent relative min-h-screen ${pathname === '/dashboard/chat' ? '' : 'p-6 space-y-6'}`}>
-            {pathname === '/dashboard/chat' ? children : <div className="w-full p-6 space-y-6">{children}</div>}
+          <main
+            className={`relative flex-1 ${pathname === '/dashboard/chat' ? '' : 'px-4 py-8 sm:px-8 lg:px-12'}`}
+          >
+            {pathname !== '/dashboard/chat' && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-4 rounded-3xl border border-white/60 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/5 dark:bg-gray-950/60 dark:shadow-[0_25px_80px_rgba(2,6,23,0.65)]"
+              />
+            )}
+            <div
+              className={`relative ${pathname === '/dashboard/chat' ? 'h-full' : 'mx-auto w-full max-w-7xl space-y-8'}`}
+            >
+              {children}
+            </div>
           </main>
         </SidebarInset>
 
